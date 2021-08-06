@@ -29,7 +29,7 @@ function lay:new(ops)
 end
 
 function lay:font(path, size, style)
-	self.fonts[style or 'regular'] = font:new(EXEDIR..'/'..path, size)
+	self.fonts[style or 'regular'] = font:new(DATADIR..'/'..path, size)
 end
 
 local function find_esc_sym(t, set, s)

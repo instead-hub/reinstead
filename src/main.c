@@ -36,12 +36,24 @@ static const luaL_Reg lua_libs[] = {
 	{ NULL, NULL }
 };
 
+#ifdef _WIN32
+static void
+reopen_stderr(const char *fname)
+{
+	if (*fname && freopen(fname, "w", stderr) != stderr) {
+		fprintf(stderr, "Error opening '%s': %s\n", fname, strerror(errno));
+		exit(1);
+	}
+}
+#endif
+
 int
 main(int argc, char **argv)
 {
 	char *exepath;
 	static char base[4096];
 	int i;
+
 	lua_State *L = luaL_newstate();
 	if (!L)
 		return 1;
@@ -79,17 +91,25 @@ main(int argc, char **argv)
 	lua_pushstring(L, exepath);
 	lua_setglobal(L, "EXEFILE");
 
-	snprintf(base, sizeof(base), "%s/%s", dirname((char*)exepath), "data");
-	free(exepath);
+	dirname((char*)exepath);
 
+	lua_pushstring(L, exepath);
+	lua_setglobal(L, "DATADIR");
+
+	snprintf(base, sizeof(base), "%s/%s", exepath, "data");
 	instead_lua_path(base);
+
+#ifdef _WIN32
+	snprintf(base, sizeof(base), "%s/%s", exepath, "errors.txt");
+	reopen_stderr(base);
+#endif
+	free(exepath);
 
 	(void) luaL_dostring(L,
 			     "local core\n"
 			     "xpcall(function()\n"
 			     "  PATHSEP = package.config:sub(1, 1)\n"
-			     "  EXEDIR = EXEFILE:match(\"^(.+)[/\\\\].*$\")\n"
-			     "  package.path = EXEDIR .. '/data/core/?.lua;' .. package.path\n"
+			     "  package.path = DATADIR .. '/data/core/?.lua;' .. package.path\n"
 			     "  core = require('core')\n"
 			     "  core.init()\n"
 			     "  core.run()\n"
