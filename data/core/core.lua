@@ -1,3 +1,4 @@
+local VERSION='0.1'
 local font = require "font"
 local conf = require "config"
 local core = {}
@@ -9,7 +10,7 @@ local dirty = false
 local last_render = 0
 local fps = 1/conf.fps;
 local input = ''
-local input_pos = 0;
+local input_pos = 1;
 local input_prompt = '> '
 local GAME = false
 local cursor
@@ -250,7 +251,11 @@ function core.init()
 	if GAME then
 		instead_start(GAME)
 	else
-		mwin:set(string.format("<b>Usage:</b>\n<w:    >%s \\<game>", EXEFILE))
+		mwin:set("<b>INSTEAD Lite V"..VERSION.." by Peter Kosyh (2021)</b>\n\n")
+		mwin:add("<i>Platform: "..PLATFORM.." / ".._VERSION.."</i>\n\n")
+		mwin:add(string.format("<b>Usage:</b>\n<w:    >%s \\<game> [-debug] [-scale \\<f>]", EXEFILE))
+		mwin:add('\nLook into "data/core/config.lua" for cusomization.')
+		mwin:add('\n<b>Press ESC to exit.</b>')
 	end
 	local w, h = win:size()
 	mwin:resize(w, h)
