@@ -190,6 +190,33 @@ sys_utf_len(lua_State *L)
 	return 1;
 }
 
+static int
+sys_readdir(lua_State *L)
+{
+	const char *path = luaL_checkstring(L, 1);
+	DIR *dir = opendir(path);
+	if (!dir) {
+		lua_pushnil(L);
+		lua_pushstring(L, strerror(errno));
+		return 2;
+	}
+	lua_newtable(L);
+	int i = 1;
+	struct dirent *entry;
+	while ((entry = readdir(dir))) {
+		if (strcmp(entry->d_name, "." ) == 0)
+			continue;
+		if (strcmp(entry->d_name, "..") == 0)
+			continue;
+		lua_pushstring(L, entry->d_name);
+		lua_rawseti(L, -2, i);
+		i++;
+	}
+	closedir(dir);
+	return 1;
+}
+
+
 static const luaL_Reg
 sys_lib[] = {
 	{ "poll", sys_poll },
@@ -204,16 +231,8 @@ sys_lib[] = {
 	{ "utf_prev", sys_utf_prev },
 	{ "utf_len", sys_utf_len },
 	{ "utf_sym", sys_utf_sym },
-	/* { "set_cursor",          f_set_cursor          }, */
-	/* { "window_has_focus",    f_window_has_focus    }, */
-	/* { "show_confirm_dialog", f_show_confirm_dialog }, */
-	/* { "list_dir",            f_list_dir            }, */
-	/* { "absolute_path",       f_absolute_path       }, */
-	/* { "get_file_info",       f_get_file_info       }, */
-	/* { "get_clipboard",       f_get_clipboard       }, */
-	/* { "set_clipboard",       f_set_clipboard       }, */
+	{ "readdir", sys_readdir },
 	{ "sleep", sys_sleep },
-	/* { "exec",                f_exec                }, */
 	{ NULL, NULL }
 };
 

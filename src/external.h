@@ -3,6 +3,7 @@
 #else
  #include <unistd.h>
 #endif
+#include <dirent.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <string.h>
