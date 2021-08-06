@@ -67,20 +67,11 @@ local function input_history(input)
 	mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
 end
 
-local function input_attach(input, edit)
-	input_detach()
-	local chars = utf.chars(input)
-	if not edit then
-		if not chars[1] then
-			input_pos = 1
-		else
-			input_pos = #chars + 1
-		end
-	end
+local function input_line(chars)
 	local pre = ''
 	for i=1,input_pos-1 do pre = pre .. chars[i] end
 	local post = ''
-	for i=input_pos,#chars do post = post .. chars[i] end
+	for i = input_pos,#chars do post = post .. chars[i] end
 	mwin:add(input_prompt..fmt_esc(pre)..'<w:\1>'..fmt_esc(post))
 	local l = mwin.lay.lines[#mwin.lay.lines]
 	for _, v in ipairs(l) do
@@ -93,6 +84,19 @@ local function input_attach(input, edit)
 			break
 		end
 	end
+end
+
+local function input_attach(input, edit)
+	input_detach()
+	local chars = utf.chars(input)
+	if not edit then
+		if not chars[1] then
+			input_pos = 1
+		else
+			input_pos = #chars + 1
+		end
+	end
+	input_line(chars)
 	local win = gfx.win()
 	local w, h = win:size()
 	mwin:resize(w, h, #mwin.lay.lines)
