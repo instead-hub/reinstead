@@ -8,7 +8,6 @@ local tbox = {
 function tbox:new()
 	local o = {
 		lay = lay:new(),
-		scrollbg = { 0x99, 0x99, 0x4c, 0xff },
 		off = 0,
 	}
 	o.pad = conf.pad;
@@ -50,6 +49,9 @@ function tbox:mouse(e, b, x, y)
 	return true
 end
 function tbox:scroll(scroll)
+	if conf.scroll_inverse then
+		scroll = -scroll
+	end
 	local ooff = self.off
 	scroll = scroll or 1
 	local l = self.lay
@@ -84,10 +86,10 @@ function tbox:render(dst, xoff, yoff)
 	yoff = yoff or 0
 	dst:fill(xoff, yoff, self.w, self.h, self.lay.bg)
 	self.lay:render(dst, xoff + SCROLLW + self.pad, yoff + self.pad, self.off)
-	dst:fill(xoff, yoff, SCROLLW, self.h, self.scrollbg)
+	dst:fill(xoff, yoff, SCROLLW, self.h, conf.scroll_bg)
 	local stop, sbot = self:scrollpos()
 	dst:fill(xoff + SCALE, yoff + stop + SCALE, SCROLLW - 2*SCALE,  sbot - stop,
-		self.lay.bg)
+		conf.scroll_fg)
 end
 function tbox:render_line(dst, n, xoff, yoff)
 	xoff = xoff or 0
