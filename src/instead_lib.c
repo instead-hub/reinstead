@@ -63,7 +63,7 @@ tiny_init(void)
 	int rc;
 	char path[1024];
 	instead_api_register(tiny_funcs);
-	snprintf(path, sizeof(path), "%s/tiny.lua", instead_lua_path(NULL));
+	snprintf(path, sizeof(path), "%s/stead3/tiny.lua", instead_lua_path(NULL));
 	rc = instead_loadfile(path);
 	if (rc)
 		return rc;

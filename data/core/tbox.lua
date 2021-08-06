@@ -1,5 +1,7 @@
 local lay = require "layout"
-local SCROLLW = 9 * SCALE
+local conf = require "config"
+local SCROLLW = conf.scrollw * SCALE
+
 local tbox = {
 }
 
@@ -9,7 +11,7 @@ function tbox:new()
 		scrollbg = { 0x99, 0x99, 0x4c, 0xff },
 		off = 0,
 	}
-	o.pad = o.lay.fsize;
+	o.pad = conf.pad;
 	self.__index = self
 	setmetatable(o, self)
 	return o

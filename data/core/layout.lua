@@ -1,30 +1,26 @@
 local font = require "font"
 local utf = require "utf"
-
+local conf = require "config"
 local lay = {
 }
 
-function lay:new(ops)
-	ops = ops or { w = 640, h = 640,
-		       fn = 'data/fonts/Go-Regular.ttf',
-		       fsize = 14 * SCALE,
-		     }
+function lay:new()
 	local o = {
 		lines = {},
 		fonts = {},
-		w = ops.w,
-		h = ops.h,
-		hspace = 1.2,
-		fsize = ops.fsize,
-		bg = {0xff, 0xff, 0xe8, 0xff},
-		fg = {0, 0, 0, 0xff},
+		w = 0,
+		h = 0,
+		hspace = conf.hspace,
+		fsize = conf.fsize * SCALE,
+		bg = conf.bg,
+		fg = conf.fg,
 	}
 	self.__index = self
 	setmetatable(o, self)
-	o:font(ops.fn, ops.fsize);
-	o:font('data/fonts/Go-Italic.ttf', ops.fsize, 'italic')
-	o:font('data/fonts/Go-Bold.ttf', ops.fsize, 'bold')
-	o:font('data/fonts/Go-Bold-Italic.ttf', ops.fsize, 'bold-italic')
+	o:font(conf.regular, o.fsize);
+	o:font(conf.italic, o.fsize, 'italic')
+	o:font(conf.bold, o.fsize, 'bold')
+	o:font(conf.bold_italic, o.fsize, 'bold-italic')
 	return o
 end
 
