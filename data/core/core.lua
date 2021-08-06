@@ -13,6 +13,7 @@ local input = ''
 local input_pos = 0;
 local input_prompt = '> '
 local GAME = false
+local cursor
 
 local function fmt_esc(s)
 	return s:gsub("<","\\<"):gsub(" ", "<w: >")
@@ -66,11 +67,32 @@ local function input_history(input)
 	mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
 end
 
-local function input_attach(input)
-	local uinp = utf.chars(input)
-	input_pos = #uinp
+local function input_attach(input, edit)
 	input_detach()
-	mwin:add(input_prompt..fmt_esc(input)..'|')
+	local chars = utf.chars(input)
+	if not edit then
+		if not chars[1] then
+			input_pos = 1
+		else
+			input_pos = #chars + 1
+		end
+	end
+	local pre = ''
+	for i=1,input_pos-1 do pre = pre .. chars[i] end
+	local post = ''
+	for i=input_pos,#chars do post = post .. chars[i] end
+	mwin:add(input_prompt..fmt_esc(pre)..'<w:\1>'..fmt_esc(post))
+	local l = mwin.lay.lines[#mwin.lay.lines]
+	for _, v in ipairs(l) do
+		if v.t == '\1' then
+			v.w = 0
+			v.img = cursor
+			local w, h = cursor:size()
+			v.h = h
+			v.xoff = -w/2
+			break
+		end
+	end
 	local win = gfx.win()
 	local w, h = win:size()
 	mwin:resize(w, h, #mwin.lay.lines)
@@ -212,6 +234,13 @@ function core.init()
 	mwin = tbox:new()
 	win:clear(mwin.lay.bg)
 	gfx.flip()
+
+	local h = mwin.lay.fonts.regular.h + SCALE*3
+	cursor = gfx.new(3*SCALE, h)
+	cursor:fill(1*SCALE, 0, 1*SCALE, h, { 0, 0, 0})
+	cursor:fill(0, 0, 3*SCALE, 3* SCALE, { 0, 0, 0})
+	cursor:fill(0, h-3*SCALE, 3*SCALE, 3*SCALE, { 0, 0, 0})
+
 	if GAME then
 		instead_start(GAME)
 	else
@@ -258,9 +287,13 @@ function core.run()
 				dirty = true
 			elseif v == 'backspace' then
 				local t = utf.chars(input)
-				table.remove(t, #t)
+				if input_pos <= #t + 1 and input_pos > 1 then
+					table.remove(t, input_pos - 1)
+					input_pos = input_pos - 1
+					if input_pos < 1 then input_pos = 1 end
+				end
 				input = table.concat(t, '')
-				dirty = input_attach(input)
+				dirty = input_attach(input, true)
 			elseif alt and v == 'return' then
 				alt = false
 				fullscreen = not fullscreen
@@ -335,13 +368,27 @@ function core.run()
 			elseif v == 'down' then
 				input = history_next() or input
 				input_attach(input)
+			elseif v == 'left' then
+				input_pos = input_pos - 1
+				if input_pos == 0 then input_pos = 1 end
+				input_attach(input, true)
+			elseif v == 'right' then
+				input_pos = input_pos + 1
+				local n = #utf.chars(input)
+				if input_pos > n then
+					input_pos = n + 1
+				end
+				input_attach(input, true)
 			end
 		elseif e == 'text' then
 			if v == ' ' and mwin:scroll(mwin.lay.h - mwin.lay.fonts.regular.h) then
 				dirty = true
 			else
-				input = input .. v
-				dirty = input_attach(input)
+				local t = utf.chars(input)
+				table.insert(t, input_pos, v)
+				input = table.concat(t, '')
+				input_pos = input_pos + 1
+				dirty = input_attach(input, true)
 			end
 		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
 			dirty = mwin:mouse(e, v, a, b)

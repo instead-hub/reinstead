@@ -160,6 +160,9 @@ end
 
 function lay:render_word(dst, w, xoff, yoff, diff)
 	local limit
+	if w.xoff then
+		xoff = xoff + w.xoff
+	end
 	if w.y - diff >= 0 then
 		if w.y + w.h - diff >= self.h then
 			limit = true
@@ -270,7 +273,7 @@ function lay:add(text)
 				local img = fn:text(t, self.fg)
 				if img then
 					local w, h = img:size()
-					table.insert(line, { img = img, w = w, h = h, spw = 0 })
+					table.insert(line, { img = img, w = w, h = h, spw = 0, t = t })
 				end
 			elseif t:find("g:", 1, true) then
 				t = t:sub(3)

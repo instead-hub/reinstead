@@ -9,7 +9,7 @@ function tbox:new()
 		scrollbg = { 0x99, 0x99, 0x4c, 0xff },
 		off = 0,
 	}
-	o.pad = o.lay.fsize * SCALE;
+	o.pad = o.lay.fsize;
 	self.__index = self
 	setmetatable(o, self)
 	return o
@@ -84,7 +84,7 @@ function tbox:render(dst, xoff, yoff)
 	self.lay:render(dst, xoff + SCROLLW + self.pad, yoff + self.pad, self.off)
 	dst:fill(xoff, yoff, SCROLLW, self.h, self.scrollbg)
 	local stop, sbot = self:scrollpos()
-	dst:fill(xoff + 1, yoff + stop + SCALE, SCROLLW - 2*SCALE,  sbot - stop,
+	dst:fill(xoff + SCALE, yoff + stop + SCALE, SCROLLW - 2*SCALE,  sbot - stop,
 		self.lay.bg)
 end
 function tbox:render_line(dst, n, xoff, yoff)
