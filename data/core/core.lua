@@ -257,6 +257,7 @@ function core.init()
 end
 
 local alt = false
+local control = false
 local fullscreen = false
 
 function core.run()
@@ -281,6 +282,11 @@ function core.run()
 		if (e == 'keydown' or e == 'keyup') and v:find"alt" then
 			alt = (e == 'keydown')
 		end
+
+		if (e == 'keydown' or e == 'keyup') and v:find"ctrl" then
+			control = (e == 'keydown')
+		end
+
 		if e == 'keydown' then
 			if v == 'escape' and not GAME then -- exit
 				break
@@ -385,6 +391,15 @@ function core.run()
 					input_pos = n + 1
 				end
 				input_attach(input, true)
+			elseif v == 'a' and control then
+				input_pos = 1
+				input_attach(input, true)
+			elseif v == 'e' and control then
+				input_pos = #utf.chars(input) + 1
+				input_attach(input, true)
+			elseif v == 'k' and control then
+				input = ''
+				input_attach(input)
 			end
 		elseif e == 'text' then
 			if v == ' ' and mwin:scroll(mwin.lay.h - mwin.lay.fonts.regular.h) then
