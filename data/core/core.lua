@@ -1,14 +1,13 @@
 local font = require "font"
+local conf = require "config"
 local core = {}
-local box
-local text
 local utf = require "utf"
 local tbox = require "tbox"
 local mwin
 
 local dirty = false
 local last_render = 0
-local fps = 1/60
+local fps = 1/conf.fps;
 local input = ''
 local input_pos = 0;
 local input_prompt = '> '
@@ -145,7 +144,7 @@ function instead_start(game, load)
 	menu_mode = false
 	local r, e = instead.init(game)
 	if not r then
-		mwin:set(e)
+		mwin:set(string.format("Trying: %q", game)..'\n'..e)
 		return
 	end
 	r = system.mkdir"saves"
@@ -227,6 +226,9 @@ function core.init()
 			SCALE = tonumber(ARGS[k+1] or "1.0")
 			skip = true
 		end
+	end
+	if not GAME and conf.autostart then
+		GAME = conf.autostart
 	end
 	print("scale: ", SCALE)
 	if GAME then
