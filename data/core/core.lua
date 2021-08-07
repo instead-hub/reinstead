@@ -118,6 +118,15 @@ function instead_done()
 	instead.done()
 end
 
+local function instead_icon(dirpath, norm)
+	local icon = gfx.new(dirpath..'/icon.png')
+	if icon and norm then
+		local w, h = icon:size()
+		icon = icon:scale(128/w)
+	end
+	return icon
+end
+
 local function instead_name(game)
 	local f = io.open(game..'/main3.lua', "r")
 	if not f then
@@ -143,6 +152,11 @@ function instead_start(game, load)
 	need_restart = false
 	parser_mode = false
 	menu_mode = false
+	local icon
+	if conf.show_icons then
+		icon = instead_icon(game, true)
+	end
+	mwin:set("")
 	local r, e = instead.init(game)
 	if not r then
 		mwin:set(string.format("Trying: %q", game)..'\n'..e)
@@ -163,15 +177,17 @@ function instead_start(game, load)
 	end
 	if r then
 		input_detach()
+		if icon then
+			mwin.lay:add_img(icon)
+		end
 		if load then
-			mwin:set("*** "..load..output(e))
+			mwin:add("*** "..load..output(e))
 		else
-			mwin:set(output(e))
+			mwin:add(output(e))
 		end
 		input_attach(input)
 		mwin.off = 0
 	end
-
 end
 local cleared = false
 function instead_clear()
@@ -220,6 +236,7 @@ local function create_cursor()
 	cursor:fill(0, h-3*SCALE, 3*SCALE, 3*SCALE, { 0, 0, 0})
 end
 local GAMES
+
 local function dir_list(dir)
 	if dir:find("./", 1, true) == 1 then
 		dir = DATADIR .. '/' .. dir:sub(3)
@@ -241,6 +258,7 @@ local function dir_list(dir)
 	end
 	table.sort(GAMES, function(a, b) return a.path < b.path end)
 	for k, v in ipairs(GAMES) do
+		--mwin.lay:add_img(v.icon)
 		mwin:add(string.format("<c>%s <i>(%d)</i></c>", v.name, k))
 	end
 	if #GAMES == 0 then
@@ -248,6 +266,7 @@ local function dir_list(dir)
 	end
 	mwin:add "\n"
 	input_attach("")
+	mwin.off = 0
 end
 
 local DIRECTORY = false

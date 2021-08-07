@@ -16,4 +16,5 @@ return {
 	directory = './games', -- set path of the games directory to browse
 	dir_title = '<b>Select game</b>',
 	scroll_inverse = false,
+	show_icons = true,
 }

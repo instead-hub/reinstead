@@ -223,6 +223,13 @@ function lay:set(text)
 	self.lines = {}
 	return self:add(text)
 end
+
+function lay:add_img(img)
+	local w, h = img:size()
+	local l = {{ img = img, w = w, h = h, spw = 0 }, center = true}
+	table.insert(self.lines, l)
+end
+
 function lay:add(text)
 	local t = text
 	local l = 1
