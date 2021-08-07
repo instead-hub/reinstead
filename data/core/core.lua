@@ -18,7 +18,7 @@ local cursor
 local icon = gfx.new(DATADIR..'/icon.png')
 
 local function fmt_esc(s)
-	return s:gsub("<","\\<"):gsub(" ", "<w: >")
+	return s:gsub("\\","\\\\"):gsub("<","\\<"):gsub(" ", "<w: >")
 end
 
 local input_attached = false
@@ -338,7 +338,7 @@ function core.run()
 	while true do
 		local start = system.time()
 		if not dirty then
-			system.wait(1)
+			while not system.wait(5) do end
 		else
 			if system.time() - last_render > fps then
 				local win = gfx.win()
@@ -360,7 +360,6 @@ function core.run()
 		if (e == 'keydown' or e == 'keyup') and v:find"ctrl" then
 			control = (e == 'keydown')
 		end
-
 		if e == 'keydown' then
 			if v == 'escape' and not GAME and not DIRECTORY then -- exit
 				break
@@ -486,13 +485,13 @@ function core.run()
 					input_pos = n + 1
 				end
 				input_attach(input, true)
-			elseif v == 'a' and control then
+			elseif v == 'a' and control or v == 'home' then
 				input_pos = 1
 				input_attach(input, true)
-			elseif v == 'e' and control then
+			elseif v == 'e' and control or v == 'end' then
 				input_pos = #utf.chars(input) + 1
 				input_attach(input, true)
-			elseif v == 'k' and control then
+			elseif ((v == 'k' or v == 'u') and control) or v == 'kill' then
 				input = ''
 				input_attach(input)
 			end

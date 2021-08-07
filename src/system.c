@@ -120,7 +120,11 @@ sys_utf_next(lua_State *L)
 		if (idx < len)
 			l = utf_ff(s + idx, s + len - 1);
 	}
+#if LUA_VERSION_NUM >= 504
+	lua_pushinteger(L, l);
+#else
 	lua_pushnumber(L, l);
+#endif
 	return 1;
 }
 
@@ -140,7 +144,11 @@ sys_utf_prev(lua_State *L)
 				l = utf_bb(s, s + idx);
 		}
 	}
+#if LUA_VERSION_NUM >= 504
+	lua_pushinteger(L, l);
+#else
 	lua_pushnumber(L, l);
+#endif
 	return 1;
 }
 

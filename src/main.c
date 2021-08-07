@@ -36,7 +36,7 @@ static const luaL_Reg lua_libs[] = {
 	{ NULL, NULL }
 };
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(PLAN9)
 static void
 reopen_stderr(const char *fname)
 {
@@ -98,7 +98,7 @@ main(int argc, char **argv)
 
 	instead_lua_path(base);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(PLAN9)
 	snprintf(base, sizeof(base), "%s/%s", exepath, "errors.txt");
 	reopen_stderr(base);
 #endif
