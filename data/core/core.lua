@@ -15,6 +15,8 @@ local input_prompt = '> '
 local GAME = false
 local cursor
 
+local icon = gfx.new(DATADIR..'/icon.png')
+
 local function fmt_esc(s)
 	return s:gsub("<","\\<"):gsub(" ", "<w: >")
 end
@@ -243,7 +245,12 @@ local function dir_list(dir)
 	end
 	GAMES = {}
 	input_detach()
-	mwin:set("<c>"..conf.dir_title.."</c>\n\n")
+	mwin:set("")
+	if icon and conf.show_icons then
+		local w, h = icon:size()
+		mwin.lay:add_img(icon:scale(128 * SCALE/w))
+	end
+	mwin:add("<c>"..conf.dir_title.."</c>\n\n")
 	local t = system.readdir(dir)
 	for k, v in ipairs(t or {}) do
 		local dirpath = dir .. '/'.. v
@@ -270,7 +277,6 @@ local function dir_list(dir)
 end
 
 local DIRECTORY = false
-local icon = gfx.new(DATADIR..'/icon.png')
 function core.init()
 	local skip
 	gfx.icon(icon)
@@ -295,7 +301,7 @@ function core.init()
 	if GAME then
 		system.title(GAME)
 	else
-		system.title("Info")
+		system.title(conf.title)
 	end
 	local win = gfx.win()
 	mwin = tbox:new()
