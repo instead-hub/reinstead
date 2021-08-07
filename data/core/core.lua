@@ -1,5 +1,7 @@
 local VERSION='0.1'
 local conf = require "config"
+if conf.scale == false then SCALE = 1.0 end
+if type(conf.scale) == 'number' then SCALE = conf.scale end
 local core = {}
 local utf = require "utf"
 local tbox = require "tbox"

@@ -18,4 +18,5 @@ return {
 	dir_title = '<b>Select game</b>',
 	scroll_inverse = false,
 	show_icons = true,
+	scale = true, -- autoscale using dpi info, set number to force specific scale
 }
