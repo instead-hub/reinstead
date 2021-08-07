@@ -1,5 +1,5 @@
 return {
-	title = "INSTEAD 9 -- RESISTANCE",
+	title = "INSTEAD 9 :: RESISTANCE",
 	fsize = 14,
 	bg = { 0xff, 0xff, 0xe8, 0xff },
 	fg = { 0, 0, 0, 0xff },
