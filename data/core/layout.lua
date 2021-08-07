@@ -1,5 +1,4 @@
 local font = require "font"
-local utf = require "utf"
 local conf = require "config"
 local lay = {
 }
@@ -45,7 +44,7 @@ local function find_esc_sym(t, set, s)
 	end
 end
 
-function token_unesc(s)
+local function token_unesc(s)
         s = s:gsub("\\?[\\<>]", {
 			   ['\\<'] = '<',
 			   ['\\>'] = '>',
@@ -56,7 +55,6 @@ end
 
 local function next_token(t)
 	local s
-	local sym = ''
 	s = find_esc_sym(t, "<\n")
 	if not s then
 		return token_unesc(t), t:len()
@@ -231,7 +229,7 @@ function lay:add_img(img)
 end
 
 function lay:add(text)
-	local t = text
+	local t
 	local l = 1
 	local line = {  }
 	local fstyle = 'regular'
@@ -257,12 +255,12 @@ function lay:add(text)
 			t=t:gsub("^<", ""):gsub(">$", "")
 			local c = t:sub(1,1) == '/'
 			t=t:gsub("^/","")
-			local tag=tags[t]
-			if tag then
+			local ftag=tags[t]
+			if ftag then
 				if c then
-					style[tag] = style[tag] - 1
+					style[ftag] = style[ftag] - 1
 				else
-					style[tag] = style[tag] + 1
+					style[ftag] = style[ftag] + 1
 				end
 			end
 			fn.nocache = false
@@ -291,7 +289,7 @@ function lay:add(text)
 					local w, h = img:size()
 					table.insert(line, { img = img, w = w, h = h, spw = 0 })
 				end
-			elseif not tag then
+			elseif not ftag then
 				t = txt
 				parsed = false
 			end

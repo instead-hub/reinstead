@@ -1,6 +1,6 @@
 local cc = {}
 
-function cc:new(fname, size)
+function cc:new(size)
 	local o = { list = {}, hash = {}, max_size = size or 0 }
 	if not size or size == 0 then
 		o.autogrow = true

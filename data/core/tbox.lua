@@ -94,7 +94,6 @@ end
 function tbox:render_line(dst, n, xoff, yoff)
 	xoff = xoff or 0
 	yoff = yoff or 0
-	local l = self.lay.lines[n]
 	self.lay:render_line(dst, n, xoff + SCROLLW + self.pad, yoff + self.pad, self.off)
 end
 return tbox

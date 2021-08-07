@@ -1,5 +1,4 @@
 local VERSION='0.1'
-local font = require "font"
 local conf = require "config"
 local core = {}
 local utf = require "utf"
@@ -64,7 +63,6 @@ local function input_history(input)
 	if #history > history_len then
 		table.remove(history, #history)
 	end
-	local uinp = utf.chars(input)
 	input_detach()
 	mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
 end
@@ -113,7 +111,7 @@ local function input_attach(input, edit)
 	end
 end
 
-function instead_done()
+local function instead_done()
 	local win = gfx.win()
 	local w, h = win:size()
 	mwin:resize(w, h)
@@ -125,7 +123,7 @@ end
 local function instead_icon(dirpath, norm)
 	local icon = gfx.new(dirpath..'/icon.png')
 	if icon and norm then
-		local w, h = icon:size()
+		local w, _ = icon:size()
 		icon = icon:scale(128/w)
 	end
 	return icon
@@ -141,7 +139,7 @@ local function instead_name(game)
 		n = n - 1
 		if n < 0 then break end
 		if l:find("^[ \t]*--[ \t]*%$Name:") then
-			local s, e = l:find("$Name:", 1, true)
+			local _, e = l:find("$Name:", 1, true)
 			game = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", "")
 		end
 	end
@@ -152,7 +150,7 @@ end
 local parser_mode = false
 local menu_mode = false
 
-function instead_start(game, load)
+local function instead_start(game, load)
 	need_restart = false
 	parser_mode = false
 	menu_mode = false
@@ -205,12 +203,14 @@ local function save_path(w)
 	return "saves/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
 
-function instead_save(w)
+local function instead_save(w)
 	w = save_path(w)
 	local r, e = instead.cmd("save "..w)
 	input_detach()
 	e = output(e)
-	if e == "" then
+	if not r then
+		e = "Error! "..w
+	elseif e == "" then
 		e = "*** "..w
 	end
 	mwin:add(e)
@@ -218,7 +218,7 @@ function instead_save(w)
 	need_save = false
 end
 
-function instead_load(w)
+local function instead_load(w)
 	need_load = false
 	w = save_path(w)
 	local f = io.open(w, "r")
@@ -249,12 +249,12 @@ local function dir_list(dir)
 	input_detach()
 	mwin:set("")
 	if icon and conf.show_icons then
-		local w, h = icon:size()
+		local w, _ = icon:size()
 		mwin.lay:add_img(icon:scale(128 * SCALE/w))
 	end
 	mwin:add("<c>"..conf.dir_title.."</c>\n\n")
 	local t = system.readdir(dir)
-	for k, v in ipairs(t or {}) do
+	for _, v in ipairs(t or {}) do
 		local dirpath = dir .. '/'.. v
 		local p = dirpath .. '/main3.lua'
 		local f = io.open(p, 'r')
@@ -507,8 +507,6 @@ function core.run()
 			end
 		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
 			dirty = mwin:mouse(e, v, a, b)
-		elseif e == 'mouseup' then
-			mouse[v] = false
 		elseif e == 'exposed' or e == 'resized' then
 			local win = gfx.win()
 			local w, h = win:size()
