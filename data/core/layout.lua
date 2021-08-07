@@ -247,6 +247,8 @@ function lay:add(text)
 	while l ~= 0 do
 		local tag
 		t, l, tag = next_token(text)
+		local txt = t
+		local parsed = true
 		-- print(string.format("%q/%d", t, l))
 		if t == '\n' then
 			table.insert(self.lines, line)
@@ -289,8 +291,14 @@ function lay:add(text)
 					local w, h = img:size()
 					table.insert(line, { img = img, w = w, h = h, spw = 0 })
 				end
+			elseif not tag then
+				t = txt
+				parsed = false
 			end
-		elseif t ~= "" then
+		else
+			parsed = false
+		end
+		if not parsed and t ~= "" then
 			if t:find("^ ") and #line > 0 then
 				line[#line].spw = fn.spw
 			end
