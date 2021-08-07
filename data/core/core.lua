@@ -118,9 +118,6 @@ function instead_done()
 	instead.done()
 end
 
-local parser_mode = false
-local menu_mode = false
-
 local function instead_name(game)
 	local f = io.open(game..'/main3.lua', "r")
 	if not f then
@@ -138,6 +135,9 @@ local function instead_name(game)
 	f:close()
 	return game
 end
+
+local parser_mode = false
+local menu_mode = false
 
 function instead_start(game, load)
 	need_restart = false
@@ -212,9 +212,43 @@ function instead_load(w)
 	instead_done()
 	instead_start(GAME, w)
 end
+local function create_cursor()
+	local h = mwin.lay.fonts.regular.h + SCALE*3
+	cursor = gfx.new(3*SCALE, h)
+	cursor:fill(1*SCALE, 0, 1*SCALE, h, { 0, 0, 0})
+	cursor:fill(0, 0, 3*SCALE, 3* SCALE, { 0, 0, 0})
+	cursor:fill(0, h-3*SCALE, 3*SCALE, 3*SCALE, { 0, 0, 0})
+end
+local GAMES
+local function dir_list(dir)
+	GAMES = {}
+	input_detach()
+	mwin:set("<c>"..conf.dir_title.."</c>\n\n")
+	local t = system.readdir(dir)
+	for k, v in ipairs(t or {}) do
+		local dirpath = dir .. '/'.. v
+		local p = dirpath .. '/main3.lua'
+		local f = io.open(p, 'r')
+		if f then
+			local name = instead_name(dirpath)
+			if name == dirpath then name = v end
+			mwin:add(string.format("<c>%s <i>(%d)</i></c>", name, #GAMES + 1))
+			f:close()
+			table.insert(GAMES, { path = dirpath, name = name })
+		end
+	end
+	if #GAMES == 0 then
+		mwin:set("No games in \""..dir.."\" found.")
+	end
+	mwin:add "\n"
+	input_attach("")
+end
+
+local DIRECTORY = false
 
 function core.init()
 	local skip
+	need_restart = false
 	for k=2, #ARGS do
 		local a = ARGS[k]
 		if skip then
@@ -242,15 +276,16 @@ function core.init()
 	win:clear(mwin.lay.bg)
 	gfx.flip()
 
-	local h = mwin.lay.fonts.regular.h + SCALE*3
-	cursor = gfx.new(3*SCALE, h)
-	cursor:fill(1*SCALE, 0, 1*SCALE, h, { 0, 0, 0})
-	cursor:fill(0, 0, 3*SCALE, 3* SCALE, { 0, 0, 0})
-	cursor:fill(0, h-3*SCALE, 3*SCALE, 3*SCALE, { 0, 0, 0})
+	create_cursor()
+
+	if not GAME and conf.directory then
+		dir_list(conf.directory)
+		DIRECTORY = true
+	end
 
 	if GAME then
 		instead_start(GAME)
-	else
+	elseif not DIRECTORY then
 		mwin:set("<b>INSTEAD Lite V"..VERSION.." by Peter Kosyh (2021)</b>\n\n")
 		mwin:add("<i>Platform: "..PLATFORM.." / ".._VERSION.."</i>\n\n")
 		mwin:add(string.format("<b>Usage:</b>\n<w:    >%s \\<game> [-debug] [-scale \\<f>]", EXEFILE))
@@ -293,7 +328,7 @@ function core.run()
 		end
 
 		if e == 'keydown' then
-			if v == 'escape' and not GAME then -- exit
+			if v == 'escape' and not GAME and not DIRECTORY then -- exit
 				break
 			elseif v == 'escape' then
 				input_detach()
@@ -336,6 +371,23 @@ function core.run()
 						r, v = instead.cmd(input:sub(2))
 						r = true
 					end
+				elseif DIRECTORY and not GAME then
+					local n = tonumber(input)
+					if n then n = math.floor(n) end
+					if not n or n > #GAMES or n < 1 then
+						if #GAMES > 1 then
+							v = '1 - ' .. tostring(#GAMES).. '?'
+						else
+							v = 'No games.'
+						end
+						r = true
+					else
+						GAME = GAMES[n].path
+						instead_start(GAMES[n].path)
+						r = 'skip'
+						v = false
+					end
+					cmd_mode = true
 				elseif not parser_mode then
 					r, v = instead.cmd(string.format("use %s", input))
 					if not r then
@@ -365,8 +417,12 @@ function core.run()
 						v = v .. "** ".. w
 					end
 				end
-				input_history(input)
-				mwin:add(output(v))
+				if r ~= 'skip' then
+					input_history(input)
+				end
+				if v then
+					mwin:add(output(v))
+				end
 				input = ''
 				input_attach(input)
 				local w, h = gfx.win():size()
@@ -438,7 +494,12 @@ function core.run()
 		end
 		if need_restart then
 			instead_done()
-			instead_start(GAME)
+			if GAME and not DIRECTORY then
+				instead_start(GAME)
+			elseif DIRECTORY then
+				GAME = false
+				core.init()
+			end
 		end
 		local elapsed = system.time() - start
 --		system.sleep(math.max(0, fps - elapsed))
