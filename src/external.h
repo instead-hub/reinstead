@@ -6,6 +6,8 @@
 #include <dirent.h>
 #ifndef PLAN9
 #include <libgen.h>
+#else
+extern char *dirname(char *);
 #endif
 #include <stdio.h>
 #include <string.h>
