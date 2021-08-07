@@ -103,7 +103,7 @@ void WindowResize(int w, int h)
 	pixels = realloc(pixels, w * h * 4);
 	if (windbuf)
 		freeimage(windbuf);
-	windbuf = allocimage(display, Rect(0, 0, w, h), ARGB32, 0, DBlack);
+	windbuf = allocimage(display, Rect(0, 0, w, h), XBGR32, 0, DBlack);
 	win_w = w;
 	win_h = h;
 }
