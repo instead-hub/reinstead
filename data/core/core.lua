@@ -221,6 +221,9 @@ local function create_cursor()
 end
 local GAMES
 local function dir_list(dir)
+	if dir:find("./", 1, true) == 1 then
+		dir = DATADIR .. '/' .. dir:sub(3)
+	end
 	GAMES = {}
 	input_detach()
 	mwin:set("<c>"..conf.dir_title.."</c>\n\n")
