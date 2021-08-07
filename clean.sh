@@ -1,1 +1,1 @@
-rm -rf *.o instead-lite
+rm -rf *.o instead9 instead9.exe
