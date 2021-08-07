@@ -74,7 +74,9 @@ local function input_line(chars)
 	for i=1,input_pos-1 do pre = pre .. chars[i] end
 	local post = ''
 	for i = input_pos,#chars do post = post .. chars[i] end
+	mwin.lay.nocache = true
 	mwin:add(input_prompt..fmt_esc(pre)..'<w:\1>'..fmt_esc(post))
+	mwin.lay.nocache = false
 	local l = mwin.lay.lines[#mwin.lay.lines]
 	for _, v in ipairs(l) do
 		if v.t == '\1' then

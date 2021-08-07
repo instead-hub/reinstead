@@ -236,6 +236,7 @@ function lay:add(text)
 	local line = {  }
 	local fstyle = 'regular'
 	local fn = self.fonts[fstyle]
+	fn.nocache = self.nocache
 	local style = { bold = 0, italic = 0, bold_italic = 0, center = 0, right = 0 }
 	local tags = {
 		b = 'bold',
@@ -262,6 +263,7 @@ function lay:add(text)
 					style[tag] = style[tag] + 1
 				end
 			end
+			fn.nocache = false
 			if style.bold > 0 and style.italic > 0 then
 				fn = self.fonts['bold-italic']
 			elseif style.bold > 0 then
@@ -271,6 +273,7 @@ function lay:add(text)
 			else
 				fn = self.fonts.regular
 			end
+			fn.nocache = self.nocache
 			if t:find("w:", 1, true) then
 				t = t:sub(3)
 				local img = fn:text(t, self.fg)
@@ -311,5 +314,6 @@ function lay:add(text)
 	if #line > 0 then
 		table.insert(self.lines, line)
 	end
+	fn.nocache = false
 end
 return lay

@@ -38,7 +38,9 @@ function fn:text(text, color)
 			return o
 		end
 		o = self.font:text(text, color)
-		self.cache:add(key, o)
+		if not self.nocache then
+			self.cache:add(key, o)
+		end
 		return o
 	end
 	local out = {}
@@ -60,7 +62,9 @@ function fn:text(text, color)
 			local o = self.cache:get(key)
 			if not o then
 				o = self.font:text(word, color)
-				self.cache:add(key, o)
+				if not self.nocache then
+					self.cache:add(key, o)
+				end
 			end
 			local ww = o:size()
 			w = w + ww
