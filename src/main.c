@@ -91,12 +91,11 @@ main(int argc, char **argv)
 	lua_pushstring(L, exepath);
 	lua_setglobal(L, "EXEFILE");
 
-	dirname((char*)exepath);
+	snprintf(base, sizeof(base), "%s/%s", dirname((char*)exepath), "data");
 
-	lua_pushstring(L, exepath);
+	lua_pushstring(L, base);
 	lua_setglobal(L, "DATADIR");
 
-	snprintf(base, sizeof(base), "%s/%s", exepath, "data");
 	instead_lua_path(base);
 
 #ifdef _WIN32
@@ -109,7 +108,7 @@ main(int argc, char **argv)
 			     "local core\n"
 			     "xpcall(function()\n"
 			     "  PATHSEP = package.config:sub(1, 1)\n"
-			     "  package.path = DATADIR .. '/data/core/?.lua;' .. package.path\n"
+			     "  package.path = DATADIR .. '/core/?.lua;' .. package.path\n"
 			     "  core = require('core')\n"
 			     "  core.init()\n"
 			     "  core.run()\n"

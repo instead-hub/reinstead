@@ -235,10 +235,13 @@ local function dir_list(dir)
 		if f then
 			local name = instead_name(dirpath)
 			if name == dirpath then name = v end
-			mwin:add(string.format("<c>%s <i>(%d)</i></c>", name, #GAMES + 1))
 			f:close()
 			table.insert(GAMES, { path = dirpath, name = name })
 		end
+	end
+	table.sort(GAMES, function(a, b) return a.path < b.path end)
+	for k, v in ipairs(GAMES) do
+		mwin:add(string.format("<c>%s <i>(%d)</i></c>", v.name, k))
 	end
 	if #GAMES == 0 then
 		mwin:set("No games in \""..dir.."\" found.")
@@ -248,9 +251,10 @@ local function dir_list(dir)
 end
 
 local DIRECTORY = false
-
+local icon = gfx.new(DATADIR..'/icon.png')
 function core.init()
 	local skip
+	gfx.icon(icon)
 	need_restart = false
 	for k=2, #ARGS do
 		local a = ARGS[k]
@@ -292,7 +296,7 @@ function core.init()
 		mwin:set("<b>INSTEAD Lite V"..VERSION.." by Peter Kosyh (2021)</b>\n\n")
 		mwin:add("<i>Platform: "..PLATFORM.." / ".._VERSION.."</i>\n\n")
 		mwin:add(string.format("<b>Usage:</b>\n<w:    >%s \\<game> [-debug] [-scale \\<f>]", EXEFILE))
-		mwin:add('\nLook into "data/core/config.lua" for cusomization.')
+		mwin:add('\nLook into "'..DATADIR..'/core/config.lua" for cusomization.')
 		mwin:add('\n<b>Press ESC to exit.</b>')
 	end
 	local w, h = win:size()
