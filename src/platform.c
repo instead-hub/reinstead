@@ -107,9 +107,13 @@ PlatformInit(void)
 	return 0;
 }
 
+static SDL_Surface *winbuff = NULL;
+
 void
 PlatformDone(void)
 {
+	if (winbuff)
+		SDL_FreeSurface(winbuff);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }
@@ -156,8 +160,6 @@ GetExePath(const char *progname)
 	path[sizeof(path) - 1] = 0;
 	return path;
 }
-
-static SDL_Surface *winbuff = NULL;
 
 void
 WindowResize(int w, int h)

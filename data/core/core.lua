@@ -539,5 +539,6 @@ function core.run()
 --		system.sleep(math.max(0, fps - elapsed))
 		system.wait(math.max(0, fps - elapsed))
 	end
+	instead.done()
 end
 return core
