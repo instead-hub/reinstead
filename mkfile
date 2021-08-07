@@ -1,0 +1,68 @@
+</$objtype/mkfile
+CC=pcc
+CFLAGS=-D_POSIX_SOURCE -Isrc/lua -Isrc/instead -DPLAN9
+
+all: $O.instead9
+	
+
+TARG=instead9
+CFILES= \
+	src/plan9/platform.c \
+	src/stb_image.c \
+	src/lua-compat.c \
+	src/stb_image_resize.c \
+	src/stb_truetype.c \
+	src/main.c \
+	src/gfx.c \
+	src/system.c \
+	src/instead/idf.c \
+	src/instead/lfs.c \
+	src/instead/util.c \
+	src/instead/cache.c \
+	src/instead/instead.c \
+	src/instead/tinymt32.c \
+	src/instead/list.c \
+	src/instead_lib.c \
+	src/lua/lcode.c \
+	src/lua/lbaselib.c \
+	src/lua/liolib.c \
+	src/lua/ldo.c \
+	src/lua/lobject.c \
+	src/lua/linit.c \
+	src/lua/lgc.c \
+	src/lua/lstrlib.c \
+	src/lua/lmathlib.c \
+	src/lua/lparser.c \
+	src/lua/lundump.c \
+	src/lua/lapi.c \
+	src/lua/lopcodes.c \
+	src/lua/lfunc.c \
+	src/lua/lzio.c \
+	src/lua/ldblib.c \
+	src/lua/ltm.c \
+	src/lua/lcorolib.c \
+	src/lua/lstate.c \
+	src/lua/ltable.c \
+	src/lua/lctype.c \
+	src/lua/ltablib.c \
+	src/lua/lmem.c \
+	src/lua/loadlib.c \
+	src/lua/loslib.c \
+	src/lua/lstring.c \
+	src/lua/lauxlib.c \
+	src/lua/ldebug.c \
+	src/lua/lvm.c \
+	src/lua/ldump.c \
+	src/lua/lutf8lib.c \
+	src/lua/llex.c \
+
+OFILES=${CFILES:%.c=%.$O}
+
+%.$O: %.c
+	$CC $CFLAGS -c -o $target $stem.c
+
+$O.instead9: $OFILES
+	$LD -o $target $OFILES
+
+clean nuke:V:
+	rm -f src/lua/*.[$OS] src/*.[$OS] src/instead/*.[$OS] [$OS].out $O.instead9
