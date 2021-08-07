@@ -24,7 +24,6 @@ static int resized = 0;
 void eresized(int new)
 {
 	int w, h;
-	printf("resized\n");
 	if (new && getwindow(display, Refnone) < 0) {
 		fprintf(stderr, "cannot reattach to window\n");
 		exit(1);
