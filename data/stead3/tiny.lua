@@ -5,6 +5,8 @@ end
 require 'tiny3'
 
 local instead = std '@instead'
+instead.reinstead = true
+
 local iface = std '@iface'
 instead.music_callback = function() end
 instead.restart = function()

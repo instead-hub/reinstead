@@ -217,6 +217,7 @@ gfx_pixels_new(lua_State *L)
 				dst[3] = src[1];
 			} else if (channels == 1) { /* grey */
 				memset(dst, src[0], 4);
+				dst[3] = 255;
 			} else { /* rgb? */
 				memset(dst, 0xff, 4);
 				memcpy(dst, src, channels);

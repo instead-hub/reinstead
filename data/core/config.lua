@@ -23,4 +23,5 @@ return {
 	scale = true, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
 --	autoload = true,
+	debug = true,
 }

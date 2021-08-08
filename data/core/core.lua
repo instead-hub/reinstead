@@ -12,6 +12,7 @@ local core = {}
 local utf = require "utf"
 local tbox = require "tbox"
 local mwin
+local cleared = false
 
 local dirty = false
 local last_render = 0
@@ -181,7 +182,6 @@ local function instead_start(game, load)
 	system.title(instead_name(game))
 	gfx.icon(gfx.new 'icon.png')
 
-
 	if load then
 		local f = io.open(load, "r")
 		if f then
@@ -206,13 +206,13 @@ local function instead_start(game, load)
 			mwin:add(output(e))
 		end
 		input_attach(input)
-		mwin.off = 0
 	else
 		input_detach()
 		mwin:add(output(e))
 	end
+	mwin.off = 0
+	cleared = true
 end
-local cleared = false
 function instead_clear()
 	mwin:set("")
 --	input_attach(input)
@@ -338,6 +338,9 @@ function core.init()
 			skip = true
 		end
 	end
+	if conf.debug then
+		instead.debug(true)
+	end
 	if not GAME and conf.autostart then
 		GAME = conf.autostart
 	end
@@ -394,7 +397,7 @@ function core.run()
 		if e == 'quit' then
 			break
 		end
-		-- print(e, v, a)
+
 		if (e == 'keydown' or e == 'keyup') and v:find"alt" then
 			alt = (e == 'keydown')
 		end
@@ -536,9 +539,15 @@ function core.run()
 			elseif ((v == 'k' or v == 'u') and control) or v == 'kill' then
 				input = ''
 				input_attach(input)
+			elseif (v == 'pagedown' or (v == 'n' and control)) and
+				mwin:scroll(mwin.scrollh) then
+				dirty = true
+			elseif (v == 'pageup' or (v == 'p' and control)) and
+				mwin:scroll(-mwin.scrollh) then
+				dirty = true
 			end
 		elseif e == 'text' then
-			if v == ' ' and mwin:scroll(mwin.lay.h - mwin.lay.fonts.regular.h) then
+			if v == ' ' and mwin:scroll(mwin.scrollh) then
 				dirty = true
 			else
 				local t = utf.chars(input)

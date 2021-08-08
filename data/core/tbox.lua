@@ -11,7 +11,7 @@ function tbox:new()
 		sw = math.round(conf.scrollw) * SCALE,
 	}
 	if o.sw < 3 then o.sw = 3 end
-	o.pad = conf.pad;
+	o.pad = conf.pad
 	self.__index = self
 	setmetatable(o, self)
 	return o
@@ -20,6 +20,7 @@ end
 function tbox:resize(w, h)
 	self.w, self.h = w, h
 	self.lay:resize(self.w - self.sw - self.pad * 2, self.h - self.pad * 2)
+	self.scrollh = math.floor(self.lay.h - (self.lay.fonts.regular.h * self.lay.hspace))
 end
 
 function tbox:mouse(e, b, x, y)
