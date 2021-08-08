@@ -93,7 +93,11 @@ main(int argc, char **argv)
 
 	snprintf(base, sizeof(base), "%s/%s", dirname((char*)exepath), "data");
 
+#ifdef DATADIR
+	lua_pushstring(L, DATADIR);
+#else
 	lua_pushstring(L, base);
+#endif
 	lua_setglobal(L, "DATADIR");
 
 	instead_lua_path(base);
