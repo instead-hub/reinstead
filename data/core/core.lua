@@ -214,8 +214,12 @@ local function instead_save(w)
 	e = output(e)
 	if not r then
 		e = "Error! "..w
-	elseif e == "" then
-		e = "*** "..w
+	else
+		local msg = ''
+		if e ~= '' and type(e) == 'string' then
+			msg = '\n<i>'..e..'</i>'
+		end
+		e = "*** "..w..msg
 	end
 	mwin:add(e)
 	input_attach(input)
