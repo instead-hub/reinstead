@@ -175,9 +175,17 @@ local function instead_start(game, load)
 	system.title(instead_name(game))
 	gfx.icon(gfx.new 'icon.png')
 
+
 	if load then
-		r, e = instead.cmd("load "..load)
-	else
+		local f = io.open(load, "r")
+		if f then
+			r, e = instead.cmd("load "..load)
+			f:close()
+		else
+			load = false
+		end
+	end
+	if not load then
 		r, e = instead.cmd"look"
 	end
 	if r then
@@ -193,6 +201,9 @@ local function instead_start(game, load)
 		end
 		input_attach(input)
 		mwin.off = 0
+	else
+		input_detach()
+		mwin:add(output(e))
 	end
 end
 local cleared = false
@@ -343,7 +354,7 @@ function core.init()
 	end
 
 	if GAME then
-		instead_start(GAME)
+		instead_start(GAME, conf.autoload and 'saves/autosave')
 	elseif not DIRECTORY then
 		mwin:set("<b>INSTEAD Lite V"..VERSION.." by Peter Kosyh (2021)</b>\n\n")
 		mwin:add("<i>Platform: "..PLATFORM.." / ".._VERSION.."</i>\n\n")
@@ -441,7 +452,7 @@ function core.run()
 						r = true
 					else
 						GAME = GAMES[n].path
-						instead_start(GAMES[n].path)
+						instead_start(GAMES[n].path, conf.autoload and 'saves/autosave')
 						r = 'skip'
 						v = false
 					end
@@ -549,6 +560,9 @@ function core.run()
 			instead_load(need_load)
 		end
 		if need_restart then
+			if conf.autoload then
+				os.remove 'saves/autosave'
+			end
 			instead_done()
 			if GAME and not DIRECTORY then
 				instead_start(GAME)
@@ -560,6 +574,9 @@ function core.run()
 		local elapsed = system.time() - start
 --		system.sleep(math.max(0, fps - elapsed))
 		system.wait(math.max(0, fps - elapsed))
+	end
+	if conf.autosave and GAME then
+		instead_save 'autosave'
 	end
 	instead.done()
 end
