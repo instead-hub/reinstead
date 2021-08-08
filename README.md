@@ -2,9 +2,9 @@
 
 Минималистичный плеер парсерных игр INSTEAD для Linux, Windows и Plan9.
 
-[МАНИФЕСТ](MANIFEST.md)
-[INSTEAD](https://instead.hugeping.ru)
-[МЕТАПАРСЕР](https://instead.hugeping.ru/page/metaparser/)
+- [МАНИФЕСТ](MANIFEST.md)
+- [INSTEAD](https://instead.hugeping.ru)
+- [МЕТАПАРСЕР](https://instead.hugeping.ru/page/metaparser/)
 
 <img src="scr/archive.png" width="50%">
 
