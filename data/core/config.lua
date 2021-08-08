@@ -1,4 +1,5 @@
 return {
+	prompt = '> ',
 	title = "INSTEAD 9 :: RESISTANCE",
 	fsize = 14,
 	bg = { 0xff, 0xff, 0xe8, 0xff },
@@ -19,7 +20,7 @@ return {
 	dir_title = '<b>Select game</b>',
 	scroll_inverse = false,
 	show_icons = true,
-	scale = true, -- autoscale using dpi info, set number to force specific scale
+	scale = false, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
 --	autoload = true,
 }

@@ -12,7 +12,7 @@ local last_render = 0
 local fps = 1/conf.fps;
 local input = ''
 local input_pos = 1;
-local input_prompt = '> '
+local input_prompt = conf.prompt
 local GAME = false
 local cursor
 
