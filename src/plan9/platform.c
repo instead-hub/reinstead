@@ -109,15 +109,13 @@ void WindowResize(int w, int h)
 
 void WindowUpdate(int x, int y, int w, int h)
 {
-	Rectangle r = Rect(x, y, x + w, y + h);
+	Rectangle r;
 	if (w > 0 && h > 0) {
 		r = Rect(x, y, x + w, y + h);
 	} else {
 		r = Rect(0, 0, win_w, win_h);
 		w = win_w;
 		h = win_h;
-		x = 0;
-		y = 0;
 	}
 	loadimage(windbuf, r, pixels, w * h * 4);
 	draw(screen, screen->r, windbuf, nil, ZP);

@@ -46,9 +46,10 @@ function tbox:mouse(e, b, x, y)
 		else
 			return
 		end
+	else
+		return
 	end
-	self:scroll(0)
-	return true
+	return self:scroll(0)
 end
 function tbox:scroll(scroll)
 	if conf.scroll_inverse then
