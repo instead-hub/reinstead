@@ -1931,9 +1931,9 @@ room {
 			return true
 		end
 		for _, v in ipairs(titles) do
-			pn(v[1])
+			pn(fmt.c(v[1]))
 		end
-		pn ("^Полную версию игры ищите на https://instead.itch.io/mars")
+		pn (fmt.c"^Полную версию игры ищите на https://instead.itch.io/mars")
 	end;
 	noparser = true;
 	{
