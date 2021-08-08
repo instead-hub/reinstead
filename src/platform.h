@@ -18,7 +18,6 @@ enum { WIN_NORMAL, WIN_MAXIMIZED, WIN_FULLSCREEN };
 extern void WindowMode(int n);
 extern void WindowTitle(const char *title);
 
-extern unsigned long Ticks(void);
 extern double Time(void);
 extern float GetScale(void);
 

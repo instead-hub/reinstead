@@ -20,12 +20,6 @@ Time(void)
 	return SDL_GetPerformanceCounter() / (double) SDL_GetPerformanceFrequency();
 }
 
-unsigned long
-Ticks(void)
-{
-	return SDL_GetTicks();
-}
-
 void
 WindowMode(int n)
 {

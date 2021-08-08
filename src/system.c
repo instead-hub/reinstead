@@ -57,13 +57,6 @@ sys_mkdir(lua_State *L)
 }
 
 static int
-sys_ticks(lua_State *L)
-{
-	lua_pushinteger(L, Ticks());
-	return 1;
-}
-
-static int
 sys_time(lua_State *L)
 {
 	double n = Time();
@@ -233,7 +226,6 @@ sys_lib[] = {
 	{ "window_mode", sys_window_mode },
 	{ "chdir", sys_chdir },
 	{ "mkdir", sys_mkdir },
-	{ "ticks", sys_ticks },
 	{ "time", sys_time },
 	{ "utf_next", sys_utf_next },
 	{ "utf_prev", sys_utf_prev },

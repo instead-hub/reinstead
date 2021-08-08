@@ -135,12 +135,6 @@ void WindowMode(int n)
 {
 }
 
-unsigned long
-Ticks(void)
-{
-	return 0;
-}
-
 double Time(void)
 {
 	struct timeval tv;
