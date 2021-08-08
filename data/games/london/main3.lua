@@ -78,7 +78,7 @@ Verb {
 }
 
 function mp:Knock(w)
-   if mp.args[1] == "в" then
+   if mp.args[1].word == "в" then
 	  return "Я постучал в {#first/вн}."
    else
 	  return "Я постучал по {#first/дт}."
