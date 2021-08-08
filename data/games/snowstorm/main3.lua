@@ -2915,7 +2915,9 @@ room {
 		if not w ^ 'скрипка' then
 			return false
 		end
-		snd.music ('mus/violin.ogg', 1)
+		if not instead.tiny then
+			snd.music ('mus/violin.ogg', 1)
+		end
 		walk 'cry2'
 	end;
 	before_Cry = function(s)

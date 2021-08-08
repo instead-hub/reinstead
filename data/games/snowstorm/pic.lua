@@ -49,13 +49,15 @@ room {
 	noparser = true;
 	enter = function(s)
 		pic_set '81'
-		snd.music 'mus/largo.ogg'
+		if not instead.tiny then
+			snd.music 'mus/largo.ogg'
+		end
 	end;
 }
 if instead.tiny then
 
 global 'pictures' ({})
-game.gfx_ = function(s)
+game.gfx = function(s)
 	local top = #pictures
 	if top == 0 then
 		return false
