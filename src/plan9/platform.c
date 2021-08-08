@@ -160,7 +160,11 @@ const char *GetPlatform(void)
 
 const char *GetExePath(const char *progname)
 {
-	return strdup("./");
+	static char exepath[4096];
+	if (progname[0] == '/')
+		return progname;
+	snprintf(exepath, sizeof(exepath), "./%s", progname);
+	return exepath;
 }
 
 void Icon(unsigned char *ptr, int w, int h)
