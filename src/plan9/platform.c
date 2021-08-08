@@ -211,6 +211,14 @@ again:
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "escape");
 				return 2;
+			case Kpgup:
+				lua_pushstring(L, "keydown");
+				lua_pushstring(L, "pageup");
+				return 2;
+			case Kpgdown:
+				lua_pushstring(L, "keydown");
+				lua_pushstring(L, "pagedown");
+				return 2;
 			case Kup:
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "up");
