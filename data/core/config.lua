@@ -1,6 +1,6 @@
 return {
 	prompt = '> ',
-	title = "INSTEAD 9 :: RESISTANCE",
+	title = "REINSTEAD",
 	fsize = 14,
 	bg = { 0xff, 0xff, 0xe8, 0xff },
 	fg = { 0, 0, 0, 0xff },
@@ -17,10 +17,10 @@ return {
 	scrollw = 9,
 	autostart = false, -- add path here to autorun game
 	directory = './games', -- set path of the games directory to browse
-	dir_title = '<b>Select game</b>',
+	dir_title = false, -- '<b>Select game</b>',
 	scroll_inverse = false,
 	show_icons = true,
-	scale = false, -- autoscale using dpi info, set number to force specific scale
+	scale = true, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
 --	autoload = true,
 }

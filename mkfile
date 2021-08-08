@@ -2,10 +2,9 @@
 CC=pcc
 CFLAGS=-D_POSIX_SOURCE -Isrc/lua -Isrc/instead -DPLAN9
 
-all: $O.instead9
+all: reinstead
 	
 
-TARG=instead9
 CFILES= \
 	src/plan9/platform.c \
 	src/stb_image.c \
@@ -61,8 +60,8 @@ OFILES=${CFILES:%.c=%.$O}
 %.$O: %.c
 	$CC $CFLAGS -c -o $target $stem.c
 
-$O.instead9: $OFILES
+reinstead: $OFILES
 	$LD -o $target $OFILES
 
 clean nuke:V:
-	rm -f src/lua/*.[$OS] src/*.[$OS] src/instead/*.[$OS] [$OS].out $O.instead9
+	rm -f src/lua/*.[$OS] src/*.[$OS] src/instead/*.[$OS] [$OS].out $O.reinstead
