@@ -6,6 +6,7 @@
 
 require "fmt"
 require "link"
+
 obj {
 	nam = '@lang';
 	act = function(s, t)

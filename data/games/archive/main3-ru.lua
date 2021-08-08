@@ -118,11 +118,20 @@ fmt.quotes = true
 require 'parser/mp-ru'
 
 function set_pic(f)
-	game.pic = 'gfx/'..f..'.jpg'
+	if instead.tiny then
+		game.gfx = 'gfx/'..f..'.jpg'
+	else
+		game.pic = 'gfx/'..f..'.jpg'
+	end
 end
 
 function get_pic(f)
-	local r = game.pic:gsub("^gfx/", ""):gsub("%.jpg$", "")
+	local r
+	if instead.tiny then
+		r = game.gfx:gsub("^gfx/", ""):gsub("%.jpg$", "")
+	else
+		r = game.pic:gsub("^gfx/", ""):gsub("%.jpg$", "")
+	end
 	return r
 end
 
