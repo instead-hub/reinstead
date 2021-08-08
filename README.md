@@ -4,7 +4,7 @@
 
 [МАНИФЕСТ](MANIFEST.md)
 
-![archive](scr/archive.png)
+<img src="scr/archive.png" width="50%">
 
 ![list of games](scr/list.png)
 
