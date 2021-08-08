@@ -1011,9 +1011,6 @@ function mp:post_action()
 	if self:noparser() or
 		(self.event and self.event:find("Meta", 1, true)) or
 		self:comment() then
-		if not std.abort_cmd then
-			game:time(game:time() - 1)
-		end
 		return
 	end
 	if mp.undo > 0 then
