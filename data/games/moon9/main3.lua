@@ -28,6 +28,10 @@ function eph_event(ev)
 end
 
 function pic_add(v)
+	if instead.tiny then
+		pic_set(v)
+		return
+	end
 	for _, it in pairs(pics) do
 		if it == v then
 			return
@@ -38,8 +42,13 @@ function pic_add(v)
 		table.remove(pics, 1)
 	end
 end
+
 function pic_set(v)
 	pics = {v}
+end
+
+function game:gfx()
+	return 'gfx/'..pics[1]..'.png'
 end
 
 function game:pic()
@@ -858,7 +867,11 @@ cutscene {
 			'Разработка игры',
 		}
 		pn(fmt.c(fmt.b(t[n])))
-		p(fmt.c(fmt.img('gfx/big/'..tostring(n).. '.png')))
+		if instead.tiny then
+			p(fmt.c(fmt.img('gfx/'..tostring(n).. '.png')))
+		else
+			p(fmt.c(fmt.img('gfx/big/'..tostring(n).. '.png')))
+		end
 	end;
 	next_to = 'theend';
 }
