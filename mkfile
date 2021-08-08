@@ -64,4 +64,4 @@ reinstead: $OFILES
 	$LD -o $target $OFILES
 
 clean nuke:V:
-	rm -f src/lua/*.[$OS] src/*.[$OS] src/instead/*.[$OS] [$OS].out $O.reinstead
+	rm -f src/plan9/*.[$OS] src/lua/*.[$OS] src/*.[$OS] src/instead/*.[$OS] [$OS].out reinstead
