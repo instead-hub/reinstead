@@ -26,3 +26,4 @@ INSTEAD-lite links with the following libraries/sources:
     Lua (MIT)
     SDL (LGPL)
     stb libraries (Public Domain)
+    lite editor (MIT)
