@@ -429,7 +429,7 @@ function core.run()
 				else
 					system.window_mode 'normal'
 				end
-			elseif v == 'return' then
+			elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
 				local oh = mwin.lay.realh
 				local r, v
 				local cmd_mode
