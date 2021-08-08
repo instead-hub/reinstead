@@ -1006,7 +1006,7 @@ function mp:step()
 	std.pr(r)
 	std.abort_cmd = true
 end
-
+local last_gfx = false
 function mp:post_action()
 	if self:noparser() or
 		(self.event and self.event:find("Meta", 1, true)) or
@@ -1039,11 +1039,14 @@ function mp:post_action()
 		if not gfx and std.game.gfx ~= nil then
 			gfx = std.call(std.game, 'gfx')
 		end
-		if gfx then
-			pn(fmt.c(fmt.img(gfx)))
+		if gfx ~= last_gfx then
+			if gfx then
+				pn(fmt.c(fmt.img(gfx)))
+			end
+			p(l, std.scene_delim)
+			game.player:need_scene(false)
+			last_gfx = gfx
 		end
-		p(l, std.scene_delim)
-		game.player:need_scene(false)
 	end
 	mp:step()
 end
