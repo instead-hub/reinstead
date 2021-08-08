@@ -343,6 +343,9 @@ function core.init()
 	end
 	if not GAME and conf.autostart then
 		GAME = conf.autostart
+		if GAME:find("./", 1, true) == 1 then
+			GAME = DATADIR .. '/' .. GAME:sub(3)
+		end
 	end
 	print("scale: ", SCALE)
 	if GAME then
