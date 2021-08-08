@@ -63,6 +63,7 @@ std.mod_start(function()
 			core_eval 'instead_clear()'
 		end)
 		std.rawset(mp, 'MetaSave', function(self, w)
+			w = w or 'autosave'
 			core_eval(string.format("need_save = %q", w))
 			std.abort()
 		end)
