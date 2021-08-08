@@ -175,9 +175,10 @@ local function instead_start(game, load)
 	system.title(instead_name(game))
 	gfx.icon(gfx.new 'icon.png')
 
-	r, e = instead.cmd"look"
 	if load then
 		r, e = instead.cmd("load "..load)
+	else
+		r, e = instead.cmd"look"
 	end
 	if r then
 		input_detach()
@@ -235,11 +236,26 @@ local function instead_load(w)
 	instead_start(GAME, w)
 end
 local function create_cursor()
-	local h = mwin.lay.fonts.regular.h + SCALE*3
-	cursor = gfx.new(3*SCALE, h)
-	cursor:fill(1*SCALE, 0, 1*SCALE, h, { 0, 0, 0})
-	cursor:fill(0, 0, 3*SCALE, 3* SCALE, { 0, 0, 0})
-	cursor:fill(0, h-3*SCALE, 3*SCALE, 3*SCALE, { 0, 0, 0})
+	local h = mwin.lay.fonts.regular.h + math.ceil(SCALE * 2)
+	local w = math.floor(3 * SCALE);
+	if w < 3 then
+		w = 1
+	elseif w % 3 ~= 0 then
+		if (w - 1) % 3 == 0 then
+			w = w - 1
+		else
+			w = w + 1
+		end
+	end
+	local b = w / 3
+	cursor = gfx.new(w, h)
+	if b <=0 then
+		cursor:fill(0, 0, w, h, conf.cursor_fg)
+		return
+	end
+	cursor:fill(b, 0, b, h, conf.cursor_fg)
+	cursor:fill(0, 0, w, w, conf.cursor_fg)
+	cursor:fill(0, h - w, w, w, conf.cursor_fg)
 end
 local GAMES
 
@@ -254,7 +270,9 @@ local function dir_list(dir)
 		local w, _ = icon:size()
 		mwin.lay:add_img(icon:scale(128 * SCALE/w))
 	end
-	mwin:add("<c>"..conf.dir_title.."</c>\n\n")
+	if conf.dir_title then
+		mwin:add("<c>"..conf.dir_title.."</c>\n\n")
+	end
 	local t = system.readdir(dir)
 	for _, v in ipairs(t or {}) do
 		local dirpath = dir .. '/'.. v
