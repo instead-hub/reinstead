@@ -2,7 +2,7 @@
 
 Минималистичный плеер парсерных игр INSTEAD.
 
-![archive](scr/archive.png)
+![archive](scr/archive.png | width=320)
 
 ![list of games](scr/list.png)
 
