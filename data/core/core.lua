@@ -1,5 +1,11 @@
 local VERSION='0.1'
 local conf = require "config"
+
+math.round = function(num, n)
+	local m = 10 ^ (n or 0)
+	return math.floor(num * m + 0.5) / m
+end
+
 if conf.scale == false then SCALE = 1.0 end
 if type(conf.scale) == 'number' then SCALE = conf.scale end
 local core = {}

@@ -10,7 +10,7 @@ function lay:new()
 		w = 0,
 		h = 0,
 		hspace = conf.hspace,
-		fsize = conf.fsize * SCALE,
+		fsize = math.round(conf.fsize * SCALE),
 		bg = conf.bg,
 		fg = conf.fg,
 	}

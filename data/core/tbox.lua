@@ -1,6 +1,5 @@
 local lay = require "layout"
 local conf = require "config"
-local SCROLLW = conf.scrollw * SCALE
 
 local tbox = {
 }
@@ -9,7 +8,9 @@ function tbox:new()
 	local o = {
 		lay = lay:new(),
 		off = 0,
+		sw = math.round(conf.scrollw) * SCALE,
 	}
+	if o.sw < 3 then o.sw = 3 end
 	o.pad = conf.pad;
 	self.__index = self
 	setmetatable(o, self)
@@ -18,7 +19,7 @@ end
 
 function tbox:resize(w, h)
 	self.w, self.h = w, h
-	self.lay:resize(self.w - SCROLLW - self.pad * 2, self.h - self.pad * 2)
+	self.lay:resize(self.w - self.sw - self.pad * 2, self.h - self.pad * 2)
 end
 
 function tbox:mouse(e, b, x, y)
@@ -30,7 +31,7 @@ function tbox:mouse(e, b, x, y)
 		x, y = b, x
 	end
 	if self.scroll_start or
-		(x >= 0 and y >=0 and x < SCROLLW and y < self.h) then -- scroll
+		(x >= 0 and y >=0 and x < self.sw and y < self.h) then -- scroll
 		if e == 'mousedown' and b == 'left' then
 			local stop, sbot = self:scrollpos()
 			if y < stop or y >= sbot then
@@ -85,15 +86,16 @@ function tbox:render(dst, xoff, yoff)
 	xoff = xoff or 0
 	yoff = yoff or 0
 	dst:fill(xoff, yoff, self.w, self.h, self.lay.bg)
-	self.lay:render(dst, xoff + SCROLLW + self.pad, yoff + self.pad, self.off)
-	dst:fill(xoff, yoff, SCROLLW, self.h, conf.scroll_bg)
+	self.lay:render(dst, xoff + self.sw + self.pad, yoff + self.pad, self.off)
+	dst:fill(xoff, yoff, self.sw, self.h, conf.scroll_bg)
 	local stop, sbot = self:scrollpos()
-	dst:fill(xoff + SCALE, yoff + stop + SCALE, SCROLLW - 2*SCALE,  sbot - stop,
+	local b = math.round(SCALE)
+	dst:fill(xoff + b, yoff + stop + b, self.sw - 2*b,  sbot - stop,
 		conf.scroll_fg)
 end
 function tbox:render_line(dst, n, xoff, yoff)
 	xoff = xoff or 0
 	yoff = yoff or 0
-	self.lay:render_line(dst, n, xoff + SCROLLW + self.pad, yoff + self.pad, self.off)
+	self.lay:render_line(dst, n, xoff + self.sw + self.pad, yoff + self.pad, self.off)
 end
 return tbox
