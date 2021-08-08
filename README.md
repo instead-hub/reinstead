@@ -2,7 +2,9 @@
 
 Минималистичный плеер парсерных игр INSTEAD.
 
-![archive](scr/archive.png | width=320)
+[МАНИФЕСТ](MANIFEST.md)
+
+![archive](scr/archive.png)
 
 ![list of games](scr/list.png)
 
