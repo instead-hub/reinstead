@@ -12,4 +12,4 @@
 
 <img src="scr/list.png" width="50%">
 
-<img src="scr/plan9.png" width="50%">
+<img src="scr/plan9.jpg" width="50%">
