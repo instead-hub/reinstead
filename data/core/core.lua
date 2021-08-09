@@ -64,10 +64,6 @@ local function history_next()
 	return history[history_pos]
 end
 
-function instead_busy(busy)
-	system.poll() -- to avoid OS busy msg
-end
-
 local function input_history(input)
 	history_pos = 0
 	if history[1] ~= input then
@@ -121,6 +117,29 @@ local function input_attach(input, edit)
 		return false
 	else
 		return true
+	end
+end
+local busy_time = false
+function instead_busy(busy)
+	if not busy then
+		busy_time = false
+		input_detach()
+		return
+	end
+	local t = system.time()
+	if not busy_time then
+		busy_time = t
+		return
+	end
+	if t - last_render > 1/10 and t - busy_time > 3 then
+		system.poll()
+		local win = gfx.win()
+		local w, h = win:size()
+		mwin:resize(w, h)
+		input_attach('Wait, please..')
+		mwin:render(win)
+		gfx.flip()
+		last_render = system.time()
 	end
 end
 
