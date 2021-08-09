@@ -64,6 +64,10 @@ local function history_next()
 	return history[history_pos]
 end
 
+function instead_busy(busy)
+	system.poll() -- to avoid OS busy msg
+end
+
 local function input_history(input)
 	history_pos = 0
 	if history[1] ~= input then

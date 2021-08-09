@@ -6,6 +6,9 @@ require 'tiny3'
 
 local instead = std '@instead'
 instead.reinstead = true
+std.busy = function(busy)
+	core_eval ('instead_busy('..(busy and 'true' or 'false')..')')
+end
 
 local iface = std '@iface'
 instead.music_callback = function() end

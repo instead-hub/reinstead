@@ -2587,6 +2587,7 @@ function(cmd)
 		local r, v, n
 		repeat
 			if n then
+				std.busy(true)
 				std.abort_cmd = false
 				std.me():moved(false)
 				std.me():need_scene(false)
@@ -2594,6 +2595,7 @@ function(cmd)
 			r, v = mp:key_enter(cmd[1] == 'look')
 			n = true
 		until not mp:autoplay_pending() or mp:noparser()
+		std.busy(false)
 		mp:onedit()
 		return r, v
 	end
