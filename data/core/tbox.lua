@@ -24,6 +24,7 @@ function tbox:resize(w, h)
 end
 
 function tbox:mouse(e, b, x, y)
+	local off
 	if e == 'mouseup' then
 		self.scroll_start = false
 		return
@@ -36,21 +37,27 @@ function tbox:mouse(e, b, x, y)
 		if e == 'mousedown' and b == 'left' then
 			local stop, sbot = self:scrollpos()
 			if y < stop or y >= sbot then
-				self.off = y * self.lay.realh / self.h
+				off = y * self.lay.realh / self.h
 				self.scroll_start = 0
 			else
 				self.scroll_start = y - stop
 			end
 		elseif e == 'mousemotion' and self.scroll_start then
-			self.off = (y - self.scroll_start)* self.lay.realh / self.h
+			off = (y - self.scroll_start)* self.lay.realh / self.h
 		else
 			return
 		end
 	else
 		return
 	end
-	return self:scroll(0)
+	if not off or self.off == off then
+		return
+	end
+	self.off = off
+	self:scroll(0)
+	return true
 end
+
 function tbox:scroll(scroll)
 	if conf.scroll_inverse then
 		scroll = -scroll
