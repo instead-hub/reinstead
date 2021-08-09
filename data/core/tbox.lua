@@ -82,14 +82,15 @@ function tbox:add(text)
 	self.lay:add(text)
 end
 function tbox:scrollpos()
+	local b = math.round(SCALE)
 	local _, rh = self.lay:size()
-	local h = self.h - self.pad*2;
-	local stop = math.floor(self.off * h/ rh)
-	local sbot = math.floor((self.off + h) * self.h / rh)
-	local sh = math.ceil(sbot - stop - 2*SCALE)
-	if sh <= 0 then sh = math.ceil(1 * SCALE) end
-	if sh > self.h then sh = math.ceil(self.h - 2*SCALE) end
-	return stop, stop + sh
+	local h = self.h - self.pad*2 - 2*b;
+	local stop = math.round(self.off * h/rh)
+	local sbot = math.round((self.off + h) * self.h/rh)
+	local sh = sbot - stop
+	if sh <= 0 then sh = 1 end
+	if sh > self.h - 2*b then sh = self.h - 2*b end
+	return stop + b, sh
 end
 function tbox:render(dst, xoff, yoff)
 	xoff = xoff or 0
@@ -97,9 +98,9 @@ function tbox:render(dst, xoff, yoff)
 	dst:fill(xoff, yoff, self.w, self.h, self.lay.bg)
 	self.lay:render(dst, xoff + self.sw + self.pad, yoff + self.pad, self.off)
 	dst:fill(xoff, yoff, self.sw, self.h, conf.scroll_bg)
-	local stop, sbot = self:scrollpos()
+	local stop, sh = self:scrollpos()
 	local b = math.round(SCALE)
-	dst:fill(xoff + b, yoff + stop + b, self.sw - 2*b,  sbot - stop,
+	dst:fill(xoff + b, yoff + stop, self.sw - 2*b,  sh,
 		conf.scroll_fg)
 end
 function tbox:render_line(dst, n, xoff, yoff)

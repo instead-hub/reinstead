@@ -14,7 +14,7 @@ return {
 	italic = 'fonts/Go-Italic.ttf',
 	bold = 'fonts/Go-Bold.ttf',
 	bold_italic = 'fonts/Go-Bold-Italic.ttf',
-	scrollw = 9,
+	scrollw = 11,
 	autostart = false, -- add path here to autorun game
 	directory = './games', -- set path of the games directory to browse
 	dir_title = false, -- '<b>Select game</b>',
