@@ -511,13 +511,13 @@ function core.run()
 					r, v = instead.cmd(string.format("act %s", input))
 				end
 				if not parser_mode and not cmd_mode then
-					local ok, w = instead.cmd "way"
+					local _, w = instead.cmd "way"
 					v = v .. '\n'
-					if ok and w ~= "" then
+					if w ~= "" then
 						v = v .. ">> "..w
 					end
-					ok, w = instead.cmd "inv"
-					if ok and w ~= "" then
+					_, w = instead.cmd "inv"
+					if w ~= "" then
 						v = v .. "** ".. w
 					end
 				end
