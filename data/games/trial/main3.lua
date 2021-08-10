@@ -359,7 +359,7 @@ obj {
 	-"малый купол,купол/но",
 	nam = 'Малый купол';
 	before_Default = function(s, ev)
-		if ev == 'Exam' or ev == 'Drive' then
+		if ev == 'Exam' then
 			return false
 		end
 		p 'Изнутри вездехода я не смогу этого сделать.';
@@ -639,7 +639,8 @@ end
 Verb { "#Drive",
 	"[ |по]ехать,едь,поеду",
 	"на {compass1} : Drive",
-	"к {noun}/дт,scene : Drive"}
+	"к {noun}/дт,scene : Drive", }
+	"на {noun}/вн,scene : Drive" }
 
 Verb { "#Attack2",
 	"[ |рас|по]коло/ть",
