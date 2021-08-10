@@ -87,5 +87,6 @@ std.mod_start(function()
 		}, mp)
 		mp.autocompl = false
 		mp.autohelp = false
+		mp.compare_len = 3
 	end
 end)
