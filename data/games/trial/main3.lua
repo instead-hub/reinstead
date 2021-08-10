@@ -639,7 +639,7 @@ end
 Verb { "#Drive",
 	"[ |по]ехать,едь,поеду",
 	"на {compass1} : Drive",
-	"к {noun}/дт,scene : Drive", }
+	"к {noun}/дт,scene : Drive",
 	"на {noun}/вн,scene : Drive" }
 
 Verb { "#Attack2",
