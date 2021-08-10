@@ -87,4 +87,5 @@ std.mod_start(function()
 		}, mp)
 		mp.autocompl = false
 		mp.autohelp = false
+	end
 end)
