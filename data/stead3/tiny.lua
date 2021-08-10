@@ -85,5 +85,6 @@ std.mod_start(function()
 			"#MetaLoad",
 			"*:MetaLoad",
 		}, mp)
-	end
+		mp.autocompl = false
+		mp.autohelp = false
 end)
