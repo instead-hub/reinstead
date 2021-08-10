@@ -359,7 +359,7 @@ obj {
 	-"малый купол,купол/но",
 	nam = 'Малый купол';
 	before_Default = function(s, ev)
-		if ev == 'Exam' then
+		if ev == 'Exam' or ev == 'Drive' then
 			return false
 		end
 		p 'Изнутри вездехода я не смогу этого сделать.';
