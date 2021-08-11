@@ -2,6 +2,7 @@ globals = {
 	'need_save',
 	'need_load',
 	'need_restart',
+	'instead_busy',
 	'instead_clear',
 	'EXEFILE',
 	'PLATFORM',

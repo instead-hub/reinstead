@@ -8,6 +8,7 @@ end
 
 if conf.scale == false then SCALE = 1.0 end
 if type(conf.scale) == 'number' then SCALE = conf.scale end
+
 local core = {}
 local utf = require "utf"
 local tbox = require "tbox"
@@ -110,16 +111,17 @@ local function input_attach(input, edit)
 		end
 	end
 	input_line(chars)
-	local win = gfx.win()
 	input_attached = true
 	if not mwin:scroll(mwin.lay.realh) then
-		mwin:render_line(win, #mwin:lines())
+		mwin:render_line(gfx.win(), #mwin:lines())
 		return false
 	else
 		return true
 	end
 end
+
 local busy_time = false
+
 function instead_busy(busy)
 	if not busy then
 		busy_time = false
@@ -230,6 +232,7 @@ local function instead_start(game, load)
 	mwin.off = 0
 	cleared = true
 end
+
 function instead_clear()
 	mwin:set(false)
 --	input_attach(input)
@@ -274,6 +277,7 @@ local function instead_load(w)
 	instead_done()
 	instead_start(GAME, w)
 end
+
 local function create_cursor()
 	local h = mwin.lay.fonts.regular.h + math.ceil(SCALE * 2)
 	local w = math.floor(3 * SCALE);
