@@ -93,9 +93,9 @@ end
 function tbox:scrollpos()
 	local b = math.round(SCALE)
 	local _, rh = self.lay:size()
-	local h = self.h - self.pad*2 - 2*b;
+	local h = self.h - 2*b;
 	local stop = math.round(self.off * h/rh)
-	local sbot = math.round((self.off + h) * self.h/rh)
+	local sbot = math.round((self.off + self.lay.h) * h/rh)
 	local sh = sbot - stop
 	if sh <= 0 then sh = 1 end
 	if sh > self.h - 2*b then sh = self.h - 2*b end

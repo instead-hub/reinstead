@@ -195,6 +195,35 @@ function lay:render_line(dst, n, xoff, yoff, off)
 	gfx.flip(xoff, yoff + l.y - off, l.w, l.h)
 end
 
+local function lookup_off(lay, off)
+	local i = 1
+	local delta = 0
+	local n = #lay.lines
+	local pos
+	while i <= n do
+		l = lay.lines[i]
+		if l.y >= off or l.y + l.h >= off then
+			pos = i
+			if delta < 1 then
+				break
+			end
+			i = i - delta + 1
+			if i > n then
+				break
+			end
+			delta = 0
+			pos = nil
+		else
+			delta = delta * 2
+			if delta == 0 then delta = 1 end
+			if i + delta > n then delta = n - i end
+			if delta < 1 then break end
+			i = i + delta
+		end
+	end
+	return pos
+end
+
 function lay:render(dst, xoff, yoff, off)
 	off = off or 0
 	xoff = xoff or 0
@@ -202,7 +231,13 @@ function lay:render(dst, xoff, yoff, off)
 	dst = dst or gfx.win
 	local diff
 	local limit
-	for _, l in ipairs(self.lines) do
+	local start = lookup_off(self, off)
+	if not start then
+		return
+	end
+	local l
+	for i = start, #self.lines do
+		l = self.lines[i]
 		if diff or l.y >= off or l.y + l.h >= off then
 			if not diff then
 				diff = off
