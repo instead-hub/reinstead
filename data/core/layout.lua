@@ -106,6 +106,7 @@ function lay:line_align(l, f)
 end
 function lay:resize(width, height, linenr)
 	local y = 0
+	if linenr == 0 then linenr = nil end
 	if linenr then
 		y = self.lines[linenr].y
 	end
@@ -219,7 +220,9 @@ function lay:set(text)
 		v.cache:zap()
 	end
 	self.lines = {}
-	return self:add(text)
+	if text then
+		return self:add(text)
+	end
 end
 
 function lay:add_img(img)

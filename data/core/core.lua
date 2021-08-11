@@ -33,7 +33,7 @@ local input_attached = false
 
 local function input_detach()
 	if input_attached then
-		table.remove(mwin.lay.lines, #mwin.lay.lines)
+		table.remove(mwin:lines(), #mwin:lines())
 	end
 	input_attached = false
 end
@@ -78,13 +78,14 @@ end
 
 local function input_line(chars)
 	local pre = ''
+	local n = #mwin:lines()
 	for i=1,input_pos-1 do pre = pre .. chars[i] end
 	local post = ''
 	for i = input_pos,#chars do post = post .. chars[i] end
 	mwin.lay.nocache = true
 	mwin:add(input_prompt..fmt_esc(pre)..'<w:\1>'..fmt_esc(post))
 	mwin.lay.nocache = false
-	local l = mwin.lay.lines[#mwin.lay.lines]
+	local l = mwin:lines()[n + 1]
 	for _, v in ipairs(l) do
 		if v.t == '\1' then
 			v.w = 0
@@ -95,6 +96,7 @@ local function input_line(chars)
 			break
 		end
 	end
+	mwin:resize(mwin.w, mwin.h, n)
 end
 
 local function input_attach(input, edit)
@@ -109,11 +111,9 @@ local function input_attach(input, edit)
 	end
 	input_line(chars)
 	local win = gfx.win()
-	local w, h = win:size()
-	mwin:resize(w, h, #mwin.lay.lines)
 	input_attached = true
 	if not mwin:scroll(mwin.lay.realh) then
-		mwin:render_line(win, #mwin.lay.lines)
+		mwin:render_line(win, #mwin:lines())
 		return false
 	else
 		return true
@@ -133,21 +133,15 @@ function instead_busy(busy)
 	end
 	if t - last_render > 1/10 and t - busy_time > 3 then
 		system.poll()
-		local win = gfx.win()
-		local w, h = win:size()
-		mwin:resize(w, h)
 		input_attach('Wait, please..')
-		mwin:render(win)
+		mwin:render()
 		gfx.flip()
 		last_render = system.time()
 	end
 end
 
 local function instead_done()
-	local win = gfx.win()
-	local w, h = win:size()
-	mwin:resize(w, h)
-	mwin:render(win)
+	mwin:render()
 	gfx.flip()
 	instead.done()
 end
@@ -190,7 +184,7 @@ local function instead_start(game, load)
 	if conf.show_icons then
 		icon = instead_icon(game, true)
 	end
-	mwin:set("")
+	mwin:set(false)
 	local r, e = instead.init(game)
 	if not r then
 		mwin:set(string.format("Trying: %q", game)..'\n'..e)
@@ -220,7 +214,7 @@ local function instead_start(game, load)
 	if r then
 		input_detach()
 		if icon then
-			mwin.lay:add_img(icon)
+			mwin:add_img(icon)
 		end
 		if load then
 			mwin:add("*** "..load)
@@ -237,7 +231,7 @@ local function instead_start(game, load)
 	cleared = true
 end
 function instead_clear()
-	mwin:set("")
+	mwin:set(false)
 --	input_attach(input)
 	mwin.off = 0
 	cleared = true
@@ -310,10 +304,10 @@ local function dir_list(dir)
 	end
 	GAMES = {}
 	input_detach()
-	mwin:set("")
+	mwin:set(false)
 	if icon and conf.show_icons then
 		local w, _ = icon:size()
-		mwin.lay:add_img(icon:scale(128 * SCALE/w))
+		mwin:add_img(icon:scale(128 * SCALE/w))
 	end
 	if conf.dir_title then
 		mwin:add("<c>"..conf.dir_title.."</c>\n\n")
@@ -332,7 +326,7 @@ local function dir_list(dir)
 	end
 	table.sort(GAMES, function(a, b) return a.path < b.path end)
 	for k, v in ipairs(GAMES) do
-		--mwin.lay:add_img(v.icon)
+		--mwin:add_img(v.icon)
 		mwin:add(string.format("<c>%s <i>(%d)</i></c>", v.name, k))
 	end
 	if #GAMES == 0 then
@@ -378,6 +372,7 @@ function core.init()
 	end
 	local win = gfx.win()
 	mwin = tbox:new()
+	mwin:resize(win:size())
 	win:clear(mwin.lay.bg)
 	gfx.flip()
 
@@ -397,8 +392,6 @@ function core.init()
 		mwin:add('\nLook into "'..DATADIR..'/core/config.lua" for cusomization.')
 		mwin:add('\n<b>Press ESC to exit.</b>')
 	end
-	local w, h = win:size()
-	mwin:resize(w, h)
 end
 
 local alt = false
@@ -438,8 +431,6 @@ function core.run()
 				input_detach()
 				mwin:add("<c>***</c>\n/quit - exit\n/restart - restart\n\n")
 				input_attach(input)
-				local w, h = gfx.win():size()
-				mwin:resize(w, h)
 				dirty = true
 			elseif v == 'backspace' then
 				local t = utf.chars(input)
@@ -529,8 +520,6 @@ function core.run()
 				end
 				input = ''
 				input_attach(input)
-				local w, h = gfx.win():size()
-				mwin:resize(w, h)
 				if not cleared then
 					mwin.off = oh
 				else

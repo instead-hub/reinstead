@@ -17,9 +17,9 @@ function tbox:new()
 	return o
 end
 
-function tbox:resize(w, h)
+function tbox:resize(w, h, ...)
 	self.w, self.h = w, h
-	self.lay:resize(self.w - self.sw - self.pad * 2, self.h - self.pad * 2)
+	self.lay:resize(self.w - self.sw - self.pad * 2, self.h - self.pad * 2, ...)
 	self.scrollh = math.floor(self.lay.h - (self.lay.fonts.regular.h * self.lay.hspace))
 end
 
@@ -76,10 +76,19 @@ function tbox:scroll(scroll)
 end
 function tbox:set(text)
 	self.lay:set(text)
+	self:resize(self.w, self.h)
 end
 
 function tbox:add(text)
+	local n = #self.lay.lines
 	self.lay:add(text)
+	self:resize(self.w, self.h, n)
+end
+
+function tbox:add_img(img)
+	local n = #self.lay.lines
+	self.lay:add_img(img)
+	self:resize(self.w, self.h, n)
 end
 function tbox:scrollpos()
 	local b = math.round(SCALE)
@@ -93,6 +102,7 @@ function tbox:scrollpos()
 	return stop + b, sh
 end
 function tbox:render(dst, xoff, yoff)
+	dst = dst or gfx.win()
 	xoff = xoff or 0
 	yoff = yoff or 0
 	dst:fill(xoff, yoff, self.w, self.h, self.lay.bg)
@@ -107,5 +117,8 @@ function tbox:render_line(dst, n, xoff, yoff)
 	xoff = xoff or 0
 	yoff = yoff or 0
 	self.lay:render_line(dst, n, xoff + self.sw + self.pad, yoff + self.pad, self.off)
+end
+function tbox:lines()
+	return self.lay.lines
 end
 return tbox
