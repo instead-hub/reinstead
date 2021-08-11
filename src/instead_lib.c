@@ -131,12 +131,20 @@ debug(lua_State *L)
 	return 0;
 }
 
+static int
+standalone(lua_State *L)
+{
+	instead_set_standalone(lua_toboolean(L, 1));
+	return 0;
+}
+
 static const luaL_Reg
 instead_funcs[] = {
 	{ "init", init },
 	{ "done", done },
 	{ "cmd", cmd },
 	{ "debug", debug },
+	{ "standalone", standalone },
 	{ NULL, NULL },
 };
 
