@@ -429,7 +429,7 @@ function core.run()
 				break
 			elseif v == 'escape' then
 				input_detach()
-				mwin:add("<c>***</c>\n/quit - exit\n/restart - restart\n\n")
+				mwin:add(conf.short_help)
 				input_attach(input)
 				dirty = true
 			elseif v == 'backspace' then

@@ -22,6 +22,7 @@ return {
 	show_icons = true,
 	scale = true, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
+	short_help = "<c>***</c>\n/quit - exit\n/restart - restart\n\n",
 --	autoload = true,
 --	debug = true,
 }
