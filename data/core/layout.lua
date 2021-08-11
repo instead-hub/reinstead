@@ -106,13 +106,14 @@ function lay:line_align(l, f)
 end
 function lay:resize(width, height, linenr)
 	local y = 0
+	local realw = 0
 	if linenr == 0 then linenr = nil end
 	if linenr then
 		y = self.lines[linenr].y
+		realw = self.realw
 	end
 	linenr = linenr or 1
 	self.w, self.h = width, height
-	local realw = 0
 	for k = linenr, #self.lines do
 		local l = self.lines[k]
 		local x = 0
@@ -186,13 +187,13 @@ function lay:render_line(dst, n, xoff, yoff, off)
 	if l.y < off and l.y+l.h < off then
 		return
 	end
-	dst:fill(xoff, yoff + l.y - off, l.w, l.h, self.bg)
+	dst:fill(xoff, yoff + l.y - off, self.realw, l.h, self.bg)
 	for _, w in ipairs(l) do
 		if w.y >= off or w.y + w.h >= off then
 			self:render_word(dst, w, xoff, yoff, off)
 		end
 	end
-	gfx.flip(xoff, yoff + l.y - off, l.w, l.h)
+	gfx.flip(xoff, yoff + l.y - off, self.realw, l.h)
 end
 
 local function lookup_off(lay, off)
