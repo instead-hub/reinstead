@@ -21,9 +21,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Please see each individual source file for a list of they copyright holders.
 
-INSTEAD-lite links with the following libraries/sources:
+RE:INSTEAD links with the following libraries/sources:
 
     Lua (MIT)
     SDL (LGPL)
     stb libraries (Public Domain)
     lite editor (MIT)
+
+The source code includes games in 'data/games' dir that are distributed
+under the CC BY-SA 4.0 license. See data/games/COPYING.
