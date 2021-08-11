@@ -99,7 +99,7 @@ function tbox:scrollpos()
 	local sh = sbot - stop
 	if sh <= 0 then sh = 1 end
 	if sh > self.h - 2*b then sh = self.h - 2*b end
-	return stop + b, sh
+	return stop + b, stop + b + sh
 end
 function tbox:render(dst, xoff, yoff)
 	dst = dst or gfx.win()
@@ -108,9 +108,9 @@ function tbox:render(dst, xoff, yoff)
 	dst:fill(xoff, yoff, self.w, self.h, self.lay.bg)
 	self.lay:render(dst, xoff + self.sw + self.pad, yoff + self.pad, self.off)
 	dst:fill(xoff, yoff, self.sw, self.h, conf.scroll_bg)
-	local stop, sh = self:scrollpos()
+	local stop, sbot = self:scrollpos()
 	local b = math.round(SCALE)
-	dst:fill(xoff + b, yoff + stop, self.sw - 2*b,  sh,
+	dst:fill(xoff + b, yoff + stop, self.sw - 2*b,  sbot - stop,
 		conf.scroll_fg)
 end
 function tbox:render_line(dst, n, xoff, yoff)
