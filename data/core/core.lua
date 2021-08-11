@@ -133,7 +133,7 @@ function instead_busy(busy)
 	end
 	if t - last_render > 1/10 and t - busy_time > 3 then
 		system.poll()
-		input_attach('Wait, please..')
+		input_attach('Wait, please...')
 		mwin:render()
 		gfx.flip()
 		last_render = system.time()
