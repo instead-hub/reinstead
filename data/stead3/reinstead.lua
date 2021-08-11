@@ -4,16 +4,19 @@ end
 
 require 'tiny3'
 
+local re_eval = core_eval
+function core_eval() end
+
 local instead = std '@instead'
 instead.reinstead = true
 std.busy = function(busy)
-	core_eval ('instead_busy('..(busy and 'true' or 'false')..')')
+	re_eval ('instead_busy('..(busy and 'true' or 'false')..')')
 end
 
 local iface = std '@iface'
 instead.music_callback = function() end
 instead.restart = function()
-	core_eval 'need_restart = true'
+	re_eval 'need_restart = true'
 end
 instead.menu = instead_menu
 instead.savepath = function() return "./saves/" end
@@ -65,16 +68,16 @@ std.mod_start(function()
 		mp.msg.CUTSCENE_MORE = '^'..mp.msg.CUTSCENE_HELP
 		std.rawset(mp, 'clear', function(self)
 			self.text = ''
-			core_eval 'instead_clear()'
+			re_eval 'instead_clear()'
 		end)
 		std.rawset(mp, 'MetaSave', function(self, w)
 			w = w or 'autosave'
-			core_eval(string.format("need_save = %q", w))
+			re_eval(string.format("need_save = %q", w))
 			std.abort()
 		end)
 		std.rawset(mp, 'MetaLoad', function(self, w)
 			w = w or 'autosave'
-			core_eval(string.format("need_load = %q", w))
+			re_eval(string.format("need_load = %q", w))
 			std.abort()
 		end)
 		VerbExtend ({
