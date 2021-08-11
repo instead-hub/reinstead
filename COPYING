@@ -28,5 +28,8 @@ RE:INSTEAD links with the following libraries/sources:
     stb libraries (Public Domain)
     lite editor (MIT)
 
+RE:INSTEAD uses dictionary files from the http://aot.ru project that is
+covered by the terms of the LGPL license. See data/stead3/morph/COPYING.
+
 The source code includes games in 'data/games' dir that are distributed
 under the CC BY-SA 4.0 license. See data/games/COPYING.
