@@ -24,7 +24,7 @@ Please see each individual source file for a list of they copyright holders.
 RE:INSTEAD links with the following libraries/sources:
 
     Lua (MIT)
-    SDL (LGPL)
+    SDL2 (zlib)
     stb libraries (Public Domain)
     lite editor (MIT)
 
