@@ -67,7 +67,7 @@ end
 
 local function input_history(input)
 	history_pos = 0
-	if history[1] ~= input then
+	if history[1] ~= input and input ~= '' then
 		table.insert(history, 1, input)
 	end
 	if #history > history_len then
