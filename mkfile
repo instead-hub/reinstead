@@ -26,6 +26,8 @@ CFILES= \
 	src/lua/lauxlib.c \
 	src/lua/lbaselib.c \
 	src/lua/lcode.c \
+	src/lua/lcorolib.c \
+	src/lua/lctype.c \
 	src/lua/ldblib.c \
 	src/lua/ldebug.c \
 	src/lua/ldo.c \
@@ -49,9 +51,9 @@ CFILES= \
 	src/lua/ltablib.c \
 	src/lua/ltm.c \
 	src/lua/lundump.c \
+	src/lua/lutf8lib.c \
 	src/lua/lvm.c \
 	src/lua/lzio.c \
-	src/lua/print.c \
 
 OFILES=${CFILES:%.c=%.$O}
 
@@ -63,4 +65,3 @@ reinstead: $OFILES
 
 clean nuke:V:
 	rm -f src/plan9/*.[$OS] src/lua/*.[$OS] src/*.[$OS] src/instead/*.[$OS] [$OS].out reinstead
-
