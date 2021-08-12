@@ -95,12 +95,12 @@ main(int argc, char **argv)
 
 #ifdef DATADIR
 	lua_pushstring(L, DATADIR);
+	instead_lua_path(DATADIR);
 #else
 	lua_pushstring(L, base);
+	instead_lua_path(base);
 #endif
 	lua_setglobal(L, "DATADIR");
-
-	instead_lua_path(base);
 
 #if defined(_WIN32) || defined(PLAN9)
 	snprintf(base, sizeof(base), "%s/%s", exepath, "errors.txt");
