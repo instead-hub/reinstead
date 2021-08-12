@@ -1,0 +1,61 @@
+\documentclass[12pt,]{article}
+\usepackage{cmap}
+\usepackage[T2A]{fontenc}
+\usepackage[english,russian]{babel}
+\usepackage{indentfirst}
+\title{RE:INSTEAD}
+\author{Петр Косых}
+\date{\today}
+\usepackage{multicol}
+\usepackage{ifxetex,ifluatex}
+\usepackage[dvipsnames]{xcolor}
+\definecolor{bg}{RGB}{255, 255, 232}
+\pagecolor{bg}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{caption}
+\captionsetup{labelformat=empty,labelsep=none}
+
+\usepackage{framed,color,verbatim}
+\definecolor{shadecolor}{RGB}{234,255,255}
+
+\newenvironment{code}%
+   {\snugshade\verbatim}%
+   {\endverbatim\endsnugshade}
+
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+%  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \usepackage{fontspec}
+  \ifxetex
+    \usepackage{xltxtra,xunicode}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+    \setmainfont{Verdana}
+    \setsansfont{Verdana}
+    \setmonofont{Liberation Mono}
+\fi
+
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={},
+            pdftitle={Луна-9},
+            colorlinks=true,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+
+\sloppy
+\begin{document}
+% \maketitle
+
+\input{manual-body.tex}
+\end{document}

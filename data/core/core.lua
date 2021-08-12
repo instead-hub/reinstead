@@ -1,5 +1,5 @@
 local VERSION='0.1'
-local conf = require "config"
+conf = require "config"
 
 math.round = function(num, n)
 	local m = 10 ^ (n or 0)
@@ -73,8 +73,8 @@ local function input_history(input)
 	if #history > history_len then
 		table.remove(history, #history)
 	end
-	input_detach()
-	mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
+	-- input_detach()
+	-- mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
 end
 
 local function input_line(chars)

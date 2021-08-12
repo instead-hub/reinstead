@@ -95,5 +95,7 @@ std.mod_start(function()
 		mp.autocompl = false
 		mp.autohelp = false
 		mp.compare_len = 3
+		local _, v = re_eval 'return conf.prompt'
+		mp.prompt = v
 	end
 end)
