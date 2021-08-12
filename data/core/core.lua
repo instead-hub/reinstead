@@ -359,7 +359,7 @@ end
 local DIRECTORY = false
 
 local function info()
-	return "<c><b>RE:INSTEAD V"..VERSION.." by Peter Kosyh (2021)</b>\n\n".."<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
+	return "<c><b>RE:INSTEAD V"..VERSION.." by Peter Kosyh (2021)</b>\n".."<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
 end
 
 function core.init()
