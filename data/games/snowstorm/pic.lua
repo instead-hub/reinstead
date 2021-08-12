@@ -24,7 +24,7 @@ J.S. Bach: Partia No.2 - Allemande // Scott Slapin^^
 {$fmt em|Движок:}^
 INSTEAD3: МЕТАПАРСЕР3 // Пётр Косых^^
 
-http://instead.syscall.ru^^
+http://instead.hugeping.ru^^
 
 {$fmt em|Альфа тестирование:}^
 techniX^

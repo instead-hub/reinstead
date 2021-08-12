@@ -1904,7 +1904,7 @@ local titles = {
 	{"INSTEAD3"},
 	{"МЕТАПАРСЕР3"},
 	{ };
-	{"http://instead.syscall.ru"},
+	{"http://instead.hugeping.ru"},
 	{ };
 	{"Альфа тестирование:"},
 	{"Irremann"},

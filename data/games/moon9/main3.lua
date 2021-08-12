@@ -827,7 +827,7 @@ cutscene {
 {$link|http://instead-games.ru}^
 {$link|https://instead.itch.io}^^
 А если хотите написать свою историю, добро пожаловать на:^
-{$link|https://instead3.syscall.ru}^^
+{$link|https://instead.hugeping.ru}^^
 {$fmt b|КОНЕЦ}^^
 {@ walk галерея|Галерея}
 ]];
