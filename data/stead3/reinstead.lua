@@ -92,6 +92,12 @@ std.mod_start(function()
 			"#MetaLoad",
 			"*:MetaLoad",
 		}, mp)
+		std.rawset(mp, 'show_prompt', function(self, inp)
+			if mp:autoplay_pending() then
+				pn(fmt.b(self.prompt .. inp))
+				return true
+			end
+		end)
 		mp.autocompl = false
 		mp.autohelp = false
 		mp.compare_len = 3

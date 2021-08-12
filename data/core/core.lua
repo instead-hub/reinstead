@@ -73,8 +73,8 @@ local function input_history(input)
 	if #history > history_len then
 		table.remove(history, #history)
 	end
-	-- input_detach()
-	-- mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
+	input_detach()
+	mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
 end
 
 local function input_line(chars)
@@ -357,6 +357,11 @@ local function dir_list(dir)
 end
 
 local DIRECTORY = false
+
+local function info()
+	return "<c><b>RE:INSTEAD V"..VERSION.." by Peter Kosyh (2021)</b>\n\n".."<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
+end
+
 function core.init()
 	local skip
 	gfx.icon(icon)
@@ -405,8 +410,7 @@ function core.init()
 	if GAME then
 		instead_start(GAME, conf.autoload and (instead_savepath()..'/autosave'))
 	elseif not DIRECTORY then
-		mwin:set("<b>INSTEAD Lite V"..VERSION.." by Peter Kosyh (2021)</b>\n\n")
-		mwin:add("<i>Platform: "..PLATFORM.." / ".._VERSION.."</i>\n\n")
+		mwin:set(info())
 		mwin:add(string.format("<b>Usage:</b>\n<w:    >%s \\<game> [-debug] [-scale \\<f>]", EXEFILE))
 		mwin:add('\nLook into "'..DATADIR..'/core/config.lua" for cusomization.')
 		mwin:add('\n<b>Press ESC to exit.</b>')
@@ -481,6 +485,9 @@ function core.run()
 						v = ''
 					elseif input == '/quit' then
 						break
+					elseif input == '/info' then
+						v = info()
+						r = true
 					else
 						r, v = instead.cmd(input:sub(2))
 						r = true
