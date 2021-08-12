@@ -192,9 +192,9 @@ local function instead_start(game, load)
 		mwin:set(string.format("Trying: %q", game)..'\n'..e)
 		return
 	end
-	r = system.mkdir"saves"
+	r = system.mkdir(instead_savepath())
 	if not r then
-		mwin:set("Can't create "..game.."/saves/ dir.")
+		mwin:set("Can't create "..game..instead_savepath().." dir.")
 		return
 	end
 
@@ -240,8 +240,23 @@ function instead_clear()
 	cleared = true
 end
 
+function instead_savepath()
+	if not GAME then return "" end
+	if system.mkdir("./saves") then
+		return "./saves"
+	end
+	local g = GAME:gsub("^.*[/\\]([^/\\]+)$", "%1")
+	local h = os.getenv('HOME') or os.getenv('home')
+	if h and
+		system.mkdir(h.."/.reinstead") and
+		system.mkdir(h.."/.reinstead/saves") then
+		return h.."/.reinstead/saves/"..g
+	end
+	return "./saves"
+end
+
 local function save_path(w)
-	return "saves/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
+	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
 
 local function instead_save(w)
@@ -388,7 +403,7 @@ function core.init()
 	end
 
 	if GAME then
-		instead_start(GAME, conf.autoload and 'saves/autosave')
+		instead_start(GAME, conf.autoload and (instead_savepath()..'/autosave'))
 	elseif not DIRECTORY then
 		mwin:set("<b>INSTEAD Lite V"..VERSION.." by Peter Kosyh (2021)</b>\n\n")
 		mwin:add("<i>Platform: "..PLATFORM.." / ".._VERSION.."</i>\n\n")
@@ -482,7 +497,7 @@ function core.run()
 						r = true
 					else
 						GAME = GAMES[n].path
-						instead_start(GAMES[n].path, conf.autoload and 'saves/autosave')
+						instead_start(GAMES[n].path, conf.autoload and (instead_savepath()..'/autosave'))
 						r = 'skip'
 						v = false
 					end
@@ -595,7 +610,7 @@ function core.run()
 		end
 		if need_restart then
 			if conf.autoload then
-				os.remove 'saves/autosave'
+				os.remove (instead_savepath()..'/autosave')
 			end
 			instead_done()
 			if GAME and not DIRECTORY then

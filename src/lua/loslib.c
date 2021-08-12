@@ -165,7 +165,7 @@ static int os_rename (lua_State *L) {
   return luaL_fileresult(L, rename(fromname, toname) == 0, NULL);
 }
 
-
+#if 0
 static int os_tmpname (lua_State *L) {
   char buff[LUA_TMPNAMBUFSIZE];
   int err;
@@ -175,7 +175,7 @@ static int os_tmpname (lua_State *L) {
   lua_pushstring(L, buff);
   return 1;
 }
-
+#endif
 
 static int os_getenv (lua_State *L) {
   lua_pushstring(L, getenv(luaL_checkstring(L, 1)));  /* if NULL push nil */
@@ -415,7 +415,7 @@ static const luaL_Reg syslib[] = {
   {"rename",    os_rename},
   {"setlocale", os_setlocale},
   {"time",      os_time},
-  {"tmpname",   os_tmpname},
+/*  {"tmpname",   os_tmpname}, */
   {NULL, NULL}
 };
 

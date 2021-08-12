@@ -18,8 +18,12 @@ instead.music_callback = function() end
 instead.restart = function()
 	re_eval 'need_restart = true'
 end
-instead.menu = instead_menu
-instead.savepath = function() return "./saves/" end
+
+instead.savepath = function()
+	local r, v = re_eval 'return instead_savepath()'
+	return v
+end
+instead_savepath = instead.savepath
 
 std.savepath = instead.savepath
 function iface:em(str)
