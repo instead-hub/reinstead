@@ -1,7 +1,7 @@
 return {
 	prompt = '> ',
 	title = "RE:INSTEAD",
-	fsize = 14,
+	fsize = 16,
 	bg = { 0xff, 0xff, 0xe8, 0xff },
 	fg = { 0, 0, 0, 0xff },
 	cursor_fg = { 0, 0, 0, 0xff },
