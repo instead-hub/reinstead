@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=RE:INSTEAD
+Comment=Simple text adventures
+Exec=__prefix__/bin/reinstead
+Icon=reinstead
+Terminal=false
+Type=Application
+Categories=Game

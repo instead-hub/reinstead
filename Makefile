@@ -13,6 +13,16 @@ install: reinstead
 	install -d -m 0755 $(DESTDIR)$(PREFIX)/share/reinstead
 	install -m 0755 reinstead $(DESTDIR)$(PREFIX)/bin
 	cp -r data/* $(DESTDIR)$(PREFIX)/share/reinstead
+	cat contrib/reinstead.desktop.in | sed -e 's|__prefix__|$(PREFIX)|' > reinstead.desktop
+	desktop-file-install --dir=$(DESTDIR)$(PREFIX)/share/applications reinstead.desktop
+	install -d -m 0755 $(DESTDIR)$(PREFIX)/share/pixmaps/
+	install -m 0644 contrib/reinstead.png $(DESTDIR)$(PREFIX)/share/pixmaps/
+
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/reinstead
+	rm -rf $(DESTDIR)$(PREFIX)/share/reinstead
+	rm -f $(DESTDIR)$(PREFIX)/share/applications/reinstead.desktop
+	rm -f $(DESTDIR)$(PREFIX)/share/pixmaps/reinstead.png
 endif
 
 CFILES= \
