@@ -188,9 +188,13 @@ again:
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "return");
 				return 2;
+			case Ketb:
+				lua_pushstring(L, "keydown");
+				lua_pushstring(L, "Ketb");
+				return 2;				
 			case Knack:
 				lua_pushstring(L, "keydown");
-				lua_pushstring(L, "kill");
+				lua_pushstring(L, "Knack");
 				return 2;
 			case Ksoh:
 				lua_pushstring(L, "keydown");

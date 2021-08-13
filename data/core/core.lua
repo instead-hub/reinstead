@@ -499,7 +499,7 @@ function core.run()
 				else
 					system.window_mode 'normal'
 				end
-			elseif control and v == 'w' then
+			elseif (control and v == 'w') or v == 'Ketb' then
 				input = input:gsub("[ \t]+$", "")
 				local t = utf.chars(input)
 				local sp = 1
@@ -623,7 +623,7 @@ function core.run()
 			elseif v == 'e' and control or v == 'end' then
 				input_pos = #utf.chars(input) + 1
 				input_attach(input, true)
-			elseif ((v == 'k' or v == 'u') and control) or v == 'kill' then
+			elseif ((v == 'k' or v == 'u') and control) or v == 'Knack' then
 				input = ''
 				input_attach(input)
 			elseif (v == 'pagedown' or (v == 'n' and control)) and
