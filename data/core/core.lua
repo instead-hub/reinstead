@@ -213,6 +213,9 @@ local function instead_start(game, load)
 	if not load then
 		r, e = instead.cmd"look"
 	end
+	if instead.error() then
+		e = e.. '\n'.. instead.error("")
+	end
 	if r then
 		input_detach()
 		if icon then
@@ -256,6 +259,7 @@ function instead_savepath()
 end
 
 local function save_path(w)
+	w = w and w:gsub("^[ \t]+", ""):gsub("[ \t]+$", "")
 	if not w or w == "" then w = 'autosave' end
 	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
