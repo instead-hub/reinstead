@@ -1,6 +1,6 @@
 local VERSION='0.1'
 conf = require "config"
-
+local gameinfo = {}
 math.round = function(num, n)
 	local m = 10 ^ (n or 0)
 	return math.floor(num * m + 0.5) / m
@@ -157,29 +157,39 @@ local function instead_icon(dirpath, norm)
 	return icon
 end
 
-local function instead_name(game)
+local function basename(p)
+		p = p:gsub("^.*[/\\]([^/\\]+)$", "%1")
+		return p
+end
+
+local function game_tag(name, l)
+	local tag
+	if l:find("^[ \t]*--[ \t]*%$"..name..":") then
+		local _, e = l:find("$"..name..":", 1, true)
+		tag = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", "")
+	end
+	return tag
+end
+
+local function instead_tags(game)
+	gameinfo = { }
 	local author
 	local f = io.open(game..'/main3.lua', "r")
 	if not f then
-		return game
+		gameinfo.name = game
+		return
 	end
 	local n = 16
 	for l in f:lines() do
 		n = n - 1
 		if n < 0 then break end
-		if l:find("^[ \t]*--[ \t]*%$Name:") then
-			local _, e = l:find("$Name:", 1, true)
-			game = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", "")
-		elseif l:find("^[ \t]*--[ \t]*%$Author:") then
-			local _, e = l:find("$Author:", 1, true)
-			author = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", "")
-		end
+		gameinfo.name = gameinfo.name or game_tag("Name", l)
+		gameinfo.author = gameinfo.author or game_tag("Author", l)
+		gameinfo.version = gameinfo.version or game_tag("Version", l)
+		gameinfo.info = gameinfo.info or game_tag("Info", l)
 	end
 	f:close()
-	if author and conf.dir_auth_info then
-		return game .. ' / '..author
-	end
-	return game
+	gameinfo.name = gameinfo.name or basename(game)
 end
 
 local parser_mode = false
@@ -193,6 +203,7 @@ local function instead_start(game, load)
 	if conf.show_icons then
 		icon = instead_icon(game, true)
 	end
+	instead_tags(game)
 	mwin:set(false)
 	local r, e = instead.init(game)
 	if not r then
@@ -204,8 +215,7 @@ local function instead_start(game, load)
 		mwin:set("Can't create "..game..instead_savepath().." dir.")
 		return
 	end
-
-	system.title(instead_name(game))
+	system.title(gameinfo.name)
 	gfx.icon(gfx.new 'icon.png')
 
 	if load then
@@ -255,7 +265,7 @@ function instead_savepath()
 	if system.mkdir("./saves") then
 		return "./saves"
 	end
-	local g = GAME:gsub("^.*[/\\]([^/\\]+)$", "%1")
+	local g = basename(GAME)
 	local h = os.getenv('HOME') or os.getenv('home')
 	if h and
 		system.mkdir(h.."/.reinstead") and
@@ -360,7 +370,8 @@ local function dir_list(dir)
 		local p = dirpath .. '/main3.lua'
 		local f = io.open(p, 'r')
 		if f then
-			local name = instead_name(dirpath)
+			instead_tags(dirpath)
+			local name = gameinfo.name
 			if name == dirpath then name = v end
 			f:close()
 			table.insert(GAMES, { path = dirpath, name = name })
@@ -382,6 +393,13 @@ end
 local DIRECTORY = false
 
 local function info()
+	if GAME then
+		local t = gameinfo.name
+		if gameinfo.author then t = t .." / "..gameinfo.author end
+		if gameinfo.version then t = t.."\nVersion:"..gameinfo.version end
+		if gameinfo.info then t = t .. "\n"..gameinfo.info end
+		return t
+	end
 	return "<c><b>RE:INSTEAD V"..VERSION.." by Peter Kosyh (2021)</b>\n".."<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
 end
 
