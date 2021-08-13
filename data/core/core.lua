@@ -499,6 +499,16 @@ function core.run()
 				else
 					system.window_mode 'normal'
 				end
+			elseif control and v == 'w' then
+				input = input:gsub("[ \t]+$", "")
+				local t = utf.chars(input)
+				local sp = 1
+				for k = #t, 1, -1 do
+					if t[k] == ' ' then sp = k break end
+				end
+				input = ''
+				for k = 1, sp - 1 do input = input .. t[k] end
+				input_attach(input)
 			elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
 				local oh = mwin.lay.realh
 				local r, v
