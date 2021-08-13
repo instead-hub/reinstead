@@ -26,7 +26,7 @@ $ ./reinstead
 
 ## With luajit
 
-Try simple make-luajit.sh script. 
+Try simple make-luajit.sh script.
 
 ```
 $ ./make-luajit.sh
@@ -65,4 +65,12 @@ $ make PREFIX=/usr/local DESTDIR=/ install
 ```
 $ mk
 $ reinstead
+```
+
+# Windows
+
+Use binary releases or install mingw and try:
+
+```
+$ ./make-win.sh
 ```
