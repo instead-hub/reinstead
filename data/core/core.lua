@@ -158,20 +158,27 @@ local function instead_icon(dirpath, norm)
 end
 
 local function instead_name(game)
+	local author
 	local f = io.open(game..'/main3.lua', "r")
 	if not f then
 		return game
 	end
-	local n = 100
+	local n = 16
 	for l in f:lines() do
 		n = n - 1
 		if n < 0 then break end
 		if l:find("^[ \t]*--[ \t]*%$Name:") then
 			local _, e = l:find("$Name:", 1, true)
 			game = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", "")
+		elseif l:find("^[ \t]*--[ \t]*%$Author:") then
+			local _, e = l:find("$Author:", 1, true)
+			author = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", "")
 		end
 	end
 	f:close()
+	if author and conf.dir_auth_info then
+		return game .. ' / '..author
+	end
 	return game
 end
 
@@ -468,7 +475,11 @@ function core.run()
 				break
 			elseif v == 'escape' then
 				input_detach()
-				mwin:add(conf.short_help)
+				if input ~= '' then
+					input = ''
+				else
+					mwin:add(conf.short_help)
+				end
 				input_attach(input)
 				dirty = true
 			elseif v == 'backspace' then

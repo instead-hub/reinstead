@@ -88,6 +88,7 @@ function lay:line_align(l, f)
 	table.insert(l, { x = 0 })
 	for k, w in ipairs(l) do
 		if len > 0 and w.x <= x then
+			x = w.x
 			w = l[k-1]
 			local d = (self.w - w.x - w.w)
 			if f == 'center' then
@@ -98,8 +99,9 @@ function lay:line_align(l, f)
 				w.x = w.x + d
 			end
 			len = 0
+		else
+			x = w.x
 		end
-		x = w.x
 		len = len + 1
 	end
 	table.remove(l, #l)

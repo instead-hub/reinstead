@@ -17,13 +17,14 @@ return {
 	scrollw = 11,
 	autostart = false, -- add path here to autorun game
 	directory = './games', -- set path of the games directory to browse
+	dir_auth_info = false, -- show authors?
 	dir_title = false, -- '<b>Select game</b>',
 	scroll_inverse = false,
 	show_icons = true,
 	scale = true, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
 	short_help = "<c>***</c>\n/quit - exit\n/load - load\n/save - save\n/restart - restart\n/info - info\n\n",
-	note = '<c>https://parser.hugeping.ru</c>'
+	note = '<c>https://parser.hugeping.ru</c>',
 --	autoload = true,
 --	debug = true,
 }
