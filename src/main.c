@@ -45,6 +45,14 @@ reopen_stderr(const char *fname)
 		exit(1);
 	}
 }
+static void
+reopen_stdout(const char *fname)
+{
+	if (*fname && freopen(fname, "w", stdout) != stdout) {
+		fprintf(stderr, "Error opening '%s': %s\n", fname, strerror(errno));
+		exit(1);
+	}
+}
 #endif
 
 int
@@ -105,6 +113,7 @@ main(int argc, char **argv)
 #if defined(_WIN32) || defined(PLAN9)
 	snprintf(base, sizeof(base), "%s/%s", exepath, "errors.txt");
 	reopen_stderr(base);
+	reopen_stdout(base);
 #endif
 	free(exepath);
 

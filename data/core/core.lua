@@ -527,6 +527,9 @@ function core.run()
 				if not r then
 					r, v = instead.cmd(string.format("act %s", input))
 				end
+				if instead.error() then
+					v = v ..'\n'.. instead.error("")
+				end
 				if not parser_mode and not cmd_mode then
 					local _, w = instead.cmd "way"
 					v = v .. '\n'

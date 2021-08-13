@@ -138,12 +138,24 @@ standalone(lua_State *L)
 	return 0;
 }
 
+static int
+error(lua_State *L)
+{
+	const char *msg = luaL_optstring(L, 1, NULL);
+	lua_pushstring(L, instead_err());
+	if (msg) {
+		instead_err_msg(msg[0]?msg:NULL);
+	}
+	return 1;
+}
+
 static const luaL_Reg
 instead_funcs[] = {
 	{ "init", init },
 	{ "done", done },
 	{ "cmd", cmd },
 	{ "debug", debug },
+	{ "error", error },
 	{ "standalone", standalone },
 	{ NULL, NULL },
 };
