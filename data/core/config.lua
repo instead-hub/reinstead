@@ -22,7 +22,7 @@ return {
 	show_icons = true,
 	scale = true, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
-	short_help = "<c>***</c>\n/quit - exit\n/restart - restart\n/info - info\n\n",
+	short_help = "<c>***</c>\n/quit - exit\n/load - load\n/save - save\n/restart - restart\n/info - info\n\n",
 	note = '<c>https://parser.hugeping.ru</c>'
 --	autoload = true,
 --	debug = true,

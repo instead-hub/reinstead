@@ -256,12 +256,19 @@ function instead_savepath()
 end
 
 local function save_path(w)
+	if not w or w == "" then w = 'autosave' end
 	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
 
 local function instead_save(w)
+	need_save = false
 	w = save_path(w)
-	local r, e = instead.cmd("save "..w)
+	local r, e
+	if not GAME then
+		r, e = true, "No game."
+	else
+		r, e = instead.cmd("save "..w)
+	end
 	input_detach()
 	e = output(e)
 	if not r then
@@ -275,11 +282,16 @@ local function instead_save(w)
 	end
 	mwin:add(e)
 	input_attach(input)
-	need_save = false
 end
 
 local function instead_load(w)
 	need_load = false
+	if not GAME then
+		input_detach()
+		mwin:add("No game.\n\n")
+		input_attach("")
+		return
+	end
 	w = save_path(w)
 	local f = io.open(w, "r")
 	if not f then
@@ -487,6 +499,12 @@ function core.run()
 						break
 					elseif input == '/info' then
 						v = info()
+						r = true
+					elseif input:find("/load", 1, true) == 1 then
+						need_load = input:sub(6)
+						r = true
+					elseif input:find("/save", 1, true) == 1 then
+						need_save = input:sub(6)
 						r = true
 					else
 						r, v = instead.cmd(input:sub(2))
