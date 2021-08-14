@@ -166,7 +166,7 @@ local function game_tag(name, l)
 	local tag
 	if l:find("^[ \t]*--[ \t]*%$"..name..":") then
 		local _, e = l:find("$"..name..":", 1, true)
-		tag = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", "")
+		tag = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", ""):gsub("\\n", "\n")
 	end
 	return tag
 end
@@ -396,7 +396,7 @@ local function info()
 	if GAME then
 		local t = gameinfo.name
 		if gameinfo.author then t = t .." / "..gameinfo.author end
-		if gameinfo.version then t = t.."\nVersion:"..gameinfo.version end
+		if gameinfo.version then t = t.."\nVersion: "..gameinfo.version end
 		if gameinfo.info then t = t .. "\n"..gameinfo.info end
 		return t
 	end
