@@ -396,7 +396,7 @@ local function info()
 	if GAME then
 		local t = gameinfo.name
 		if gameinfo.author then t = t .." / "..gameinfo.author end
-		if gameinfo.version then t = t.."\nVersion:"..gameinfo.version end
+		if gameinfo.version then t = t.."\nVersion: "..gameinfo.version end
 		if gameinfo.info then t = t .. "\n"..gameinfo.info end
 		return t
 	end
