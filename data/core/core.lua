@@ -166,7 +166,7 @@ local function game_tag(name, l)
 	local tag
 	if l:find("^[ \t]*--[ \t]*%$"..name..":") then
 		local _, e = l:find("$"..name..":", 1, true)
-		tag = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", "")
+		tag = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", ""):gsub("\\n", "\n")
 	end
 	return tag
 end
