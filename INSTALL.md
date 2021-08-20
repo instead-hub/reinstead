@@ -13,8 +13,8 @@ $ ./make-default.sh
 ```
 
 ```
-CFLAGS="`pkg-config --cflags sdl2` -Isrc/lua -Isrc/instead -Dunix"
-LDFLAGS="`pkg-config --libs sdl2` -lm"
+CFLAGS="`sdl2-config --cflags` -Isrc/lua -Isrc/instead -Dunix"
+LDFLAGS="`sdl2-config --libs` -lm"
 gcc -Wall -O3 src/*.c src/instead/*.c src/lua/*.c $CFLAGS $LDFLAGS -o reinstead
 ```
 
