@@ -1388,13 +1388,19 @@ font_width(font_t *font, const char *text)
 	int x = 0;
 	const char *p = text;
 	unsigned codepoint;
+	int xend = 0;
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		glyphset_t *set = get_glyphset(font, codepoint);
 		stbtt_bakedchar *g = &set->glyphs[codepoint & 0xff];
 		x += g->xadvance;
+		xend = g->xoff + g->x1 - g->x0;
+		if (xend > g->xadvance)
+			xend -= g->xadvance;
+		else
+			xend = 0;
 	}
-	return x;
+	return x + xend;
 }
 
 static font_t*
