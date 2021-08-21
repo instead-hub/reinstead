@@ -33,10 +33,12 @@ end
 local input_attached = false
 
 local function input_detach()
+	local l
 	if input_attached then
-		table.remove(mwin:lines(), #mwin:lines())
+		l = table.remove(mwin:lines(), #mwin:lines())
 	end
 	input_attached = false
+	return l
 end
 
 local history = { }
@@ -98,10 +100,11 @@ local function input_line(chars)
 		end
 	end
 	mwin:resize(mwin.w, mwin.h, n)
+	return l
 end
 
 local function input_attach(input, edit)
-	input_detach()
+	local o = input_detach()
 	local chars = utf.chars(input)
 	if not edit then
 		if not chars[1] then
@@ -110,9 +113,10 @@ local function input_attach(input, edit)
 			input_pos = #chars + 1
 		end
 	end
-	input_line(chars)
+	local l = input_line(chars)
 	input_attached = true
-	if not mwin:scroll(mwin.lay.realh) then
+	l = o and (l.h == o.h)
+	if not mwin:scroll(mwin.lay.realh) and l then
 		mwin:render_line(gfx.win(), #mwin:lines())
 		return false
 	else
@@ -526,7 +530,7 @@ function core.run()
 				end
 				input = ''
 				for k = 1, sp - 1 do input = input .. t[k] end
-				input_attach(input)
+				dirty = input_attach(input)
 			elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
 				local oh = mwin.lay.realh
 				local r, v
@@ -627,23 +631,23 @@ function core.run()
 			elseif v == 'left' then
 				input_pos = input_pos - 1
 				if input_pos == 0 then input_pos = 1 end
-				input_attach(input, true)
+				dirty = input_attach(input, true)
 			elseif v == 'right' then
 				input_pos = input_pos + 1
 				local n = #utf.chars(input)
 				if input_pos > n then
 					input_pos = n + 1
 				end
-				input_attach(input, true)
+				dirty = input_attach(input, true)
 			elseif v == 'a' and control or v == 'home' then
 				input_pos = 1
-				input_attach(input, true)
+				dirty = input_attach(input, true)
 			elseif v == 'e' and control or v == 'end' then
 				input_pos = #utf.chars(input) + 1
-				input_attach(input, true)
+				dirty = input_attach(input, true)
 			elseif ((v == 'k' or v == 'u') and control) or v == 'Knack' then
 				input = ''
-				input_attach(input)
+				dirty = input_attach(input)
 			elseif (v == 'pagedown' or (v == 'n' and control)) and
 				mwin:scroll(mwin.scrollh) then
 				dirty = true

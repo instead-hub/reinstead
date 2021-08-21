@@ -129,7 +129,7 @@ function lay:resize(width, height, linenr)
 			w.x = x
 			w.y = y
 			x = x + w.w + w.spw
-			if x - w.spw >= width then
+			if x - w.spw >= width and w.w > 0 then
 				x = 0
 				y = y + h
 				if w.x > 0 then -- not first word
@@ -158,23 +158,30 @@ end
 
 function lay:render_word(dst, w, xoff, yoff, diff)
 	local limit
+	local ww = w.w
 	if w.xoff then
 		xoff = xoff + w.xoff
+	end
+	if w.x + ww >= self.w then
+		ww = self.w - w.x
+		if ww <= 0 then
+			return
+		end
 	end
 	if w.y - diff >= 0 then
 		if w.y + w.h - diff >= self.h then
 			limit = true
 			local ydiff = math.floor(self.h - (w.y - diff))
 			if ydiff > 0 then
-				w.img:blend(0, 0, w.w, ydiff,
+				w.img:blend(0, 0, ww, ydiff,
 					    dst, xoff + w.x, yoff + w.y - diff)
 			end
 		else
-			w.img:blend(dst, xoff + w.x, yoff + w.y - diff)
+			w.img:blend(0, 0, ww, w.h, dst, xoff + w.x, yoff + w.y - diff)
 		end
 	elseif w.y + w.h - diff >= 0 then
 		local ydiff = math.floor(diff - w.y)
-		w.img:blend(0, ydiff, w.w, w.h - ydiff,
+		w.img:blend(0, ydiff, ww, w.h - ydiff,
 			    dst, xoff + w.x, yoff)
 	end
 	return limit
