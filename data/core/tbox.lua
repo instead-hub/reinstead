@@ -79,10 +79,16 @@ function tbox:set(text)
 	self:resize(self.w, self.h)
 end
 
-function tbox:add(text)
+function tbox:add(text, cache)
+	if cache == false then
+		self.lay.nocache = true
+	end
 	local n = #self.lay.lines
 	self.lay:add(text)
 	self:resize(self.w, self.h, n)
+	if cache == false then
+		self.lay.nocache = false
+	end
 end
 
 function tbox:add_img(img)
@@ -118,6 +124,11 @@ function tbox:render_line(dst, n, xoff, yoff)
 	yoff = yoff or 0
 	self.lay:render_line(dst, n, xoff + self.sw + self.pad, yoff + self.pad, self.off)
 end
+
+function tbox:texth()
+	return self.lay.realh
+end
+
 function tbox:lines()
 	return self.lay.lines
 end

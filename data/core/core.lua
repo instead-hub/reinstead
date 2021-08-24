@@ -85,11 +85,9 @@ local function input_line(chars)
 	for i=1,input_pos-1 do pre = pre .. chars[i] end
 	local post = ''
 	for i = input_pos,#chars do post = post .. chars[i] end
-	mwin.lay.nocache = true
-	mwin:add(input_prompt..fmt_esc(pre)..'<w:\1>'..fmt_esc(post))
-	mwin.lay.nocache = false
+	mwin:add(input_prompt..fmt_esc(pre)..'<w:\1>'..fmt_esc(post), false)
 	local l = mwin:lines()[n + 1]
-	for _, v in ipairs(l) do
+	for _, v in ipairs(l or {}) do
 		if v.t == '\1' then
 			v.w = 0
 			v.img = cursor
@@ -115,8 +113,8 @@ local function input_attach(input, edit)
 	end
 	local l = input_line(chars)
 	input_attached = true
-	l = o and (l.h == o.h)
-	if not mwin:scroll(mwin.lay.realh) and l then
+	l = o and l and (l.h == o.h)
+	if not mwin:scroll(mwin:texth()) and l then
 		mwin:render_line(gfx.win(), #mwin:lines())
 		return false
 	else
@@ -442,7 +440,7 @@ function core.init()
 	local win = gfx.win()
 	mwin = tbox:new()
 	mwin:resize(win:size())
-	win:clear(mwin.lay.bg)
+	win:clear(conf.bg)
 	gfx.flip()
 
 	create_cursor()
@@ -532,7 +530,7 @@ function core.run()
 				for k = 1, sp - 1 do input = input .. t[k] end
 				dirty = input_attach(input)
 			elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
-				local oh = mwin.lay.realh
+				local oh = mwin:texth()
 				local r, v
 				local cmd_mode
 				input = input:gsub("^ +", ""):gsub(" +$", "")
@@ -660,9 +658,10 @@ function core.run()
 				dirty = true
 			else
 				local t = utf.chars(input)
+				local app = utf.chars(v)
 				table.insert(t, input_pos, v)
 				input = table.concat(t, '')
-				input_pos = input_pos + 1
+				input_pos = input_pos + #app
 				dirty = input_attach(input, true)
 			end
 		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
