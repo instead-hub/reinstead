@@ -673,6 +673,9 @@ function core.run()
 			mwin:scroll(0)
 			dirty = true
 		elseif e == 'mousewheel' then
+			if conf.scroll_inverse then
+				v = -v
+			end
 			mwin:scroll(-v *mwin.lay.fsize)
 			dirty = true
 		end

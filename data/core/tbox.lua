@@ -59,9 +59,6 @@ function tbox:mouse(e, b, x, y)
 end
 
 function tbox:scroll(scroll)
-	if conf.scroll_inverse then
-		scroll = -scroll
-	end
 	local ooff = self.off
 	scroll = scroll or 1
 	local l = self.lay
