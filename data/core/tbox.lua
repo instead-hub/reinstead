@@ -27,6 +27,7 @@ function tbox:mouse(e, b, x, y)
 	local off
 	if e == 'mouseup' then
 		self.scroll_start = false
+		self.touch_start = false
 		return
 	end
 	if e == 'mousemotion' then
@@ -46,6 +47,13 @@ function tbox:mouse(e, b, x, y)
 			off = (y - self.scroll_start)* self.lay.realh / self.h
 		else
 			return
+		end
+	elseif conf.scroll_drag and (self.touch_start or (e == 'mousedown' and b == 'left'
+		and x >= self.sw and y >=0 and x < self.w and y < self.h)) then -- touch
+		if self.touch_start then
+			off = (self.touch_start - y)
+		else
+			self.touch_start = self.off + y
 		end
 	else
 		return
