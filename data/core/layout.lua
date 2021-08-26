@@ -276,6 +276,20 @@ function lay:add_img(img)
 	table.insert(self.lines, l)
 end
 
+function lay:reset()
+	for _, l in ipairs(self.lines) do
+		for _, w in ipairs(l) do
+			if w.style then
+				local fn = self.fonts[w.style]
+				w.img = fn:text(w.t, self.fg)
+				local ww, hh = w.img:size()
+				w.w = ww
+				w.h = hh
+			end
+		end
+	end
+end
+
 function lay:add(text)
 	local t
 	local l = 1
@@ -283,7 +297,7 @@ function lay:add(text)
 	local fstyle = 'regular'
 	local fn = self.fonts[fstyle]
 	fn.nocache = self.nocache
-	local style = { bold = 0, italic = 0, bold_italic = 0, center = 0, right = 0 }
+	local style = { bold = 0, italic = 0, bold_italic = 0, center = 0, right = 0, style = 'regular' }
 	local tags = {
 		b = 'bold',
 		i = 'italic',
@@ -313,21 +327,22 @@ function lay:add(text)
 			end
 			fn.nocache = false
 			if style.bold > 0 and style.italic > 0 then
-				fn = self.fonts['bold-italic']
+				style.style = 'bold-italic'
 			elseif style.bold > 0 then
-				fn = self.fonts.bold
+				style.style = 'bold'
 			elseif style.italic > 0 then
-				fn = self.fonts.italic
+				style.style = 'italic'
 			else
-				fn = self.fonts.regular
+				style.style = 'regular'
 			end
+			fn = self.fonts[style.style]
 			fn.nocache = self.nocache
 			if t:find("w:", 1, true) then
 				t = t:sub(3)
 				local img = fn:text(t, self.fg)
 				if img then
 					local w, h = img:size()
-					table.insert(line, { img = img, w = w, h = h, spw = 0, t = t })
+					table.insert(line, { img = img, w = w, h = h, spw = 0, t = t, style = style.style })
 				end
 			elseif t:find("g:", 1, true) then
 				t = t:sub(3)
@@ -351,7 +366,7 @@ function lay:add(text)
 			t:gsub("[^ \t]+", function(c)
 					local img = fn:text(c, self.fg)
 					local w, h = img:size()
-					table.insert(line, { img = img, w = w, h = h, spw = fn.spw })
+					table.insert(line, { img = img, w = w, h = h, spw = fn.spw, t = c, style = style.style })
 			end)
 			if not t:find(" $") then
 				line[#line].spw = 0

@@ -520,6 +520,28 @@ function core.run()
 				else
 					system.window_mode 'normal'
 				end
+			elseif (control and (v == '=' or v == '-')) then
+				if v == '=' then
+					conf.fsize = conf.fsize + math.ceil(SCALE)
+				else
+					conf.fsize = conf.fsize - math.ceil(SCALE)
+				end
+				if conf.fsize < 10*SCALE then
+					conf.fsize = math.round(10*SCALE)
+				end
+				if conf.fsize > 64*SCALE then
+					conf.fsize = math.round(64*SCALE)
+				end
+				local lines = mwin:lines()
+				local win = gfx.win()
+				mwin = tbox:new()
+				mwin.lay.lines = lines
+				mwin:reset()
+				mwin:resize(win:size())
+				input_detach()
+				create_cursor()
+				input_attach(input)
+				dirty = true
 			elseif (control and v == 'w') or v == 'Ketb' then
 				input = input:gsub("[ \t]+$", "")
 				local t = utf.chars(input)
@@ -654,7 +676,7 @@ function core.run()
 				mwin:scroll(-mwin.scrollh) then
 				dirty = true
 			end
-		elseif e == 'text' then
+		elseif e == 'text' and not control and not alt then
 			if v == ' ' and mwin:scroll(mwin.scrollh) then
 				dirty = true
 			else

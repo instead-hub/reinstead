@@ -129,4 +129,9 @@ end
 function tbox:lines()
 	return self.lay.lines
 end
+
+function tbox:reset()
+	return self.lay:reset()
+end
+
 return tbox
