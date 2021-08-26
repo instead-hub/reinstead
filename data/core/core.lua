@@ -403,7 +403,7 @@ local function info()
 		if gameinfo.info then t = t .. "\n"..gameinfo.info end
 		return t
 	end
-	return "<c><b>RE:INSTEAD V"..VERSION.." by Peter Kosyh (2021)</b>\n".."<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
+	return "<c><b>RE:INSTEAD v"..VERSION.." by Peter Kosyh (2021)</b>\n".."<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
 end
 
 function core.init()
@@ -418,10 +418,26 @@ function core.init()
 			GAME = a
 		elseif a == "-debug" then
 			instead.debug(true)
+		elseif a == '-i' then
+			AUTOSCRIPT = ARGS[k+1] or "autoscript"
+			skip = true
+		elseif a == '-h' or a == '-help' then
+			print("RE:INSTEAD v"..VERSION)
+			print(string.format("Usage:\n\t%s [gamedir] [-debug] [-i <autoscript>] [-scale <f>]", EXEFILE))
+			os.exit(0)
 		elseif a == "-scale" then
 			SCALE = tonumber(ARGS[k+1] or "1.0")
 			skip = true
 		end
+	end
+	if AUTOSCRIPT then
+		local a, e = io.open(AUTOSCRIPT, "r")
+		if a then
+			print("Using input file: " .. AUTOSCRIPT)
+		else
+			print("Input file: " .. e)
+		end
+		AUTOSCRIPT = a
 	end
 	if conf.debug then
 		instead.debug(true)
@@ -479,7 +495,21 @@ function core.run()
 				last_render = system.time()
 			end
 		end
-		local e, v, a, b = system.poll()
+		local e, v, a, b
+		v = AUTOSCRIPT and AUTOSCRIPT:read("*line")
+		if not v and AUTOSCRIPT then
+			AUTOSCRIPT:close()
+			AUTOSCRIPT = nil
+			gfx.flip()
+		end
+		if v then
+			input = v
+			e = 'keydown'
+			v = 'return'
+		else
+			e, v, a, b = system.poll()
+		end
+
 		if e == 'quit' then
 			break
 		end
