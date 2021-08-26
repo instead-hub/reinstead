@@ -495,21 +495,21 @@ function core.run()
 				last_render = system.time()
 			end
 		end
-		local e, v, a, b
-		v = AUTOSCRIPT and AUTOSCRIPT:read("*line")
-		if not v and AUTOSCRIPT then
-			AUTOSCRIPT:close()
-			AUTOSCRIPT = nil
-			gfx.flip()
+		local e, v, a, b, nv
+		e, v, a, b = system.poll()
+		if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
+			nv = AUTOSCRIPT and AUTOSCRIPT:read("*line")
+			if not nv and AUTOSCRIPT then
+				AUTOSCRIPT:close()
+				AUTOSCRIPT = nil
+				gfx.flip()
+			end		
+			if nv then
+				input = nv
+				e = 'keydown'
+				v = 'return'
+			end
 		end
-		if v then
-			input = v
-			e = 'keydown'
-			v = 'return'
-		else
-			e, v, a, b = system.poll()
-		end
-
 		if e == 'quit' then
 			break
 		end
@@ -550,8 +550,8 @@ function core.run()
 				else
 					system.window_mode 'normal'
 				end
-			elseif (control and (v == '=' or v == '-')) then
-				if v == '=' then
+			elseif (control and (v == '=' or v == '-')) or v == '++' or v == '--' then
+				if v == '=' or v == '++' then
 					conf.fsize = conf.fsize + math.ceil(SCALE)
 				else
 					conf.fsize = conf.fsize - math.ceil(SCALE)

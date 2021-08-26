@@ -184,6 +184,14 @@ again:
 		case Ekeyboard:
 			r = ev.kbdc;
 			switch (r) {
+			case 0x1d:
+				lua_pushstring(L, "keydown");
+				lua_pushstring(L, "++");
+				return 2;
+			case 0x0d:
+				lua_pushstring(L, "keydown");
+				lua_pushstring(L, "--");
+				return 2;				
 			case '\n':
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "return");
