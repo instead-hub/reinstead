@@ -333,7 +333,7 @@ local function create_cursor()
 	local h = mwin.lay.fonts.regular.h + math.ceil(SCALE * 2)
 	local w = math.floor(3 * SCALE);
 	if w < 3 then
-		w = 1
+		w = 3
 	elseif w % 3 ~= 0 then
 		if (w - 1) % 3 == 0 then
 			w = w - 1
