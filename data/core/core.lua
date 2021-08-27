@@ -533,7 +533,7 @@ function core.run()
 				end
 				input_attach(input)
 				dirty = true
-			elseif v == 'backspace' then
+			elseif v == 'backspace' or (control and v == 'h') then
 				local t = utf.chars(input)
 				if input_pos <= #t + 1 and input_pos > 1 then
 					table.remove(t, input_pos - 1)

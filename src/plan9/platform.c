@@ -191,7 +191,7 @@ again:
 			case 0x0d:
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "--");
-				return 2;				
+				return 2;
 			case '\n':
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "return");
@@ -199,7 +199,7 @@ again:
 			case Ketb:
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "Ketb");
-				return 2;				
+				return 2;
 			case Knack:
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "Knack");
