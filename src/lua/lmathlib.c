@@ -25,6 +25,12 @@
 #undef PI
 #define PI	(l_mathop(3.141592653589793238462643383279502884))
 
+#ifdef __ANDROID__
+double log2(double x)
+{
+	return log(x)/log(2);
+}
+#endif
 
 static int math_abs (lua_State *L) {
   if (lua_isinteger(L, 1)) {

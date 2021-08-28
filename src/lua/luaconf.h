@@ -650,14 +650,17 @@
 #endif
 #endif
 
-
 /*
 @@ lua_getlocaledecpoint gets the locale "radix character" (decimal point).
 ** Change that if you do not want to use C locales. (Code using this
 ** macro must include the header 'locale.h'.)
 */
 #if !defined(lua_getlocaledecpoint)
+#ifdef __ANDROID__
+#define lua_getlocaledecpoint()		('.')
+#else
 #define lua_getlocaledecpoint()		(localeconv()->decimal_point[0])
+#endif
 #endif
 
 
