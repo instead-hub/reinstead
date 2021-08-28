@@ -99,8 +99,11 @@ main(int argc, char **argv)
 	lua_pushstring(L, exepath);
 	lua_setglobal(L, "EXEFILE");
 
+#ifdef __ANDROID__
+	snprintf(base, sizeof(base), "%s", SDL_AndroidGetInternalStoragePath());
+#else
 	snprintf(base, sizeof(base), "%s/%s", dirname((char*)exepath), "data");
-
+#endif
 #ifdef DATADIR
 	lua_pushstring(L, DATADIR);
 	instead_lua_path(DATADIR);

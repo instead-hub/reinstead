@@ -9,6 +9,9 @@
 #else
 extern char *dirname(char *);
 #endif
+#ifdef __ANDROID__
+#include <SDL_system.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
