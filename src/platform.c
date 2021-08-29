@@ -341,6 +341,12 @@ top:
 		lua_pushstring(L, "text");
 		lua_pushstring(L, e.text.text);
 		return 2;
+#ifdef __ANDROID__
+	case SDL_TEXTEDITING:
+		lua_pushstring(L, "edit");
+		lua_pushstring(L, e.edit.text);
+		return 2;
+#endif
 	case SDL_MOUSEBUTTONDOWN:
 		if (e.button.button == 1) { SDL_CaptureMouse(1); }
 		lua_pushstring(L, "mousedown");

@@ -706,12 +706,15 @@ function core.run()
 				mwin:scroll(-mwin.scrollh) then
 				dirty = true
 			end
+		elseif e == 'edit' then
+			dirty = input_attach(input..v)
 		elseif e == 'text' and not control and not alt then
 			if v == ' ' and mwin:scroll(mwin.scrollh) then
 				dirty = true
 			else
 				local t = utf.chars(input)
 				local app = utf.chars(v)
+				if input_pos > #t then input_pos = #t + 1 end
 				table.insert(t, input_pos, v)
 				input = table.concat(t, '')
 				input_pos = input_pos + #app
