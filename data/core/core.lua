@@ -484,12 +484,11 @@ local fullscreen = false
 function core.run()
 	while true do
 		local start = system.time()
-		if not dirty then
+		if not dirty and not AUTOSCRIPT then
 			while not system.wait(5) do end
 		else
 			if system.time() - last_render > fps then
-				local win = gfx.win()
-				mwin:render(win)
+				mwin:render()
 				gfx.flip()
 				dirty = false
 				last_render = system.time()
@@ -720,8 +719,7 @@ function core.run()
 		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
 			dirty = mwin:mouse(e, v, a, b)
 		elseif e == 'exposed' or e == 'resized' then
-			local win = gfx.win()
-			local w, h = win:size()
+			local w, h = gfx.win():size()
 			mwin:resize(w, h)
 			mwin:scroll(0)
 			dirty = true
@@ -752,7 +750,9 @@ function core.run()
 		end
 		local elapsed = system.time() - start
 --		system.sleep(math.max(0, fps - elapsed))
-		system.wait(math.max(0, fps - elapsed))
+		if not AUTOSCRIPT then
+			system.wait(math.max(0, fps - elapsed))
+		end
 	end
 	if conf.autosave and GAME then
 		instead_save 'autosave'

@@ -2,6 +2,7 @@
 #include "external.h"
 #include "platform.h"
 
+static int destroyed = 0;
 static void
 tolow(char *p)
 {
@@ -12,7 +13,10 @@ tolow(char *p)
 	}
 }
 
-static SDL_Window *window;
+static SDL_Window *window = NULL;
+static SDL_Renderer *renderer = NULL;
+static SDL_Texture *texture = NULL;
+static SDL_RendererInfo renderer_info;
 
 double
 Time(void)
@@ -37,10 +41,38 @@ WindowTitle(const char *title)
 	SDL_SetWindowTitle(window, title);
 }
 
+/* SDL2 realization after 2.0.16 may sleep. BUG? */
+int
+SDL_WaitEventTo(int timeout)
+{
+	Uint32 expiration = 0;
+
+	if (timeout > 0)
+		expiration = SDL_GetTicks() + timeout;
+
+	for (;;) {
+		SDL_PumpEvents();
+		switch (SDL_PeepEvents(NULL, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT)) {
+		case -1:
+			return 0;
+		case 0:
+			if (timeout == 0)
+				return 0;
+			if (timeout > 0 && SDL_TICKS_PASSED(SDL_GetTicks(), expiration))
+				return 0;
+			SDL_Delay(10); /* 1/100 sec */
+			break;
+		default:
+			/* Has events */
+			return 1;
+		}
+	}
+}
+
 int
 WaitEvent(float n)
 {
-	return SDL_WaitEventTimeout(NULL, n * 1000);
+	return SDL_WaitEventTo((int)(n * 1000));
 }
 
 void
@@ -108,6 +140,10 @@ PlatformDone(void)
 {
 	if (winbuff)
 		SDL_FreeSurface(winbuff);
+	if (texture)
+		SDL_DestroyTexture(texture);
+	if (renderer)
+		SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }
@@ -123,12 +159,11 @@ WindowCreate(void)
 {
 	SDL_DisplayMode mode;
 	SDL_GetCurrentDisplayMode(0, &mode);
-	window = SDL_CreateWindow("",
-		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		mode.w * 0.5, mode.h * 0.8,
-		SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-	if (!window)
+	if (SDL_CreateWindowAndRenderer(mode.w * 0.5, mode.h * 0.8,
+		SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI, &window, &renderer))
 		return -1;
+	SDL_GetRendererInfo(renderer, &renderer_info);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 	return 0;
 }
 
@@ -158,26 +193,47 @@ GetExePath(const char *progname)
 void
 WindowResize(int w, int h)
 {
-	SDL_FreeSurface(winbuff);
+	if (winbuff)
+		SDL_FreeSurface(winbuff);
 	winbuff = NULL;
+	if (texture)
+		SDL_DestroyTexture(texture);
+	texture = NULL;
+	destroyed = 1;
 }
 
 void
 WindowUpdate(int x, int y, int w, int h)
 {
-	SDL_Rect r;
-	if (!winbuff)
+	SDL_Rect rect;
+	int pitch, psize;
+	unsigned char *pixels;
+	if (!winbuff || !texture)
 		return;
+	pitch = winbuff->pitch;
+	psize = winbuff->format->BytesPerPixel;
+	pixels = winbuff->pixels;
+	if (renderer_info.flags & SDL_RENDERER_ACCELERATED)
+	    w = -1;
 	if (w > 0 && h > 0) {
-		r.x = x;
-		r.y = y;
-		r.w = w;
-		r.h = h;
-		SDL_BlitSurface(winbuff, &r, SDL_GetWindowSurface(window), &r);
+		rect.x = x;
+		rect.y = y;
+		rect.w = w;
+		rect.h = h;
+		pixels += pitch * y + x * psize;
+		SDL_UpdateTexture(texture, &rect, pixels, pitch);
+		SDL_RenderCopy(renderer, texture, &rect, &rect);
 	} else {
-		SDL_BlitSurface(winbuff, NULL, SDL_GetWindowSurface(window), NULL);
+		SDL_UpdateTexture(texture, NULL, pixels, pitch);
+		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		if (destroyed) { /* problem with double buffering */
+			SDL_RenderPresent(renderer);
+			SDL_UpdateTexture(texture, NULL, pixels, pitch);
+			SDL_RenderCopy(renderer, texture, NULL, NULL);
+		}
 	}
-	SDL_UpdateWindowSurface(window);
+	SDL_RenderPresent(renderer);
+	destroyed = 0;
 }
 
 void
@@ -200,20 +256,23 @@ Icon(unsigned char *ptr, int w, int h)
 unsigned char *
 WindowPixels(int *w, int *h)
 {
-	SDL_Surface *surf = SDL_GetWindowSurface(window);
-	if (!surf)
-		return NULL;
-	if (winbuff && (winbuff->w != surf->w || winbuff->h != surf->h)) {
+	SDL_GetWindowSize(window, w, h);
+	if (winbuff && (winbuff->w != *w || winbuff->h != *h)) {
 		SDL_FreeSurface(winbuff);
 		winbuff = NULL;
+		if (texture)
+			SDL_DestroyTexture(texture);
+		texture = NULL;
 	}
 	if (!winbuff)
-		winbuff = SDL_CreateRGBSurface(0, surf->w, surf->h, 32,
+		winbuff = SDL_CreateRGBSurface(0, *w, *h, 32,
 			0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 	if (!winbuff)
 		return NULL;
-	*w = surf->w;
-	*h = surf->h;
+	if (!texture)
+		texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888,
+			SDL_TEXTUREACCESS_STREAMING, *w, *h);
+
 	return (unsigned char*)winbuff->pixels;
 }
 
