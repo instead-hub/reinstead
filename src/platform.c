@@ -305,10 +305,15 @@ top:
 		return 0;
 
 	switch (e.type) {
+	case SDL_APP_DIDENTERBACKGROUND:
+		lua_pushstring(L, "save");
+		return 1;
 	case SDL_QUIT:
 		lua_pushstring(L, "quit");
 		return 1;
-
+	case SDL_APP_DIDENTERFOREGROUND:
+		lua_pushstring(L, "exposed");
+		return 1;
 	case SDL_WINDOWEVENT:
 		if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
 			lua_pushstring(L, "resized");

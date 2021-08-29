@@ -513,7 +513,11 @@ function core.run()
 		if e == 'quit' then
 			break
 		end
-
+		if e == 'save' then
+			if conf.autosave and GAME then
+				instead_save 'autosave'
+			end
+		end
 		if (e == 'keydown' or e == 'keyup') and v:find"alt" then
 			alt = (e == 'keydown')
 		end
