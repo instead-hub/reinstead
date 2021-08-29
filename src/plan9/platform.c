@@ -19,6 +19,17 @@
 static unsigned char *pixels = nil;
 static Image *windbuf = nil;
 
+void
+Log(const char *msg)
+{
+	printf("%s\n", msg);
+}
+
+void
+TextInput(void)
+{
+}
+
 static int resized = 0;
 
 void eresized(int new)

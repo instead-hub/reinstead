@@ -217,6 +217,20 @@ sys_readdir(lua_State *L)
 	return 1;
 }
 
+static int
+sys_input(lua_State *L)
+{
+	TextInput();
+	return 0;
+}
+
+static int
+sys_log(lua_State *L)
+{
+	const char *str = luaL_checkstring(L, 1);
+	Log(str);
+	return 0;
+}
 
 static const luaL_Reg
 sys_lib[] = {
@@ -233,6 +247,8 @@ sys_lib[] = {
 	{ "utf_sym", sys_utf_sym },
 	{ "readdir", sys_readdir },
 	{ "sleep", sys_sleep },
+	{ "input", sys_input },
+	{ "log", sys_log },
 	{ NULL, NULL }
 };
 

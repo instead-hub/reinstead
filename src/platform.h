@@ -27,5 +27,8 @@ extern const char *GetExePath(const char *progname);
 extern void Icon(unsigned char *ptr, int w, int h);
 
 extern int sys_poll(lua_State *L);
+extern void TextInput(void);
+
+extern void Log(const char *msg);
 
 #endif

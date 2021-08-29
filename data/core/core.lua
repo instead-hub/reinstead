@@ -112,7 +112,7 @@ local function input_attach(input, edit)
 		end
 	end
 	local l = input_line(chars)
-	input_attached = true
+	input_attached = l
 	l = o and l and (l.h == o.h)
 	if not mwin:scroll(mwin:texth()) and l then
 		mwin:render_line(gfx.win(), #mwin:lines())
@@ -475,6 +475,7 @@ function core.init()
 		mwin:add('\nLook into "'..DATADIR..'/core/config.lua" for cusomization.')
 		mwin:add('\n<b>Press ESC to exit.</b>')
 	end
+	dirty = true
 end
 
 local alt = false
@@ -717,6 +718,13 @@ function core.run()
 				dirty = input_attach(input, true)
 			end
 		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
+			if input_attached and e == 'mousedown' then
+				local x, y, w, h = mwin.sw + mwin.pad, input_attached.y - mwin.off + mwin.pad,
+					mwin.lay.w, input_attached.h
+				if v == 'left' and a >= x and a < x + w and b >= y and b < y + h then
+					system.input()
+				end
+			end
 			dirty = mwin:mouse(e, v, a, b)
 		elseif e == 'exposed' or e == 'resized' then
 			local w, h = gfx.win():size()

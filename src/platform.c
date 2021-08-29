@@ -2,6 +2,13 @@
 #include "external.h"
 #include "platform.h"
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#define LOG(s) do { __android_log_print(ANDROID_LOG_VERBOSE, "reinstead", "%s", s); } while(0)
+#else
+#define LOG(s) do { printf("%s", (s)); } while(0)
+#endif
+
 static int destroyed = 0;
 static void
 tolow(char *p)
@@ -17,6 +24,18 @@ static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *texture = NULL;
 static SDL_RendererInfo renderer_info;
+
+void
+Log(const char *msg)
+{
+	LOG(msg);
+}
+
+void
+TextInput(void)
+{
+	SDL_StartTextInput();
+}
 
 double
 Time(void)
@@ -263,6 +282,7 @@ WindowPixels(int *w, int *h)
 		if (texture)
 			SDL_DestroyTexture(texture);
 		texture = NULL;
+		destroyed = 1;
 	}
 	if (!winbuff)
 		winbuff = SDL_CreateRGBSurface(0, *w, *h, 32,
@@ -296,8 +316,8 @@ top:
 			lua_pushnumber(L, e.window.data2);
 			WindowResize(e.window.data1, e.window.data2);
 			return 3;
-		} else if (e.window.event == SDL_WINDOWEVENT_EXPOSED) {
-			//rencache_invalidate();
+		} else if (e.window.event == SDL_WINDOWEVENT_EXPOSED ||
+			e.window.event == SDL_WINDOWEVENT_RESTORED) {
 			lua_pushstring(L, "exposed");
 			return 1;
 		}
