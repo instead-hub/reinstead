@@ -299,6 +299,7 @@ local function instead_save(w)
 		e = "Error! "..w
 	else
 		local msg = ''
+		instead_clear()
 		if e ~= '' and type(e) == 'string' then
 			msg = '\n<i>'..e..'</i>'
 		end

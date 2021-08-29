@@ -313,6 +313,7 @@ top:
 		return 1;
 	case SDL_APP_DIDENTERFOREGROUND:
 		lua_pushstring(L, "exposed");
+		destroyed = 1;
 		return 1;
 	case SDL_WINDOWEVENT:
 		if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
