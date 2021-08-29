@@ -17,7 +17,7 @@ public static String copyDirorfileFromAssetManager(AssetManager asset_manager, S
 {
     
     String dest_dir_path = arg_destinationDir;
-    Log.e("hack", "External: " + dest_dir_path);
+    Log.e("reinstead", "External: " + dest_dir_path);
     File dest_dir = new File(dest_dir_path);
 
     createDir(dest_dir);
