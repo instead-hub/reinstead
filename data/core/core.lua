@@ -279,8 +279,8 @@ function instead_savepath()
 end
 
 local function save_path(w)
-	w = w and w:gsub("^[ \t]+", ""):gsub("[ \t]+$", "")
-	if not w or w == "" then w = 'autosave' end
+	w = w and w:gsub("^[ \t]+", ""):gsub("[ \t]+$", ""):gsub("\\","/")
+	if not w or w == "" then w = 'autosave' else w = basename(w) end
 	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
 
