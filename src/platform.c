@@ -244,10 +244,12 @@ WindowUpdate(int x, int y, int w, int h)
 		SDL_RenderCopy(renderer, texture, &rect, &rect);
 	} else {
 		SDL_UpdateTexture(texture, NULL, pixels, pitch);
+		SDL_RenderClear(renderer);
 		SDL_RenderCopy(renderer, texture, NULL, NULL);
 		if (destroyed) { /* problem with double buffering */
 			SDL_RenderPresent(renderer);
 			SDL_UpdateTexture(texture, NULL, pixels, pitch);
+			SDL_RenderClear(renderer);
 			SDL_RenderCopy(renderer, texture, NULL, NULL);
 		}
 	}
