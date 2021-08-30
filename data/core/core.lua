@@ -242,7 +242,7 @@ local function instead_start(game, load)
 			mwin:add_img(icon)
 		end
 		if load then
-			mwin:add("*** "..load)
+			mwin:add("*** "..basename(load))
 			mwin:add(output(e))
 		else
 			mwin:add(output(e))
@@ -303,7 +303,7 @@ local function instead_save(w)
 		if e ~= '' and type(e) == 'string' then
 			msg = '\n<i>'..e..'</i>'
 		end
-		e = "*** "..w..msg
+		e = "*** "..basename(w)..msg
 	end
 	mwin:add(e)
 	input_attach(input)
