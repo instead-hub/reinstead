@@ -529,7 +529,7 @@ function core.run()
 		if e == 'keydown' then
 			if v == 'escape' and not GAME and not DIRECTORY then -- exit
 				break
-			elseif v == 'escape' then
+			elseif v == 'escape' or v == 'ac back' then
 				input_detach()
 				if input ~= '' then
 					input = ''
