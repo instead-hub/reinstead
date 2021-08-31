@@ -165,6 +165,9 @@ PlatformDone(void)
 		SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+#ifdef __ANDROID__
+	exit(0);
+#endif
 }
 
 const char *
