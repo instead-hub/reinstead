@@ -1,6 +1,11 @@
-local VERSION='0.1'
+local VERSION='0.2'
 conf = require "config"
+
 local gameinfo = {}
+
+local FONT_MIN = 10
+local FONT_MAX = 64
+
 math.round = function(num, n)
 	local m = 10 ^ (n or 0)
 	return math.floor(num * m + 0.5) / m
@@ -254,6 +259,7 @@ local function instead_start(game, load)
 	end
 	mwin.off = 0
 	cleared = true
+	instead_settings()
 end
 
 function instead_clear()
@@ -261,6 +267,33 @@ function instead_clear()
 --	input_attach(input)
 	mwin.off = 0
 	cleared = true
+end
+local function write(fn, string)
+	local f = io.open(fn, "w")
+	if not f then return false end
+	if not f:write(string) then
+		f:close()
+		return false
+	end
+	return f:close()
+end
+
+function open_settings()
+	if not conf.settings then
+		return false
+	end
+	local f = io.open(DATADIR..'/settings', 'r')
+	if f then
+		return f
+	end
+	local h = os.getenv('HOME') or os.getenv('home')
+	if h then
+		f = io.open(h.."/.reinstead/settings", "r")
+		if f then
+			return f
+		end
+	end
+	return false
 end
 
 function instead_savepath()
@@ -354,6 +387,27 @@ local function create_cursor()
 end
 local GAMES
 
+function instead_settings()
+	if not conf.settings then
+		return false
+	end
+	local p = DATADIR..'/settings'
+	local cfg = string.format("/font %d\n", conf.fsize)
+	if GAMES and GAME then
+		cfg = cfg .. string.format("/game %s\n", GAME)
+	end
+	if write(p, cfg) then
+		return true
+	end
+	local h = os.getenv('HOME') or os.getenv('home')
+	if h and system.mkdir(h.."/.reinstead") then
+		if write(h.."/.reinstead/settings", cfg) then
+			return true
+		end
+	end
+	return false
+end
+
 local function dir_list(dir)
 	if dir:find("./", 1, true) == 1 then
 		dir = DATADIR .. '/' .. dir:sub(3)
@@ -409,8 +463,6 @@ end
 
 function core.init()
 	local skip
-	gfx.icon(icon)
-	need_restart = false
 	for k=2, #ARGS do
 		local a = ARGS[k]
 		if skip then
@@ -438,18 +490,32 @@ function core.init()
 		else
 			print("Input file: " .. e)
 		end
-		AUTOSCRIPT = a
+		AUTOSCRIPT = { a }
+	else
+		AUTOSCRIPT = { }
+	end
+	local f = open_settings()
+	if f then
+		table.insert(AUTOSCRIPT, 1, f)
 	end
 	if conf.debug then
 		instead.debug(true)
 	end
+
+	print("scale: ", SCALE)
+	core.start()
+end
+
+function core.start()
+	gfx.icon(icon)
+	need_restart = false
+
 	if not GAME and conf.autostart then
 		GAME = conf.autostart
 		if GAME:find("./", 1, true) == 1 then
 			GAME = DATADIR .. '/' .. GAME:sub(3)
 		end
 	end
-	print("scale: ", SCALE)
 	if GAME then
 		system.title(GAME)
 	else
@@ -483,10 +549,24 @@ local alt = false
 local control = false
 local fullscreen = false
 
+local function font_changed()
+	local lines = mwin:lines()
+	local win = gfx.win()
+	mwin = tbox:new()
+	mwin.lay.lines = lines
+	mwin:reset()
+	mwin:resize(win:size())
+	input_detach()
+	create_cursor()
+	input_attach(input)
+	dirty = true
+	instead_settings()
+end
+
 function core.run()
 	while true do
 		local start = system.time()
-		if not dirty and not AUTOSCRIPT then
+		if not dirty and not AUTOSCRIPT[1] then
 			while not system.wait(5) do end
 		else
 			if system.time() - last_render > fps then
@@ -499,12 +579,12 @@ function core.run()
 		local e, v, a, b, nv
 		e, v, a, b = system.poll()
 		if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
-			nv = AUTOSCRIPT and AUTOSCRIPT:read("*line")
-			if not nv and AUTOSCRIPT then
-				AUTOSCRIPT:close()
-				AUTOSCRIPT = nil
+			nv = AUTOSCRIPT[1] and AUTOSCRIPT[1]:read("*line")
+			if not nv and AUTOSCRIPT[1] then
+				AUTOSCRIPT[1]:close()
+				table.remove(AUTOSCRIPT, 1)
 				gfx.flip()
-			end		
+			end
 			if nv then
 				input = nv
 				e = 'keydown'
@@ -561,22 +641,13 @@ function core.run()
 				else
 					conf.fsize = conf.fsize - math.ceil(SCALE)
 				end
-				if conf.fsize < 10*SCALE then
+				if conf.fsize < FONT_MIN*SCALE then
 					conf.fsize = math.round(10*SCALE)
 				end
-				if conf.fsize > 64*SCALE then
+				if conf.fsize > FONT_MAX*SCALE then
 					conf.fsize = math.round(64*SCALE)
 				end
-				local lines = mwin:lines()
-				local win = gfx.win()
-				mwin = tbox:new()
-				mwin.lay.lines = lines
-				mwin:reset()
-				mwin:resize(win:size())
-				input_detach()
-				create_cursor()
-				input_attach(input)
-				dirty = true
+				font_changed()
 			elseif (control and v == 'w') or v == 'Ketb' then
 				input = input:gsub("[ \t]+$", "")
 				local t = utf.chars(input)
@@ -609,6 +680,21 @@ function core.run()
 					elseif input:find("/save", 1, true) == 1 then
 						need_save = input:sub(6)
 						r = true
+					elseif input:find("/font +[0-9]+", 1) == 1 then
+						conf.fsize = (tonumber(input:sub(7)) or conf.fsize)
+						if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
+						if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
+						font_changed()
+						r = 'skip'
+					elseif input:find("/font", 1) == 1 then
+						v = tostring(conf.fsize)
+						r = true
+					elseif GAMES and input:find("/game .+", 1) == 1 then
+						local p = input:sub(7)
+						GAME = p
+						instead_start(p, conf.autoload and (instead_savepath()..'/autosave'))
+						r = 'skip'
+						v = false
 					else
 						r, v = instead.cmd(input:sub(2))
 						r = true
@@ -649,7 +735,8 @@ function core.run()
 					r, v = instead.cmd(string.format("act %s", input))
 				end
 				if instead.error() then
-					v = v ..'\n'.. instead.error("")
+					if type(v) ~= 'string' then v = '' end
+					v = v ..'\n('.. instead.error("")..')'
 				end
 				if not parser_mode and not cmd_mode then
 					local _, w = instead.cmd "way"
@@ -680,10 +767,10 @@ function core.run()
 				dirty = true
 			elseif v == 'up' then
 				input = history_prev() or input
-				input_attach(input)
+				dirty = input_attach(input)
 			elseif v == 'down' then
 				input = history_next() or input
-				input_attach(input)
+				dirty = input_attach(input)
 			elseif v == 'left' then
 				input_pos = input_pos - 1
 				if input_pos == 0 then input_pos = 1 end
@@ -761,12 +848,13 @@ function core.run()
 				instead_start(GAME)
 			elseif DIRECTORY then
 				GAME = false
-				core.init()
+				core.start()
 			end
+			instead_settings()
 		end
 		local elapsed = system.time() - start
 --		system.sleep(math.max(0, fps - elapsed))
-		if not AUTOSCRIPT then
+		if not AUTOSCRIPT[1] then
 			system.wait(math.max(0, fps - elapsed))
 		end
 	end
