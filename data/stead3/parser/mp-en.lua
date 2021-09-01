@@ -760,6 +760,9 @@ Use compass directions to walk. For example: "go north" or "north" or just "n". 
 		p [[^^You may use the "TAB" key for autocompletion.]]
 	else
 		p [[^^Use "save" and "load" to save and load game. For ex. "save 1". Restart game: "restart".]]
+		if instead.reinstead then
+			p [[^^Also available: /restart, /quit, /info, /save, /load and /font <size>.]]
+		end
 	end
 
 end
