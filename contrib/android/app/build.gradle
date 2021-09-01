@@ -91,6 +91,10 @@ task downloadDependencies() {
     	    from "jni/src/reinstead/data"
     	    into 'src/main/assets/data'
     	}
+    	copy {
+    	    from "config.lua"
+    	    into 'src/main/assets/data/core/'
+    	}
 
         download {
             src "https://www.libsdl.org/release/SDL2-${SDL2}.tar.gz"
