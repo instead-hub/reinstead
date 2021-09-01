@@ -20,7 +20,7 @@ return {
 	dir_auth_info = false, -- show authors?
 	dir_title = false, -- '<b>Select game</b>',
 	scroll_inverse = false,
-	scroll_drag = false,
+	scroll_drag = true,
 	show_icons = true,
 	scale = true, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
