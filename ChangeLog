@@ -1,2 +1,11 @@
+0.2
+  * ctrl+/ctrl- - changes font size;
+  * -i <autoscript> feature;
+  * conf.scroll_drag support;
+  * Android port;
+  * use SDL2 Render API (faster);
+  * conf.settings feature;
+  * bugfixes.
+
 0.1
   * Initial release
