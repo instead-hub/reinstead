@@ -95,7 +95,7 @@ task downloadDependencies() {
     	    from "config.lua"
     	    into 'src/main/assets/data/core/'
     	}
-
+	delete("src/main/assets/data/stead3/morph/morphs.mrd")
         download {
             src "https://www.libsdl.org/release/SDL2-${SDL2}.tar.gz"
             dest buildDir
