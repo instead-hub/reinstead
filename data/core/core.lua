@@ -1,5 +1,6 @@
 local VERSION='0.2'
 conf = require "config"
+local iface = require "iface"
 
 local gameinfo = {}
 
@@ -15,40 +16,15 @@ if conf.scale == false then SCALE = 1.0 end
 if type(conf.scale) == 'number' then SCALE = conf.scale end
 
 local core = {}
-local utf = require "utf"
-local tbox = require "tbox"
 local mwin
 local cleared = false
 
 local dirty = false
 local last_render = 0
 local fps = 1/conf.fps;
-local input = ''
-local input_pos = 1;
-local input_prompt = conf.prompt
 local GAME = false
-local cursor
 
 local icon = gfx.new(DATADIR..'/icon.png')
-
-local function fmt_esc(s)
-	return s:gsub("\\","\\\\"):gsub("<","\\<"):gsub(" ", "<w: >")
-end
-
-local input_attached = false
-
-local function input_detach()
-	local l
-	if input_attached then
-		l = table.remove(mwin:lines(), #mwin:lines())
-	end
-	input_attached = false
-	return l
-end
-
-local history = { }
-local history_len = 50
-local history_pos = 0
 
 local function output(str)
 	str = str:gsub("^\n+",""):gsub("\n+$","")
@@ -56,83 +32,12 @@ local function output(str)
 	return str
 end
 
-local function history_prev()
-	history_pos = history_pos + 1
-	if history_pos > #history then
-		history_pos = #history
-	end
-	return history[history_pos]
-end
-
-local function history_next()
-	history_pos = history_pos - 1
-	if history_pos < 1 then
-		history_pos = 1
-	end
-	return history[history_pos]
-end
-
-local function input_history(input)
-	history_pos = 0
-	if history[1] ~= input and input ~= '' then
-		table.insert(history, 1, input)
-	end
-	if #history > history_len then
-		table.remove(history, #history)
-	end
-	input_detach()
-	mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
-end
-
-local function input_line(chars)
-	local pre = ''
-	local n = #mwin:lines()
-	for i=1,input_pos-1 do pre = pre .. chars[i] end
-	local post = ''
-	for i = input_pos,#chars do post = post .. chars[i] end
-	mwin:add(input_prompt..fmt_esc(pre)..'<w:\1>'..fmt_esc(post), false)
-	local l = mwin:lines()[n + 1]
-	for _, v in ipairs(l or {}) do
-		if v.t == '\1' then
-			v.w = 0
-			v.img = cursor
-			local w, h = cursor:size()
-			v.h = h
-			v.xoff = -w/2
-			break
-		end
-	end
-	mwin:resize(mwin.w, mwin.h, n)
-	return l
-end
-
-local function input_attach(input, edit)
-	local o = input_detach()
-	local chars = utf.chars(input)
-	if not edit then
-		if not chars[1] then
-			input_pos = 1
-		else
-			input_pos = #chars + 1
-		end
-	end
-	local l = input_line(chars)
-	input_attached = l
-	l = o and l and (l.h == o.h)
-	if not mwin:scroll(mwin:texth()) and l then
-		mwin:render_line(gfx.win(), #mwin:lines())
-		return false
-	else
-		return true
-	end
-end
-
 local busy_time = false
 
 function instead_busy(busy)
 	if not busy then
 		busy_time = false
-		input_detach()
+		iface.input_detach()
 		return
 	end
 	local t = system.time()
@@ -142,7 +47,7 @@ function instead_busy(busy)
 	end
 	if t - last_render > 1/10 and t - busy_time > 3 then
 		system.poll()
-		input_attach('Wait, please...')
+		iface.input_attach('Wait, please...')
 		mwin:render()
 		gfx.flip()
 		last_render = system.time()
@@ -165,8 +70,8 @@ local function instead_icon(dirpath, norm)
 end
 
 local function basename(p)
-		p = p:gsub("^.*[/\\]([^/\\]+)$", "%1")
-		return p
+	p = p:gsub("^.*[/\\]([^/\\]+)$", "%1")
+	return p
 end
 
 local function game_tag(name, l)
@@ -181,7 +86,6 @@ end
 
 local function instead_tags(game)
 	gameinfo = { }
-	local author
 	local f = io.open(game..'/main3.lua', "r")
 	if not f then
 		gameinfo.name = game
@@ -242,7 +146,7 @@ local function instead_start(game, load)
 		e = e.. '\n'.. instead.error("")
 	end
 	if r then
-		input_detach()
+		iface.input_detach()
 		if icon then
 			mwin:add_img(icon)
 		end
@@ -252,9 +156,9 @@ local function instead_start(game, load)
 		else
 			mwin:add(output(e))
 		end
-		input_attach(input)
+		iface.input_attach()
 	else
-		input_detach()
+		iface.input_detach()
 		mwin:add(output(e))
 	end
 	mwin.off = 0
@@ -264,10 +168,11 @@ end
 
 function instead_clear()
 	mwin:set(false)
---	input_attach(input)
+--	iface.input_attach(input)
 	mwin.off = 0
 	cleared = true
 end
+
 local function write(fn, string)
 	local f = io.open(fn, "w")
 	if not f then return false end
@@ -326,7 +231,7 @@ local function instead_save(w)
 	else
 		r, e = instead.cmd("save "..w)
 	end
-	input_detach()
+	iface.input_detach()
 	e = output(e)
 	if not r then
 		e = "Error! "..w
@@ -339,23 +244,23 @@ local function instead_save(w)
 		e = "*** "..basename(w)..msg
 	end
 	mwin:add(e)
-	input_attach(input)
+	iface.input_attach()
 end
 
 local function instead_load(w)
 	need_load = false
 	if not GAME then
-		input_detach()
+		iface.input_detach()
 		mwin:add("No game.\n\n")
-		input_attach("")
+		iface.input_kill()
 		return
 	end
 	w = save_path(w)
 	local f = io.open(w, "r")
 	if not f then
-		input_detach()
+		iface.input_detach()
 		mwin:add("No file.\n\n")
-		input_attach("")
+		iface.input_kill()
 		return
 	end
 	f:close()
@@ -363,28 +268,6 @@ local function instead_load(w)
 	instead_start(GAME, w)
 end
 
-local function create_cursor()
-	local h = mwin.lay.fonts.regular.h + math.ceil(SCALE * 2)
-	local w = math.floor(3 * SCALE);
-	if w < 3 then
-		w = 3
-	elseif w % 3 ~= 0 then
-		if (w - 1) % 3 == 0 then
-			w = w - 1
-		else
-			w = w + 1
-		end
-	end
-	local b = w / 3
-	cursor = gfx.new(w, h)
-	if b <=0 then
-		cursor:fill(0, 0, w, h, conf.cursor_fg)
-		return
-	end
-	cursor:fill(b, 0, b, h, conf.cursor_fg)
-	cursor:fill(0, 0, w, w, conf.cursor_fg)
-	cursor:fill(0, h - w, w, w, conf.cursor_fg)
-end
 local GAMES
 
 function instead_settings()
@@ -413,7 +296,7 @@ local function dir_list(dir)
 		dir = DATADIR .. '/' .. dir:sub(3)
 	end
 	GAMES = {}
-	input_detach()
+	iface.input_detach()
 	mwin:set(false)
 	if icon and conf.show_icons then
 		local w, _ = icon:size()
@@ -444,7 +327,7 @@ local function dir_list(dir)
 		mwin:set("No games in \""..dir.."\" found.")
 	end
 	mwin:add "\n"
-	input_attach("")
+	iface.input_kill()
 	mwin.off = 0
 end
 
@@ -458,7 +341,8 @@ local function info()
 		if gameinfo.info then t = t .. "\n"..gameinfo.info end
 		return t
 	end
-	return "<c><b>RE:INSTEAD v"..VERSION.." by Peter Kosyh (2021)</b>\n".."<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
+	return "<c><b>RE:INSTEAD v"..VERSION.." by Peter Kosyh (2021)</b>\n"..
+		"<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
 end
 
 function core.init()
@@ -521,13 +405,11 @@ function core.start()
 	else
 		system.title(conf.title)
 	end
-	local win = gfx.win()
-	mwin = tbox:new()
-	mwin:resize(win:size())
-	win:clear(conf.bg)
+
+	gfx.win():clear(conf.bg)
 	gfx.flip()
 
-	create_cursor()
+	mwin = iface.win()
 
 	if not GAME and conf.directory then
 		dir_list(conf.directory)
@@ -550,15 +432,7 @@ local control = false
 local fullscreen = false
 
 local function font_changed()
-	local lines = mwin:lines()
-	local win = gfx.win()
-	mwin = tbox:new()
-	mwin.lay.lines = lines
-	mwin:reset()
-	mwin:resize(win:size())
-	input_detach()
-	create_cursor()
-	input_attach(input)
+	iface.reset()
 	dirty = true
 	instead_settings()
 end
@@ -586,7 +460,7 @@ function core.run()
 				gfx.flip()
 			end
 			if nv then
-				input = nv
+				iface.input_set(nv)
 				e = 'keydown'
 				v = 'return'
 			end
@@ -610,23 +484,16 @@ function core.run()
 			if v == 'escape' and not GAME and not DIRECTORY then -- exit
 				break
 			elseif v == 'escape' or v == 'ac back' then
-				input_detach()
-				if input ~= '' then
-					input = ''
+				iface.input_detach()
+				if iface.input() ~= '' then
+					iface.input_set ''
 				else
 					mwin:add(conf.short_help)
 				end
-				input_attach(input)
+				iface.input_attach()
 				dirty = true
 			elseif v == 'backspace' or (control and v == 'h') then
-				local t = utf.chars(input)
-				if input_pos <= #t + 1 and input_pos > 1 then
-					table.remove(t, input_pos - 1)
-					input_pos = input_pos - 1
-					if input_pos < 1 then input_pos = 1 end
-				end
-				input = table.concat(t, '')
-				dirty = input_attach(input, true)
+				dirty = iface.input_bs()
 			elseif alt and v == 'return' then
 				alt = false
 				fullscreen = not fullscreen
@@ -649,20 +516,12 @@ function core.run()
 				end
 				font_changed()
 			elseif (control and v == 'w') or v == 'Ketb' then
-				input = input:gsub("[ \t]+$", "")
-				local t = utf.chars(input)
-				local sp = 1
-				for k = #t, 1, -1 do
-					if t[k] == ' ' then sp = k break end
-				end
-				input = ''
-				for k = 1, sp - 1 do input = input .. t[k] end
-				dirty = input_attach(input)
+				dirty = iface.input_etb()
 			elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
 				local oh = mwin:texth()
 				local r, v
 				local cmd_mode
-				input = input:gsub("^ +", ""):gsub(" +$", "")
+				local input = iface.input():gsub("^ +", ""):gsub(" +$", "")
 				if input:find("/", 1, true) == 1 then
 					cmd_mode = true
 					r = true
@@ -690,13 +549,14 @@ function core.run()
 						v = tostring(conf.fsize)
 						r = true
 					elseif GAMES and input:find("/game .+", 1) == 1 then
-						local p = input:sub(7)
+						local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
 						GAME = p
 						instead_start(p, conf.autoload and (instead_savepath()..'/autosave'))
 						r = 'skip'
 						v = false
 					else
 						r, v = instead.cmd(input:sub(2))
+						if r == false and v == '' then v = '?' end
 						r = true
 					end
 				elseif DIRECTORY and not GAME then
@@ -750,13 +610,12 @@ function core.run()
 					end
 				end
 				if r ~= 'skip' then
-					input_history(input)
+					iface.input_history(input)
 				end
 				if v then
 					mwin:add(output(v))
 				end
-				input = ''
-				input_attach(input)
+				iface.input_kill()
 				if not cleared then
 					mwin.off = oh
 				else
@@ -766,31 +625,19 @@ function core.run()
 				mwin:scroll(0)
 				dirty = true
 			elseif v == 'up' then
-				input = history_prev() or input
-				dirty = input_attach(input)
+				dirty = iface.history_prev()
 			elseif v == 'down' then
-				input = history_next() or input
-				dirty = input_attach(input)
+				dirty = iface.history_next()
 			elseif v == 'left' then
-				input_pos = input_pos - 1
-				if input_pos == 0 then input_pos = 1 end
-				dirty = input_attach(input, true)
+				dirty = iface.input_left()
 			elseif v == 'right' then
-				input_pos = input_pos + 1
-				local n = #utf.chars(input)
-				if input_pos > n then
-					input_pos = n + 1
-				end
-				dirty = input_attach(input, true)
+				dirty = iface.input_right()
 			elseif v == 'a' and control or v == 'home' then
-				input_pos = 1
-				dirty = input_attach(input, true)
+				dirty = iface.input_home()
 			elseif v == 'e' and control or v == 'end' then
-				input_pos = #utf.chars(input) + 1
-				dirty = input_attach(input, true)
+				dirty = iface.input_end()
 			elseif ((v == 'k' or v == 'u') and control) or v == 'Knack' then
-				input = ''
-				dirty = input_attach(input)
+				dirty = iface.input_kill()
 			elseif (v == 'pagedown' or (v == 'n' and control)) and
 				mwin:scroll(mwin.scrollh) then
 				dirty = true
@@ -799,31 +646,17 @@ function core.run()
 				dirty = true
 			end
 		elseif e == 'edit' then
-			dirty = input_attach(input..v)
-			input_pos = #utf.chars(input) + 1
+			dirty = iface.input_edit(v)
 		elseif e == 'text' and not control and not alt then
 			if v == ' ' and mwin:scroll(mwin.scrollh) then
 				dirty = true
 			else
-				local t = utf.chars(input)
-				local app = utf.chars(v)
-				table.insert(t, input_pos, v)
-				input = table.concat(t, '')
-				input_pos = input_pos + #app
-				dirty = input_attach(input, true)
+				dirty = iface.input_text(v)
 			end
 		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
-			if input_attached and e == 'mousedown' then
-				local x, y, w, h = mwin.sw + mwin.pad, input_attached.y - mwin.off + mwin.pad,
-					mwin.lay.w, input_attached.h
-				if v == 'left' and a >= x and a < x + w and b >= y and b < y + h then
-					system.input()
-				end
-			end
-			dirty = mwin:mouse(e, v, a, b)
+			dirty = iface.mouse(e, v, a, b)
 		elseif e == 'exposed' or e == 'resized' then
-			local w, h = gfx.win():size()
-			mwin:resize(w, h)
+			mwin:resize(gfx.win():size())
 			mwin:scroll(0)
 			dirty = true
 		elseif e == 'mousewheel' then

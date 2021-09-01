@@ -2,6 +2,9 @@ globals = {
 	'need_save',
 	'need_load',
 	'need_restart',
+	'open_settings',
+	'instead_savepath',
+	'instead_settings',
 	'instead_busy',
 	'instead_clear',
 	'EXEFILE',
@@ -12,4 +15,6 @@ globals = {
 	'system',
 	'gfx',
 	'instead',
+	'AUTOSCRIPT',
+	'conf',
 }
