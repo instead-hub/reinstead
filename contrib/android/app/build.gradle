@@ -88,14 +88,14 @@ task downloadDependencies() {
 
         delete("src/main/assets/data")
         copy {
-    	    from "jni/src/reinstead/data"
-    	    into 'src/main/assets/data'
-    	}
-    	copy {
-    	    from "config.lua"
-    	    into 'src/main/assets/data/core/'
-    	}
-	delete("src/main/assets/data/stead3/morph/morphs.mrd")
+            from "jni/src/reinstead/data"
+            into 'src/main/assets/data'
+        }
+        copy {
+            from "config.lua"
+            into 'src/main/assets/data/core/'
+        }
+        delete("src/main/assets/data/stead3/morph/morphs.mrd")
         download {
             src "https://www.libsdl.org/release/SDL2-${SDL2}.tar.gz"
             dest buildDir
