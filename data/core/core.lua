@@ -226,18 +226,18 @@ local function instead_save(w)
 	need_save = false
 	w = save_path(w)
 	local r, e
+	iface.input_detach()
 	if not GAME then
 		r, e = true, "No game."
 	else
+		instead_clear()
 		r, e = instead.cmd("save "..w)
 	end
-	iface.input_detach()
 	e = output(e)
 	if not r then
 		e = "Error! "..w
 	else
 		local msg = ''
-		instead_clear()
 		if e ~= '' and type(e) == 'string' then
 			msg = '\n<i>'..e..'</i>'
 		end
@@ -544,7 +544,7 @@ function core.run()
 						if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
 						if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
 						font_changed()
-						r = 'skip'
+						r = true
 					elseif input:find("/font", 1) == 1 then
 						v = tostring(conf.fsize)
 						r = true
