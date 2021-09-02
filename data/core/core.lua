@@ -300,7 +300,7 @@ local function dir_list(dir)
 	mwin:set(false)
 	if icon and conf.show_icons then
 		local w, _ = icon:size()
-		mwin:add_img(icon:scale(128 * SCALE/w))
+		mwin:add_img(icon:scale(192 * SCALE/w))
 	end
 	if conf.dir_title then
 		mwin:add("<c>"..conf.dir_title.."</c>\n\n")
