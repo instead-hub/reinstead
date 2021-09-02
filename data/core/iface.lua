@@ -240,6 +240,7 @@ function iface.reset()
 	iface.input_detach()
 	iface.create_cursor()
 	iface.input_attach(input)
+	return mwin
 end
 
 return iface

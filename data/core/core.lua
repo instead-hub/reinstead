@@ -432,7 +432,7 @@ local control = false
 local fullscreen = false
 
 local function font_changed()
-	iface.reset()
+	mwin = iface.reset()
 	dirty = true
 	instead_settings()
 end
