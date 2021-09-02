@@ -6,6 +6,7 @@ local gameinfo = {}
 
 local FONT_MIN = 10
 local FONT_MAX = 64
+local FONT_DEF = conf.fsize
 
 math.round = function(num, n)
 	local m = 10 ^ (n or 0)
@@ -502,11 +503,13 @@ function core.run()
 				else
 					system.window_mode 'normal'
 				end
-			elseif (control and (v == '=' or v == '-')) or v == '++' or v == '--' then
+			elseif (control and (v == '=' or v == '-' or v == '0')) or v == '++' or v == '--' or v == '==' then
 				if v == '=' or v == '++' then
 					conf.fsize = conf.fsize + math.ceil(SCALE)
-				else
+				elseif v == '-' or v == '--' then
 					conf.fsize = conf.fsize - math.ceil(SCALE)
+				else
+					conf.fsize = FONT_DEF
 				end
 				if conf.fsize < FONT_MIN*SCALE then
 					conf.fsize = math.round(10*SCALE)
