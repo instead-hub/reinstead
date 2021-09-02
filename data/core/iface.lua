@@ -175,8 +175,9 @@ function iface.input_text(v)
 end
 
 function iface.input_edit(v)
+	local dirty = iface.input_attach(input..v)
 	input_pos = #utf.chars(input) + 1
-	return iface.input_attach(input..v)
+	return dirty
 end
 
 function iface.input_bs()
