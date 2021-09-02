@@ -552,8 +552,8 @@ function core.run()
 						local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
 						GAME = p
 						instead_start(p, conf.autoload and (instead_savepath()..'/autosave'))
-						r = 'skip'
-						v = false
+						r = true
+						v = ''
 					else
 						r, v = instead.cmd(input:sub(2))
 						if r == false and v == '' then v = '?' end
