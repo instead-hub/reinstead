@@ -544,7 +544,7 @@ function core.run()
 						if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
 						if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
 						font_changed()
-						r = true
+						r = 'hidden'
 					elseif input:find("/font", 1) == 1 then
 						v = tostring(conf.fsize)
 						r = true
@@ -552,8 +552,8 @@ function core.run()
 						local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
 						GAME = p
 						instead_start(p, conf.autoload and (instead_savepath()..'/autosave'))
-						r = true
-						v = ''
+						r = 'skip'
+						v = false
 					else
 						r, v = instead.cmd(input:sub(2))
 						if r == false and v == '' then v = '?' end
@@ -610,7 +610,7 @@ function core.run()
 					end
 				end
 				if r ~= 'skip' and (r or v ~= '') then
-					iface.input_history(input)
+					iface.input_history(input, r ~= 'hidden')
 				end
 				if v then
 					mwin:add(output(v))
