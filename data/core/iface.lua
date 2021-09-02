@@ -166,7 +166,6 @@ function iface.input_kill()
 end
 
 function iface.input_text(v)
-	if not v then return end
 	local t = utf.chars(input)
 	local app = utf.chars(v)
 	table.insert(t, input_pos, v)
