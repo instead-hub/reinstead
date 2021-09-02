@@ -157,9 +157,10 @@ const char *GetPlatform(void)
 const char *GetExePath(const char *progname)
 {
 	static char exepath[4096];
+	static char cwd[4096];
 	if (progname[0] == '/')
 		return progname;
-	snprintf(exepath, sizeof(exepath), "./%s", progname);
+	snprintf(exepath, sizeof(exepath), "%s/%s", getcwd(cwd, sizeof(cwd)), progname);
 	return exepath;
 }
 
