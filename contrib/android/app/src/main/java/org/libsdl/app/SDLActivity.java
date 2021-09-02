@@ -2247,7 +2247,10 @@ class SDLInputConnection extends BaseInputConnection {
             nativeGenerateScancodeForUnichar(c);
         }
 
-        SDLInputConnection.nativeCommitText(text.toString(), newCursorPosition);
+        if (text.equals(" ") && !super.getEditable().toString().isEmpty()) /* damn swift keyboard reinstead */
+            SDLInputConnection.nativeCommitText(super.getEditable().toString() + " ", newCursorPosition);
+        else
+            SDLInputConnection.nativeCommitText(text.toString(), newCursorPosition);
 
         boolean ret = super.commitText(text, newCursorPosition);
         reset(); // reinstead
