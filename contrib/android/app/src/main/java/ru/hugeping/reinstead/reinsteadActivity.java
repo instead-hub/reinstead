@@ -9,16 +9,16 @@ import android.os.Bundle;
 
 public class reinsteadActivity extends SDLActivity
 {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        AssetManager asset_manager = getApplicationContext().getAssets();
-        try {
-    	    String path = Assets.copyDirorfileFromAssetManager(asset_manager, "data", getFilesDir() + "/");
-    	    Log.v("reinstead", path);
-	} catch(IOException e) {
-            // Nom nom
-            Log.v("reinstead", "Can't copy assets");
-	}    
-        super.onCreate(savedInstanceState);
-    }
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		AssetManager asset_manager = getApplicationContext().getAssets();
+		try {
+			String path = Assets.copyDirorfileFromAssetManager(asset_manager, "data", getFilesDir() + "/");
+			Log.v("reinstead", path);
+		} catch(IOException e) {
+			// Nom nom
+			Log.v("reinstead", "Can't copy assets");
+		}
+		super.onCreate(savedInstanceState);
+	}
 }
