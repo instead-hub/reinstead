@@ -239,7 +239,7 @@ local function instead_save(w)
 	else
 		local msg = ''
 		if e ~= '' and type(e) == 'string' then
-			msg = '\n<i>'..e..'</i>'
+			msg = '\n'..e
 		end
 		e = "*** "..basename(w)..msg
 	end
