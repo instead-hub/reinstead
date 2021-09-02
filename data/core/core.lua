@@ -621,7 +621,6 @@ function core.run()
 				else
 					mwin.off = 0
 				end
-				cleared = false
 				mwin:scroll(0)
 				dirty = true
 			elseif v == 'up' then
@@ -690,6 +689,7 @@ function core.run()
 		if not AUTOSCRIPT[1] then
 			system.wait(math.max(0, fps - elapsed))
 		end
+		cleared = false
 	end
 	if conf.autosave and GAME then
 		instead_save 'autosave'
