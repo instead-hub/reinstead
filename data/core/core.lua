@@ -598,7 +598,7 @@ function core.run()
 					if type(v) ~= 'string' then v = '' end
 					v = v ..'\n('.. instead.error("")..')'
 				end
-				if not parser_mode and not cmd_mode then
+				if not parser_mode and not cmd_mode and false then -- disabled for parser games
 					local _, w = instead.cmd "way"
 					v = v .. '\n'
 					if w ~= "" then
@@ -609,7 +609,7 @@ function core.run()
 						v = v .. "** ".. w
 					end
 				end
-				if r ~= 'skip' then
+				if r ~= 'skip' and (r or v ~= '') then
 					iface.input_history(input)
 				end
 				if v then
