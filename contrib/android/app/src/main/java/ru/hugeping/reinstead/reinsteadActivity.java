@@ -14,6 +14,7 @@ public class reinsteadActivity extends SDLActivity
 		AssetManager asset_manager = getApplicationContext().getAssets();
 		try {
 			String path = Assets.copyDirorfileFromAssetManager(asset_manager, "data", getFilesDir() + "/");
+			Assets.copyAssetFile(asset_manager, "data/stamp", getFilesDir() + "/stamp");
 			Log.v("reinstead", path);
 		} catch(IOException e) {
 			// Nom nom

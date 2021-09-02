@@ -45,7 +45,8 @@ public class Assets
 			if (sub_files.length == 0) {
 				// It is a file
 				String dest_file_path = addTrailingSlash(dest_dir_path) + files[i];
-				copyAssetFile(asset_manager, abs_asset_file_path, dest_file_path);
+				if (!abs_asset_file_path.equals(arg_assetDir + "/stamp"))
+					copyAssetFile(asset_manager, abs_asset_file_path, dest_file_path);
 			} else {
 				// It is a sub directory
 				copyDirorfileFromAssetManager(asset_manager, abs_asset_file_path,
