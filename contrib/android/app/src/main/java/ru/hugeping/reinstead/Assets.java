@@ -5,6 +5,9 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.File;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import android.os.Environment;
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -12,7 +15,6 @@ import android.util.Log;
 
 public class Assets
 {
-
 	public static String copyDirorfileFromAssetManager(AssetManager asset_manager,
 							   String arg_assetDir,
 							   String arg_destinationDir) throws IOException
@@ -20,6 +22,18 @@ public class Assets
 		String dest_dir_path = arg_destinationDir;
 		Log.e("reinstead", "External: " + dest_dir_path);
 		File dest_dir = new File(dest_dir_path);
+		boolean doCopy = true;
+		try (BufferedReader reader = new BufferedReader(new FileReader(dest_dir_path + "/stamp"))) {
+			String line1 = reader.readLine();
+			Log.e("reinstead", "Internal stamp: " + line1);
+			BufferedReader reader2 = new BufferedReader(new InputStreamReader(asset_manager.open(arg_assetDir + "/stamp")));
+			String line2 = reader2.readLine();
+			Log.e("reinstead", "Assets stamp: " + line2);
+			doCopy = !line2.equals(line1);
+		} catch (IOException io) {}
+
+		if (!doCopy)
+			return dest_dir_path;
 
 		createDir(dest_dir);
 

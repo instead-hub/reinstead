@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY');
 def buildAsApplication = !buildAsLibrary
 if (buildAsApplication) {
@@ -70,7 +72,28 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 }
 
-task downloadDependencies() {
+task assets() {
+    doLast {
+        delete("src/main/assets/data")
+        copy {
+            from "jni/src/reinstead/data"
+            into 'src/main/assets/data'
+        }
+        copy {
+            from "config.lua"
+            into 'src/main/assets/data/core/'
+        }
+        delete("src/main/assets/data/stead3/morph/morphs.mrd")
+    }
+}
+
+task stamp(dependsOn: assets) {
+    doLast {
+	new File("app/src/main/assets/data", "stamp").text = "${new SimpleDateFormat('ddMMyyyyhhmmss').format(new Date())}"
+    }
+}
+
+task downloadDependencies(dependsOn: stamp) {
     def Reinstead = 'master'
     def SDL2 = '2.0.16'
     doLast {
@@ -83,19 +106,9 @@ task downloadDependencies() {
             from zipTree("${buildDir}/reinstead-${Reinstead}.zip")
             into 'jni/src/'
         }
-	delete("jni/src/reinstead")
+        delete("jni/src/reinstead")
         file("jni/src/reinstead-${Reinstead}").renameTo(file('jni/src/reinstead'))
 
-        delete("src/main/assets/data")
-        copy {
-            from "jni/src/reinstead/data"
-            into 'src/main/assets/data'
-        }
-        copy {
-            from "config.lua"
-            into 'src/main/assets/data/core/'
-        }
-        delete("src/main/assets/data/stead3/morph/morphs.mrd")
         download {
             src "https://www.libsdl.org/release/SDL2-${SDL2}.tar.gz"
             dest buildDir
