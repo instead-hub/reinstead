@@ -511,11 +511,11 @@ function core.run()
 				else
 					conf.fsize = FONT_DEF
 				end
-				if conf.fsize < FONT_MIN*SCALE then
-					conf.fsize = math.round(10*SCALE)
+				if conf.fsize < FONT_MIN then
+					conf.fsize = FONT_MIN
 				end
-				if conf.fsize > FONT_MAX*SCALE then
-					conf.fsize = math.round(64*SCALE)
+				if conf.fsize > FONT_MAX then
+					conf.fsize = FONT_MAX
 				end
 				font_changed()
 			elseif (control and v == 'w') or v == 'Ketb' then
