@@ -64,7 +64,7 @@ local function instead_icon(dirpath, norm)
 	local icon = gfx.new(dirpath..'/icon.png')
 	if icon and norm then
 		local w, _ = icon:size()
-		icon = icon:scale(128/w)
+		icon = icon:scale(128 * SCALE/w)
 	end
 	return icon
 end
@@ -300,7 +300,7 @@ local function dir_list(dir)
 	mwin:set(false)
 	if icon and conf.show_icons then
 		local w, _ = icon:size()
-		mwin:add_img(icon:scale(192 * SCALE/w))
+		mwin:add_img(icon:scale(128 * SCALE/w))
 	end
 	if conf.dir_title then
 		mwin:add("<c>"..conf.dir_title.."</c>\n\n")
