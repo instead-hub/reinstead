@@ -72,28 +72,13 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 }
 
-task assets() {
-    doLast {
-        delete("src/main/assets/data")
-        copy {
-            from "jni/src/reinstead/data"
-            into 'src/main/assets/data'
-        }
-        copy {
-            from "config.lua"
-            into 'src/main/assets/data/core/'
-        }
-        delete("src/main/assets/data/stead3/morph/morphs.mrd")
-    }
-}
-
-task stamp(dependsOn: assets) {
+task stamp() {
     doLast {
 	new File("app/src/main/assets/data", "stamp").text = "${new SimpleDateFormat('ddMMyyyyhhmmss').format(new Date())}"
     }
 }
 
-task downloadDependencies(dependsOn: stamp) {
+task downloadDependencies() {
     def Reinstead = 'master'
     def SDL2 = '2.0.16'
     doLast {
@@ -120,5 +105,18 @@ task downloadDependencies(dependsOn: stamp) {
             into 'jni/'
         }
         file("jni/SDL2-${SDL2}").renameTo(file('jni/SDL'))
+
+        delete("src/main/assets/data")
+        copy {
+            from "jni/src/reinstead/data"
+            into 'src/main/assets/data'
+        }
+        copy {
+            from "config.lua"
+            into 'src/main/assets/data/core/'
+        }
+        delete("src/main/assets/data/stead3/morph/morphs.mrd")
     }
 }
+
+preBuild.dependsOn stamp
