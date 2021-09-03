@@ -494,7 +494,7 @@ function core.run()
 				iface.input_attach()
 				dirty = true
 			elseif v == 'backspace' or (control and v == 'h') then
-				dirty = iface.input_bs()
+				dirty = dirty or iface.input_bs()
 			elseif alt and v == 'return' then
 				alt = false
 				fullscreen = not fullscreen
@@ -519,7 +519,7 @@ function core.run()
 				end
 				font_changed()
 			elseif (control and v == 'w') or v == 'Ketb' then
-				dirty = iface.input_etb()
+				dirty = dirty or iface.input_etb()
 			elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
 				local oh = mwin:texth()
 				local r, v
@@ -627,19 +627,19 @@ function core.run()
 				mwin:scroll(0)
 				dirty = true
 			elseif v == 'up' then
-				dirty = iface.history_prev()
+				dirty = dirty or iface.history_prev()
 			elseif v == 'down' then
-				dirty = iface.history_next()
+				dirty = dirty or iface.history_next()
 			elseif v == 'left' then
-				dirty = iface.input_left()
+				dirty = dirty or iface.input_left()
 			elseif v == 'right' then
-				dirty = iface.input_right()
+				dirty = dirty or iface.input_right()
 			elseif v == 'a' and control or v == 'home' then
-				dirty = iface.input_home()
+				dirty = dirty or iface.input_home()
 			elseif v == 'e' and control or v == 'end' then
-				dirty = iface.input_end()
+				dirty = dirty or iface.input_end()
 			elseif ((v == 'k' or v == 'u') and control) or v == 'Knack' then
-				dirty = iface.input_kill()
+				dirty = dirty or iface.input_kill()
 			elseif (v == 'pagedown' or (v == 'n' and control)) and
 				mwin:scroll(mwin.scrollh) then
 				dirty = true
@@ -648,15 +648,15 @@ function core.run()
 				dirty = true
 			end
 		elseif e == 'edit' then
-			dirty = iface.input_edit(v)
+			dirty = dirty or iface.input_edit(v)
 		elseif e == 'text' and not control and not alt then
 			if v == ' ' and mwin:scroll(mwin.scrollh) then
 				dirty = true
 			else
-				dirty = iface.input_text(v)
+				dirty = dirty or iface.input_text(v)
 			end
 		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
-			dirty = iface.mouse(e, v, a, b)
+			dirty = dirty or iface.mouse(e, v, a, b)
 		elseif e == 'exposed' or e == 'resized' then
 			mwin:resize(gfx.win():size())
 			mwin:scroll(0)
