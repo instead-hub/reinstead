@@ -104,7 +104,7 @@ static char*
 key_name(int sym)
 {
 	static char dst[16];
-	strcpy(dst, SDL_GetKeyName(sym));
+	strcpy(dst, SDL_GetScancodeName(sym));
 	tolow(dst);
 	return dst;
 }
@@ -342,11 +342,11 @@ top:
 		goto top;
 	case SDL_KEYDOWN:
 		lua_pushstring(L, "keydown");
-		lua_pushstring(L, key_name(e.key.keysym.sym));
+		lua_pushstring(L, key_name(e.key.keysym.scancode));
 		return 2;
 	case SDL_KEYUP:
 		lua_pushstring(L, "keyup");
-		lua_pushstring(L, key_name(e.key.keysym.sym));
+		lua_pushstring(L, key_name(e.key.keysym.scancode));
 		return 2;
 	case SDL_TEXTINPUT:
 		lua_pushstring(L, "text");
