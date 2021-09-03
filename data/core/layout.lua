@@ -157,10 +157,12 @@ function lay:resize(width, height, linenr)
 end
 
 function lay:rerender_word(w)
-	if not w.img and w.t then
-		local fn = self.fonts[w.style]
-		w.img = fn:text(w.t, self.fg)
+	if w.img or not w.t then
+		return w.img
 	end
+	local fn = self.fonts[w.style]
+	w.img = fn:text(w.t, self.fg)
+	return w.img
 end
 
 function lay:render_word(dst, w, xoff, yoff, diff)
@@ -176,7 +178,7 @@ function lay:render_word(dst, w, xoff, yoff, diff)
 		end
 	end
 	if w.y - diff >= 0 then
-		self:rerender_word(w)
+		if not self:rerender_word(w) then return end
 		if w.y + w.h - diff >= self.h then
 			limit = true
 			local ydiff = math.floor(self.h - (w.y - diff))
@@ -188,7 +190,7 @@ function lay:render_word(dst, w, xoff, yoff, diff)
 			w.img:blend(0, 0, ww, w.h, dst, xoff + w.x, yoff + w.y - diff)
 		end
 	elseif w.y + w.h - diff >= 0 then
-		self:rerender_word(w)
+		if not self:rerender_word(w) then return end
 		local ydiff = math.floor(diff - w.y)
 		w.img:blend(0, ydiff, ww, w.h - ydiff,
 			    dst, xoff + w.x, yoff)
@@ -351,10 +353,9 @@ function lay:add(text)
 			fn.nocache = self.nocache
 			if t:find("w:", 1, true) then
 				t = t:sub(3)
-				local img = fn:text(t, self.fg)
-				if img then
-					local w, h = img:size()
-					table.insert(line, { img = img, w = w, h = h, spw = 0, t = t, style = style.style })
+				local w, h = fn:size(t)
+				if t ~= '' then
+					table.insert(line, { w = w, h = h, spw = 0, t = t, style = style.style })
 				end
 			elseif t:find("g:", 1, true) then
 				t = t:sub(3)
@@ -376,9 +377,8 @@ function lay:add(text)
 				line[#line].spw = fn.spw
 			end
 			t:gsub("[^ \t]+", function(c)
-					local img = fn:text(c, self.fg)
-					local w, h = img:size()
-					table.insert(line, { img = img, w = w, h = h, spw = fn.spw, t = c, style = style.style })
+					local w, h = fn:size(c)
+					table.insert(line, { w = w, h = h, spw = fn.spw, t = c, style = style.style })
 			end)
 			if not t:find(" $") then
 				line[#line].spw = 0
