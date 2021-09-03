@@ -156,6 +156,13 @@ function lay:resize(width, height, linenr)
 	self.realw = realw
 end
 
+function lay:rerender_word(w)
+	if not w.img and w.t then
+		local fn = self.fonts[w.style]
+		w.img = fn:text(w.t, self.fg)
+	end
+end
+
 function lay:render_word(dst, w, xoff, yoff, diff)
 	local limit
 	local ww = w.w
@@ -169,6 +176,7 @@ function lay:render_word(dst, w, xoff, yoff, diff)
 		end
 	end
 	if w.y - diff >= 0 then
+		self:rerender_word(w)
 		if w.y + w.h - diff >= self.h then
 			limit = true
 			local ydiff = math.floor(self.h - (w.y - diff))
@@ -180,6 +188,7 @@ function lay:render_word(dst, w, xoff, yoff, diff)
 			w.img:blend(0, 0, ww, w.h, dst, xoff + w.x, yoff + w.y - diff)
 		end
 	elseif w.y + w.h - diff >= 0 then
+		self:rerender_word(w)
 		local ydiff = math.floor(diff - w.y)
 		w.img:blend(0, ydiff, ww, w.h - ydiff,
 			    dst, xoff + w.x, yoff)
@@ -277,12 +286,15 @@ function lay:add_img(img)
 end
 
 function lay:reset()
+	for _, v in pairs(self.fonts) do -- reset font caches
+		v.cache:zap()
+	end
 	for _, l in ipairs(self.lines) do
 		for _, w in ipairs(l) do
 			if w.style then
 				local fn = self.fonts[w.style]
-				w.img = fn:text(w.t, self.fg)
-				local ww, hh = w.img:size()
+				w.img = nil
+				local ww, hh = fn:size(w.t)
 				w.w = ww
 				w.h = hh
 			end

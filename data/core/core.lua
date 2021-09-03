@@ -505,9 +505,9 @@ function core.run()
 				end
 			elseif (control and (v == '=' or v == '-' or v == '0')) or v == '++' or v == '--' or v == '==' then
 				if v == '=' or v == '++' then
-					conf.fsize = conf.fsize + math.ceil(SCALE)
+					conf.fsize = conf.fsize + 1
 				elseif v == '-' or v == '--' then
-					conf.fsize = conf.fsize - math.ceil(SCALE)
+					conf.fsize = conf.fsize - 1
 				else
 					conf.fsize = FONT_DEF
 				end
