@@ -199,7 +199,7 @@ again:
 			case 0x10:
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "==");
-				return 2;				
+				return 2;
 			case 0x1d:
 				lua_pushstring(L, "keydown");
 				lua_pushstring(L, "++");
