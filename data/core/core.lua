@@ -164,7 +164,6 @@ local function instead_start(game, load)
 	end
 	mwin.off = 0
 	cleared = true
-	instead_settings()
 end
 
 function instead_clear()
@@ -435,7 +434,6 @@ local fullscreen = false
 local function font_changed()
 	mwin = iface.reset()
 	dirty = true
-	instead_settings()
 end
 
 function core.run()
@@ -470,6 +468,7 @@ function core.run()
 			break
 		end
 		if e == 'save' then
+			instead_settings()
 			if conf.autosave and GAME then
 				instead_save 'autosave'
 			end
@@ -553,6 +552,7 @@ function core.run()
 						r = true
 					elseif GAMES and input:find("/game .+", 1) == 1 then
 						local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
+						instead_settings() -- if game crashed
 						GAME = p
 						instead_start(p, conf.autoload and (instead_savepath()..'/autosave'))
 						r = 'skip'
@@ -675,6 +675,7 @@ function core.run()
 			instead_load(need_load)
 		end
 		if need_restart then
+			instead_settings()
 			if conf.autoload then
 				os.remove (instead_savepath()..'/autosave')
 			end
@@ -685,7 +686,6 @@ function core.run()
 				GAME = false
 				core.start()
 			end
-			instead_settings()
 		end
 		local elapsed = system.time() - start
 --		system.sleep(math.max(0, fps - elapsed))
@@ -698,5 +698,6 @@ function core.run()
 		instead_save 'autosave'
 	end
 	instead.done()
+	instead_settings()
 end
 return core
