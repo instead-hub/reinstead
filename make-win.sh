@@ -1,4 +1,4 @@
-CFLAGS="-Isrc/instead -Iwindows/"
+CFLAGS="-Isrc/instead -Iwindows/ -Iwindows/SDL2"
 LDFLAGS="windows/libluajit.a -Lwindows/SDL2 -lSDL2 -lSDL2main -lm"
 
 i686-w64-mingw32-windres -i windows/resources.rc -o resources.o || exit 1
