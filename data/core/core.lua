@@ -276,7 +276,7 @@ function instead_settings()
 	end
 	local p = DATADIR..'/settings'
 	local cfg = string.format("/font %d\n", conf.fsize)
-	if GAMES and GAME and conf.autosave and conf.autoload then
+	if GAMES and GAME then
 		cfg = cfg .. string.format("/game %s\n", GAME)
 	end
 	if write(p, cfg) then
