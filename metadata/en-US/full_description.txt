@@ -1,0 +1,16 @@
+Interactive fiction games with text input.
+
+Most games are in Russian. The only game in English is "Archive".
+
+Games:
+
+- Archive (English + Russian)
+- Луна-9 (Russian)
+- Другой Марс (Russian)
+- Метель (Russian)
+- Один день лета (Russian)
+- Судный день (Russian)
+- Пробуждение (Russian)
+- Лондон 1884 (Russian)
+- Испытание Марсом (Russian)
+- Урзи (Russian)
