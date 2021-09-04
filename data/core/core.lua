@@ -291,10 +291,15 @@ function instead_settings()
 	return false
 end
 
-local function dir_list(dir)
+local function datadir(dir)
 	if dir:find("./", 1, true) == 1 then
 		dir = DATADIR .. '/' .. dir:sub(3)
 	end
+	return dir
+end
+
+local function dir_list(dir)
+	dir = datadir(dir)
 	GAMES = {}
 	iface.input_detach()
 	mwin:set(false)
@@ -397,7 +402,9 @@ function core.start()
 	if not GAME and conf.autostart then
 		GAME = conf.autostart
 		if GAME:find("./", 1, true) == 1 then
-			GAME = DATADIR .. '/' .. GAME:sub(3)
+			GAME = datadir(GAME)
+		elseif conf.directory then
+			GAME = datadir(conf.directory)..'/'..GAME
 		end
 	end
 	if GAME then
