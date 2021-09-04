@@ -276,7 +276,7 @@ function instead_settings()
 	end
 	local p = DATADIR..'/settings'
 	local cfg = string.format("/font %d\n", conf.fsize)
-	if GAMES and GAME then
+	if GAME and conf.settings_game then
 		cfg = cfg .. string.format("/game %s\n", GAME)
 	end
 	if write(p, cfg) then
@@ -557,11 +557,13 @@ function core.run()
 					elseif input:find("/font", 1) == 1 then
 						v = tostring(conf.fsize)
 						r = true
-					elseif GAMES and input:find("/game .+", 1) == 1 then
-						local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
-						instead_settings() -- if game crashed
-						GAME = p
-						instead_start(p, conf.autoload and (instead_savepath()..'/autosave'))
+					elseif input:find("/game .+", 1) == 1 then
+						if not GAME and conf.settings_game then
+							local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
+							instead_settings() -- if game crashed
+							GAME = p
+							instead_start(p, conf.autoload and (instead_savepath()..'/autosave'))
+						end
 						r = 'skip'
 						v = false
 					else

@@ -26,7 +26,8 @@ return {
 	autosave = true,
 	short_help = "<c>***</c>\n/quit - exit\n/load - load\n/save - save\n/restart - restart\n/info - info\n\n",
 	note = '<c>https://parser.hugeping.ru</c>',
-	settings = true, -- store font size and selected game
+	settings = true, -- store font size
+--	settings_game = true, -- store selected game
 --	autoload = true,
 --	debug = true,
 }
