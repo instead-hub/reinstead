@@ -1,6 +1,6 @@
 # RE:INSTEAD
 
-Минималистичный плеер парсерных игр INSTEAD для Linux, Windows и Plan9.
+Минималистичный плеер парсерных игр INSTEAD для Linux, Windows, Plan9 и Android.
 
 - [МАНИФЕСТ](MANIFEST.md)
 - [INSTALL](INSTALL.md)
