@@ -959,10 +959,10 @@ room {
 		end
 		if dir == 'n_to' then
 			p [[В этом направлении не видно ничего примечательного.]]
-			if s.seen then
+--			if s.seen then
 				p [[ Ширина обзора визора невелика. Возможно,
 				тебе стоит осмотреть другие северные направления.]];
-			end
+--			end
 			s.seen = true
 			return
 		end
@@ -1830,10 +1830,14 @@ cutscene {
 
 cutscene {
 	nam = 'разговор с отцом 2';
+	gfx = false;
 	enter = function(s)
 		D()
 		snd.music'mus/far_away.ogg'
 		anim'earth'
+		if instead.reinstead then
+			s.gfx = 'img/earth.png'
+		end
 	end;
 	text = {
 		[[...]];
