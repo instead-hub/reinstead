@@ -79,11 +79,11 @@ task stamp() {
 }
 
 task downloadDependencies() {
-    def Reinstead = 'master'
+    def Reinstead = '0.2'
     def SDL2 = '2.0.16'
     doLast {
         download {
-            src "https://github.com/instead-hub/reinstead/archive/refs/heads/${Reinstead}.zip"
+            src "https://github.com/instead-hub/reinstead/archive/${Reinstead}.zip"
             dest new File(buildDir, "reinstead-${Reinstead}.zip")
             overwrite true
         }
