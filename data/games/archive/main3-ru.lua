@@ -452,8 +452,8 @@ cutscene {
 	next_to = 'titles';
 }
 
-cutscene {
-	noparser = true;
+gameover {
+--	noparser = true;
 	nam = 'titles';
 	title = false,
 	enter = function(s)
@@ -475,8 +475,7 @@ cutscene {
 {$link|https://instead.itch.io}^^
 А если хотите написать свою историю,^добро пожаловать на:^
 {$link|https://instead.hugeping.ru}^^
-{$fmt b|КОНЕЦ}
-]];
+{$fmt b|КОНЕЦ}]];
 }
 
 room {

@@ -1927,7 +1927,7 @@ local titles = {
 	{"КОНЕЦ", style = 1};
 }
 
-room {
+gameover {
 	nam = 'titles';
 	title = false;
 	dsc = function(s)
@@ -1939,7 +1939,7 @@ room {
 		end
 		pn (fmt.c"^Полную версию игры ищите на https://instead.itch.io/mars")
 	end;
-	noparser = true;
+--	noparser = true;
 	{
 		finish = false;
 		offset = 0;

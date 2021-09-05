@@ -624,10 +624,10 @@ cutscene {
 	next_to = 'titles';
 }
 
-room {
+gameover {
 	title = fmt.c(fmt.b([[СУДНЫЙ ДЕНЬ]]));
 	nam = 'titles';
-	noparser = true;
+--	noparser = true;
 	dsc = [[{$fmt c|Автор сюжета и кода: Косых Пётр^^
 Специально на ИНСТЕДОЗ-6^^
 Март -- 2019^^

@@ -42,11 +42,11 @@ spline^
 
 {$fmt em|Февраль 2019}}]];
 
-room {
+gameover {
 	nam = 'titles';
 	title = false;
 	dsc = titles;
-	noparser = true;
+--	noparser = true;
 	enter = function(s)
 		pic_set '81'
 		if not instead.tiny then

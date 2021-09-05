@@ -418,8 +418,8 @@ The countdown begins (or continues?) on the dashboard.]];
 	next_to = 'titles';
 }
 
-cutscene {
-	noparser = true;
+gameover {
+--	noparser = true;
 	nam = 'titles';
 	title = false,
 	enter = function(s)
@@ -442,8 +442,7 @@ If you liked it, you can find similar games at:^^
 {$link|https://instead.itch.io}^^
 And if you would like to write your own story,^welcome to:^
 {$link|https://instead.hugeping.ru}^^
-{$fmt b|THE END}
-]];
+{$fmt b|THE END}]];
 }
 
 room {
