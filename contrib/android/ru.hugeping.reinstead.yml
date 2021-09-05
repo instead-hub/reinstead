@@ -18,6 +18,7 @@ Builds:
     versionCode: 2
     commit: '0.2'
     subdir: contrib/android/app
+    scandelete: windows
     gradle:
       - yes
     ndk: r20b
