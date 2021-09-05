@@ -21,7 +21,7 @@ Builds:
     scandelete: windows
     gradle:
       - yes
-    ndk: r20b
+    ndk: r21e
     preassemble:
       - downloadDependencies
 
