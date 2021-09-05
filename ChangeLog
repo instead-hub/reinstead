@@ -5,6 +5,7 @@
   * Android port;
   * use SDL2 Render API (faster);
   * conf.settings feature;
+  * metaparser + games fixes;
   * bugfixes.
 
 0.1
