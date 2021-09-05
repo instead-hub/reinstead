@@ -74,7 +74,6 @@ dependencies {
 
 task stamp() {
     doLast {
-        new File("app/src/main/assets/data", "stamp").createNewFile()
         new File("app/src/main/assets/data", "stamp").text = "${new SimpleDateFormat('ddMMyyyyhhmmss').format(new Date())}"
     }
 }
