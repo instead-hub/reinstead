@@ -18,9 +18,10 @@ Builds:
     versionCode: 2
     commit: '0.2'
     subdir: contrib/android/app
-    scandelete: windows
     gradle:
       - yes
+    scandelete:
+      - windows
     ndk: r21e
     preassemble:
       - downloadDependencies
