@@ -3,25 +3,23 @@ Categories:
 License: MIT
 AuthorName: Peter Kosyh
 AuthorEmail: p.kosyh@gmail.com
-SourceCode: https://github.com/instead-hub/reinstead/
-IssueTracker: https://github.com/instead-hub/reinstead/issues
-Changelog: https://github.com/instead-hub/reinstead/blob/HEAD/ChangeLog
+SourceCode: https://gitlab.com/gl00my/reinstead-fdroid
+IssueTracker: https://gitlab.com/gl00my/reinstead-fdroid/-/issues
+Changelog: https://gitlab.com/gl00my/reinstead-fdroid/-/blob/main/ChangeLog
 Donate: https://paypal.me/hugeping
 
 AutoName: Re:instead
 
 RepoType: git
-Repo: https://github.com/instead-hub/reinstead.git
+Repo: https://gitlab.com/gl00my/reinstead-fdroid.git
 
 Builds:
   - versionName: '0.2'
     versionCode: 2
     commit: '0.2'
-    subdir: contrib/android/app
+    subdir: app
     gradle:
       - yes
-    rm:
-      - windows
     ndk: r21e
     preassemble:
       - downloadDependencies
