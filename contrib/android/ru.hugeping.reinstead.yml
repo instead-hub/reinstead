@@ -20,7 +20,7 @@ Builds:
     subdir: contrib/android/app
     gradle:
       - yes
-    scandelete:
+    rm:
       - windows
     ndk: r21e
     preassemble:
