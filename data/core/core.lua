@@ -222,7 +222,7 @@ local function save_path(w)
 	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
 
-local function instead_save(w)
+local function instead_save(w, silent)
 	need_save = false
 	w = save_path(w)
 	local r, e
@@ -230,7 +230,9 @@ local function instead_save(w)
 	if not GAME then
 		r, e = true, "No game."
 	else
-		instead_clear()
+		if not silent then
+			instead_clear()
+		end
 		r, e = instead.cmd("save "..w)
 	end
 	e = output(e)
@@ -243,7 +245,9 @@ local function instead_save(w)
 		end
 		e = "*** "..basename(w)..msg
 	end
-	mwin:add(e)
+	if not silent then
+		mwin:add(e)
+	end
 	iface.input_attach()
 end
 
@@ -477,7 +481,7 @@ function core.run()
 		if e == 'save' then
 			instead_settings()
 			if conf.autosave and GAME then
-				instead_save 'autosave'
+				instead_save ('autosave', true)
 			end
 		end
 		if (e == 'keydown' or e == 'keyup') and v:find"alt" then
