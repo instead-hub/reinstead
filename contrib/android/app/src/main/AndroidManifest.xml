@@ -39,7 +39,7 @@
         android:required="false" /> -->
 
     <!-- Allow writing to external storage -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
     <!-- Allow access to Bluetooth devices -->
 <!--    <uses-permission android:name="android.permission.BLUETOOTH" /> -->
     <!-- Allow access to the vibrator -->
