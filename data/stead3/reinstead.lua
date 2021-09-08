@@ -97,6 +97,8 @@ std.mod_start(function()
 				pn(fmt.b(self.prompt .. inp))
 				return true
 			end
+			-- nil -- to show mp:correct()
+			-- false -- do not show mp:correct()
 		end)
 		mp.autocompl = false
 		mp.autohelp = false
