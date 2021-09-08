@@ -1,5 +1,6 @@
 0.3
   * mp 2.2.2;
+  * parser correct messages fix;
   * autoscript cr/lf compat;
   * -d as -debug.
 
