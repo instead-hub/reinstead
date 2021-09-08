@@ -470,7 +470,7 @@ function core.run()
 				gfx.flip()
 			end
 			if nv then
-				iface.input_set(nv)
+				iface.input_set(nv:gsub("[\r\n]",""))
 				e = 'keydown'
 				v = 'return'
 			end
