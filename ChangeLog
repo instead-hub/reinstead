@@ -1,3 +1,8 @@
+0.3
+  * mp 2.2.2;
+  * autoscript cr/lf compat;
+  * -d as -debug.
+
 0.2
   * ctrl+/ctrl- - changes font size;
   * -i <autoscript> feature;
