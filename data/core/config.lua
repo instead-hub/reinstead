@@ -16,7 +16,7 @@ return {
 	bold_italic = 'fonts/Go-Bold-Italic.ttf',
 	scrollw = 11,
 	autostart = false, -- add path here to autorun game
-	directory = './games', -- set path of the games directory to browse
+	directory = './games', -- set path (or { path, ... }) of the games directory to browse
 	dir_auth_info = false, -- show authors?
 	dir_title = false, -- '<b>Select game</b>',
 	scroll_inverse = false,

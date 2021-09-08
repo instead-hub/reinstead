@@ -2,6 +2,7 @@
   * mp 2.2.2;
   * parser correct messages fix;
   * autoscript cr/lf compat;
+  * conf.directory can be { };
   * -d as -debug.
 
 0.2

@@ -302,8 +302,8 @@ local function datadir(dir)
 	return dir
 end
 
-local function dir_list(dir)
-	dir = datadir(dir)
+local function dir_list(dirs)
+	dirs = type(dirs) == 'table' and dirs or { dirs }
 	GAMES = {}
 	iface.input_detach()
 	mwin:set(false)
@@ -314,17 +314,20 @@ local function dir_list(dir)
 	if conf.dir_title then
 		mwin:add("<c>"..conf.dir_title.."</c>\n\n")
 	end
-	local t = system.readdir(dir)
-	for _, v in ipairs(t or {}) do
-		local dirpath = dir .. '/'.. v
-		local p = dirpath .. '/main3.lua'
-		local f = io.open(p, 'r')
-		if f then
-			instead_tags(dirpath)
-			local name = gameinfo.name
-			if name == dirpath then name = v end
-			f:close()
-			table.insert(GAMES, { path = dirpath, name = name })
+	for _, dir in ipairs(dirs) do
+		dir = datadir(dir)
+		local t = system.readdir(dir)
+		for _, v in ipairs(t or {}) do
+			local dirpath = dir .. '/'.. v
+			local p = dirpath .. '/main3.lua'
+			local f = io.open(p, 'r')
+			if f then
+				instead_tags(dirpath)
+				local name = gameinfo.name
+				if name == dirpath then name = v end
+				f:close()
+				table.insert(GAMES, { path = dirpath, name = name })
+			end
 		end
 	end
 	table.sort(GAMES, function(a, b) return a.path < b.path end)
