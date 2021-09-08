@@ -362,7 +362,7 @@ function core.init()
 			skip = false
 		elseif a:find("-", 1, true) ~= 1 then
 			GAME = a
-		elseif a == "-debug" then
+		elseif a == "-debug" or a == "-d" then
 			instead.debug(true)
 		elseif a == '-i' then
 			AUTOSCRIPT = ARGS[k+1] or "autoscript"
