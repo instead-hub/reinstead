@@ -19,7 +19,14 @@ end
 
 function tbox:resize(w, h, ...)
 	self.w, self.h = w, h
-	self.lay:resize(self.w - self.sw - self.pad * 2, self.h - self.pad * 2, ...)
+	self.xoff = 0
+	if conf.width then
+		local ww = self.lay.fonts.regular.w * conf.width
+		if w > ww then
+			self.xoff = math.round((w - ww) / 2)
+		end
+	end
+	self.lay:resize(self.w - self.sw - self.pad * 2 - 2*self.xoff, self.h - self.pad * 2, ...)
 	self.scrollh = math.floor(self.lay.h - (self.lay.fonts.regular.h * self.lay.hspace))
 end
 
@@ -117,7 +124,7 @@ function tbox:render(dst, xoff, yoff)
 	xoff = xoff or 0
 	yoff = yoff or 0
 	dst:fill(xoff, yoff, self.w, self.h, self.lay.bg)
-	self.lay:render(dst, xoff + self.sw + self.pad, yoff + self.pad, self.off)
+	self.lay:render(dst, xoff + self.sw + self.pad + self.xoff, yoff + self.pad, self.off)
 	dst:fill(xoff, yoff, self.sw, self.h, conf.scroll_bg)
 	local stop, sbot = self:scrollpos()
 	local b = math.round(SCALE)
@@ -127,7 +134,7 @@ end
 function tbox:render_line(dst, n, xoff, yoff)
 	xoff = xoff or 0
 	yoff = yoff or 0
-	self.lay:render_line(dst, n, xoff + self.sw + self.pad, yoff + self.pad, self.off)
+	self.lay:render_line(dst, n, xoff + self.sw + self.pad + self.xoff, yoff + self.pad, self.off)
 end
 
 function tbox:texth()

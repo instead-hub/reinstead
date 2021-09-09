@@ -10,6 +10,7 @@ return {
 	pad = 14,
 	fps = 60,
 	hspace = 1.2,
+	width = 75, -- maximum text width in elements
 	regular = 'fonts/Go-Regular.ttf',
 	italic = 'fonts/Go-Italic.ttf',
 	bold = 'fonts/Go-Bold.ttf',

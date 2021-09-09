@@ -12,6 +12,7 @@ function fn:new(fname, size)
 	end
 	o.font = f
 	o.spw, o.h = f:size(" ")
+	o.w = f:size("0")
 	return o
 end
 

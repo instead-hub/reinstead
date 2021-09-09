@@ -214,7 +214,7 @@ end
 
 function iface.mouse(e, v, a, b)
 	if input_attached and e == 'mousedown' then
-		local x, y, w, h = mwin.sw + mwin.pad, input_attached.y - mwin.off + mwin.pad,
+		local x, y, w, h = mwin.sw + mwin.pad + mwin.xoff, input_attached.y - mwin.off + mwin.pad,
 			mwin.lay.w, input_attached.h
 		if v == 'left' and a >= x and a < x + w and b >= y and b < y + h then
 			system.input()
