@@ -20,14 +20,18 @@ end
 function tbox:resize(w, h, ...)
 	self.w, self.h = w, h
 	self.xoff = 0
+	local uw = self.w - self.sw - self.pad * 2
 	if conf.width then
 		local ww = self.lay.fonts.regular.w * conf.width
-		if w > ww then
-			self.xoff = math.round((w - ww) / 2)
+		if uw > ww then
+			self.xoff = math.round((uw - ww) / 2)
 		end
 	end
-	self.lay:resize(self.w - self.sw - self.pad * 2 - 2*self.xoff, self.h - self.pad * 2, ...)
+	self.lay:resize(uw - 2*self.xoff, self.h - self.pad * 2, ...)
 	self.scrollh = math.floor(self.lay.h - (self.lay.fonts.regular.h * self.lay.hspace))
+	if self.xoff > math.ceil(self.sw / 2) then -- compensate scroller if we can
+		self.xoff = math.round(self.xoff - self.sw / 2)
+	end
 end
 
 function tbox:mouse(e, b, x, y)
