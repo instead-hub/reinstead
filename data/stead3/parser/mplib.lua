@@ -1674,7 +1674,7 @@ function mp:TakeAll(wh)
 		if o:hasnt 'static' and o:hasnt'scenery' and o:hasnt 'concealed'
 			and not mp:animate(o)
 			and not cont_taken(o, taken) then
-			and not partof(o) then
+			and not mp:partof(o) then
 			empty = false
 			mp:message('TAKING_ALL', o)
 			mp:subaction('Take', o)
