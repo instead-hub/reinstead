@@ -571,13 +571,13 @@ function core.run()
 						v = tostring(conf.fsize)
 						r = true
 					elseif input:find("/game .+", 1) == 1 then
-						if not GAME and conf.settings_game then
+						if not AUTOSCRIPT[1] or (not GAME and conf.settings_game) then
 							local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
 							instead_settings() -- if game crashed
 							GAME = datadir(p)
 							instead_start(GAME, conf.autoload and (instead_savepath()..'/autosave'))
 						end
-						r = 'skip'
+						r = 'hidden'
 						v = false
 					else
 						r, v = instead.cmd(input:sub(2))
@@ -635,7 +635,7 @@ function core.run()
 					end
 				end
 				if r ~= 'skip' and not skip and (r or v ~= '') then
-					iface.input_history(input)
+					iface.input_history(input, r ~= 'hidden')
 				end
 				if v then
 					mwin:add(output(v))
