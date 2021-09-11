@@ -279,9 +279,9 @@ function instead_settings()
 		return false
 	end
 	local p = DATADIR..'/settings'
-	local cfg = string.format("/font %d\n", conf.fsize)
+	local cfg = string.format("~/font %d\n", conf.fsize)
 	if GAME and conf.settings_game then
-		cfg = cfg .. string.format("/game %s\n", GAME)
+		cfg = cfg .. string.format("~/game %s\n", GAME)
 	end
 	if write(p, cfg) then
 		return true
@@ -537,7 +537,13 @@ function core.run()
 				local oh = mwin:texth()
 				local r, v
 				local cmd_mode
-				local input = iface.input():gsub("^ +", ""):gsub(" +$", "")
+				local input = iface.input()
+				local skip
+				if input:find("~", 1, true) == 1 then
+					skip = true
+					input = input:sub(2)
+				end
+				input = input:gsub("^ +", ""):gsub(" +$", "")
 				if input:find("/", 1, true) == 1 then
 					cmd_mode = true
 					r = true
@@ -560,7 +566,7 @@ function core.run()
 						if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
 						if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
 						font_changed()
-						r = 'hidden'
+						r = true
 					elseif input:find("/font", 1) == 1 then
 						v = tostring(conf.fsize)
 						r = true
@@ -568,8 +574,8 @@ function core.run()
 						if not GAME and conf.settings_game then
 							local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
 							instead_settings() -- if game crashed
-							GAME = p
-							instead_start(p, conf.autoload and (instead_savepath()..'/autosave'))
+							GAME = datadir(p)
+							instead_start(GAME, conf.autoload and (instead_savepath()..'/autosave'))
 						end
 						r = 'skip'
 						v = false
@@ -628,8 +634,8 @@ function core.run()
 						v = v .. "** ".. w
 					end
 				end
-				if r ~= 'skip' and (r or v ~= '') then
-					iface.input_history(input, r ~= 'hidden')
+				if r ~= 'skip' and not skip and (r or v ~= '') then
+					iface.input_history(input)
 				end
 				if v then
 					mwin:add(output(v))

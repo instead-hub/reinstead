@@ -44,7 +44,7 @@ function iface.history_next()
 	return
 end
 
-function iface.input_history(input, add)
+function iface.input_history(input)
 	history_pos = 0
 	if history[1] ~= input and input ~= '' then
 		table.insert(history, 1, input)
@@ -53,9 +53,7 @@ function iface.input_history(input, add)
 		table.remove(history, #history)
 	end
 	iface.input_detach()
-	if add ~= false then
-		mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
-	end
+	mwin:add("<b>"..input_prompt..fmt_esc(input).."</b>")
 end
 
 local input_attached = false
