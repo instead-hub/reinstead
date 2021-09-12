@@ -5,6 +5,7 @@
   * conf.directory can be { };
   * conf.width (maximum width in elements);
   * -d as -debug;
+  * more clever resize -> scroll;
   * bug fixes.
 
 0.2

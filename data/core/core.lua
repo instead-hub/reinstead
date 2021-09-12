@@ -679,8 +679,14 @@ function core.run()
 		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
 			dirty = iface.mouse(e, v, a, b) or dirty
 		elseif e == 'exposed' or e == 'resized' then
+			local iv = iface.input_visible()
+			local oh = mwin.h
 			mwin:resize(gfx.win():size())
-			mwin:scroll(0)
+			if iv then
+				mwin:scroll(oh)
+			else
+				mwin:scroll(0)
+			end
 			dirty = true
 		elseif e == 'mousewheel' then
 			if conf.scroll_inverse then

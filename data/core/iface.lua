@@ -213,7 +213,11 @@ end
 function iface.input_set(v)
 	input = v
 end
-
+function iface.input_visible()
+	if not input_attached then return false end
+	local y = input_attached.y - mwin.off + mwin.pad
+	return y < mwin.pad + mwin.lay.h
+end
 function iface.mouse(e, v, a, b)
 	if input_attached and e == 'mousedown' then
 		local x, y, w, h = mwin.sw + mwin.pad + mwin.xoff, input_attached.y - mwin.off + mwin.pad,

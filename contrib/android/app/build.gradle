@@ -17,8 +17,8 @@ android {
         }
         minSdkVersion 16
         targetSdkVersion 26
-        versionCode 2
-        versionName "0.2"
+        versionCode 0
+        versionName "master"
         externalNativeBuild {
             ndkBuild {
                 arguments "APP_PLATFORM=android-16"
@@ -49,12 +49,12 @@ android {
             //     path 'jni/CMakeLists.txt'
             // }
         }
-       
     }
+
     lintOptions {
         abortOnError false
     }
-    
+
     if (buildAsLibrary) {
         libraryVariants.all { variant ->
             variant.outputs.each { output ->
@@ -79,7 +79,7 @@ task stamp() {
 }
 
 task downloadDependencies() {
-    def Reinstead = '0.2'
+    def Reinstead = 'master'
     def SDL2 = '2.0.16'
     doLast {
         download {
