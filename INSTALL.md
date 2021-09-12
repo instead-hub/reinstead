@@ -74,3 +74,13 @@ Use binary releases or install mingw and try:
 ```
 $ ./make-win.sh
 ```
+
+# Android
+
+Use binary releases or F-Droid or try build yourself:
+
+```
+$ cd contrib/android
+$ ./gradlew downloadDependencies
+$ ./gradlew installDebug
+```
