@@ -3,7 +3,9 @@
   * parser correct messages fix;
   * autoscript cr/lf compat;
   * conf.directory can be { };
-  * -d as -debug.
+  * conf.width (maximum width in elements);
+  * -d as -debug;
+  * bug fixes.
 
 0.2
   * ctrl+/ctrl- - changes font size;
