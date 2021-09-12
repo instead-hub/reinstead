@@ -279,9 +279,9 @@ function instead_settings()
 		return false
 	end
 	local p = DATADIR..'/settings'
-	local cfg = string.format("~/font %d\n", conf.fsize)
+	local cfg = string.format("/font %d\n", conf.fsize)
 	if GAME and conf.settings_game then
-		cfg = cfg .. string.format("~/game %s\n", GAME)
+		cfg = cfg .. string.format("/game %s\n", GAME)
 	end
 	if write(p, cfg) then
 		return true
@@ -357,6 +357,8 @@ local function info()
 		"<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
 end
 
+local loading_settings = false
+
 function core.init()
 	local skip
 	for k=2, #ARGS do
@@ -393,6 +395,7 @@ function core.init()
 	local f = open_settings()
 	if f then
 		table.insert(AUTOSCRIPT, 1, f)
+		loading_settings = true
 	end
 	if conf.debug then
 		instead.debug(true)
@@ -470,6 +473,7 @@ function core.run()
 			if not nv and AUTOSCRIPT[1] then
 				AUTOSCRIPT[1]:close()
 				table.remove(AUTOSCRIPT, 1)
+				loading_settings = false
 				gfx.flip()
 			end
 			if nv then
@@ -537,13 +541,7 @@ function core.run()
 				local oh = mwin:texth()
 				local r, v
 				local cmd_mode
-				local input = iface.input()
-				local skip
-				if input:find("~", 1, true) == 1 then
-					skip = true
-					input = input:sub(2)
-				end
-				input = input:gsub("^ +", ""):gsub(" +$", "")
+				local input = iface.input():gsub("^ +", ""):gsub(" +$", "")
 				if input:find("/", 1, true) == 1 then
 					cmd_mode = true
 					r = true
@@ -634,7 +632,8 @@ function core.run()
 						v = v .. "** ".. w
 					end
 				end
-				if r ~= 'skip' and not skip and (r or v ~= '') then
+				iface.input_detach()
+				if not loading_settings and r ~= 'skip' and (r or v ~= '') then
 					iface.input_history(input, r ~= 'hidden')
 				end
 				if v then
