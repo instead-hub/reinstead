@@ -1,5 +1,5 @@
 return {
-	prompt = '> ',
+	prompt = '<b>> </b>',
 	title = "RE:INSTEAD",
 	fsize = 12,
 	bg = { 0xff, 0xff, 0xe8, 0xff },

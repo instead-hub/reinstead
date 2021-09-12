@@ -69,7 +69,7 @@ std.mod_start(function()
 	end)
 	local mp = std.ref '@metaparser'
 	if mp then
-		mp.msg.CUTSCENE_MORE = '^'..mp.msg.CUTSCENE_HELP
+--		mp.msg.CUTSCENE_MORE = '^'..mp.msg.CUTSCENE_HELP
 		std.rawset(mp, 'clear', function(self)
 			self.text = ''
 			re_eval 'instead_clear()'
@@ -96,6 +96,9 @@ std.mod_start(function()
 			if mp:autoplay_pending() then
 				pn(fmt.b(self.prompt .. inp))
 				return true
+			end
+			if std.here():has'cutscene' then
+				return false
 			end
 			-- nil -- to show mp:correct()
 			-- false -- do not show mp:correct()
