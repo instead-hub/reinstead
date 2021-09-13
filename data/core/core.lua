@@ -539,6 +539,7 @@ function core.run()
 				dirty = iface.input_etb() or dirty
 			elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
 				local oh = mwin:texth()
+				local off = mwin.off
 				local r, v
 				local cmd_mode
 				local input = iface.input():gsub("^ +", ""):gsub(" +$", "")
@@ -641,7 +642,11 @@ function core.run()
 				end
 				iface.input_kill()
 				if not cleared then
-					mwin.off = oh
+					if loading_settings then
+						mwin.off = off
+					else
+						mwin.off = oh
+					end
 				else
 					mwin.off = 0
 				end
