@@ -299,6 +299,7 @@ function lay:reset()
 				local ww, hh = fn:size(w.t)
 				w.w = ww
 				w.h = hh
+				if w.spw then w.spw = fn.spw end
 			end
 		end
 	end
