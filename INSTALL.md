@@ -47,6 +47,14 @@ Then run.
 
 ```
 $ ./reinstead
+
+```
+
+## With freetype
+
+You can build reinstead with freetype instead of stb_truetype.
+```
+$ make WITH_FREETYPE=1
 ```
 
 ## System-wide build and install
