@@ -59,7 +59,7 @@ font_load(const char *filename, float size)
 	if (!ok)
 		goto err;
 	FT_Set_Char_Size(font->face, 0, size*64, 0, 72);
-	font->height = round((font->face->bbox.yMax - font->face->bbox.yMin) * size / font->face->units_per_EM + 0.5);
+	font->height = round((font->face->ascender - font->face->descender) * size / font->face->units_per_EM + 0.5);
 	return font;
 err:
 	free(font);
