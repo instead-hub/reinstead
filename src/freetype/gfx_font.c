@@ -98,7 +98,6 @@ font_load(const char *filename, float size)
 	memset(font->glyphs, 0, sz);
 	FT_Set_Char_Size(font->face, 0, size*64, 0, 72);
 	face = font->face;
-	font->height = round((face->bbox.yMax - face->bbox.yMin) * size / font->face->units_per_EM + 0.5);
 	font->height = round((face->ascender - face->descender) * size / font->face->units_per_EM + 0.5);
 	return font;
 err:
