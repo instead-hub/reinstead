@@ -38,7 +38,7 @@ get_glyph(font_t *font, int idx)
 	FT_Load_Glyph(font->face, idx, FT_LOAD_DEFAULT);
 	glyph = font->face->glyph;
 	g->advance = glyph->advance.x >> 6;
-	g->width = glyph->metrics.width;
+	g->width = (glyph->metrics.width >> 6) + (glyph->metrics.horiBearingX >> 6);
 	return g;
 }
 
@@ -57,8 +57,8 @@ font_width(font_t *font, const char *text)
 		g = get_glyph(font, idx);
 		x += g->advance;
 		xend = g->width;
-		if (xend > g->advance) {
-			xend -= (xend - g->advance);
+		if (g->width > g->advance) {
+			xend = g->width - g->advance;
 		} else
 			xend = 0;
 	}
@@ -112,6 +112,7 @@ int
 font_render(font_t *font, const char *text, img_t *img)
 {
 	int x = 0, y, xx, i, pos, idx, yoff;
+	int left = 0;
 	img_t *g;
 	const char *p = text;
 	unsigned codepoint;
@@ -127,29 +128,29 @@ font_render(font_t *font, const char *text, img_t *img)
 		if (!g) {
 			glyph = face->glyph;
 			FT_Render_Glyph(glyph, FT_RENDER_MODE_NORMAL);
-			g = img_new(glyph->bitmap.width + glyph->bitmap_left, img->h);
+			left = glyph->bitmap_left;
+			if (left < 0)
+				left = 0;
+			g = img_new(glyph->bitmap.width + left, img->h);
 			memset(g->ptr, 0, g->w * g->h * 4);
 			i = 0;
 			yoff = face->ascender * font->size / face->units_per_EM - glyph->bitmap_top;
 			for (y=0; y < glyph->bitmap.rows; y++) {
 				if (yoff + y >= g->h)
 					break;
-				pos = ((yoff + y) * g->w + glyph->bitmap_left) * 4;
+				pos = ((yoff + y) * g->w + left) * 4;
 				for (xx = 0; xx < glyph->bitmap.width; xx ++) {
-					if (xx + glyph->bitmap_left >= g->w) {
+					if (xx + left >= g->w) {
 						i += (glyph->bitmap.width - xx);
 						break;
 					}
 					pos += 3;
-					g->ptr[pos++] =  glyph->bitmap.buffer[i++];
+					g->ptr[pos++] = glyph->bitmap.buffer[i++];
 				}
 			}
 			font->cache[idx] = g;
-			gi = &font->glyphs[idx];
-			gi->advance = glyph->advance.x >> 6;
-			gi->width = glyph->metrics.width;
-		} else
-			gi = get_glyph(font, idx);
+		}
+		gi = get_glyph(font, idx);
 		img_pixels_blend(g, 0, 0, g->w, g->h,
 			img, x, 0, PXL_BLEND_BLEND);
 		x += gi->advance;
