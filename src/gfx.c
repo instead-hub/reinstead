@@ -1362,6 +1362,7 @@ font_text(lua_State *L)
 	pxl = pixels_new(L, w, h);
 	if (!pxl)
 		return 0;
+	memset(pxl->img.ptr, 0, pxl->img.w * pxl->img.h * 4);
 	font_render(fn->font, text, &pxl->img);
 	img_colorize(&pxl->img, &col);
 	return 1;
