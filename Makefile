@@ -58,4 +58,4 @@ reinstead:  $(OFILES)
 	$(CC) $(CFLAGS) $(^) $(LDFLAGS) -o $(@)
 
 clean:
-	$(RM) -f src/lua/*.o src/*.o src/instead/*.o reinstead
+	$(RM) -f src/lua/*.o src/*.o src/instead/*.o src/freetype/*.o reinstead
