@@ -38,7 +38,9 @@ get_glyph(font_t *font, int idx)
 	FT_Load_Glyph(font->face, idx, FT_LOAD_DEFAULT);
 	glyph = font->face->glyph;
 	g->advance = glyph->advance.x >> 6;
-	g->width = (glyph->metrics.width >> 6) + (glyph->metrics.horiBearingX >> 6);
+	g->width = (glyph->metrics.width >> 6);
+	if (glyph->metrics.horiBearingX > 0)
+		g->width += (glyph->metrics.horiBearingX >> 6);
 	return g;
 }
 
