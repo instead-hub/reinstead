@@ -30,7 +30,6 @@ CFILES= \
 	src/stb_image.c \
 	src/lua-compat.c \
 	src/stb_image_resize.c \
-	src/stb_truetype.c \
 	src/main.c \
 	src/gfx.c \
 	src/system.c \
@@ -43,6 +42,13 @@ CFILES= \
 	src/instead/list.c \
 	src/instead_lib.c
 
+ifneq ($(WITH_FREETYPE),)
+CFILES += src/freetype/gfx_font.c
+CFLAGS += $(shell pkg-config --cflags freetype2)
+LDFLAGS += $(shell pkg-config --libs freetype2)
+else
+CFILES += src/gfx_font.c src/stb_truetype.c
+endif
 OFILES  := $(patsubst %.c, %.o, $(CFILES))
 
 $(OFILES): %.o : %.c

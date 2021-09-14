@@ -3,14 +3,9 @@
 #include "stb_image.h"
 #include "stb_image_resize.h"
 #include "platform.h"
+#include "gfx.h"
 
-typedef struct {
-	int w;
-	int h;
-	unsigned char *ptr;
-} img_t;
-
-static img_t *
+img_t *
 img_new(int w, int h)
 {
 	img_t *img = malloc(sizeof(img_t) + w * h * 4);
@@ -55,8 +50,6 @@ struct lua_pixels {
 	img_t img;
 };
 
-#define PXL_BLEND_COPY 1
-#define PXL_BLEND_BLEND 2
 static __inline void
 blend(unsigned char *s, unsigned char *d)
 {
@@ -376,8 +369,8 @@ pixels_clear(lua_State *L)
 }
 
 
-static int
-_pixels_blend(img_t *src, int x, int y, int w, int h,
+int
+img_pixels_blend(img_t *src, int x, int y, int w, int h,
 			img_t *dst, int xx, int yy, int mode)
 {
 	unsigned char *ptr1, *ptr2;
@@ -464,7 +457,7 @@ pixels_copy(lua_State *L)
 		return 0;
 	if (!dst || dst->type != PIXELS_MAGIC)
 		return 0;
-	return _pixels_blend(&src->img, x, y, w, h, &dst->img, xx, yy, PXL_BLEND_COPY);
+	return img_pixels_blend(&src->img, x, y, w, h, &dst->img, xx, yy, PXL_BLEND_COPY);
 }
 
 static int
@@ -490,7 +483,7 @@ pixels_blend(lua_State *L)
 		return 0;
 	if (!dst || dst->type != PIXELS_MAGIC)
 		return 0;
-	return _pixels_blend(&src->img, x, y, w, h, &dst->img, xx, yy, PXL_BLEND_BLEND);
+	return img_pixels_blend(&src->img, x, y, w, h, &dst->img, xx, yy, PXL_BLEND_BLEND);
 }
 
 static __inline void
@@ -1301,152 +1294,15 @@ gfx_flip(lua_State *L)
 	return 0;
 }
 
-#define MAX_GLYPHSET 256
-
-typedef struct {
-	img_t *image;
-	stbtt_bakedchar glyphs[256];
-} glyphset_t;
-
-typedef struct {
-	void *data;
-	stbtt_fontinfo stbfont;
-	glyphset_t *sets[MAX_GLYPHSET];
-	float size;
-	int height;
-} font_t;
-
-static glyphset_t*
-load_glyphset(font_t *font, int idx)
-{
-	unsigned char col[4] = { 255, 255, 255, 255 };
-	int w = 128, h = 128, i;
-	float s;
-	int ascent, descent, linegap;
-	int res;
-	unsigned char c;
-	glyphset_t *set = calloc(1, sizeof(glyphset_t));
-retry:
-	set->image = img_new(w, h);
-	s = stbtt_ScaleForMappingEmToPixels(&font->stbfont, 1) /
-		stbtt_ScaleForPixelHeight(&font->stbfont, 1);
-	res = stbtt_BakeFontBitmap(font->data, 0,
-				   font->size * s,
-				   (void*)set->image->ptr,
-				   w, h, idx * 256, 256, set->glyphs);
-	if (res < 0) {
-		w *= 2;
-		h *= 2;
-		free(set->image);
-		goto retry;
-	}
-	stbtt_GetFontVMetrics(&font->stbfont, &ascent, &descent, &linegap);
-	s = stbtt_ScaleForMappingEmToPixels(&font->stbfont, font->size);
-	int scaled_ascent = ascent * s + 0.5;
-	for (i = 0; i < 256; i++) {
-		set->glyphs[i].yoff += scaled_ascent;
-		set->glyphs[i].xadvance = ceil(set->glyphs[i].xadvance);
-	}
-	for (i = w * h - 1; i >= 0; i--) {
-		c = *(set->image->ptr + i);
-		col[3] = c;
-		memcpy(set->image->ptr + i * 4, col, 4);
-	}
-	return set;
-}
-
-static glyphset_t*
-get_glyphset(font_t *font, int codepoint)
-{
-	int idx = (codepoint >> 8) % MAX_GLYPHSET;
-	if (!font->sets[idx]) {
-		font->sets[idx] = load_glyphset(font, idx);
-	}
-	return font->sets[idx];
-}
-
-static const char*
-utf8_to_codepoint(const char *p, unsigned *dst)
-{
-	unsigned res, n;
-	switch (*p & 0xf0) {
-		case 0xf0 :  res = *p & 0x07;  n = 3;  break;
-		case 0xe0 :  res = *p & 0x0f;  n = 2;  break;
-		case 0xd0 :
-		case 0xc0 :  res = *p & 0x1f;  n = 1;  break;
-		default   :  res = *p;         n = 0;  break;
-	}
-	while (n-- && *p)
-		res = (res << 6) | (*(++p) & 0x3f);
-	*dst = res;
-	return p + 1;
-}
-
 static int
-font_width(font_t *font, const char *text)
+gfx_icon(lua_State *L)
 {
-	int x = 0;
-	const char *p = text;
-	unsigned codepoint;
-	int xend = 0;
-	while (*p) {
-		p = utf8_to_codepoint(p, &codepoint);
-		glyphset_t *set = get_glyphset(font, codepoint);
-		stbtt_bakedchar *g = &set->glyphs[codepoint & 0xff];
-		x += g->xadvance;
-		xend = g->xoff + g->x1 - g->x0;
-		if (xend > g->xadvance)
-			xend -= g->xadvance;
-		else
-			xend = 0;
-	}
-	return x + xend;
-}
-
-static font_t*
-font_load(const char *filename, float size)
-{
-	int ok;
-	int ascent = 0, descent = 0, linegap = 0;
-	float scale;
-	font_t *font = NULL;
-	FILE *fp = NULL;
-	long fsize;
-	font = malloc(sizeof(font_t));
-	if (!font)
-		goto err;
-	memset(font, 0, sizeof(font_t));
-	font->size = size;
-	fp = fopen(filename, "rb");
-	if (!fp)
-		goto err;
-	if (fseek(fp, 0, SEEK_END) < 0)
-		goto err;
-	fsize = ftell(fp);
-	if (fsize < 0)
-		goto err;
-	if (fseek(fp, 0, SEEK_SET) < 0)
-		goto err;
-	font->data = malloc(fsize);
-	if (!font->data)
-		goto err;
-	if (fread(font->data, 1, fsize, fp) != fsize)
-		goto err;
-	fclose(fp); fp = NULL;
-	ok = stbtt_InitFont(&font->stbfont, font->data, 0);
-	if (!ok)
-		goto err;
-	stbtt_GetFontVMetrics(&font->stbfont, &ascent, &descent, &linegap);
-	scale = stbtt_ScaleForMappingEmToPixels(&font->stbfont, size);
-	font->height = (ascent - descent + linegap) * scale + 0.5;
-	return font;
-err:
-	if (fp)
-		fclose(fp);
-	if (font)
-		free(font->data);
-	free(font);
-	return NULL;
+	struct lua_pixels *src;
+	src = (struct lua_pixels*)lua_touserdata(L, 1);
+	if (!src || src->type != PIXELS_MAGIC)
+		return 0;
+	Icon(src->img.ptr, src->img.w, src->img.h);
+	return 0;
 }
 
 #define FONT_MAGIC 0x1978
@@ -1457,6 +1313,77 @@ struct lua_font {
 };
 
 static int
+font_gc(lua_State *L)
+{
+	struct lua_font *fn = (struct lua_font*)lua_touserdata(L, 1);
+	if (!fn || fn->type != FONT_MAGIC)
+		return 0;
+	font_free(fn->font);
+	return 0;
+}
+
+static int
+font_size(lua_State *L)
+{
+	struct lua_font *fn = (struct lua_font*)lua_touserdata(L, 1);
+	const char *text = luaL_checkstring(L, 2);
+	if (!fn || fn->type != FONT_MAGIC)
+		return 0;
+	lua_pushinteger(L, font_width(fn->font, text));
+	lua_pushinteger(L, font_height(fn->font));
+	return 2;
+}
+
+static void
+img_colorize(img_t *img, color_t *col)
+{
+	unsigned char *ptr = img->ptr;
+	size_t size = img->w * img->h * 4;
+	while (size -= 4) { /* colorize! */
+		memcpy(ptr, col, 3);
+		ptr[3] = ptr[3] * col->a / 255;
+		ptr += 4;
+	}
+}
+
+static int
+font_text(lua_State *L)
+{
+	int w, h;
+	color_t col;
+	struct lua_pixels *pxl;
+	struct lua_font *fn = (struct lua_font*)lua_touserdata(L, 1);
+	const char *text = luaL_checkstring(L, 2);
+	checkcolor(L, 3, &col);
+	if (!fn || fn->type != FONT_MAGIC)
+		return 0;
+	w = font_width(fn->font, text);
+	h = font_height(fn->font);
+	pxl = pixels_new(L, w, h);
+	if (!pxl)
+		return 0;
+	font_render(fn->font, text, &pxl->img);
+	img_colorize(&pxl->img, &col);
+	return 1;
+}
+
+static const luaL_Reg font_mt[] = {
+	{ "__gc", font_gc },
+	{ "size", font_size },
+	{ "text", font_text },
+	{ NULL, NULL }
+};
+
+static void
+font_create_meta(lua_State *L)
+{
+	luaL_newmetatable(L, "font metatable");
+	luaL_setfuncs(L, font_mt, 0);
+	lua_pushvalue(L, -1);
+	lua_setfield(L, -2, "__index");
+}
+
+int
 gfx_font(lua_State *L)
 {
 	const char *filename  = luaL_checkstring(L, 1);
@@ -1479,114 +1406,21 @@ gfx_font(lua_State *L)
 	return 1;
 }
 
-static int
-font_size(lua_State *L)
+const char*
+utf8_to_codepoint(const char *p, unsigned *dst)
 {
-	struct lua_font *fn = (struct lua_font*)lua_touserdata(L, 1);
-	const char *text = luaL_checkstring(L, 2);
-	if (!fn || fn->type != FONT_MAGIC)
-		return 0;
-	lua_pushinteger(L, font_width(fn->font, text));
-	lua_pushinteger(L, fn->font->height);
-	return 2;
-}
-static void
-img_colorize(img_t *img, color_t *col)
-{
-	unsigned char *ptr = img->ptr;
-	size_t size = img->w * img->h * 4;
-	while (size -= 4) { /* colorize! */
-		memcpy(ptr, col, 3);
-		ptr[3] = ptr[3] * col->a / 255;
-		ptr += 4;
+	unsigned res, n;
+	switch (*p & 0xf0) {
+		case 0xf0 :  res = *p & 0x07;  n = 3;  break;
+		case 0xe0 :  res = *p & 0x0f;  n = 2;  break;
+		case 0xd0 :
+		case 0xc0 :  res = *p & 0x1f;  n = 1;  break;
+		default   :  res = *p;         n = 0;  break;
 	}
-}
-static int
-font_text(lua_State *L)
-{
-	int w, h;
-	int x = 0, y = 0;
-	color_t col;
-	const char *p;
-	glyphset_t *set;
-	stbtt_bakedchar *g;
-	unsigned codepoint;
-	struct lua_pixels *pxl;
-	struct lua_font *fn = (struct lua_font*)lua_touserdata(L, 1);
-	const char *text = luaL_checkstring(L, 2);
-	checkcolor(L, 3, &col);
-	if (!fn || fn->type != FONT_MAGIC)
-		return 0;
-	w = font_width(fn->font, text);
-	h = fn->font->height;
-	pxl = pixels_new(L, w, h);
-	if (!pxl)
-		return 0;
-	p = text;
-	while (*p) {
-		p = utf8_to_codepoint(p, &codepoint);
-		set = get_glyphset(fn->font, codepoint);
-		g = &set->glyphs[codepoint & 0xff];
-		_pixels_blend(set->image,
-			g->x0, g->y0,
-			g->x1 - g->x0, g->y1 - g->y0,
-			&pxl->img,
-			x + g->xoff, y + g->yoff, PXL_BLEND_BLEND);
-		x += g->xadvance;
-	}
-	img_colorize(&pxl->img, &col);
-	return 1;
-}
-static void
-font_free(font_t *font)
-{
-	int i;
-	for (i = 0; i < MAX_GLYPHSET; i++) {
-		glyphset_t *set = font->sets[i];
-		if (!set)
-			continue;
-		free(set->image);
-		free(set);
-	}
-	free(font->data);
-	free(font);
-}
-
-static int
-font_gc(lua_State *L)
-{
-	struct lua_font *fn = (struct lua_font*)lua_touserdata(L, 1);
-	if (!fn || fn->type != FONT_MAGIC)
-		return 0;
-	font_free(fn->font);
-	return 0;
-}
-
-static const luaL_Reg font_mt[] = {
-	{ "__gc", font_gc },
-	{ "size", font_size },
-	{ "text", font_text },
-	{ NULL, NULL }
-};
-
-static void
-font_create_meta(lua_State *L)
-{
-	luaL_newmetatable(L, "font metatable");
-	luaL_setfuncs(L, font_mt, 0);
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-}
-
-static int
-gfx_icon(lua_State *L)
-{
-	struct lua_pixels *src;
-	src = (struct lua_pixels*)lua_touserdata(L, 1);
-	if (!src || src->type != PIXELS_MAGIC)
-		return 0;
-	Icon(src->img.ptr, src->img.w, src->img.h);
-	return 0;
+	while (n-- && *p)
+		res = (res << 6) | (*(++p) & 0x3f);
+	*dst = res;
+	return p + 1;
 }
 
 static const luaL_Reg
