@@ -1114,6 +1114,16 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
         return mLayout;
     }
 
+    /**
+     * This method is called by SDL using JNI.
+     */
+    public static void speak(String text) { // reinstead
+        if (mSingleton == null) {
+            return;
+        }
+        mSingleton.Speak(text);
+    }
+    public void Speak(String text) { }
     static class ShowTextInputTask implements Runnable {
         /*
          * This is used to regulate the pan&scan method to have some offset from

@@ -169,6 +169,10 @@ void Icon(unsigned char *ptr, int w, int h)
 	return;
 }
 
+void Speak(const char *txt)
+{
+}
+
 static int mb = 0;
 extern int sys_poll(lua_State *L)
 {
