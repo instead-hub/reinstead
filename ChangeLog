@@ -1,3 +1,9 @@
+0.4
+  * space distance while font resizing fix;
+  * freetype support (make WITH_TRUETYPE=1);
+  * libschrift support (make WITH_SCHRIFT=1).
+  * fix scroll on title screen.
+
 0.3
   * mp 2.2.2;
   * parser correct messages fix;
