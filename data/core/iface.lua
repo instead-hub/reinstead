@@ -26,7 +26,7 @@ function iface.history_prev()
 	local i = history[history_pos]
 	if i then
 		input = i
-		iface.tts_add(i)
+		iface.tts_more(i)
 		return iface.input_attach(i)
 	end
 	return
@@ -42,7 +42,7 @@ function iface.history_next()
 	local i = history[history_pos]
 	if i then
 		input = i
-		iface.tts_add(i)
+		iface.tts_more(i)
 		return iface.input_attach(i)
 	end
 	return
@@ -171,9 +171,9 @@ end
 
 function iface.input_text(v)
 	if v == ' ' then
-		iface.tts_add(input)
+		iface.tts_more(input)
 	else
-		iface.tts_add(v)
+		iface.tts_more(v)
 	end
 	local t = utf.chars(input)
 	local app = utf.chars(v)
@@ -200,7 +200,7 @@ function iface.input_bs()
 	end
 	input = table.concat(t, '')
 	if a == ' ' then
-		iface.tts_add(input)
+		iface.tts_more(input)
 	end
 	return iface.input_attach(input, true)
 end
@@ -270,7 +270,7 @@ local function strip_tags(str)
 	return str
 end
 
-function iface.tts_add(str)
+function iface.tts_more(str)
 	str = strip_tags(str)
 	tts_text = (tts_text or '')..str
 end
