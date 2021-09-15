@@ -13,8 +13,7 @@ CFILES= \
 	src/stb_truetype.c \
 	src/main.c \
 	src/gfx.c \
-	src/schrift/schrift.c \
-	src/schrift/gfx_font.c \
+	src/gfx_font.c \
 	src/system.c \
 	src/instead/idf.c \
 	src/instead/lfs.c \
