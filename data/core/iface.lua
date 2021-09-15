@@ -26,6 +26,7 @@ function iface.history_prev()
 	local i = history[history_pos]
 	if i then
 		input = i
+		iface.tts_add(i)
 		return iface.input_attach(i)
 	end
 	return
@@ -41,6 +42,7 @@ function iface.history_next()
 	local i = history[history_pos]
 	if i then
 		input = i
+		iface.tts_add(i)
 		return iface.input_attach(i)
 	end
 	return
@@ -168,6 +170,11 @@ function iface.input_kill()
 end
 
 function iface.input_text(v)
+	if v == ' ' then
+		iface.tts_add(input)
+	else
+		iface.tts_add(v)
+	end
 	local t = utf.chars(input)
 	local app = utf.chars(v)
 	table.insert(t, input_pos, v)
@@ -177,6 +184,7 @@ function iface.input_text(v)
 end
 
 function iface.input_edit(v)
+	--iface.tts(v)
 	local dirty = iface.input_attach(input..v)
 	input_pos = #utf.chars(input) + 1
 	return dirty
@@ -184,12 +192,16 @@ end
 
 function iface.input_bs()
 	local t = utf.chars(input)
+	local a
 	if input_pos <= #t + 1 and input_pos > 1 then
-		table.remove(t, input_pos - 1)
+		a = table.remove(t, input_pos - 1)
 		input_pos = input_pos - 1
 		if input_pos < 1 then input_pos = 1 end
 	end
 	input = table.concat(t, '')
+	if a == ' ' then
+		iface.tts_add(input)
+	end
 	return iface.input_attach(input, true)
 end
 
@@ -249,6 +261,41 @@ function iface.reset()
 	iface.create_cursor()
 	iface.input_attach(input)
 	return mwin
+end
+local tts_on = false
+local tts_text = false
+
+local function strip_tags(str)
+	str = str:gsub("<[^>]+>", ""):gsub("^[ \t]+",""):gsub("[ \t]+$", "")
+	return str
+end
+
+function iface.tts_add(str)
+	str = strip_tags(str)
+	tts_text = (tts_text or '')..str
+end
+
+function iface.tts_mode(on)
+	if on == nil then
+		return tts_on
+	end
+	tts_on = on
+	return tts_on
+end
+
+function iface.tts(str)
+	if str == false then
+		system.speak('')
+		tts_text = false
+		return
+	end
+	str = str or ''
+	str = strip_tags(str)
+	str = (tts_text or '').. str
+	if tts_on and str ~= '' then
+		system.speak(str)
+	end
+	tts_text = false
 end
 
 return iface
