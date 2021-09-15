@@ -46,9 +46,12 @@ ifneq ($(WITH_FREETYPE),)
 CFILES += src/freetype/gfx_font.c
 CFLAGS += $(shell pkg-config --cflags freetype2)
 LDFLAGS += $(shell pkg-config --libs freetype2)
+else ifneq ($(WITH_SCHRIFT),)
+CFILES += src/schrift/gfx_font.c src/schrift/schrift.c
 else
 CFILES += src/gfx_font.c src/stb_truetype.c
 endif
+
 OFILES  := $(patsubst %.c, %.o, $(CFILES))
 
 $(OFILES): %.o : %.c
@@ -58,4 +61,4 @@ reinstead:  $(OFILES)
 	$(CC) $(CFLAGS) $(^) $(LDFLAGS) -o $(@)
 
 clean:
-	$(RM) -f src/lua/*.o src/*.o src/instead/*.o src/freetype/*.o reinstead
+	$(RM) -f src/lua/*.o src/*.o src/instead/*.o src/freetype/*.o src/schrift/*.o reinstead

@@ -31,6 +31,7 @@ RE:INSTEAD links with the following libraries/sources:
 RE:INSTEAD _may_ be linked with:
 
     freetype 2 (FTL)
+    libschrift (ISC)
 
 RE:INSTEAD uses dictionary files from the http://aot.ru project that is
 covered by the terms of the LGPL license. See data/stead3/morph/COPYING.
