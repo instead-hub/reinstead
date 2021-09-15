@@ -154,16 +154,16 @@ local function instead_start(game, load)
 		if load then
 			mwin:add("*** "..basename(load))
 			mwin:add(output(e))
-			iface.tts_add(basename(load).. '\n'..e)
+			iface.tts_more(basename(load).. '\n'..e)
 		else
 			mwin:add(output(e))
-			iface.tts_add(e)
+			iface.tts_more(e)
 		end
 		iface.input_attach()
 	else
 		iface.input_detach()
 		mwin:add(output(e))
-		iface.tts_add(e)
+		iface.tts_more(e)
 	end
 	mwin.off = 0
 	cleared = true
@@ -250,7 +250,7 @@ local function instead_save(w, silent)
 	end
 	if not silent then
 		mwin:add(e)
-		iface.tts_add(e)
+		iface.tts_more(e)
 	end
 	iface.input_attach()
 end
@@ -342,7 +342,7 @@ local function dir_list(dirs)
 	for k, v in ipairs(GAMES) do
 		--mwin:add_img(v.icon)
 		mwin:add(string.format("<c>%s <i>(%d)</i></c>", v.name, k))
-		iface.tts_add(string.format("%s %d\n", v.name, k))
+		iface.tts_more(string.format("%s %d\n", v.name, k))
 	end
 	if #GAMES == 0 then
 		mwin:set("No games in \""..dir.."\" found.")
@@ -516,7 +516,7 @@ function core.run()
 					iface.input_set ''
 				else
 					mwin:add(conf.short_help)
-					iface.tts_add(conf.short_help)
+					iface.tts_more(conf.short_help)
 				end
 				iface.input_attach()
 				dirty = true
@@ -652,11 +652,11 @@ function core.run()
 				iface.input_detach()
 				if not loading_settings and r ~= 'skip' and (r or v ~= '') then
 					iface.input_history(input, r ~= 'hidden')
-					iface.tts_add(input..'\n')
+					iface.tts_more(input..'\n')
 				end
 				if v then
 					mwin:add(output(v))
-					iface.tts_add(v)
+					iface.tts_more(v)
 				end
 				iface.input_kill()
 				if not cleared then
