@@ -232,6 +232,14 @@ sys_log(lua_State *L)
 	return 0;
 }
 
+static int
+sys_speak(lua_State *L)
+{
+	const char *str = luaL_checkstring(L, 1);
+	Speak(str);
+	return 0;
+}
+
 static const luaL_Reg
 sys_lib[] = {
 	{ "poll", sys_poll },
@@ -249,6 +257,7 @@ sys_lib[] = {
 	{ "sleep", sys_sleep },
 	{ "input", sys_input },
 	{ "log", sys_log },
+	{ "speak", sys_speak },
 	{ NULL, NULL }
 };
 

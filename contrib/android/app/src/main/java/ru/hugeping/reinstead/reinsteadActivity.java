@@ -6,9 +6,13 @@ import java.io.IOException;
 import java.io.File;
 import android.util.Log;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import java.util.Locale;
+// import android.widget.Toast;
 
 public class reinsteadActivity extends SDLActivity
 {
+	TextToSpeech tts;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		AssetManager asset_manager = getApplicationContext().getAssets();
@@ -21,5 +25,30 @@ public class reinsteadActivity extends SDLActivity
 			Log.v("reinstead", "Can't copy assets");
 		}
 		super.onCreate(savedInstanceState);
+		tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+			@Override
+			public void onInit(int status) {
+				if (status != TextToSpeech.ERROR) {
+					Log.v("reinstead", "Started TTS");
+					tts.setLanguage(Locale.getDefault());
+				}
+			}
+		});
+		// Toast.makeText(getApplicationContext(), "",Toast.LENGTH_SHORT).show();
+	}
+	public void Speak(String text) {
+		if (tts == null)
+			return;
+/*		if (tts.isSpeaking()) {
+			tts.stop();
+		} */
+		tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+	}
+	public void onPause(){
+		if(tts !=null){
+			tts.stop();
+			tts.shutdown();
+		}
+		super.onPause();
 	}
 }
