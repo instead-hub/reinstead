@@ -133,7 +133,7 @@ font_load(const char *filename, float size)
 err:
 	if (fp)
 		fclose(fp);
-	if (font)
+	if (font && font->data)
 		free(font->data);
 	free(font);
 	return NULL;
