@@ -17,6 +17,8 @@
 #ifndef SCHRIFT_H
 #define SCHRIFT_H 1
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
