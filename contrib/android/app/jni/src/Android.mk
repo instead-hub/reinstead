@@ -17,7 +17,7 @@ SRC := instead/cache.c instead/idf.c instead/instead.c instead/lfs.c \
 	lua/liolib.c lua/llex.c lua/lmathlib.c lua/lmem.c lua/loadlib.c \
 	lua/lobject.c lua/lopcodes.c lua/loslib.c lua/lparser.c lua/lstate.c \
 	lua/lstring.c lua/lstrlib.c lua/ltable.c lua/ltablib.c lua/ltm.c \
-	lua/lundump.c lua/lutf8lib.c lua/lvm.c lua/lzio.c gfx.c instead_lib.c lua-compat.c \
+	lua/lundump.c lua/lutf8lib.c lua/lvm.c lua/lzio.c gfx.c gfx_font.c instead_lib.c lua-compat.c \
 	main.c platform.c stb_image.c stb_image_resize.c stb_truetype.c system.c
 
 LOCAL_SRC_FILES = $(patsubst %,reinstead/src/%, $(SRC))
