@@ -154,13 +154,16 @@ local function instead_start(game, load)
 		if load then
 			mwin:add("*** "..basename(load))
 			mwin:add(output(e))
+			iface.tts_add(basename(load).. '\n'..e)
 		else
 			mwin:add(output(e))
+			iface.tts_add(e)
 		end
 		iface.input_attach()
 	else
 		iface.input_detach()
 		mwin:add(output(e))
+		iface.tts_add(e)
 	end
 	mwin.off = 0
 	cleared = true
@@ -247,6 +250,7 @@ local function instead_save(w, silent)
 	end
 	if not silent then
 		mwin:add(e)
+		iface.tts_add(e)
 	end
 	iface.input_attach()
 end
@@ -279,7 +283,11 @@ function instead_settings()
 		return false
 	end
 	local p = DATADIR..'/settings'
-	local cfg = string.format("/font %d\n", conf.fsize)
+	local cfg = ''
+	if iface.tts_mode() then
+		cfg = cfg .. "/tts\n"
+	end
+	cfg = cfg .. string.format("/font %d\n", conf.fsize)
 	if GAME and conf.settings_game then
 		cfg = cfg .. string.format("/game %s\n", GAME)
 	end
@@ -334,6 +342,7 @@ local function dir_list(dirs)
 	for k, v in ipairs(GAMES) do
 		--mwin:add_img(v.icon)
 		mwin:add(string.format("<c>%s <i>(%d)</i></c>", v.name, k))
+		iface.tts_add(string.format("%s %d\n", v.name, k))
 	end
 	if #GAMES == 0 then
 		mwin:set("No games in \""..dir.."\" found.")
@@ -507,6 +516,7 @@ function core.run()
 					iface.input_set ''
 				else
 					mwin:add(conf.short_help)
+					iface.tts_add(conf.short_help)
 				end
 				iface.input_attach()
 				dirty = true
@@ -554,6 +564,11 @@ function core.run()
 					elseif input == '/info' then
 						v = info()
 						r = true
+					elseif input == '/tts' then
+						if not iface.tts_mode(not iface.tts_mode()) then
+							iface.tts(false)
+						end
+						r = true
 					elseif input:find("/load", 1, true) == 1 then
 						need_load = input:sub(6)
 						r = true
@@ -588,6 +603,7 @@ function core.run()
 					if n then n = math.floor(n) end
 					if not n or n > #GAMES or n < 1 then
 						if #GAMES > 1 then
+							dir_list(conf.directory)
 							v = '1 - ' .. tostring(#GAMES).. '?'
 						else
 							v = 'No games.'
@@ -636,9 +652,11 @@ function core.run()
 				iface.input_detach()
 				if not loading_settings and r ~= 'skip' and (r or v ~= '') then
 					iface.input_history(input, r ~= 'hidden')
+					iface.tts_add(input..'\n')
 				end
 				if v then
 					mwin:add(output(v))
+					iface.tts_add(v)
 				end
 				iface.input_kill()
 				if not cleared then
@@ -721,6 +739,7 @@ function core.run()
 		end
 		local elapsed = system.time() - start
 --		system.sleep(math.max(0, fps - elapsed))
+		iface.tts()
 		if not AUTOSCRIPT[1] then
 			system.wait(math.max(0, fps - elapsed))
 		end

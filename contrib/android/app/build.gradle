@@ -17,7 +17,7 @@ android {
         }
         minSdkVersion 16
         targetSdkVersion 26
-        versionCode 0
+        versionCode 1
         versionName "master"
         externalNativeBuild {
             ndkBuild {

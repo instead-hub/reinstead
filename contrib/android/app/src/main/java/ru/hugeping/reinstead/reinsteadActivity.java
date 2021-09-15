@@ -44,10 +44,16 @@ public class reinsteadActivity extends SDLActivity
 		} */
 		tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
 	}
+
+	public void onDestroy(){
+		if (tts !=null)
+			tts.shutdown();
+		super.onDestroy();
+	}
+
 	public void onPause(){
 		if(tts !=null){
 			tts.stop();
-			tts.shutdown();
 		}
 		super.onPause();
 	}
