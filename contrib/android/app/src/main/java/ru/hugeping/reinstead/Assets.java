@@ -23,7 +23,8 @@ public class Assets
 		Log.e("reinstead", "External: " + dest_dir_path);
 		File dest_dir = new File(dest_dir_path);
 		boolean doCopy = true;
-		try (BufferedReader reader = new BufferedReader(new FileReader(dest_dir_path + "/stamp"))) {
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(dest_dir_path + "/stamp"));
 			String line1 = reader.readLine();
 			Log.e("reinstead", "Internal stamp: " + line1);
 			BufferedReader reader2 = new BufferedReader(new InputStreamReader(asset_manager.open(arg_assetDir + "/stamp")));
