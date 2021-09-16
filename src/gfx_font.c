@@ -77,13 +77,17 @@ font_width(font_t *font, const char *text)
 {
 	int x = 0;
 	const char *p = text;
-	unsigned codepoint;
-	int xend = 0;
+	unsigned codepoint, ocp = 0;
+	int xend = 0, kern = 0;
+	float s = stbtt_ScaleForMappingEmToPixels(&font->stbfont, font->size);
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		glyphset_t *set = get_glyphset(font, codepoint);
 		stbtt_bakedchar *g = &set->glyphs[codepoint & 0xff];
-		x += g->xadvance;
+		if (ocp)
+			kern = stbtt_GetCodepointKernAdvance(&font->stbfont, ocp, codepoint);
+		ocp = codepoint;
+		x += g->xadvance + round(kern * s);
 		xend = g->xoff + g->x1 - g->x0;
 		if (xend > g->xadvance)
 			xend -= g->xadvance;
@@ -142,16 +146,21 @@ err:
 int
 font_render(font_t *font, const char *text, img_t *img)
 {
-	int x = 0;
-	unsigned codepoint;
+	int x = 0, kern = 0;
+	unsigned codepoint, ocp = 0;
 	glyphset_t *set;
 	stbtt_bakedchar *g;
+	float s = stbtt_ScaleForMappingEmToPixels(&font->stbfont, font->size);
 	const char *p;
 	p = text;
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		set = get_glyphset(font, codepoint);
 		g = &set->glyphs[codepoint & 0xff];
+		if (ocp)
+			kern = stbtt_GetCodepointKernAdvance(&font->stbfont, ocp, codepoint);
+		ocp = codepoint;
+		x += round(s * kern);
 		img_pixels_blend(set->image,
 			g->x0, g->y0,
 			g->x1 - g->x0, g->y1 - g->y0,
