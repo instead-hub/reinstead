@@ -15,5 +15,8 @@ function utf.chars(b)
 	end
 	return res
 end
-
+function utf.strip(str)
+	str = str:gsub("^[ \t]+",""):gsub("[ \t]+$","")
+	return str
+end
 return utf
