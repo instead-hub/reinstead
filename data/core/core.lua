@@ -284,7 +284,7 @@ function instead_settings()
 	end
 	local p = DATADIR..'/settings'
 	local cfg = ''
-	if iface.tts_mode() then
+	if iface.tts_mode() and not system.is_speak() then
 		cfg = cfg .. "/tts on\n"
 	end
 	cfg = cfg .. string.format("/font %d\n", conf.fsize)
