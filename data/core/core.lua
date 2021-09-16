@@ -1,6 +1,7 @@
 local VERSION='0.4'
 conf = require "config"
 local iface = require "iface"
+local utf = require "utf"
 
 local gameinfo = {}
 
@@ -80,7 +81,7 @@ local function game_tag(name, l)
 	l = l:gsub("\r", "")
 	if l:find("^[ \t]*--[ \t]*%$"..name..":") then
 		local _, e = l:find("$"..name..":", 1, true)
-		tag = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", ""):gsub("\\n", "\n")
+		tag = l:sub(e + 1):gsub("^[ \t]+", ""):gsub("[ \t%$]$", ""):gsub("\\n", "\n")
 	end
 	return tag
 end
@@ -220,7 +221,7 @@ function instead_savepath()
 end
 
 local function save_path(w)
-	w = w and w:gsub("^[ \t]+", ""):gsub("[ \t]+$", ""):gsub("\\","/")
+	w = w and utf.strip(w):gsub("\\","/")
 	if not w or w == "" then w = 'autosave' else w = basename(w) end
 	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
@@ -555,44 +556,38 @@ function core.run()
 				local off = mwin.off
 				local r, v
 				local cmd_mode
-				local input = iface.input():gsub("^ +", ""):gsub(" +$", "")
-				if input:find("/", 1, true) == 1 then
+				local input = utf.strip(iface.input())
+				if input:find("/", 1, true) == 1 or input:find("!", 1, true) == 1 then
 					cmd_mode = true
+					local cmd = utf.strip(input:sub(2))
 					r = true
-					if input == '/restart' then
+					if cmd == 'restart' then
 						need_restart = true
 						v = ''
-					elseif input == '/quit' then
+					elseif cmd == 'quit' then
 						break
-					elseif input == '/info' then
+					elseif cmd == 'info' then
 						v = info()
-						r = true
-					elseif input == '/tts on' then -- settings?
+					elseif cmd == 'tts on' then -- settings?
 						iface.tts_mode(true)
-						r = true
-					elseif input == '/tts' then -- toggle
+					elseif cmd == 'tts' then -- toggle
 						if not iface.tts_mode(not iface.tts_mode()) then
 							iface.tts(false)
 						end
-						r = true
-					elseif input:find("/load", 1, true) == 1 then
-						need_load = input:sub(6)
-						r = true
-					elseif input:find("/save", 1, true) == 1 then
-						need_save = input:sub(6)
-						r = true
-					elseif input:find("/font +[0-9]+", 1) == 1 then
-						conf.fsize = (tonumber(input:sub(7)) or conf.fsize)
+					elseif cmd:find("load", 1, true) == 1 then
+						need_load = cmd:sub(5)
+					elseif cmd:find("save", 1, true) == 1 then
+						need_save = cmd:sub(5)
+					elseif cmd:find("font +[0-9]+", 1) == 1 then
+						conf.fsize = (tonumber(cmd:sub(6)) or conf.fsize)
 						if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
 						if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
 						font_changed()
-						r = true
-					elseif input:find("/font", 1) == 1 then
+					elseif cmd == "font" then
 						v = tostring(conf.fsize)
-						r = true
-					elseif input:find("/game .+", 1) == 1 then
+					elseif cmd:find("game .+", 1) == 1 then
 						if not AUTOSCRIPT[1] or (not GAME and conf.settings_game) then
-							local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
+							local p = utf.strip(cmd:sub(6))
 							instead_settings() -- if game crashed
 							GAME = datadir(p)
 							instead_start(GAME, conf.autoload and (instead_savepath()..'/autosave'))
@@ -600,7 +595,7 @@ function core.run()
 						r = 'hidden'
 						v = false
 					else
-						r, v = instead.cmd(input:sub(2))
+						r, v = instead.cmd(cmd)
 						if r == false and v == '' then v = '?' end
 						r = true
 					end
