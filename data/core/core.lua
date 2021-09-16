@@ -285,7 +285,7 @@ function instead_settings()
 	local p = DATADIR..'/settings'
 	local cfg = ''
 	if iface.tts_mode() then
-		cfg = cfg .. "/tts\n"
+		cfg = cfg .. "/tts on\n"
 	end
 	cfg = cfg .. string.format("/font %d\n", conf.fsize)
 	if GAME and conf.settings_game then
@@ -411,6 +411,9 @@ function core.init()
 	end
 
 	print("scale: ", SCALE)
+	if system.is_speak() then
+		iface.speak_mode(true)
+	end
 	core.start()
 end
 
@@ -564,7 +567,10 @@ function core.run()
 					elseif input == '/info' then
 						v = info()
 						r = true
-					elseif input == '/tts' then
+					elseif input == '/tts on' then -- settings?
+						iface.tts_mode(true)
+						r = true
+					elseif input == '/tts' then -- toggle
 						if not iface.tts_mode(not iface.tts_mode()) then
 							iface.tts(false)
 						end
