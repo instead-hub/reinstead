@@ -48,7 +48,8 @@ int
 font_width(font_t *font, const char *text)
 {
 	int x = 0;
-	int idx;
+	int idx, oidx = 0;
+	FT_Vector kern;
 	glyph_t *g;
 	const char *p = text;
 	unsigned codepoint;
@@ -56,8 +57,12 @@ font_width(font_t *font, const char *text)
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		idx = FT_Get_Char_Index(font->face, codepoint);
+		kern.x = 0;
+		if (oidx)
+			FT_Get_Kerning(font->face, oidx, idx, 0, &kern);
+		oidx = idx;
 		g = get_glyph(font, idx);
-		x += g->advance;
+		x += g->advance + (kern.x >> 6);
 		xend = g->width;
 		if (g->width > g->advance) {
 			xend = g->width - g->advance;
@@ -115,8 +120,9 @@ err:
 int
 font_render(font_t *font, const char *text, img_t *img)
 {
-	int x = 0, y, xx, i, pos, idx, yoff;
+	int x = 0, y, xx, i, pos, idx, yoff, oidx = 0;
 	int left = 0;
+	FT_Vector kern;
 	img_t *g;
 	const char *p = text;
 	unsigned codepoint;
@@ -127,6 +133,10 @@ font_render(font_t *font, const char *text, img_t *img)
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		idx = FT_Get_Char_Index(face, codepoint);
+		kern.x = 0;
+		if (oidx)
+			FT_Get_Kerning(font->face, oidx, idx, 0, &kern);
+		oidx = idx;
 		FT_Load_Glyph(face, idx, FT_LOAD_DEFAULT);
 		g = font->cache[idx];
 		if (!g) {
@@ -158,6 +168,7 @@ font_render(font_t *font, const char *text, img_t *img)
 		img_pixels_blend(g, 0, 0, g->w, g->h,
 			img, x, 0, PXL_BLEND_BLEND);
 		x += gi->advance;
+		x += kern.x >> 6;
 	}
 	return 0;
 }
