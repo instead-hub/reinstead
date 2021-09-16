@@ -266,7 +266,7 @@ local tts_on = false
 local tts_text = false
 
 local function strip_tags(str)
-	str = str:gsub("<[^>]+>", ""):gsub("^[ \t]+",""):gsub("[ \t]+$", "")
+	str = str:gsub("<[^w][^>]+>", ""):gsub("^[ \t]+",""):gsub("[ \t]+$", ""):gsub("<w:([^>]+)>","%1")
 	return str
 end
 
