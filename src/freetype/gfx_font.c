@@ -137,6 +137,7 @@ font_render(font_t *font, const char *text, img_t *img)
 		if (oidx)
 			FT_Get_Kerning(font->face, oidx, idx, 0, &kern);
 		oidx = idx;
+		x += kern.x >> 6;
 		FT_Load_Glyph(face, idx, FT_LOAD_DEFAULT);
 		g = font->cache[idx];
 		if (!g) {
@@ -168,7 +169,6 @@ font_render(font_t *font, const char *text, img_t *img)
 		img_pixels_blend(g, 0, 0, g->w, g->h,
 			img, x, 0, PXL_BLEND_BLEND);
 		x += gi->advance;
-		x += kern.x >> 6;
 	}
 	return 0;
 }
