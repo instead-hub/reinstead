@@ -47,15 +47,20 @@ font_width(font_t *font, const char *text)
 {
 	int x = 0;
 	struct SFT_GMetrics metrics;
-	SFT_Glyph glyph;
+	SFT_Glyph glyph, oglyph = 0;
+	SFT_Kerning kern;
 	const char *p = text;
 	unsigned codepoint;
 	int xend = 0;
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		sft_lookup(&font->sft, codepoint, &glyph);
+		kern.xShift = 0;
+		if (oglyph)
+			sft_kerning(&font->sft, oglyph, glyph,  &kern);
+		oglyph = glyph;
 		sft_gmetrics(&font->sft, glyph, &metrics);
-		x += ceil(metrics.advanceWidth);
+		x += ceil(metrics.advanceWidth) + kern.xShift;
 		xend = ceil(metrics.minWidth);
 		if (metrics.leftSideBearing > 0) {
 			xend += metrics.leftSideBearing;
@@ -125,15 +130,21 @@ font_render(font_t *font, const char *text, img_t *img)
 		.height = 256,
 		.pixels = pixels,
 	};
-	SFT_Glyph glyph;
+	SFT_Glyph glyph, oglyph = 0;
 	struct SFT_LMetrics lm;
 	struct SFT_GMetrics metrics;
+	SFT_Kerning kern;
 	const char *p = text;
 	unsigned codepoint;
 	sft_lmetrics(&font->sft, &lm);
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		sft_lookup(&font->sft, codepoint, &glyph);
+		kern.xShift = 0;
+		if (oglyph)
+			sft_kerning(&font->sft, oglyph, glyph,  &kern);
+		oglyph = glyph;
+		x += kern.xShift;
 		sft_gmetrics(&font->sft, glyph, &metrics);
 		g.width = metrics.minWidth;
 		g.height = metrics.minHeight;
