@@ -10,13 +10,13 @@ else {
 }
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 30
     defaultConfig {
         if (buildAsApplication) {
             applicationId "ru.hugeping.reinstead"
         }
-        minSdkVersion 16
-        targetSdkVersion 26
+        minSdkVersion 18
+        targetSdkVersion 30
         versionCode 1
         versionName "master"
         externalNativeBuild {
