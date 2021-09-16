@@ -240,6 +240,13 @@ sys_speak(lua_State *L)
 	return 0;
 }
 
+static int
+sys_is_speak(lua_State *L)
+{
+	lua_pushboolean(L, isSpeak());
+	return 1;
+}
+
 static const luaL_Reg
 sys_lib[] = {
 	{ "poll", sys_poll },
@@ -258,6 +265,7 @@ sys_lib[] = {
 	{ "input", sys_input },
 	{ "log", sys_log },
 	{ "speak", sys_speak },
+	{ "is_speak", sys_is_speak },
 	{ NULL, NULL }
 };
 

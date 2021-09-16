@@ -31,5 +31,6 @@ extern void TextInput(void);
 
 extern void Log(const char *msg);
 extern void Speak(const char *msg);
+extern int isSpeak(void);
 
 #endif

@@ -8,6 +8,7 @@ import android.util.Log;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import java.util.Locale;
+import android.view.accessibility.AccessibilityManager;
 // import android.widget.Toast;
 
 public class reinsteadActivity extends SDLActivity
@@ -48,6 +49,14 @@ public class reinsteadActivity extends SDLActivity
 			}
 		});
 	}
+
+	public boolean isSpeakEnabled() {
+		AccessibilityManager am = (AccessibilityManager) getSystemService(ACCESSIBILITY_SERVICE);
+		boolean isAccessibilityEnabled = am.isEnabled();
+		boolean isExploreByTouchEnabled = am.isTouchExplorationEnabled();
+		return isAccessibilityEnabled || isExploreByTouchEnabled;
+	}
+
 	public void Speak(String text) {
 		if (!ttsInitialized)
 			ttsInit();

@@ -173,6 +173,11 @@ void Speak(const char *txt)
 {
 }
 
+int isSpeak(void)
+{
+	return 0;
+}
+
 static int mb = 0;
 extern int sys_poll(lua_State *L)
 {
