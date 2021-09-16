@@ -286,11 +286,11 @@ function instead_settings()
 	local p = DATADIR..'/settings'
 	local cfg = ''
 	if iface.tts_mode() and not system.is_speak() then
-		cfg = cfg .. "/tts on\n"
+		cfg = cfg .. "!tts on\n"
 	end
-	cfg = cfg .. string.format("/font %d\n", conf.fsize)
+	cfg = cfg .. string.format("!font %d\n", conf.fsize)
 	if GAME and conf.settings_game then
-		cfg = cfg .. string.format("/game %s\n", GAME)
+		cfg = cfg .. string.format("!game %s\n", GAME)
 	end
 	if write(p, cfg) then
 		return true
@@ -594,10 +594,12 @@ function core.run()
 						end
 						r = 'hidden'
 						v = false
-					else
+					elseif input:find("/", 1, true) then
 						r, v = instead.cmd(cmd)
 						if r == false and v == '' then v = '?' end
 						r = true
+					else
+						r = nil
 					end
 				elseif DIRECTORY and not GAME then
 					local n = tonumber(input)
