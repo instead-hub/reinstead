@@ -19,20 +19,27 @@ public class Assets
 							   String arg_assetDir,
 							   String arg_destinationDir) throws IOException
 	{
+		BufferedReader reader = null;
+		BufferedReader reader2 = null;
 		String dest_dir_path = arg_destinationDir;
 		Log.e("reinstead", "External: " + dest_dir_path);
 		File dest_dir = new File(dest_dir_path);
 		boolean doCopy = false;
 		try {
-			BufferedReader reader = new BufferedReader(new FileReader(dest_dir_path + "/stamp"));
+			reader = new BufferedReader(new FileReader(dest_dir_path + "/stamp"));
 			String line1 = reader.readLine();
 			Log.e("reinstead", "Internal stamp: " + line1);
-			BufferedReader reader2 = new BufferedReader(new InputStreamReader(asset_manager.open(arg_assetDir + "/stamp")));
+			reader2 = new BufferedReader(new InputStreamReader(asset_manager.open(arg_assetDir + "/stamp")));
 			String line2 = reader2.readLine();
 			Log.e("reinstead", "Assets stamp: " + line2);
 			doCopy = !line2.equals(line1);
 		} catch (IOException io) {
 			doCopy = true; /* just copy it again ! */
+		} finally {
+			if (reader != null)
+				reader.close();
+			if (reader2 != null)
+				reader2.close();
 		}
 
 		if (!doCopy)

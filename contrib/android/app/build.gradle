@@ -9,6 +9,12 @@ else {
     apply plugin: 'com.android.library'
 }
 
+//tasks.withType(JavaCompile) {
+//    configure(options) {
+//        options.compilerArgs << '-Xlint:deprecation' //<< '-Xlint:unchecked'
+//    }
+//}
+
 android {
     compileSdkVersion 30
     defaultConfig {
