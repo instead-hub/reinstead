@@ -20,41 +20,7 @@ tolow(char *p)
 		p ++;
 	}
 }
-#ifdef __ANDROID__
-void Speak(const char *text)
-{
-	JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
-	jobject activity = (jobject)SDL_AndroidGetActivity();
-	jclass cl = (*env)->GetObjectClass(env, activity);
-	jmethodID mid = (*env)->GetStaticMethodID(env, cl, "speak", "(Ljava/lang/String;)V");
-	jstring jtxt = (*env)->NewStringUTF(env, text);
-	(*env)->CallStaticVoidMethod(env, cl, mid, jtxt);
-	(*env)->DeleteLocalRef(env, jtxt);
-	(*env)->DeleteLocalRef(env, cl);
-	(*env)->DeleteLocalRef(env, activity);
-}
 
-int isSpeak()
-{
-	jboolean retval;
-	JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
-	jobject activity = (jobject)SDL_AndroidGetActivity();
-	jclass cl = (*env)->GetObjectClass(env, activity);
-	jmethodID mid = (*env)->GetStaticMethodID(env, cl, "isSpeak", "()Z");
-	retval = (*env)->CallStaticBooleanMethod(env, cl, mid);
-	(*env)->DeleteLocalRef(env, cl);
-	(*env)->DeleteLocalRef(env, activity);
-	return (retval == JNI_TRUE) ? 1 : 0;
-}
-#else
-void Speak(const char *text)
-{
-}
-int isSpeak()
-{
-	return 0;
-}
-#endif
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *texture = NULL;

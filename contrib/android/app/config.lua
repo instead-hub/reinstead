@@ -24,7 +24,7 @@ return {
 	show_icons = true,
 	scale = true, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
-	short_help = "<c>***</c>\n!quit - exit\n!load - load\n!save - save\n!restart - restart\n!info - info\n!font <sz> - change font size\n!tts - toggle tts\n\n",
+	short_help = "<c>***</c>\n!quit - exit\n!load - load\n!save - save\n!restart - restart\n!info - info\n!font <sz> - change font size\n\n",
 	note = '<c>https://parser.hugeping.ru</c>',
 	settings = true, -- store font size
 	settings_game = true, -- store selected game

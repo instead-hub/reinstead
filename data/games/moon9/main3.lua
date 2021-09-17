@@ -830,7 +830,7 @@ cutscene {
 {$link|https://instead.hugeping.ru}^^
 {$fmt b|КОНЕЦ}^^
 {@ walk галерея|Галерея}^^
-{$fmt em|Введите /restart, чтобы начать сначала.}]];
+{$fmt em|Введите !restart, чтобы начать сначала.}]];
 }
 
 cutscene {
