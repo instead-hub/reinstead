@@ -9,15 +9,21 @@ else {
     apply plugin: 'com.android.library'
 }
 
+//tasks.withType(JavaCompile) {
+//    configure(options) {
+//        options.compilerArgs << '-Xlint:deprecation' //<< '-Xlint:unchecked'
+//    }
+//}
+
 android {
-    compileSdkVersion 26
+    compileSdkVersion 30
     defaultConfig {
         if (buildAsApplication) {
             applicationId "ru.hugeping.reinstead"
         }
-        minSdkVersion 16
-        targetSdkVersion 26
-        versionCode 0
+        minSdkVersion 18
+        targetSdkVersion 30
+        versionCode 1
         versionName "master"
         externalNativeBuild {
             ndkBuild {

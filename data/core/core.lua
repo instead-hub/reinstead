@@ -1,6 +1,7 @@
 local VERSION='0.4'
 conf = require "config"
 local iface = require "iface"
+local utf = require "utf"
 
 local gameinfo = {}
 
@@ -80,7 +81,7 @@ local function game_tag(name, l)
 	l = l:gsub("\r", "")
 	if l:find("^[ \t]*--[ \t]*%$"..name..":") then
 		local _, e = l:find("$"..name..":", 1, true)
-		tag = l:sub(e + 1):gsub("^[ \t]*", ""):gsub("[ \t%$]$", ""):gsub("\\n", "\n")
+		tag = l:sub(e + 1):gsub("^[ \t]+", ""):gsub("[ \t%$]$", ""):gsub("\\n", "\n")
 	end
 	return tag
 end
@@ -154,13 +155,16 @@ local function instead_start(game, load)
 		if load then
 			mwin:add("*** "..basename(load))
 			mwin:add(output(e))
+			iface.tts_more(basename(load).. '\n'..e)
 		else
 			mwin:add(output(e))
+			iface.tts_more(e)
 		end
 		iface.input_attach()
 	else
 		iface.input_detach()
 		mwin:add(output(e))
+		iface.tts_more(e)
 	end
 	mwin.off = 0
 	cleared = true
@@ -217,7 +221,7 @@ function instead_savepath()
 end
 
 local function save_path(w)
-	w = w and w:gsub("^[ \t]+", ""):gsub("[ \t]+$", ""):gsub("\\","/")
+	w = w and utf.strip(w):gsub("\\","/")
 	if not w or w == "" then w = 'autosave' else w = basename(w) end
 	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
@@ -247,6 +251,7 @@ local function instead_save(w, silent)
 	end
 	if not silent then
 		mwin:add(e)
+		iface.tts_more(e)
 	end
 	iface.input_attach()
 end
@@ -279,9 +284,13 @@ function instead_settings()
 		return false
 	end
 	local p = DATADIR..'/settings'
-	local cfg = string.format("/font %d\n", conf.fsize)
+	local cfg = ''
+	if iface.tts_mode() and not system.is_speak() then
+		cfg = cfg .. "!tts on\n"
+	end
+	cfg = cfg .. string.format("!font %d\n", conf.fsize)
 	if GAME and conf.settings_game then
-		cfg = cfg .. string.format("/game %s\n", GAME)
+		cfg = cfg .. string.format("!game %s\n", GAME)
 	end
 	if write(p, cfg) then
 		return true
@@ -334,6 +343,7 @@ local function dir_list(dirs)
 	for k, v in ipairs(GAMES) do
 		--mwin:add_img(v.icon)
 		mwin:add(string.format("<c>%s <i>(%d)</i></c>", v.name, k))
+		iface.tts_more(string.format("%s %d\n", v.name, k))
 	end
 	if #GAMES == 0 then
 		mwin:set("No games in \""..dir.."\" found.")
@@ -402,6 +412,9 @@ function core.init()
 	end
 
 	print("scale: ", SCALE)
+	if system.is_speak() then
+		iface.tts_mode(true)
+	end
 	core.start()
 end
 
@@ -507,6 +520,7 @@ function core.run()
 					iface.input_set ''
 				else
 					mwin:add(conf.short_help)
+					iface.tts_more(conf.short_help)
 				end
 				iface.input_attach()
 				dirty = true
@@ -542,52 +556,57 @@ function core.run()
 				local off = mwin.off
 				local r, v
 				local cmd_mode
-				local input = iface.input():gsub("^ +", ""):gsub(" +$", "")
-				if input:find("/", 1, true) == 1 then
+				local input = utf.strip(iface.input())
+				if input:find("/", 1, true) == 1 or input:find("!", 1, true) == 1 then
 					cmd_mode = true
+					local cmd = utf.strip(input:sub(2))
 					r = true
-					if input == '/restart' then
+					if cmd == 'restart' then
 						need_restart = true
 						v = ''
-					elseif input == '/quit' then
+					elseif cmd == 'quit' then
 						break
-					elseif input == '/info' then
+					elseif cmd == 'info' then
 						v = info()
-						r = true
-					elseif input:find("/load", 1, true) == 1 then
-						need_load = input:sub(6)
-						r = true
-					elseif input:find("/save", 1, true) == 1 then
-						need_save = input:sub(6)
-						r = true
-					elseif input:find("/font +[0-9]+", 1) == 1 then
-						conf.fsize = (tonumber(input:sub(7)) or conf.fsize)
+					elseif cmd == 'tts on' then -- settings?
+						iface.tts_mode(true)
+					elseif cmd == 'tts' then -- toggle
+						if not iface.tts_mode(not iface.tts_mode()) then
+							iface.tts(false)
+						end
+					elseif cmd:find("load", 1, true) == 1 then
+						need_load = cmd:sub(5)
+					elseif cmd:find("save", 1, true) == 1 then
+						need_save = cmd:sub(5)
+					elseif cmd:find("font +[0-9]+", 1) == 1 then
+						conf.fsize = (tonumber(cmd:sub(6)) or conf.fsize)
 						if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
 						if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
 						font_changed()
-						r = true
-					elseif input:find("/font", 1) == 1 then
+					elseif cmd == "font" then
 						v = tostring(conf.fsize)
-						r = true
-					elseif input:find("/game .+", 1) == 1 then
+					elseif cmd:find("game .+", 1) == 1 then
 						if not AUTOSCRIPT[1] or (not GAME and conf.settings_game) then
-							local p = input:sub(7):gsub("^ +", ""):gsub(" +$", "")
+							local p = utf.strip(cmd:sub(6))
 							instead_settings() -- if game crashed
 							GAME = datadir(p)
 							instead_start(GAME, conf.autoload and (instead_savepath()..'/autosave'))
 						end
 						r = 'hidden'
 						v = false
-					else
-						r, v = instead.cmd(input:sub(2))
+					elseif input:find("/", 1, true) then
+						r, v = instead.cmd(cmd)
 						if r == false and v == '' then v = '?' end
 						r = true
+					else
+						r = nil
 					end
 				elseif DIRECTORY and not GAME then
 					local n = tonumber(input)
 					if n then n = math.floor(n) end
 					if not n or n > #GAMES or n < 1 then
 						if #GAMES > 1 then
+							dir_list(conf.directory)
 							v = '1 - ' .. tostring(#GAMES).. '?'
 						else
 							v = 'No games.'
@@ -636,9 +655,11 @@ function core.run()
 				iface.input_detach()
 				if not loading_settings and r ~= 'skip' and (r or v ~= '') then
 					iface.input_history(input, r ~= 'hidden')
+					iface.tts_more(input..'\n')
 				end
 				if v then
 					mwin:add(output(v))
+					iface.tts_more(v)
 				end
 				iface.input_kill()
 				if not cleared then
@@ -721,6 +742,7 @@ function core.run()
 		end
 		local elapsed = system.time() - start
 --		system.sleep(math.max(0, fps - elapsed))
+		iface.tts()
 		if not AUTOSCRIPT[1] then
 			system.wait(math.max(0, fps - elapsed))
 		end
