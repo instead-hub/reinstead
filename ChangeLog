@@ -2,6 +2,8 @@
   * space distance while font resizing fix;
   * freetype support (make WITH_TRUETYPE=1);
   * libschrift support (make WITH_SCHRIFT=1).
+  * / -> ! in system wide commands;
+  * !saves - list saves;
   * fix scroll on title screen.
 
 0.3

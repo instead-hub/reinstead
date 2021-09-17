@@ -555,10 +555,21 @@ function core.run()
 						break
 					elseif cmd == 'info' then
 						v = info()
-					elseif cmd:find("load", 1, true) == 1 then
-						need_load = cmd:sub(5)
-					elseif cmd:find("save", 1, true) == 1 then
-						need_save = cmd:sub(5)
+					elseif cmd:find("load ", 1, true) == 1 or cmd == "load" then
+						need_load = cmd:sub(6)
+					elseif cmd:find("save ", 1, true) == 1 or cmd == "save" then
+						need_save = cmd:sub(6)
+					elseif cmd == "saves" then
+						if not GAME then
+							v = "No game."
+						else
+							local t = system.readdir(instead_savepath())
+							table.sort(t)
+							v = ''
+							for _, f in ipairs(t) do
+								v = v .. f..'\n'
+							end
+						end
 					elseif cmd:find("font +[0-9]+", 1) == 1 then
 						conf.fsize = (tonumber(cmd:sub(6)) or conf.fsize)
 						if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
