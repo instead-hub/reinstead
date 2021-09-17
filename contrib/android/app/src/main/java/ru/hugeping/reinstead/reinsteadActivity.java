@@ -9,7 +9,7 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import java.util.Locale;
 import android.view.accessibility.AccessibilityManager;
-// import android.widget.Toast;
+//import android.widget.Toast;
 
 public class reinsteadActivity extends SDLActivity
 {
@@ -27,15 +27,12 @@ public class reinsteadActivity extends SDLActivity
 		} catch(IOException e) {
 			// Nom nom
 			Log.v("reinstead", "Can't copy assets");
+//			Toast.makeText(getApplicationContext(), "No free space!",Toast.LENGTH_SHORT).show();
 		}
 		super.onCreate(savedInstanceState);
-		ttsInitialized = false;
-		ttsStarted = false;
-		// Toast.makeText(getApplicationContext(), "",Toast.LENGTH_SHORT).show();
 	}
 	protected void ttsInit() {
 		ttsInitialized = true;
-		reinsteadActivity base = this;
 		tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
 			@Override
 			public void onInit(int status) {
@@ -44,7 +41,6 @@ public class reinsteadActivity extends SDLActivity
 					Log.v("reinstead", "Started TTS");
 					tts.speak(ttsCached, TextToSpeech.QUEUE_FLUSH, null);
 					ttsCached = "";
-					//tts.setLanguage(Locale.getDefault());
 				}
 			}
 		});

@@ -22,7 +22,7 @@ public class Assets
 		String dest_dir_path = arg_destinationDir;
 		Log.e("reinstead", "External: " + dest_dir_path);
 		File dest_dir = new File(dest_dir_path);
-		boolean doCopy = true;
+		boolean doCopy = false;
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(dest_dir_path + "/stamp"));
 			String line1 = reader.readLine();
@@ -31,7 +31,9 @@ public class Assets
 			String line2 = reader2.readLine();
 			Log.e("reinstead", "Assets stamp: " + line2);
 			doCopy = !line2.equals(line1);
-		} catch (IOException io) {}
+		} catch (IOException io) {
+			doCopy = true; /* just copy it again ! */
+		}
 
 		if (!doCopy)
 			return dest_dir_path;
