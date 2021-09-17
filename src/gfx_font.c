@@ -87,7 +87,7 @@ font_width(font_t *font, const char *text)
 		if (ocp)
 			kern = stbtt_GetCodepointKernAdvance(&font->stbfont, ocp, codepoint);
 		ocp = codepoint;
-		x += g->xadvance + round(kern * s);
+		x += g->xadvance + ceil(kern * s);
 		xend = g->xoff + g->x1 - g->x0;
 		if (xend > g->xadvance)
 			xend -= g->xadvance;
@@ -160,7 +160,7 @@ font_render(font_t *font, const char *text, img_t *img)
 		if (ocp)
 			kern = stbtt_GetCodepointKernAdvance(&font->stbfont, ocp, codepoint);
 		ocp = codepoint;
-		x += round(s * kern);
+		x += ceil(s * kern);
 		img_pixels_blend(set->image,
 			g->x0, g->y0,
 			g->x1 - g->x0, g->y1 - g->y0,
