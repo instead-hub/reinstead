@@ -593,7 +593,8 @@ function core.run()
 					else
 						r = nil
 					end
-				elseif DIRECTORY and not GAME then
+				end
+				if not r and DIRECTORY and not GAME then
 					local n = tonumber(input)
 					if n then n = math.floor(n) end
 					if not n or n > #GAMES or n < 1 then
@@ -611,7 +612,7 @@ function core.run()
 						v = false
 					end
 					cmd_mode = true
-				elseif not parser_mode then
+				elseif not r and not parser_mode then
 					r, v = instead.cmd(string.format("use %s", input))
 					if not r then
 						r, v = instead.cmd(string.format("go %s", input))
