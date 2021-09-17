@@ -413,7 +413,7 @@ function core.init()
 
 	print("scale: ", SCALE)
 	if system.is_speak() then
-		iface.speak_mode(true)
+		iface.tts_mode(true)
 	end
 	core.start()
 end
