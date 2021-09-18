@@ -1,4 +1,5 @@
 /* See LICENSE file for copyright and license details. */
+/* Some changes were made by Peter Kosyh (adoptation for Plan9) */
 
 #include <assert.h>
 #include <errno.h>
@@ -265,9 +266,9 @@ sft_lmetrics(const SFT *sft, SFT_LMetrics *metrics)
 	if (!is_safe_offset(sft->font, hhea, 36))
 		return -1;
 	factor = sft->yScale / sft->font->unitsPerEm;
-	metrics->ascender  = geti16(sft->font, hhea + 4) * factor;
-	metrics->descender = geti16(sft->font, hhea + 6) * factor;
-	metrics->lineGap   = geti16(sft->font, hhea + 8) * factor;
+	metrics->ascender  = (int)geti16(sft->font, hhea + 4) * factor;
+	metrics->descender = (int)geti16(sft->font, hhea + 6) * factor;
+	metrics->lineGap   = (int)geti16(sft->font, hhea + 8) * factor;
 	return 0;
 }
 
