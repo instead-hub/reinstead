@@ -559,6 +559,12 @@ function core.run()
 						need_load = cmd:sub(6)
 					elseif cmd:find("save ", 1, true) == 1 or cmd == "save" then
 						need_save = cmd:sub(6)
+					elseif cmd:find("rm ", 1, true) == 1 or cmd == "rm" then
+						if not GAME then
+							v = "No game."
+						else
+							os.remove(save_path(cmd:sub(4) or "autosave"))
+						end
 					elseif cmd == "saves" then
 						if not GAME then
 							v = "No game."

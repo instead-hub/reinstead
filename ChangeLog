@@ -4,6 +4,7 @@
   * libschrift support (make WITH_SCHRIFT=1).
   * / -> ! in system wide commands;
   * !saves - list saves;
+  * !rm - remove save;
   * fix scroll on title screen.
 
 0.3
