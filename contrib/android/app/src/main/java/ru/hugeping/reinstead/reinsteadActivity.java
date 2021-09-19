@@ -6,9 +6,6 @@ import java.io.IOException;
 import java.io.File;
 import android.util.Log;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
-import java.util.Locale;
-//import android.view.accessibility.AccessibilityManager;
 
 public class reinsteadActivity extends SDLActivity
 {
