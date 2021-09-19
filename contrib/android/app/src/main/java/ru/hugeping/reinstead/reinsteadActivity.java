@@ -12,10 +12,6 @@ import java.util.Locale;
 
 public class reinsteadActivity extends SDLActivity
 {
-	TextToSpeech tts;
-	boolean ttsInitialized;
-	boolean ttsStarted;
-	String ttsCached;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		AssetManager asset_manager = getApplicationContext().getAssets();
@@ -28,18 +24,5 @@ public class reinsteadActivity extends SDLActivity
 			Log.v("reinstead", "Can't copy assets");
 		}
 		super.onCreate(savedInstanceState);
-	}
-
-	public void onDestroy(){
-		if (tts !=null)
-			tts.shutdown();
-		super.onDestroy();
-	}
-
-	public void onPause(){
-		if(tts !=null){
-			tts.stop();
-		}
-		super.onPause();
 	}
 }
