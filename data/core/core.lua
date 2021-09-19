@@ -135,7 +135,7 @@ local function instead_start(game, load)
 	if load then
 		local f = io.open(load, "r")
 		if f then
-			r, e = instead.cmd("load "..load)
+			r, e = instead.cmd("load "..save_path(load))
 			f:close()
 		else
 			load = false
@@ -225,7 +225,6 @@ end
 
 local function instead_save(w, silent)
 	need_save = false
-	w = save_path(w)
 	local r, e
 	iface.input_detach()
 	if not GAME then
@@ -234,7 +233,7 @@ local function instead_save(w, silent)
 		if not silent then
 			instead_clear()
 		end
-		r, e = instead.cmd("save "..w)
+		r, e = instead.cmd("save "..save_path(w))
 	end
 	e = output(e)
 	if not r then
@@ -260,8 +259,8 @@ local function instead_load(w)
 		iface.input_kill()
 		return
 	end
-	w = save_path(w)
-	local f = io.open(w, "r")
+	local rw = save_path(w)
+	local f = io.open(rw, "r")
 	if not f then
 		iface.input_detach()
 		mwin:add("No file.\n\n")
@@ -435,7 +434,7 @@ function core.start()
 	end
 
 	if GAME then
-		instead_start(GAME, conf.autoload and (instead_savepath()..'/autosave'))
+		instead_start(GAME, conf.autoload and 'autosave')
 	elseif not DIRECTORY then
 		mwin:set(info())
 		mwin:add(string.format("<b>Usage:</b>\n<w:    >%s \\<game> [-debug] [-scale \\<f>]", EXEFILE))
@@ -563,7 +562,7 @@ function core.run()
 						if not GAME then
 							v = "No game."
 						else
-							os.remove(save_path(cmd:sub(4) or "autosave"))
+							os.remove(save_path(utf.strip(cmd:sub(4)) or "autosave"))
 						end
 					elseif cmd == "saves" then
 						if not GAME then
@@ -588,7 +587,7 @@ function core.run()
 							local p = utf.strip(cmd:sub(6))
 							instead_settings() -- if game crashed
 							GAME = datadir(p)
-							instead_start(GAME, conf.autoload and (instead_savepath()..'/autosave'))
+							instead_start(GAME, conf.autoload and 'autosave')
 						end
 						r = 'hidden'
 						v = false
@@ -613,7 +612,7 @@ function core.run()
 						r = true
 					else
 						GAME = GAMES[n].path
-						instead_start(GAMES[n].path, conf.autoload and (instead_savepath()..'/autosave'))
+						instead_start(GAMES[n].path, conf.autoload and 'autosave')
 						r = 'skip'
 						v = false
 					end

@@ -16,6 +16,7 @@ function utf.chars(b)
 	return res
 end
 function utf.strip(str)
+	if not str then return str end
 	str = str:gsub("^[ \t]+",""):gsub("[ \t]+$","")
 	return str
 end
