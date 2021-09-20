@@ -2220,9 +2220,9 @@ class SDLInputConnection extends BaseInputConnection {
          * as we do with physical keyboards, let's just use it to hide the keyboard.
          */
 
-//        if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER || event.getKeyCode() == KeyEvent.KEYCODE_DEL) { // reinstead
-//    	    reset(); // reinstead
-//    	}
+        if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) { // reinstead
+            reset(); // reinstead
+        }
 
         if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
             if (SDLActivity.onNativeSoftReturnKey()) {
@@ -2263,7 +2263,7 @@ class SDLInputConnection extends BaseInputConnection {
         nativeSetComposingText(text.toString(), newCursorPosition);
         boolean ret = super.setComposingText(text, newCursorPosition);
         if (super.getEditable().toString().isEmpty()) { //reinstead
-    	    reset();
+            reset();
         }
         return ret;
     }
