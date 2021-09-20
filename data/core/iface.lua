@@ -251,4 +251,43 @@ function iface.reset()
 	return mwin
 end
 
+local tts_on = false
+local tts_text = false
+
+local function strip_tags(str)
+	if str == '' then return str end
+	str = utf.strip(str)
+	str = str:gsub("</?[gicrb]>", ""):gsub("<w:([^>]*)>","%1")
+	return str
+end
+
+function iface.tts_more(str)
+	str = strip_tags(str)
+	tts_text = (tts_text or '')..str
+end
+
+function iface.tts_mode(on)
+	if on == nil then
+		return tts_on
+	end
+	tts_on = on
+	return tts_on
+end
+
+function iface.tts(str)
+	if str == false then
+		system.speak('')
+		tts_text = false
+		return
+	end
+	str = str or ''
+	str = strip_tags(str)
+	str = (tts_text or '').. str
+	if tts_on and str ~= '' then
+		system.speak(str)
+	end
+	tts_text = false
+	return tts_on and str ~= ''
+end
+
 return iface

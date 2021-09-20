@@ -316,3 +316,12 @@ char *dirname(char *path)
 		p--;
 	return p < path ? "." : p == path ? "/" : (*p = '\0', path);
 }
+
+void Speak(const char *txt)
+{
+}
+
+int isSpeak(void)
+{
+	return 0;
+}
