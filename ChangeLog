@@ -1,3 +1,8 @@
+0.5
+  * experimental tts support;
+  * !tts command;
+  * fix backspace problem with some keyboards.
+
 0.4
   * space distance while font resizing fix;
   * freetype support (make WITH_TRUETYPE=1);

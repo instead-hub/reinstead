@@ -1,4 +1,4 @@
-local VERSION='0.4'
+local VERSION='0.5'
 conf = require "config"
 local iface = require "iface"
 local utf = require "utf"
