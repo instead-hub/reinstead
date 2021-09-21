@@ -6,7 +6,9 @@
 - [INSTALL](INSTALL.md)
 - [INSTEAD](https://instead.hugeping.ru)
 - [МЕТАПАРСЕР](https://instead.hugeping.ru/page/metaparser/)
-- [Пакет в F-Droid](https://f-droid.org/en/packages/ru.hugeping.reinstead/)
+
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+	alt="Get it on F-Droid" height="80">](https://f-droid.org/en/packages/ru.hugeping.reinstead/)
 
 # Параметры
 
