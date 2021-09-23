@@ -257,7 +257,7 @@ local tts_text = false
 local function strip_tags(str)
 	if str == '' then return str end
 	str = utf.strip(str)
-	str = str:gsub("</?[gicrb]>", ""):gsub("<w:([^>]*)>","%1")
+	str = str:gsub("</?[icrb]>", ""):gsub("<g:[^>]*>", ""):gsub("<w:([^>]*)>","%1")
 	return str
 end
 
