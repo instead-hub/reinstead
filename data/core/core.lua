@@ -108,6 +108,12 @@ end
 local parser_mode = false
 local menu_mode = false
 
+local function save_path(w)
+	w = w and utf.strip(w):gsub("\\","/")
+	if not w or w == "" then w = 'autosave' else w = basename(w) end
+	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
+end
+
 local function instead_start(game, load)
 	need_restart = false
 	parser_mode = false
@@ -132,7 +138,7 @@ local function instead_start(game, load)
 	gfx.icon(gfx.new 'icon.png')
 
 	if load then
-		local f = io.open(load, "r")
+		local f = io.open(save_path(load), "r")
 		if f then
 			r, e = instead.cmd("load "..save_path(load))
 			f:close()
@@ -215,12 +221,6 @@ function instead_savepath()
 		return h.."/.reinstead/saves/"..g
 	end
 	return "./saves"
-end
-
-local function save_path(w)
-	w = w and utf.strip(w):gsub("\\","/")
-	if not w or w == "" then w = 'autosave' else w = basename(w) end
-	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
 end
 
 local function instead_save(w, silent)
