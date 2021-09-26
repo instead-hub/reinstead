@@ -139,12 +139,33 @@ GetScale(void)
 	return dpi / 96.0f;
 }
 
+#ifdef _WIN32
+static HINSTANCE tolk;
+void (*Tolk_Load)() = NULL;
+void (*Tolk_TrySAPI)(int trySAPI) = NULL;
+int (*Tolk_Output)(const wchar_t *str, int interrupt) = NULL;
+wchar_t *(*Tolk_DetectScreenReader)() = NULL;
+#endif
+
 int
 PlatformInit(void)
 {
 #ifdef _WIN32
-	HINSTANCE lib = LoadLibrary("user32.dll");
-	int (*SetProcessDPIAware)() = (void*) GetProcAddress(lib, "SetProcessDPIAware");
+	HINSTANCE lib;
+	int (*SetProcessDPIAware)();
+	tolk = LoadLibrary("Tolk.dll");
+	if (tolk) {
+		Tolk_Load = (void*) GetProcAddress(tolk, "Tolk_Load");
+		Tolk_TrySAPI = (void*) GetProcAddress(tolk, "Tolk_TrySAPI");
+		Tolk_Output = (void*) GetProcAddress(tolk, "Tolk_Output");
+		Tolk_DetectScreenReader = (void*) GetProcAddress(tolk, "Tolk_DetectScreenReader");
+		if (Tolk_TrySAPI)
+			Tolk_TrySAPI(1);
+		if (Tolk_Load)
+			Tolk_Load();
+	}
+	lib = LoadLibrary("user32.dll");
+	SetProcessDPIAware = (void*) GetProcAddress(lib, "SetProcessDPIAware");
 	if (SetProcessDPIAware)
 		SetProcessDPIAware();
 #endif
@@ -446,9 +467,30 @@ int isSpeak()
 #else
 void Speak(const char *text)
 {
+#ifdef _WIN32
+	wchar_t* wstr;
+	int len;
+	if (!Tolk_Output)
+		return;
+	len = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL ,0);
+	if (len <= 0)
+		return;
+	wstr = malloc(len * sizeof(wchar_t));
+	if (!wstr)
+		return;
+	MultiByteToWideChar(CP_UTF8, 0, text, -1, wstr, len);
+	Tolk_Output(wstr, 1);
+	free(wstr);
+#endif
 }
 int isSpeak()
 {
+#ifdef _WIN32
+	if (!Tolk_DetectScreenReader)
+		return 0;
+	if (Tolk_DetectScreenReader())
+		return 1;
+#endif
 	return 0;
 }
 #endif
