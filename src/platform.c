@@ -336,6 +336,10 @@ int
 sys_poll(lua_State *L)
 {
 	SDL_Event e;
+#ifdef __linux__
+	pid_t pid;
+	while ((pid = waitpid(-1, NULL, WNOHANG)) > 0);
+#endif
 top:
 	if (!SDL_PollEvent(&e))
 		return 0;
@@ -489,7 +493,6 @@ void Speak(const char *text)
 #endif
 #if defined(__linux__)
 	pid_t pid;
-	while ((pid = waitpid(-1, NULL, WNOHANG)) > 0);
 	pid = fork();
 	if (pid != 0)
 		return;
