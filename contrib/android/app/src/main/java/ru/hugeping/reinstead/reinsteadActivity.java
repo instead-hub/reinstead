@@ -60,12 +60,7 @@ public class reinsteadActivity extends SDLActivity
 
 		if (manager.isEnabled()) {
 			manager.interrupt();
-			AccessibilityEvent e = AccessibilityEvent.obtain();
-			e.setEventType(AccessibilityEvent.TYPE_ANNOUNCEMENT);
-			e.setClassName(getClass().getName());
-			e.setPackageName(context.getPackageName());
-			e.getText().add(text);
-			manager.sendAccessibilityEvent(e);
+			mLayout.announceForAccessibility(text);
 			return;
 		}
 		if (!ttsInitialized)
