@@ -141,10 +141,11 @@ GetScale(void)
 
 #ifdef _WIN32
 static HINSTANCE tolk;
-void (*Tolk_Load)() = NULL;
-void (*Tolk_TrySAPI)(int trySAPI) = NULL;
-int (*Tolk_Output)(const wchar_t *str, int interrupt) = NULL;
-wchar_t *(*Tolk_DetectScreenReader)() = NULL;
+static void (*Tolk_Load)() = NULL;
+static void (*Tolk_TrySAPI)(int trySAPI) = NULL;
+static int (*Tolk_Output)(const wchar_t *str, int interrupt) = NULL;
+static wchar_t *(*Tolk_DetectScreenReader)() = NULL;
+static int Tolk_IsReader = 0;
 #endif
 
 int
@@ -160,9 +161,13 @@ PlatformInit(void)
 		Tolk_Output = (void*) GetProcAddress(tolk, "Tolk_Output");
 		Tolk_DetectScreenReader = (void*) GetProcAddress(tolk, "Tolk_DetectScreenReader");
 		if (Tolk_TrySAPI)
-			Tolk_TrySAPI(1);
+			Tolk_TrySAPI(0);
 		if (Tolk_Load)
 			Tolk_Load();
+		if (Tolk_DetectScreenReader)
+			Tolk_IsReader = !!Tolk_DetectScreenReader();
+		if (!Tolk_IsReader && Tolk_TrySAPI)
+			Tolk_TrySAPI(1);
 	}
 	lib = LoadLibrary("user32.dll");
 	SetProcessDPIAware = (void*) GetProcAddress(lib, "SetProcessDPIAware");
@@ -486,9 +491,7 @@ void Speak(const char *text)
 int isSpeak()
 {
 #ifdef _WIN32
-	if (!Tolk_DetectScreenReader)
-		return 0;
-	if (Tolk_DetectScreenReader())
+	if (Tolk_IsReader)
 		return 1;
 #endif
 	return 0;
