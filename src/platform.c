@@ -487,6 +487,18 @@ void Speak(const char *text)
 	Tolk_Output(wstr, 1);
 	free(wstr);
 #endif
+#if defined(__linux__)
+	pid_t pid;
+	while ((pid = waitpid(-1, NULL, WNOHANG)) > 0);
+	pid = fork();
+	if (pid != 0)
+		return;
+	if (*text)
+		execlp("spd-say", "spd-say", "-C", "--wait", text, NULL);
+	else
+		execlp("spd-say", "spd-say", "-C", NULL);
+	exit(0);
+#endif
 }
 int isSpeak()
 {

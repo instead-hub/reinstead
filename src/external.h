@@ -3,6 +3,9 @@
 #else
  #include <unistd.h>
 #endif
+#ifdef __linux__
+ #include <sys/wait.h>
+#endif
 #include <dirent.h>
 #ifndef PLAN9
 #include <libgen.h>

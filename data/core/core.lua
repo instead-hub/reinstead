@@ -770,6 +770,7 @@ function core.run()
 	if conf.autosave and GAME then
 		instead_save 'autosave'
 	end
+	iface.tts(false)
 	instead.done()
 	instead_settings()
 end
