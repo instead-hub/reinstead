@@ -61,6 +61,9 @@ public class reinsteadActivity extends SDLActivity
 		if (manager.isEnabled()) {
 			manager.interrupt();
 			mLayout.announceForAccessibility(text);
+			if (text.length() > 4) { // hack to not add letters
+				mLayout.setContentDescription(text);
+			}
 			return;
 		}
 		if (!ttsInitialized)
