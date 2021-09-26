@@ -178,6 +178,9 @@ function iface.input_tts(v)
 	if not tts_on then
 		return
 	end
+	if PLATFORM == "Windows" then
+		return
+	end
 	if old_input == v then
 		return
 	end
