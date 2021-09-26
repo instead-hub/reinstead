@@ -7,7 +7,7 @@
 #include <android/log.h>
 #define LOG(s) do { __android_log_print(ANDROID_LOG_VERBOSE, "reinstead", "%s", s); } while(0)
 #else
-#define LOG(s) do { printf("%s", (s)); } while(0)
+#define LOG(s) do { printf("%s\n", (s)); } while(0)
 #endif
 
 static int destroyed = 0;
@@ -302,6 +302,10 @@ WindowPixels(int *w, int *h)
 	return (unsigned char*)winbuff->pixels;
 }
 
+#ifdef __ANDROID__
+static char edit_str[1024] = {0};
+#endif
+
 int
 sys_poll(lua_State *L)
 {
@@ -355,8 +359,16 @@ top:
 		return 2;
 #ifdef __ANDROID__
 	case SDL_TEXTEDITING:
+		if (e.text.text[0] && e.text.text[strlen(e.text.text) - 1] == '\001') { /* more */
+			e.text.text[strlen(e.text.text) - 1] = 0;
+			if (strlen(edit_str) + strlen(e.text.text) + 1 < sizeof(edit_str))
+				strcat(edit_str, e.text.text);
+			goto top;
+		}
+		strcat(edit_str, e.text.text);
 		lua_pushstring(L, "edit");
-		lua_pushstring(L, e.edit.text);
+		lua_pushstring(L, edit_str);
+		edit_str[0] = 0;
 		return 2;
 #endif
 	case SDL_MOUSEBUTTONDOWN:
