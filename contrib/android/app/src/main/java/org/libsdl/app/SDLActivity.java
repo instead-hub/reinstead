@@ -56,8 +56,10 @@ import android.widget.Toast;
 
 import java.util.Hashtable;
 import java.util.Locale;
-
-
+import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
+import android.text.Editable;
+import android.text.Selection;
 /**
     SDL Activity
 */
@@ -2164,7 +2166,10 @@ class DummyEdit extends View implements View.OnKeyListener {
          */
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             if (SDLActivity.isTextInputEvent(event)) {
-                ic.commitText(String.valueOf((char) event.getUnicodeChar()), 1);
+                if ((event.getFlags() & KeyEvent.FLAG_SOFT_KEYBOARD)!= 0) // reinstead
+                    ic.commitText(String.valueOf((char) event.getUnicodeChar()), 1);
+                else
+                    SDLInputConnection.nativeCommitText(String.valueOf((char) event.getUnicodeChar()), 1);
                 return true;
             }
             SDLActivity.onNativeKeyDown(keyCode);
@@ -2207,23 +2212,66 @@ class DummyEdit extends View implements View.OnKeyListener {
 
 class SDLInputConnection extends BaseInputConnection {
     protected View m_View; // reinstead
-    protected void reset() { // reinstead
+    protected int m_batch;
+    protected void update() { // reinstead
+        if (m_batch > 0)
+            return;
         InputMethodManager imm = (InputMethodManager) SDL.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-	imm.restartInput(m_View);
+        final Editable content = getEditable();
+
+        int a = Selection.getSelectionStart(content);
+        int b = Selection.getSelectionEnd(content);
+        int ca = getComposingSpanStart(content);
+        int cb = getComposingSpanEnd(content);
+
+        imm.updateSelection(m_View, a, b, ca, cb);
+        String str = content.toString();
+        if (str.isEmpty()) {
+            nativeSetComposingText("", 1);
+            return;
+        }
+        for (int i = 0; i <= str.length(); i += 8) {
+            int end = i + 8;
+            if (end > str.length()) {
+                nativeSetComposingText(str.substring(i, str.length()), 1);
+            } else {
+                nativeSetComposingText(str.substring(i, end) + "\001", 1);
+            }
+        }
+    }
+
+    @Override
+    public boolean beginBatchEdit()
+    {
+        m_batch ++;
+        return true;
+    }
+    @Override
+    public boolean endBatchEdit()
+    {
+        m_batch --;
+        if (m_batch <0)
+            m_batch = 0;
+        if (m_batch == 0)
+            update();
+        return m_batch > 0;
     }
 
     public SDLInputConnection(View targetView, boolean fullEditor) {
         super(targetView, fullEditor);
-	m_View = targetView; // reinstead
+        m_View = targetView; // reinstead
     }
-
     @Override
-    public boolean performEditorAction (int editorAction) { // reinstead
-        nativeCommitText(super.getEditable().toString(), 0);
-        reset();
-	return super.performEditorAction(editorAction);
-    }
+    public boolean performEditorAction(int editorAction) { // reinstead
+        SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
+        SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
 
+        super.finishComposingText();
+        super.deleteSurroundingText(1000, 1000);
+        super.setComposingRegion(0, 0);
+        super.setSelection(0, 0);
+        return true; //super.performEditorAction(editorAction);
+    }
     @Override
     public boolean sendKeyEvent(KeyEvent event) {
         /*
@@ -2237,24 +2285,39 @@ class SDLInputConnection extends BaseInputConnection {
          * Return DOES still generate a key event, however.  So rather than using it as the 'click a button' key
          * as we do with physical keyboards, let's just use it to hide the keyboard.
          */
-
-        if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) { // reinstead
-            reset(); // reinstead
+        if (event.getAction() == KeyEvent.ACTION_DOWN && ((event.getFlags() & KeyEvent.FLAG_SOFT_KEYBOARD)!= 0)) {
+            if (event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
+                if (super.getEditable().length() > 0)
+                    deleteSurroundingText(1, 0);
+                return true;
+            } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
+                return true;
+            } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                return true;
+            }
         }
-
         if (event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
             if (SDLActivity.onNativeSoftReturnKey()) {
                 return true;
             }
         }
-
-
         return super.sendKeyEvent(event);
     }
 
     @Override
-    public boolean commitText(CharSequence text, int newCursorPosition) {
+    public ExtractedText getExtractedText(ExtractedTextRequest request, int flags)
+    {
+        ExtractedText extractedText = new ExtractedText();
+        extractedText.text = super.getEditable();
+        extractedText.startOffset = 0;
+        extractedText.flags = ExtractedText.FLAG_SINGLE_LINE;
+        extractedText.selectionStart = super.getEditable().length();
+        extractedText.selectionEnd = super.getEditable().length();
+        return extractedText;
+    }
 
+    @Override
+    public boolean commitText(CharSequence text, int newCursorPosition) {
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             if (c == '\n') {
@@ -2264,26 +2327,7 @@ class SDLInputConnection extends BaseInputConnection {
             }
             nativeGenerateScancodeForUnichar(c);
         }
-
-        if (text.equals(" ") && !super.getEditable().toString().isEmpty()) /* damn swift keyboard reinstead */
-            SDLInputConnection.nativeCommitText(super.getEditable().toString() + " ", newCursorPosition);
-        else
-            SDLInputConnection.nativeCommitText(text.toString(), newCursorPosition);
-
-        boolean ret = super.commitText(text, newCursorPosition);
-        reset(); // reinstead
-        return ret;
-    }
-
-    @Override
-    public boolean setComposingText(CharSequence text, int newCursorPosition) {
-
-        nativeSetComposingText(text.toString(), newCursorPosition);
-        boolean ret = super.setComposingText(text, newCursorPosition);
-        if (super.getEditable().toString().isEmpty()) { //reinstead
-            reset();
-        }
-        return ret;
+        return super.commitText(text, newCursorPosition);
     }
 
     public static native void nativeCommitText(String text, int newCursorPosition);
@@ -2291,24 +2335,6 @@ class SDLInputConnection extends BaseInputConnection {
     public native void nativeGenerateScancodeForUnichar(char c);
 
     public native void nativeSetComposingText(String text, int newCursorPosition);
-
-    @Override
-    public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-        // Workaround to capture backspace key. Ref: http://stackoverflow.com/questions/14560344/android-backspace-in-webview-baseinputconnection
-        // and https://bugzilla.libsdl.org/show_bug.cgi?id=2265
-        if (beforeLength > 0 && afterLength == 0) {
-            boolean ret = true;
-            // backspace(s)
-            while (beforeLength-- > 0) {
-               boolean ret_key = sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
-                              && sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
-               ret = ret && ret_key;
-            }
-            return ret;
-        }
-
-        return super.deleteSurroundingText(beforeLength, afterLength);
-    }
 }
 
 class SDLClipboardHandler implements

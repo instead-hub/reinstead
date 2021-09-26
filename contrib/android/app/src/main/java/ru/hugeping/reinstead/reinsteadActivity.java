@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import java.util.Locale;
 import android.view.accessibility.AccessibilityManager;
+import android.view.accessibility.AccessibilityEvent;
+import android.content.Context;
 
 public class reinsteadActivity extends SDLActivity
 {
@@ -53,6 +55,19 @@ public class reinsteadActivity extends SDLActivity
 	}
 
 	public void Speak(String text) {
+		Context context = getApplicationContext();
+		AccessibilityManager manager = (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+
+		if (manager.isEnabled()) {
+			manager.interrupt();
+			AccessibilityEvent e = AccessibilityEvent.obtain();
+			e.setEventType(AccessibilityEvent.TYPE_ANNOUNCEMENT);
+			e.setClassName(getClass().getName());
+			e.setPackageName(context.getPackageName());
+			e.getText().add(text);
+			manager.sendAccessibilityEvent(e);
+			return;
+		}
 		if (!ttsInitialized)
 			ttsInit();
 		if (tts == null)

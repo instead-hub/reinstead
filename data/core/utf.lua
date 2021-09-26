@@ -20,4 +20,12 @@ function utf.strip(str)
 	str = str:gsub("^[ \t]+",""):gsub("[ \t]+$","")
 	return str
 end
+
+function utf.split(s, sep_arg)
+	local sep, fields = sep_arg or " ", {}
+	local pattern = string.format("([^%s]+)", sep)
+	s:gsub(pattern, function(c) table.insert(fields, utf.strip(c)) end)
+	return fields
+end
+
 return utf

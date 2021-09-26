@@ -26,6 +26,7 @@ function iface.history_prev()
 	local i = history[history_pos]
 	if i then
 		input = i
+		iface.tts_more(i)
 		return iface.input_attach(i)
 	end
 	return
@@ -41,6 +42,7 @@ function iface.history_next()
 	local i = history[history_pos]
 	if i then
 		input = i
+		iface.tts_more(i)
 		return iface.input_attach(i)
 	end
 	return
@@ -166,6 +168,39 @@ function iface.input_kill()
 	input = ''
 	return iface.input_attach(input)
 end
+local old_input
+
+local tts_on = false
+local tts_text = false
+
+function iface.input_tts(v)
+	if not tts_on then
+		return
+	end
+	if old_input == v then
+		return
+	end
+	local o = utf.chars(old_input or '')
+	local n = utf.chars(v or '')
+	local len = #n
+	if len >= #o then
+		for i=1,len do
+			if n[1] ~= o[i] then
+				break
+			end
+			table.remove(n, 1)
+		end
+		if #n == 1 and n[1] == " " then
+			local w = utf.split(v)
+			iface.tts_more(w[#w])
+		else
+			iface.tts_more(table.concat(n, ''))
+		end
+	elseif len == #o - 1 then
+		iface.tts_more(o[#o])
+	end
+	old_input = v
+end
 
 function iface.input_text(v)
 	local t = utf.chars(input)
@@ -173,11 +208,14 @@ function iface.input_text(v)
 	table.insert(t, input_pos, v)
 	input = table.concat(t, '')
 	input_pos = input_pos + #app
+	iface.input_tts(input)
 	return iface.input_attach(input, true)
 end
 
 function iface.input_edit(v)
-	local dirty = iface.input_attach(input..v)
+	iface.input_tts(v)
+	input = v
+	local dirty = iface.input_attach(input)
 	input_pos = #utf.chars(input) + 1
 	return dirty
 end
@@ -190,6 +228,7 @@ function iface.input_bs()
 		if input_pos < 1 then input_pos = 1 end
 	end
 	input = table.concat(t, '')
+	iface.input_tts(input)
 	return iface.input_attach(input, true)
 end
 
@@ -251,17 +290,15 @@ function iface.reset()
 	return mwin
 end
 
-local tts_on = false
-local tts_text = false
-
 local function strip_tags(str)
-	if str == '' then return str end
+	if str == '' or not str then return str end
 	str = utf.strip(str)
 	str = str:gsub("</?[icrb]>", ""):gsub("<g:[^>]*>", ""):gsub("<w:([^>]*)>","%1")
 	return str
 end
 
 function iface.tts_more(str)
+	if not str then return end
 	str = strip_tags(str)
 	tts_text = (tts_text or '')..str
 end
