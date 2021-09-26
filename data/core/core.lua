@@ -512,6 +512,8 @@ function core.run()
 		if e == 'keydown' then
 			if v == 'escape' and not GAME and not DIRECTORY then -- exit
 				break
+			elseif v == 'f5' then
+				iface.tts_replay()
 			elseif v == 'escape' or v == 'ac back' then
 				iface.input_detach()
 				if iface.input() ~= '' then
