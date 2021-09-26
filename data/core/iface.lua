@@ -7,6 +7,7 @@ local iface = {
 }
 
 local input = ''
+local old_input = ''
 local input_pos = 1;
 local input_prompt = conf.prompt
 
@@ -166,9 +167,9 @@ end
 
 function iface.input_kill()
 	input = ''
+	old_input = ''
 	return iface.input_attach(input)
 end
-local old_input
 
 local tts_on = false
 local tts_text = false
@@ -313,6 +314,7 @@ end
 
 function iface.tts(str)
 	if str == false then
+		-- system.log("stop speak")
 		system.speak('')
 		tts_text = false
 		return
@@ -321,6 +323,7 @@ function iface.tts(str)
 	str = strip_tags(str)
 	str = (tts_text or '').. str
 	if tts_on and str ~= '' then
+		-- system.log("speak:" .. str)
 		system.speak(str)
 	end
 	tts_text = false

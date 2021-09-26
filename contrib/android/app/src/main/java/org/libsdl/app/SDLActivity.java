@@ -2265,11 +2265,12 @@ class SDLInputConnection extends BaseInputConnection {
     public boolean performEditorAction(int editorAction) { // reinstead
         SDLActivity.onNativeKeyDown(KeyEvent.KEYCODE_ENTER);
         SDLActivity.onNativeKeyUp(KeyEvent.KEYCODE_ENTER);
-
+        beginBatchEdit();
         super.finishComposingText();
         super.deleteSurroundingText(1000, 1000);
         super.setComposingRegion(0, 0);
         super.setSelection(0, 0);
+        endBatchEdit();
         return true; //super.performEditorAction(editorAction);
     }
     @Override
