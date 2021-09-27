@@ -135,7 +135,8 @@ float
 GetScale(void)
 {
 	float dpi;
-	SDL_GetDisplayDPI(0, NULL, &dpi, NULL);
+	if (SDL_GetDisplayDPI(0, NULL, &dpi, NULL))
+		return 1.0f;
 	return dpi / 96.0f;
 }
 
