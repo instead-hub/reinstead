@@ -140,8 +140,10 @@ GetScale(void)
 }
 
 #ifdef _WIN32
+static HINSTANCE user32_lib;
 static HINSTANCE tolk;
 static void (*Tolk_Load)() = NULL;
+static void (*Tolk_Unload)() = NULL;
 static void (*Tolk_TrySAPI)(int trySAPI) = NULL;
 static int (*Tolk_Output)(const wchar_t *str, int interrupt) = NULL;
 static wchar_t *(*Tolk_DetectScreenReader)() = NULL;
@@ -152,11 +154,11 @@ int
 PlatformInit(void)
 {
 #ifdef _WIN32
-	HINSTANCE lib;
 	int (*SetProcessDPIAware)();
 	tolk = LoadLibrary("Tolk.dll");
 	if (tolk) {
 		Tolk_Load = (void*) GetProcAddress(tolk, "Tolk_Load");
+		Tolk_Unload = (void*) GetProcAddress(tolk, "Tolk_Unlad");
 		Tolk_TrySAPI = (void*) GetProcAddress(tolk, "Tolk_TrySAPI");
 		Tolk_Output = (void*) GetProcAddress(tolk, "Tolk_Output");
 		Tolk_DetectScreenReader = (void*) GetProcAddress(tolk, "Tolk_DetectScreenReader");
@@ -169,10 +171,11 @@ PlatformInit(void)
 		if (!Tolk_IsReader && Tolk_TrySAPI)
 			Tolk_TrySAPI(1);
 	}
-	lib = LoadLibrary("user32.dll");
-	SetProcessDPIAware = (void*) GetProcAddress(lib, "SetProcessDPIAware");
+	user32_lib = LoadLibrary("user32.dll");
+	SetProcessDPIAware = (void*) GetProcAddress(user32_lib, "SetProcessDPIAware");
 	if (SetProcessDPIAware)
 		SetProcessDPIAware();
+	LoadLibrary("Tolk.dll");
 #endif
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
 		return -1;
@@ -184,6 +187,15 @@ static SDL_Surface *winbuff = NULL;
 void
 PlatformDone(void)
 {
+#ifdef _WIN32
+	if (user32_lib)
+		FreeLibrary(user32_lib);
+	if (tolk) {
+		if (Tolk_Unload)
+			Tolk_Unload();
+		FreeLibrary(tolk);
+	}
+#endif
 	if (winbuff)
 		SDL_FreeSurface(winbuff);
 	if (texture)
