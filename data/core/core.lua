@@ -158,7 +158,7 @@ local function instead_start(game, load)
 			mwin:add_img(icon)
 		end
 		if load then
-			mwin:add("*** "..basename(load))
+			e = "*** "..basename(load) .. "\n" .. (e or '')
 			mwin:add(output(e))
 		else
 			mwin:add(output(e))
