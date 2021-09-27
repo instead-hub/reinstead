@@ -25,7 +25,9 @@ return {
 	show_icons = true,
 	scale = true, -- autoscale using dpi info, set number to force specific scale
 	autosave = true,
-	short_help = "<c>***</c>\n!quit - exit\n!load - load\n!save - save\n!restart - restart\n!info - info\n\n",
+	short_help = "<c>***</c>\n!info - info\n!save - save game\n!load - load game\n!restart - restart game\n"..
+		"!font <size> - change font size\n!tts - toggle tts\n!quit - exit\n\n"..
+		"<i>All commands must be entered with an exclamation mark at the beginning!</i>\n\n",
 	note = '<c>https://parser.hugeping.ru</c>',
 	settings = true, -- store font size
 --	settings_game = true, -- store selected game
