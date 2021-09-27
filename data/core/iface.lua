@@ -319,7 +319,7 @@ function iface.tts_replay(str)
 	if not tts_on or not last_screen or last_screen == '' then
 		return
 	end
-	system.speak(last_screen)
+	iface.tts_more(last_screen)
 end
 function iface.tts(str)
 	if str == false then
@@ -331,11 +331,11 @@ function iface.tts(str)
 	str = str or ''
 	str = strip_tags(str)
 	str = (tts_text or '').. str
+	if str:find("\n") then
+		last_screen = str
+	end
 	if tts_on and str ~= '' then
 		-- system.log("speak:" .. str)
-		if str:find("\n") then
-			last_screen = str
-		end
 		system.speak(str)
 	end
 	tts_text = false

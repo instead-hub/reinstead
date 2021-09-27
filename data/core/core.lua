@@ -570,6 +570,7 @@ function core.run()
 						v = info()
 					elseif cmd == 'tts on' then -- settings?
 						iface.tts_mode(true)
+						iface.tts_replay()
 					elseif cmd == 'tts' then -- toggle
 						if not iface.tts_mode(not iface.tts_mode()) then
 							iface.tts(false)
