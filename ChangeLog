@@ -1,7 +1,8 @@
 0.5
-  * experimental tts support;
+  * tts support for: Linux, Windows and Android.
   * !tts command;
-  * fix backspace problem with some keyboards.
+  * Accessibility friendly Android version;
+  * better support for Android soft-keyboards.
 
 0.4
   * space distance while font resizing fix;
