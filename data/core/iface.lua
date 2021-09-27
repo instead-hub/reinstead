@@ -331,6 +331,7 @@ function iface.tts(str)
 	str = str or ''
 	str = strip_tags(str)
 	str = (tts_text or '').. str
+	str = str:gsub("\n$", "")
 	if str:find("\n") then
 		last_screen = str
 	end
