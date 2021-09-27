@@ -122,6 +122,11 @@ void WindowUpdate(int x, int y, int w, int h)
 {
 	Rectangle r = Rect(0, 0, win_w, win_h);
 	loadimage(windbuf, r, pixels, win_w * win_h * 4);
+	if (w > 0 && h > 0)
+		replclipr(screen, 0, rectaddpt(Rect(0, 0, w, h),
+			Pt(screen->r.min.x + x, screen->r.min.y + y)));
+	else
+		replclipr(screen, 0, screen->r);
 	draw(screen, screen->r, windbuf, nil, ZP);
 	flushimage(display, 1);
 }
