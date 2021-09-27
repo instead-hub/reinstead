@@ -509,6 +509,10 @@ int isSpeak()
 	if (Tolk_IsReader)
 		return 1;
 #endif
+#if defined(__linux)
+	if (getenv("ACCESSIBILITY_ENABLED"))
+		return 1;
+#endif
 	return 0;
 }
 #endif
