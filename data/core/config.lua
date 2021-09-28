@@ -33,4 +33,5 @@ return {
 --	settings_game = true, -- store selected game
 --	autoload = true,
 --	debug = true,
+--	tts = true,
 }

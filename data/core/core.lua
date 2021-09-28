@@ -408,7 +408,7 @@ function core.init()
 	end
 
 	print("scale: ", SCALE)
-	if system.is_speak() then
+	if system.is_speak() or conf.tts then
 		system.input()
 		iface.tts_mode(true)
 	end
