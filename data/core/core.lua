@@ -281,7 +281,7 @@ function instead_settings()
 	end
 	local p = DATADIR..'/settings'
 	local cfg = ''
-	if iface.tts_mode() and not system.is_speak() then
+	if iface.tts_mode() and not system.is_speak() and not conf.tts then
 		cfg = cfg .. "!tts on\n"
 	end
 	cfg = cfg .. string.format("!font %d\n", conf.fsize)
@@ -375,6 +375,8 @@ function core.init()
 			GAME = a
 		elseif a == "-debug" or a == "-d" then
 			instead.debug(true)
+		elseif a == "-tts" then
+			conf.tts = true
 		elseif a == '-i' then
 			AUTOSCRIPT = ARGS[k+1] or "autoscript"
 			skip = true
