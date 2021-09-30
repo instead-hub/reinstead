@@ -156,7 +156,7 @@ PlatformInit(void)
 {
 #ifdef _WIN32
 	int (*SetProcessDPIAware)();
-	tolk = LoadLibrary("Tolk\\Tolk.dll");
+	tolk = LoadLibrary("Tolk.dll");
 	if (tolk) {
 		Tolk_Load = (void*) GetProcAddress(tolk, "Tolk_Load");
 		Tolk_Unload = (void*) GetProcAddress(tolk, "Tolk_Unlad");
