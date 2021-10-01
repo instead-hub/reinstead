@@ -480,7 +480,7 @@ function core.run()
 		end
 		local e, v, a, b, nv
 		e, v, a, b = system.poll()
-		-- system.log(string.format("%q %q", e, v))
+		-- system.log(string.format("%q %q", e or 'nil', v or 'nil'))
 		if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
 			nv = AUTOSCRIPT[1] and AUTOSCRIPT[1]:read("*line")
 			if not nv and AUTOSCRIPT[1] then
