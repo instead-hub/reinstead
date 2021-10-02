@@ -67,7 +67,7 @@ main(int argc, char **argv)
 		return 1;
 
 	if (PlatformInit()) {
-		fprintf(stderr, "Can not do platform init!");
+		fprintf(stderr, "Can not do platform init!\n");
 		return 1;
 	}
 
@@ -86,7 +86,7 @@ main(int argc, char **argv)
 	lua_setglobal(L, "SCALE");
 
 	if (WindowCreate()) {
-		fprintf(stderr, "Can not create window!");
+		fprintf(stderr, "Can not create window!\n");
 		return 1;
 	}
 
