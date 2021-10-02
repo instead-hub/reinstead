@@ -2,7 +2,8 @@
   * tts support for: Linux, Windows and Android.
   * !tts command;
   * Accessibility friendly Android version;
-  * better support for Android soft-keyboards.
+  * better support for Android soft-keyboards;
+  * bugfixes.
 
 0.4
   * space distance while font resizing fix;
