@@ -20,5 +20,6 @@ extern void font_free(font_t *font);
 extern int font_width(font_t *font, const char *text);
 extern int font_render(font_t *font, const char *text, img_t *img);
 extern int font_height(font_t *font);
+const char *font_renderer(void);
 
 extern const char* utf8_to_codepoint(const char *p, unsigned *dst);

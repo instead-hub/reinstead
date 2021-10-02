@@ -359,8 +359,13 @@ local function info()
 		if gameinfo.info then t = t .. "\n"..gameinfo.info end
 		return t
 	end
+	local luaver = _VERSION
+	if type(jit) == 'table' and type(jit.version) == 'string' then
+		luaver = jit.version
+	end
 	return "<c><b>RE:INSTEAD v"..VERSION.." by Peter Kosyh (2021)</b>\n"..
-		"<i>Platform: "..PLATFORM.." / ".._VERSION.."</i></c>\n\n".. (conf.note or '')
+		"<i>Platform: "..PLATFORM.." / "..luaver.."</i>\n"..
+		"<i>Font renderer: "..FONTRENDERER.."</i></c>\n\n".. (conf.note or '')
 end
 
 local loading_settings = false

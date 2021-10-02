@@ -186,3 +186,10 @@ font_free(font_t *font)
 	FT_Done_Face(font->face);
 	free(font);
 }
+
+static const char *info = "freetype";
+const char *
+font_renderer()
+{
+	return info;
+}

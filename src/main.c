@@ -2,7 +2,7 @@
 #include "platform.h"
 #include "instead.h"
 #include "util.h"
-
+#include "gfx.h" /* to get font_renderer */
 extern int system_init(lua_State *L);
 
 static int
@@ -98,6 +98,9 @@ main(int argc, char **argv)
 
 	lua_pushstring(L, exepath);
 	lua_setglobal(L, "EXEFILE");
+
+	lua_pushstring(L, font_renderer());
+	lua_setglobal(L, "FONTRENDERER");
 
 #ifdef __ANDROID__
 	snprintf(base, sizeof(base), "%s", SDL_AndroidGetInternalStoragePath());

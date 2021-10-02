@@ -185,3 +185,10 @@ font_free(font_t *font)
 	free(font->data);
 	free(font);
 }
+
+static const char *info = "stb_truetype";
+const char *
+font_renderer()
+{
+	return info;
+}

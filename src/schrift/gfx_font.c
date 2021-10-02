@@ -183,3 +183,10 @@ font_free(font_t *font)
 	free(font->data);
 	free(font);
 }
+
+static const char *info = "libschrift";
+const char *
+font_renderer()
+{
+	return info;
+}
