@@ -56,6 +56,15 @@
 
 См. файл data/core/config.lua.
 
+# Расширения для программ экранного доступа (Windows)
+
+Пользователи программ экранного доступа могут установить расширения,
+которые повышают удобство использования RE:INSTEAD:
+
+* [Дополнение для NVDA](https://tseykovets.ru/download/nvda/reinstead.nvda-addon)
+
+* [Скрипты для JAWS](https://tseykovets.ru/download/jaws/reinstead.zip)
+
 ------
 
 <img src="scr/archive.png" width="50%">
