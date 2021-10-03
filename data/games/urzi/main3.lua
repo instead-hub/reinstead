@@ -1,4 +1,4 @@
---$Name: Urzi$
+--$Name: Urzi / Урзи$
 --$Name(ru): Урзи$
 --$Version: 1.05$
 --$Author: Антон Жучков (fireton)$
