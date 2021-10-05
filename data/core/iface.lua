@@ -217,6 +217,9 @@ function iface.input_text(v)
 end
 
 function iface.input_edit(v)
+	if v == input then
+		return false
+	end
 	iface.input_tts(v)
 	input = v
 	local dirty = iface.input_attach(input)
