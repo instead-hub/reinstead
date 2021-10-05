@@ -1,3 +1,7 @@
+0.6
+  * urzi English translation;
+  * fix in paging.
+
 0.5
   * tts support for: Linux, Windows and Android.
   * !tts command;
