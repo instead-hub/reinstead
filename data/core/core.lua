@@ -579,9 +579,7 @@ function core.run()
 						iface.tts_mode(true)
 						iface.tts_replay()
 					elseif cmd == 'tts' then -- toggle
-						if not iface.tts_mode(not iface.tts_mode()) then
-							iface.tts(false)
-						end
+						iface.tts_mode(not iface.tts_mode())
 					elseif cmd:find("load ", 1, true) == 1 or cmd == "load" then
 						need_load = cmd:sub(6)
 					elseif cmd:find("save ", 1, true) == 1 or cmd == "save" then

@@ -314,6 +314,9 @@ function iface.tts_mode(on)
 	if on == nil then
 		return tts_on
 	end
+	if not on then -- halt tts
+		iface.tts(false)
+	end
 	tts_on = on
 	return tts_on
 end
@@ -327,7 +330,9 @@ end
 function iface.tts(str)
 	if str == false then
 		-- system.log("stop speak")
-		system.speak('')
+		if tts_on then
+			system.speak('')
+		end
 		tts_text = false
 		return
 	end
