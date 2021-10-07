@@ -104,7 +104,7 @@ function init()
   move('tail', pl)
   move('paws', pl)
   move('teeth', pl)
-  pl.description = "Imma. Fluffy and big here. Has paws and tail."
+  pl.description = "Imma. Fluffy and in charge here. Has paws and tail."
   pl.hungry = true
 end
 
@@ -335,7 +335,7 @@ type {$fmt em|help}.^^]]
       -"high|tall|table|legs",
       nam = "table",
       description = [[High. The legs are long and hard. Can jump on it
-      	but Tally don't like. Imma jumps on anyway. Because big here.]],
+      	but Tally don't like. Imma jumps on anyway. Because in charge here.]],
       ["before_Enter,Climb"] = function(s)
         walk 'on_table'
       end
@@ -426,7 +426,7 @@ obj {
       return
     end
     if s:inside 'on_table' then
-      pn "Should not touch ffo. But Imma wants to play. Imma big here! Hit with paw. Ffo fell down."
+      pn "Should not touch ffo. But Imma wants. In charge here! Hit with paw. Ffo fell down."
       move(s, 'main')
       return
     end
