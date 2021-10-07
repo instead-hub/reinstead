@@ -30,6 +30,20 @@ mp.msg.Tell.SELF = "Глупо же."
 mp.msg.UNKNOWN_WORD = "Урзи ничего не понял."
 mp.msg.Touch.LIVE = "Урзи тронул лапкой."
 mp.msg.Touch.TOUCH = "Урзи не хочет."
+mp.msg.INCOMPLETE_SECOND_NOUN = function(w)
+	p ('Урзи должен ', w ,'?')
+end
+mp.msg.Sleep.SLEEP = "Урзи уже выспался."
+mp.msg.Yes.YES = "Урзи не спрашивал."
+mp.msg.COMPASS_EXAM_NO = "Ничего необычного там."
+mp.msg.Insert.NOTCONTAINER = "Урзи не понимает, как."
+mp.msg.Insert.WHERE = "Уже там."
+mp.msg.PutOn.WHERE = "Уже там."
+mp.msg.Wake.WAKE = "Урзи не спит."
+mp.msg.WakeOther.WAKE = "Нанни не спит."
+mp.msg.WakeOther.NOTLIVE = "Урзи не знает, как."
+mp.msg.Think.THINK = "Говорите Урзи. Урзи слушается."
+mp.msg.Swim.SWIM = "Урзи не любит плавать."
 
 function mp:pre_input(str)
 	local a = std.split(str)
@@ -38,6 +52,9 @@ function mp:pre_input(str)
 	end
 	if a[1] == 'в' or a[1] == 'на' or a[1] == 'во' or a[1] == "к" or a[1] == 'ко' then
 		return "идти "..str
+	end
+	if a[1] == 'под' then
+		return 'смотреть '..str
 	end
 	return str
 end
@@ -50,7 +67,7 @@ function game:before_Walk(w)
 	if dir == 'd_to' or dir == 'u_to' or dir == 'in_to' or dir == 'out_to' then
 		return false
 	end
-	p [[Урзи не знает куда это. У Урзи лапки.]]
+	p [[Урзи не знает, куда это. У Урзи лапки.]]
 end
 
 function game:Take(w) 
@@ -89,15 +106,33 @@ function init()
   mp.togglehelp = false
   
   pl.word = "Урзи/мр,од,ед,3л"
-  pl.scope = std.list {"claws", "tail", "paws", "teeth"};
+  move('claws', pl)
+  move('tail', pl)
+  move('paws', pl)
+  move('teeth', pl)
   pl.description = [[Урзи. Пушист и главный тут. Лапки есть и хвост.]]
   pl.hungry = true
 end
 
+VerbRemove "#Wear"
+VerbRemove "#Disrobe"
+VerbRemove "#Remove"
+VerbRemove "#SwitchOn"
+VerbRemove "#SwitchOff"
+VerbRemove "#Sing"
+VerbRemove "#Burn"
+VerbRemove "#Kiss"
+VerbRemove "#Tie"
+VerbRemove "#Blow"
+VerbRemove "#Consult"
+VerbRemove "#Fill"
+VerbRemove "#Wave"
+VerbRemove "#Buy"
+
 ----- Урзи
 
 PartOfCat = Class {
-  before_Take = function(s)
+  ["before_Take,Drop,Attack,Throw,ThrowAt"] = function(s)
     p [[Глупо. Часть Урзи же.]]
   end,
   before_Smell = "Пахнет Урзи.",
@@ -136,12 +171,12 @@ PartOfCat {
 --- verbs
 
 VerbExtend {"#Pull",
-  "{noun}/вн {noun}/тв : PullWith",
-  "{noun}/тв {noun}/вн : PullWith reverse"
+  "{noun}/вн {noun}/тв : Unlock",
+  "{noun}/тв {noun}/вн : Unlock reverse"
 }
 
 VerbExtend{"#Eat",
-  "из {noun}/рд : EatFrom"
+  "из {noun}/рд : Eat"
 }
 
 Verb {"#JumpOn",
@@ -159,7 +194,7 @@ Verb {"#PushExt",
 Verb {"#Play",
   "[|по]игра/ть",
   "Play",
-  "с|со {noun}/тв : PlayWith"
+  "с|со|в {noun}/тв : PlayWith"
 }
 
 Verb {"#Bite",
@@ -250,6 +285,7 @@ cutscene {
 
 room {
   nam = 'main',
+  -"светлая/но,светл*|гостиная",
   title = "Светлая",
   enter = function(s,w)
     if w ^ 'intro' then
@@ -267,7 +303,7 @@ room {
 			return false
 		end
 		if ev == 'Look' or ev == 'Exam' or ev == 'Exit' or ev == 'GetOff' or ev == 'Sleep' or ev == 'Wake' or ev == 'Walk'
-			or ev == 'Jump' or ev == 'JumpOn' then
+			or ev == 'Jump' or ev == 'JumpOn' or ev == 'Meow' or ev == 'Purr' then
 			return false
 		end
 		p [[Неудобно отсюда. Надо слезть.]]
@@ -281,7 +317,7 @@ room {
     if not dir then
       return false
     end
-    if dir == 'd_to' then
+    if dir == 'd_to' or dir == 'out_to' then
       mp:xaction("GetOff", _'couch')
     else
       return false
@@ -313,7 +349,7 @@ room {
         end
       end,
       before_Enter = function(s) p [[Урзи прыгнул.]] return false end,
-      before_Exit = function(s) p [[Урзи cпрыгнул.]] return false end,
+      before_Exit = function(s) p [[Урзи прыгнул вниз.]] return false end,
       after_Enter = function(s) disable('ball') end,
       after_Exit  = function(s) enable('ball') end,
     }:attr "static,concealed,enterable,supporter",
@@ -360,6 +396,7 @@ room {
 
 room {
   nam = 'on_table',
+  -"высокий,высок*/но|стол|ноги",
   title = "На Высоком",
   dsc = "Гладко тут. Урзи не нравится. Иногда бывает вкусное. Сейчас нет.",
   enter = [[Урзи прыгнул.]],
@@ -415,6 +452,7 @@ Path {
 
 room {
   nam = 'corridor',
+  -"длинный,длинн*/но|коридор",
   title = "Длинный",
   dsc = [[Это Длинный. Ход тут в Главную. И в Светлую тоже. Ещё в Мокрую. Но туда Урзи не любит.]],
   enter = function(s) _'nanni':daemonStart() end,
@@ -542,15 +580,19 @@ obj {
   before_Smell = "Пахнет вкусным. Как всегда.",
   
   ["before_Unlock,PullWith"] = function(s,w) 
-    if w ^ 'claws' then
-      p [[Урзи умный. Зацепил Белый когтями и потянул. Белый открылся! Вкусное там!]]
-      s:attr 'open'
-    elseif w ^ 'teeth' then
-      p [[Не подлезть.]]
-    elseif w ^ 'paws' then
-      p [[Не зацепляется.]]
+    if s:has'open' then
+      p('Уже открыт.')
     else
-      p [[Урзи не умеет так.]]
+      if w ^ 'claws' then
+        p [[Урзи умный. Зацепил Белый когтями и потянул. Белый открылся! Вкусное там!]]
+        s:attr 'open'
+      elseif w ^ 'teeth' then
+        p [[Не подлезть.]]
+      elseif w ^ 'paws' then
+        p [[Не зацепляется.]]
+      else
+        p [[Урзи не умеет так.]]
+      end
     end
   end,
   
@@ -592,7 +634,7 @@ obj {
   before_EatFrom = function(s)
     p [[Ничего нет. Урзи всё съел.]]
   end,
-  before_Taste = function(s) 
+  ["before_Taste,Eat"] = function(s) 
     if pl.hungry then 
       p "Немножко вкусно. Но Урзи голодный."
     else
