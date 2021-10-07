@@ -171,8 +171,8 @@ PartOfCat {
 --- verbs
 
 VerbExtend {"#Pull",
-  "{noun}/вн {noun}/тв : Unlock",
-  "{noun}/тв {noun}/вн : Unlock reverse"
+  "{noun}/вн {noun}/тв : PullWith",
+  "{noun}/тв {noun}/вн : PullWith reverse"
 }
 
 VerbExtend{"#Eat",

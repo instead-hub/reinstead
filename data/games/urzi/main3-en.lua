@@ -141,7 +141,7 @@ VerbExtend{"#Open",
 -- End of proposed update
 
 VerbExtend {"#Pull",
-  "{noun} with {noun} : Unlock",
+  "{noun} with {noun} : PullWith",
 }
 
 VerbExtend{"#Eat",
