@@ -17,31 +17,31 @@ mp.msg.INCOMPLETE_NOUN = function(w)
   return "What Imma must " .. w .. "?"
 end
 mp.msg.Attack.LIFE = "No. Imma is kind."
-mp.msg.Attack.ATTACK = "Why? Imma is not angry."
-mp.msg.UNKNOWN_OBJ = "Where? Imma does not see."
-mp.msg.INCOMPLETE = "Need more. Imma does not understand."
-mp.msg.Eat.NOTEDIBLE = "Imma does not eat this."
+mp.msg.Attack.ATTACK = "Why? Imma not angry."
+mp.msg.UNKNOWN_OBJ = "Where? Imma not see."
+mp.msg.INCOMPLETE = "Need more. Imma not understand."
+mp.msg.Eat.NOTEDIBLE = "Imma not eat this."
 mp.msg.Talk.SELF = "Stupid."
-mp.msg.Talk.NOTLIVE = "Imma can not talk with {#first}."
-mp.msg.Tell.SELF = "It is stupid."
-mp.msg.UNKNOWN_WORD = "Imma understands nothing."
+mp.msg.Talk.NOTLIVE = "Imma can't talk with {#first}."
+mp.msg.Tell.SELF = "It's stupid."
+mp.msg.UNKNOWN_WORD = "Imma not understand."
 mp.msg.Touch.LIVE = "Imma touched with paw."
-mp.msg.Touch.TOUCH = "Imma does not want."
+mp.msg.Touch.TOUCH = "Imma not want."
 mp.msg.CUTSCENE_HELP = "To continue press {$fmt b|enter} or type {$fmt em|more}."
 mp.msg.INCOMPLETE_SECOND_NOUN = function(w)
 	p ("Imma must ", w ,"?")
 end
 mp.msg.Sleep.SLEEP = "Imma slept enough."
 mp.msg.Yes.YES = "Imma did not ask."
-mp.msg.COMPASS_EXAM_NO = "Nothing unusual there."
-mp.msg.Insert.NOTCONTAINER = "Imma does not know how."
+mp.msg.COMPASS_EXAM_NO = "Nothing unusual."
+mp.msg.Insert.NOTCONTAINER = "Imma not know how."
 mp.msg.Insert.WHERE = "Already there."
 mp.msg.PutOn.WHERE = "Already there."
-mp.msg.Wake.WAKE = "Imma is not sleeping."
-mp.msg.WakeOther.WAKE = "Tally is not sleeping."
-mp.msg.WakeOther.NOTLIVE = "Imma does not know how."
+mp.msg.Wake.WAKE = "Imma not sleeping."
+mp.msg.WakeOther.WAKE = "Tally not sleeping."
+mp.msg.WakeOther.NOTLIVE = "Imma not know how."
 mp.msg.Think.THINK = "Talk to Imma. Imma will do."
-mp.msg.Swim.SWIM = "Imma does not like to swim."
+mp.msg.Swim.SWIM = "Imma hate swim."
 
 function mp:pre_input(str)
 	local a = std.split(str)
@@ -65,11 +65,11 @@ function game:before_Walk(w)
 	if dir == 'd_to' or dir == 'u_to' or dir == 'in_to' or dir == 'out_to' then
 		return false
 	end
-	pn "Imma does not know where it is. Imma has paws."
+	pn "Imma not know where it is. Imma has little paws."
 end
 
 function game:Take(w)
-  pn "Imma can not carry."
+  pn "Imma not carry."
 end
 
 Path = Class {
@@ -104,7 +104,7 @@ function init()
   move('tail', pl)
   move('paws', pl)
   move('teeth', pl)
-  pl.description = "Imma. Fluffy and main here. Has paws and tail."
+  pl.description = "Imma. Fluffy and big here. Has paws and tail."
   pl.hungry = true
 end
 
@@ -205,7 +205,7 @@ PartOfCat {
 PartOfCat {
   -"paws/plural|paw";
   nam = 'paws';
-  description = 'Soft. Imma walks and jumps. But has claws.';
+  description = 'Soft. Imma walks and jumps. But there is claws.';
 }:attr 'static';
 
 PartOfCat {
@@ -213,14 +213,14 @@ PartOfCat {
   nam = 'tail';
   description = 'Long and fluffy.';
   before_PlayWith = function(s)
-    pn "Imma is a grown up already."
+    pn "Imma not a kitten. Big already."
   end
 }:attr 'static';
 
 PartOfCat {
   -"teeth/plural|tooth";
   nam = 'teeth';
-  description = 'Can not see them.';
+  description = 'Not see them.';
 }:attr 'static';
 
 function mp:Sharpen()
@@ -246,9 +246,9 @@ end
 
 function mp:Play()
   if pl.hungry then
-    pn "Imma does not want to play. Imma wants to eat."
+    pn "Imma want no play. Imma wants eat."
   else
-    pn "Imma can not play with self."
+    pn "Imma not play with self."
   end
 end
 
@@ -262,7 +262,7 @@ end
 
 function game:before_PlayWith(w)
   if pl.hungry then
-    pn "Imma does not want to play. Imma wants to eat."
+    pn "Imma want no play. Imma wants eat."
   else
     return false
   end
@@ -298,7 +298,7 @@ type {$fmt em|help}.^^]]
   end,
   dsc = function(s)
 	  pn [[Lit and big. Imma likes it here. Can sleep. Can play. High
-	  stands here. And soft is here. Nice. Can go to Long.]]
+	  is standing here. And Soft is here. Nice. Can go to Long.]]
   end,
   before_Any = function(s, ev)
 		if not pl:inside'couch' then
@@ -335,7 +335,7 @@ type {$fmt em|help}.^^]]
       -"high|tall|table|legs",
       nam = "table",
       description = [[High. The legs are long and hard. Can jump on it
-      	but Tally gets angry. Imma jumps on anyway. Main here.]],
+      	but Tally don't like. Imma jumps on anyway. Because big here.]],
       ["before_Enter,Climb"] = function(s)
         walk 'on_table'
       end
@@ -364,7 +364,7 @@ type {$fmt em|help}.^^]]
       description = function(s)
         p("Imma's ball. Imma plays sometimes.")
         if s.underCouch then
-				  pn [[It lies under the soft. Far. Can not reach. Regretful. Imma wants to play!]]
+				  pn [[It lies under the Soft. Far. Can't reach. Pity! Imma wants to play!]]
         end
       end,
       dsc = function(s)
@@ -376,19 +376,19 @@ type {$fmt em|help}.^^]]
       end,
       ["before_PlayWith,Attack,Pull,Push,PullWith,Move"] = function(s)
         if s.underCouch then
-          pn "Far. Can not reach."
+          pn "Far. Can't reach."
         else
           if pl.hungry then
-            pn "Imma does not want to play. Imma wants to eat."
+            pn "Imma want no play. Imma wants to eat."
           else
-            pn "Imma hit with paw. Played. Rolled the ball under the soft. Paw can not reach. Sad."
+            pn "Imma hit with paw. Played. Rolled the ball under the Soft. Paw can't reach. Pity."
             s.underCouch = true
           end
         end
       end,
       before_Take = function(s)
         if s.underCouch then
-          pn "Far. Can not reach."
+          pn "Far. Can't reach."
         else
          return false
         end
@@ -401,7 +401,7 @@ room {
   nam = 'on_table',
   -"high|tall|table|legs",
   title = 'On the Tall',
-  dsc = [[It is smooth here. Imma does not like. Sometimes there is tasty. Not now.]],
+  dsc = [[It is smooth here. Imma don't like. Sometimes tasty here. Not now.]],
   enter = 'Imma jumped up.',
   exit  = 'Imma jumped down.',
   obj = { 'phone' },
@@ -418,7 +418,7 @@ obj {
   	should not touch ffo. Tally gets angry.]],
   ["before_PlayWith,Attack,Push,Pull,PullWith,Move"] = function(s)
     if pl.hungry then
-      pn "Imma does not want to play. Imma wants to eat."
+      pn "Imma want no play. Imma wants to eat."
       return
     end
     if not _'ball'.underCouch then
@@ -426,7 +426,7 @@ obj {
       return
     end
     if s:inside 'on_table' then
-      pn "Should not touch ffo. But Imma wants to play. Main here! Hit with paw. Ffo fell down."
+      pn "Should not touch ffo. But Imma wants to play. Imma big here! Hit with paw. Ffo fell down."
       move(s, 'main')
       return
     end
@@ -484,7 +484,7 @@ room {
       ['before_Walk,Enter'] = function(s)
         pn "Imma will not go.";
       end,
-      desc = 'It is wet there. Imma does not like it.';
+      desc = 'Wet there. Imma not like.';
     }
   }
 }
@@ -493,7 +493,7 @@ obj {
   nam='nanni',
   -"Tally/female,live",
   description = [[It is Tally. Loves Imma. And Imma loves. Tally feeds
-  	and pets nicely. Now Tally lies down. Is tired probably.]],
+  	and pets nicely. Now Tally lies down. Tired probably.]],
   dsc = 'Near the way to the Wet Tally lies.',
   ["before_Ask,Tell,Say,Talk"] = function(s)
     pn "— Meow.^"
@@ -555,7 +555,7 @@ obj {
   -"white|fridge|refrigerator",
   nam = "fridge",
   description = function(s)
-    pn "White is very important. Everything tasty is there.";
+    pn "White is very important. All tasty is there.";
     if s:has'open' then
       pn "White is opened. Tasty is there. Imma sees."
     end
@@ -573,7 +573,7 @@ obj {
     if s:has'open' then
       pn "Already open."
     else
-      pn "Want it very much. With what?"
+      pn "Want it very much. But with what?"
     end
   end,
 
@@ -612,7 +612,7 @@ obj {
     obj {
       -"tasty|food";
       nam = 'food';
-      description = 'Different. Smells tasty.',
+      description = 'Many things. Smells tasty.',
       before_Smell = function(s)
         if pl.hungry then
           pn "Smells very tasty. Imma wants."
@@ -628,7 +628,7 @@ obj {
           pn "Imma does not want to eat more. Imma wants to play."
         end
       end,
-      before_PlayWith = 'Imma does not play with food.'
+      before_PlayWith = 'Imma not play with food.'
     }
   }
 }:attr 'static,concealed,openable,container'
@@ -637,8 +637,8 @@ obj {
   nam = 'bowl',
   -"bowl,cup",
   description = "Imma's bowl. Empty.",
-  before_Smell = 'Smells tasty. But nothing is there. Imma ate everything.',
-  ["before_PlayWith,Move,Push,Pull"] = 'No. Is not a toy.',
+  before_Smell = 'Smells tasty. But nothing is there. Imma ate everything before.',
+  ["before_PlayWith,Move,Push,Pull"] = 'No. Not a toy.',
   before_EatFrom = function(s)
     pn "Nothing here. Imma ate everything."
   end,
@@ -654,7 +654,7 @@ obj {
 cutscene {
   nam = 'happyend',
   text = {
-    "Tally took ffo. Talked. Imma was there and was petted. All.",
+    "Tally took ffo. Talked. Imma was there and was petted. Good.",
     [[Later Some Whites came and Asha. Asha is kind and pets
     Imma.^^Imma was angry at Some. Smelled strange and stomped
     loudly. They took Tally.^^Asha stayed. Fed Imma a lot and petted
@@ -668,13 +668,10 @@ cutscene {
   nam = 'gossip',
   text = {
 					[[— Did you hear about Natalie, from the eighteenth?^^
-— No, but what?^^
-— She almost gave her soul to god. Fell by the bathroom. A stroke. So,
-can you imagine, her's cat, Simba did save her. Dragged the phone from
-another room. Whoever told, I won't believe it!^^
-— It happens! And some say, pets are unreasonable. Understand
-everything...^^
-— That's for sure...]]
+            — No, why?^^
+            — She’s almost kicked the bucket. Fell down by her bathroom. A stroke. Can you imagine, that cat of hers, Simba, it saved her. It brought her phone from the room. I wouldn’t believe it if someone told me!^^
+            — What are the odds? And they say they are not intelligent. They understand everything...^^
+            — Exactly...]]
   },
   next_to = 'theend'
 }
@@ -700,5 +697,5 @@ Imma is handsome. Can "look at self" and see.^^
 
 Sometimes can go "up" and "down". But not often.^^
 
-All.]]
+So.]]
 end
