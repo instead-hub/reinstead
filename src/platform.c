@@ -206,7 +206,7 @@ PlatformDone(void)
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 #ifdef __ANDROID__
-	exit(0);
+	_exit(0);
 #endif
 }
 
