@@ -40,7 +40,7 @@ mp.msg.PutOn.WHERE = "Already there."
 mp.msg.Wake.WAKE = "Imma is not sleeping."
 mp.msg.WakeOther.WAKE = "Tally is not sleeping."
 mp.msg.WakeOther.NOTLIVE = "Imma does not know how."
-mp.msg.Think.THINK = "Talk to Imma. Imma will obey."
+mp.msg.Think.THINK = "Talk to Imma. Imma will do."
 mp.msg.Swim.SWIM = "Imma does not like to swim."
 
 function mp:pre_input(str)
@@ -687,7 +687,7 @@ gameover {
 
 function mp:MetaHelp()
 	pn "{$fmt b|HOW TO PLAY?}"
-	pn [[^Talk to Imma. Imma will obey. How:^
+	pn [[^Talk to Imma. Imma will do. How:^
 > go to long^
 > bite the ball^
 > meow^^
