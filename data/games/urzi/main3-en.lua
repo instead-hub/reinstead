@@ -669,7 +669,7 @@ cutscene {
   text = {
 					[[— Did you hear about Natalie, from the eighteenth?^^
             — No, why?^^
-            — She’s almost kicked the bucket. Fell down by her bathroom. A stroke. Can you imagine, that cat of hers, Simba, it saved her. It brought her phone from the room. I wouldn’t believe it if someone told me!^^
+            — She’s almost gave up the ghost. Fell down by her bathroom. A stroke. Can you imagine, that cat of hers, Simba, it saved her. It brought her phone from the room. I wouldn’t believe it if someone told me!^^
             — What are the odds? And they say they are not intelligent. They understand everything...^^
             — Exactly...]]
   },
