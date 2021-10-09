@@ -158,7 +158,7 @@ local function instead_start(game, load)
 			mwin:add_img(icon)
 		end
 		if load then
-			e = "*** "..basename(load) .. "\n" .. (e or '')
+			e = "*** "..basename(save_path(load)) .. "\n" .. (e or '')
 			mwin:add(output(e))
 		else
 			mwin:add(output(e))
@@ -243,7 +243,7 @@ local function instead_save(w, silent)
 		if e ~= '' and type(e) == 'string' then
 			msg = '\n'..e
 		end
-		e = "*** "..basename(w)..msg
+		e = "*** "..basename(save_path(w))..msg
 	end
 	if not silent then
 		mwin:add(e)
