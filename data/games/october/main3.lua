@@ -1649,7 +1649,7 @@ obj {
 		mp:move(me(), s)
 		put('boy', s)
 	end;
-}:attr'container,open,enterable';
+}:attr'container,open,enterable,static';
 
 cutscene {
 	nam = 'flashout';
