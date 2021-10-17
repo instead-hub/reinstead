@@ -313,7 +313,7 @@ Useless {
 	before_Take = function(s)
 		mp:xaction('Exam', s)
 	end;
-}
+}:attr'~scenery'
 
 Furniture {
 	-"холст|картина|мольберт";
