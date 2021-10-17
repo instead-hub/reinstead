@@ -1,0 +1,48 @@
+diff --git a/data/core/core.lua b/data/core/core.lua
+index ee3be90..4eec689 100644
+--- a/data/core/core.lua
++++ b/data/core/core.lua
+@@ -533,6 +533,12 @@ function core.run()
+ 				dirty = true
+ 			elseif v == 'backspace' or (control and v == 'h') then
+ 				dirty = iface.input_bs() or dirty
++			elseif v == 'tab' then
++				local _, compl = instead.cmd(string.format('@mpcompl %q', iface.input()))
++				compl = compl:gsub("\n", "")
++				if compl ~= '' then
++					dirty = iface.input_edit(compl) or dirty
++				end
+ 			elseif alt and v == 'return' then
+ 				alt = false
+ 				fullscreen = not fullscreen
+diff --git a/data/stead3/reinstead.lua b/data/stead3/reinstead.lua
+index 2fee87b..9030bb0 100644
+--- a/data/stead3/reinstead.lua
++++ b/data/stead3/reinstead.lua
+@@ -103,7 +103,25 @@ std.mod_start(function()
+ 			-- nil -- to show mp:correct()
+ 			-- false -- do not show mp:correct()
+ 		end)
+-		mp.autocompl = false
++		std.mod_cmd(function(cmd)
++			local inp_split = " :.,!?-"
++			if cmd[1] == '@mpcompl' then
++				local inp = cmd[2] or ''
++				local words = std.split(inp, inp_split)
++				local pinp = ''
++				mp.inp = ""
++				for k, w in ipairs(words) do
++					w = std.strip(w)
++					pinp = pinp .. w
++					if k < #words or inp:find(" $") then pinp = pinp .. ' ' end
++						mp.inp = pinp
++						mp:compl(mp.inp)
++					end
++					local r = mp:docompl(mp.inp)
++				return r, false
++			end
++		end, -1)
++		mp.autocompl = true
+ 		mp.autohelp = false
+ 		mp.compare_len = 3
+ 		local _, v = re_eval 'return conf.prompt'
