@@ -31,7 +31,7 @@ return {
 	note = '<c>https://parser.hugeping.ru</c>',
 	settings = true, -- store font size
 --	settings_game = true, -- store selected game
---	autoload = true,
+	autoload = true,
 --	debug = true,
 --	tts = true,
 }

@@ -384,6 +384,7 @@ function core.init()
 			conf.tts = true
 		elseif a == '-i' then
 			AUTOSCRIPT = ARGS[k+1] or "autoscript"
+			conf.autoload = false
 			skip = true
 		elseif a == '-h' or a == '-help' then
 			print("RE:INSTEAD v"..VERSION)
