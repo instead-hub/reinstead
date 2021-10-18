@@ -481,9 +481,6 @@ function core.run()
 				mwin:render()
 				gfx.flip()
 				dirty = false
-				if iface.tts() and system.is_speak() then
-					system.input()
-				end
 				last_render = system.time()
 			end
 		end
@@ -770,6 +767,9 @@ function core.run()
 			end
 		end
 		local elapsed = system.time() - start
+		if not loading_settings and iface.tts() and system.is_speak() then
+			system.input()
+		end
 		if not AUTOSCRIPT[1] then
 			system.wait(math.max(0, fps - elapsed))
 		end
