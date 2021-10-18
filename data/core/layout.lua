@@ -107,6 +107,8 @@ function lay:line_align(l, f)
 	table.remove(l, #l)
 end
 function lay:resize(width, height, linenr)
+	width = math.floor(width)
+	height = math.floor(height)
 	local y = 0
 	local realw = 0
 	if linenr == 0 then linenr = nil end
