@@ -477,7 +477,7 @@ function core.run()
 		if not dirty and not AUTOSCRIPT[1] then
 			while not system.wait(5) do end
 		else
-			if system.time() - last_render > fps then
+			if system.time() - last_render > fps and not loading_settings then
 				mwin:render()
 				gfx.flip()
 				dirty = false
