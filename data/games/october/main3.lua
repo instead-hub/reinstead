@@ -577,6 +577,7 @@ room {
 	-"парк";
 	nam = 'park1';
 	title = 'Парк';
+	e_to = 'park2';
 	enter = function(s, f)
 		if f ^ 'fall' then
 			p [[... Я лежал лицом вниз, уткнувшись в мокрые листья. Голова немного кружилась, и я почувствовал тошноту.
@@ -885,6 +886,8 @@ end
 room {
 	nam = 'entrance';
 	title = 'У ворот';
+	s_to = 'vorota';
+	n_to = 'park2';
 	out_to = 'vorota';
 	in_to = 'skam_nav';
 	before_Listen = lalarm;
@@ -920,6 +923,8 @@ room {
 	nam = 'park2';
 	title = 'парк';
 	out_to = 'vorota';
+	n_to = 'lake';
+	s_to = 'vorota';
 	in_to = 'vorota';
 	before_Listen = lalarm;
 	onexit = function(s, t)
@@ -1037,6 +1042,8 @@ obj {
 room {
 	nam = 'lake';
 	out_to = 'park2';
+	s_to = 'park2';
+	n_to = 'sad';
 	enter = function(s)
 		set_pic 'lake';
 	end;
@@ -1102,6 +1109,7 @@ room {
 	before_Listen = lalarm;
 	n = 0;
 	out_to = 'lake';
+	s_to = 'lake';
 	before_Smell = [[Пахнет яблоками!]];
 	daemon = function(s)
 		s.n = s.n + 1
@@ -1148,6 +1156,8 @@ room {
 	-"город|улица";
 	title = "Город";
 	first = false;
+	n_to = 'vorota';
+	s_to = 'downstairs';
 	d_to = 'downstairs';
 	n = 0;
 	enter = function(s)
