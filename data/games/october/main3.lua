@@ -1481,7 +1481,7 @@ obj {
 	end;
 	before_Attack = function(s, w)
 		if not mission then
-			p [[Это слишком радикально.]]
+			p [[Это слишком радикально. Нужна веская причина, чтобы сделать это.]]
 			return
 		end
 		if w then
