@@ -147,7 +147,7 @@ Path = Class {
 		if mp:check_inside(_(o)) then
 			return
 		end
-		if _(o):has 'door' then
+		if _(o):has 'door' or mp:compass_dir(_(o)) then
 			mp:xaction("Enter", _(o))
 			return
 		end

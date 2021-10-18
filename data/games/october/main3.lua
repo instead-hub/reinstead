@@ -1378,7 +1378,13 @@ room {
 			nam = '#down';
 			-"лестницы|лестница";
 			desc = "Я могу спуститься вниз.";
-			walk_to = '@d_to';
+			walk_to = function(s)
+				if disabled'soldier' then
+					return 'дверь'
+				else
+					return '@d_to';
+				end
+			end
 		}:disable();
 		door {
 			nam = 'дверь';
@@ -1892,10 +1898,12 @@ gameover {
 	enter = function()
 		set_pic 'skam'
 	end;
-	title = fmt.c'Краски октября';
+	title = fmt.c'КРАСКИ ОКТЯБРЯ';
 	dsc = function(s)
 		p [[{$fmt c|Спасибо вам за прохождение этой небольшой игры.^^]]
-		p [[{$fmt em|Тестирование: Oleg Bosh, Canwolf.}}^^]]
+		p [[{$fmt b|Тестирование:}^{$fmt em|Oleg Bosh^
+		Canwolf^
+		Nikita Tseykovets}}^^]]
 		p (fmt.c("{$fmt b|КОНЕЦ}^^{$fmt r|Пётр Косых, 2021^https://instead.hugeping.ru}"))
 	end;
 }
