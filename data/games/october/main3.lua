@@ -1159,6 +1159,9 @@ room {
 	n_to = 'vorota';
 	s_to = 'downstairs';
 	d_to = 'downstairs';
+	u_to = function()
+		mp:xaction('Climb', _'#stolb')
+	end;
 	n = 0;
 	enter = function(s)
 		-- picture = 'street';
@@ -1258,6 +1261,7 @@ room {
 			description = [[Пустынная дорога испещрена выбоинами и ямами.]];
 		}:attr'scenery';
 		obj {
+			nam = '#stolb';
 			-"столб,конус*,воронк*";
 			description = [[Высота столба около шести метров. На верху столба я вижу три конусообразных воронки, направленные в разные стороны.]];
 			before_Climb = [[Какой смысл в том, чтобы залезть на столб?]];
