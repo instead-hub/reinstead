@@ -1894,7 +1894,8 @@ gameover {
 	end;
 	title = fmt.c'Краски октября';
 	dsc = function(s)
-		p [[{$fmt c|Спасибо вам за прохождение этой небольшой игры.}^^]]
+		p [[{$fmt c|Спасибо вам за прохождение этой небольшой игры.^^]]
+		p [[{$fmt em|Тестирование: Oleg Bosh.}}^^]]
 		p (fmt.c("{$fmt b|КОНЕЦ}^^{$fmt r|Пётр Косых, 2021^https://instead.hugeping.ru}"))
 	end;
 }
