@@ -481,6 +481,9 @@ function core.run()
 				mwin:render()
 				gfx.flip()
 				dirty = false
+				if iface.tts() and system.is_speak() then
+					system.input()
+				end
 				last_render = system.time()
 			end
 		end
@@ -614,6 +617,7 @@ function core.run()
 							local p = utf.strip(cmd:sub(6))
 							instead_settings() -- if game crashed
 							GAME = datadir(p)
+							iface.tts(false)
 							instead_start(GAME, conf.autoload and 'autosave')
 						end
 						r = 'hidden'
@@ -766,9 +770,6 @@ function core.run()
 			end
 		end
 		local elapsed = system.time() - start
-		if iface.tts() and system.is_speak() then
-			system.input()
-		end
 		if not AUTOSCRIPT[1] then
 			system.wait(math.max(0, fps - elapsed))
 		end
