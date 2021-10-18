@@ -1,5 +1,8 @@
 0.6
   * urzi English translation;
+  * new geme: october;
+  * better settings loading;
+  * updated parser module;
   * fix in paging.
 
 0.5
