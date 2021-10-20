@@ -612,7 +612,7 @@ function core.run()
 						else
 							os.remove(save_path(utf.strip(cmd:sub(4)) or "autosave"))
 						end
-					elseif cmd == "saves" then
+					elseif cmd == "saves" or cmd == "ls" then
 						if not GAME then
 							v = "No game."
 						else
