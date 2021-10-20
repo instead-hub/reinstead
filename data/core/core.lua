@@ -194,9 +194,12 @@ function open_settings()
 	if not conf.settings then
 		return false
 	end
-	local f = io.open(DATADIR..'/settings', 'r')
+	local f = io.open((conf.appdata or DATADIR)..'/settings', 'r')
 	if f then
 		return f
+	end
+	if conf.appdata then
+		return false
 	end
 	local h = os.getenv('HOME') or os.getenv('home')
 	if h then
@@ -208,17 +211,33 @@ function open_settings()
 	return false
 end
 
+local function datadir(dir)
+	local absolute
+	if PLATFORM == "Windows" then
+		absolute = (dir:sub(2,2) == ':')
+	else
+		absolute = (dir:sub(1,1) == '/')
+	end
+	if not absolute then
+		dir = DATADIR .. '/' .. dir:sub(3)
+	end
+	return dir
+end
+
 function instead_savepath()
 	if not GAME then return "" end
-	if system.mkdir("./saves") then
+	if not conf.appdata and system.mkdir("./saves") then
 		return "./saves"
 	end
 	local g = basename(GAME)
-	local h = os.getenv('HOME') or os.getenv('home')
-	if h and
-		system.mkdir(h.."/.reinstead") and
-		system.mkdir(h.."/.reinstead/saves") then
-		return h.."/.reinstead/saves/"..g
+	local h = conf.appdata or os.getenv('HOME') or os.getenv('home')
+	if h then
+		local path = string.format("%s/.reinstead", h)
+		if conf.appdata then path = h end
+		if system.mkdir(path) and
+			system.mkdir(path .."/saves") then
+			return path .. "/saves/"..g
+		end
 	end
 	return "./saves"
 end
@@ -279,7 +298,7 @@ function instead_settings()
 	if not conf.settings then
 		return false
 	end
-	local p = DATADIR..'/settings'
+	local p = (conf.appdata or DATADIR)..'/settings'
 	local cfg = ''
 	if iface.tts_mode() and not system.is_speak() and not conf.tts then
 		cfg = cfg .. "!tts on\n"
@@ -291,6 +310,9 @@ function instead_settings()
 	if write(p, cfg) then
 		return true
 	end
+	if conf.appdata then
+		return false
+	end
 	local h = os.getenv('HOME') or os.getenv('home')
 	if h and system.mkdir(h.."/.reinstead") then
 		if write(h.."/.reinstead/settings", cfg) then
@@ -298,13 +320,6 @@ function instead_settings()
 		end
 	end
 	return false
-end
-
-local function datadir(dir)
-	if dir:find("./", 1, true) == 1 then
-		dir = DATADIR .. '/' .. dir:sub(3)
-	end
-	return dir
 end
 
 local function dir_list(dirs)
@@ -378,6 +393,10 @@ function core.init()
 			skip = false
 		elseif a:find("-", 1, true) ~= 1 then
 			GAME = a
+		elseif a == "-appdata" then
+			APPDATA = ARGS[k+1] or false
+			conf.appdata = APPDATA
+			skip = true
 		elseif a == "-debug" or a == "-d" then
 			instead.debug(true)
 		elseif a == "-tts" then
@@ -414,7 +433,9 @@ function core.init()
 	if conf.debug then
 		instead.debug(true)
 	end
-
+	if conf.appdata then
+		conf.appdata = datadir(conf.appdata)
+	end
 	print("scale: ", SCALE)
 	if system.is_speak() or conf.tts then
 		system.input()
