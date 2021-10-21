@@ -842,6 +842,8 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
      */
     public void setOrientationBis(int w, int h, boolean resizable, String hint)
     {
+        if (true) /* reinstead */
+            return;
         int orientation_landscape = -1;
         int orientation_portrait = -1;
 
