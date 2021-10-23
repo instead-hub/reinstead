@@ -676,7 +676,7 @@ function core.run()
 					end
 				end
 				if not r and not menu_mode and r ~= "" then
-					r, v = instead.cmd(string.format("@metaparser %q", input))
+					r, v = instead.cmd(string.format("@metaparser %q", input:gsub("[<>]", "")))
 					if r then
 						parser_mode = true
 					end
