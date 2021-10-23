@@ -369,8 +369,12 @@ obj {
 			return false
 		end
 	end;
-	before_Smear = function(s)
+	before_Smear = function(s, w)
 		if mp:check_held(s) then
+			return
+		end
+		if not w ^ 'paint' then
+			p [[Но зачем?]]
 			return
 		end
 		p [[Я обмакнул кисточку в краску.]];
