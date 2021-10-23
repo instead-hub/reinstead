@@ -1,6 +1,6 @@
 0.6
   * urzi English translation;
-  * new geme: october;
+  * new game: october;
   * better settings loading;
   * updated parser module;
   * Android: compat with rotate lock;
