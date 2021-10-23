@@ -3,6 +3,7 @@
   * new geme: october;
   * better settings loading;
   * updated parser module;
+  * Android: compat with rotate lock;
   * fix in paging.
 
 0.5
