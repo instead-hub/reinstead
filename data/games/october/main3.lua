@@ -106,8 +106,8 @@ Verb {
 	"~ {noun}/вн,held {noun}/тв : Smear",
 	"~ {noun}/тв {noun}/вн: Smear reverse",
 }
-function mp:Smear(w)
-	if not w.smear then
+function mp:Smear(s, w)
+	if w and not w.smear then
 		p(w:Noun'вн', " нельзя намазать.")
 		return
 	end
@@ -374,8 +374,7 @@ obj {
 			return
 		end
 		if not w ^ 'paint' then
-			p [[Но зачем?]]
-			return
+			return false
 		end
 		p [[Я обмакнул кисточку в краску.]];
 		s.paint = true
