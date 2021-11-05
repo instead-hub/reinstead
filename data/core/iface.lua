@@ -187,7 +187,7 @@ function iface.input_tts(v)
 	local o = utf.chars(old_input or '')
 	local n = utf.chars(v or '')
 	local len = #n
-	if len >= #o then
+	if len >= #o or input_pos ~= #n + 1 then
 		for i=1,len do
 			if n[1] ~= o[i] then
 				break
@@ -227,9 +227,13 @@ function iface.input_edit(v)
 	return dirty
 end
 
-function iface.input_bs()
+function iface.input_bs(del)
 	local t = utf.chars(input)
-	if input_pos <= #t + 1 and input_pos > 1 then
+	if del then
+		if input_pos <= #t then
+			table.remove(t, input_pos)
+		end
+	elseif input_pos <= #t + 1 and input_pos > 1 then
 		table.remove(t, input_pos - 1)
 		input_pos = input_pos - 1
 		if input_pos < 1 then input_pos = 1 end

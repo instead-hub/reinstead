@@ -555,6 +555,8 @@ function core.run()
 				dirty = true
 			elseif v == 'backspace' or (control and v == 'h') then
 				dirty = iface.input_bs() or dirty
+			elseif v == 'delete' then
+				dirty = iface.input_bs(true) or dirty
 			elseif alt and v == 'return' then
 				alt = false
 				fullscreen = not fullscreen
