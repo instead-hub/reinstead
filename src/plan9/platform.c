@@ -121,13 +121,44 @@ void WindowResize(int w, int h)
 void WindowUpdate(int x, int y, int w, int h)
 {
 	Rectangle r = Rect(0, 0, win_w, win_h);
-	loadimage(windbuf, r, pixels, win_w * win_h * 4);
-	if (w > 0 && h > 0)
+	if (w > 0 && h > 0) { /* update region */
+		Point p;
+		unsigned char *buf, *src, *dst;
+		if (x < 0) {
+			w += x;
+			x = 0;
+		}
+		if (y < 0) {
+			h += y;
+			y = 0;
+		}
+		if (y + h > win_h)
+			h = win_h - y;
+		if (x + w > win_w)
+			w = win_w - x;
+		if (w <= 0 || x <= 0)
+			return;
+		buf = malloc(w * h * 4);
+		if (!buf)
+			return;
+		src = pixels + x * 4 + y * win_w * 4;
+		dst = buf;
+		for (int yy = 0; yy < h; yy ++) {
+			memcpy(dst, src, w * 4);
+			src += win_w * 4;
+			dst += w * 4;
+		}
+		loadimage(windbuf, Rect(0, 0, w, h), (unsigned char *)buf, w * h * 4);
+		p.x = -x; p.y = -y;
 		replclipr(screen, 0, rectaddpt(Rect(0, 0, w, h),
 			Pt(screen->r.min.x + x, screen->r.min.y + y)));
-	else
+		draw(screen, screen->r, windbuf, nil, p);
+		free(buf);
+	} else {
+		loadimage(windbuf, r, pixels, win_w * win_h * 4);
 		replclipr(screen, 0, screen->r);
-	draw(screen, screen->r, windbuf, nil, ZP);
+		draw(screen, screen->r, windbuf, nil, ZP);
+	}
 	flushimage(display, 1);
 }
 
