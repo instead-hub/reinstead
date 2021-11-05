@@ -594,6 +594,7 @@ function core.run()
 						need_restart = true
 						v = ''
 					elseif cmd == 'quit' then
+						break
 					elseif cmd == 'stop' and AUTOSCRIPT[1] and
 						not loading_settings then
 						AUTOSCRIPT[1]:close()
