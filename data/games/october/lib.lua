@@ -57,6 +57,10 @@ Verb {
 	": Cry"
 }
 
+function mp:before_Consult(w)
+	mp:xaction("Search", w)
+end
+
 function mp:Cry(w)
 	p "Это {#me/дт} не поможет."
 end
