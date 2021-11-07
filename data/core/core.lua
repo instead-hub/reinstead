@@ -492,6 +492,15 @@ local function font_changed()
 	dirty = true
 end
 
+local function autoscript_stop()
+	if not AUTOSCRIPT[1] then
+		return
+	end
+	AUTOSCRIPT[1]:close()
+	table.remove(AUTOSCRIPT, 1)
+	loading_settings = false
+end
+
 function core.run()
 	while true do
 		local start = system.time()
@@ -511,9 +520,7 @@ function core.run()
 		if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
 			nv = AUTOSCRIPT[1] and AUTOSCRIPT[1]:read("*line")
 			if not nv and AUTOSCRIPT[1] then
-				AUTOSCRIPT[1]:close()
-				table.remove(AUTOSCRIPT, 1)
-				loading_settings = false
+				autoscript_stop()
 				gfx.flip()
 			end
 			if nv then
@@ -597,10 +604,8 @@ function core.run()
 						v = ''
 					elseif cmd == 'quit' then
 						break
-					elseif cmd == 'stop' and AUTOSCRIPT[1] and
-						not loading_settings then
-						AUTOSCRIPT[1]:close()
-						table.remove(AUTOSCRIPT, 1)
+					elseif cmd == 'stop' then
+						autoscript_stop()
 					elseif cmd == 'info' then
 						v = info()
 					elseif cmd == 'tts on' then -- settings?
@@ -693,6 +698,7 @@ function core.run()
 				if instead.error() then
 					if type(v) ~= 'string' then v = '' end
 					v = v ..'\n('.. instead.error("")..')'
+					autoscript_stop()
 				end
 				if not parser_mode and not cmd_mode and false then -- disabled for parser games
 					local _, w = instead.cmd "way"
