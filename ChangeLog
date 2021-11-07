@@ -1,3 +1,10 @@
+0.7
+  * mp updates;
+  * october: fixes;
+  * del key (input edit);
+  * fix in reset layout (change font size on the fly);
+  * /stop command in autoscript.
+
 0.6
   * urzi English translation;
   * new game: october;
