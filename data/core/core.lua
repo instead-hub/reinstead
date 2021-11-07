@@ -707,7 +707,7 @@ function core.run()
 				end
 				iface.input_detach()
 				if not loading_settings and r ~= 'skip' and (r or v ~= '') then
-					iface.input_history(input, r ~= 'hidden')
+					iface.input_history(input, r ~= 'hidden' and not cleared)
 					iface.tts_more(input..'\n')
 				end
 				if v then
