@@ -10,6 +10,7 @@ FT_Library  library;
 typedef struct {
 	short int advance;
 	short int width;
+	short int offx;
 } glyph_t;
 
 struct _font_t {
@@ -39,8 +40,11 @@ get_glyph(font_t *font, int idx)
 	glyph = font->face->glyph;
 	g->advance = glyph->advance.x >> 6;
 	g->width = (glyph->metrics.width >> 6);
+	g->offx = 0;
 	if (glyph->metrics.horiBearingX > 0)
 		g->width += (glyph->metrics.horiBearingX >> 6);
+	else
+		g->offx = glyph->metrics.horiBearingX >> 6;
 	return g;
 }
 
@@ -62,7 +66,10 @@ font_width(font_t *font, const char *text)
 			FT_Get_Kerning(font->face, oidx, idx, 0, &kern);
 		oidx = idx;
 		g = get_glyph(font, idx);
-		x += g->advance + (kern.x >> 6);
+		x += g->offx + (kern.x >> 6);
+		if (x < 0)
+			x = 0;
+		x += g->advance;
 		xend = g->width;
 		if (g->width > g->advance) {
 			xend = g->width - g->advance;
@@ -133,11 +140,14 @@ font_render(font_t *font, const char *text, img_t *img)
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		idx = FT_Get_Char_Index(face, codepoint);
+		gi = get_glyph(font, idx);
 		kern.x = 0;
 		if (oidx)
 			FT_Get_Kerning(font->face, oidx, idx, 0, &kern);
 		oidx = idx;
-		x += kern.x >> 6;
+		x += gi->offx + (kern.x >> 6);
+		if (x < 0)
+			x = 0;
 		FT_Load_Glyph(face, idx, FT_LOAD_DEFAULT);
 		g = font->cache[idx];
 		if (!g) {
@@ -165,7 +175,6 @@ font_render(font_t *font, const char *text, img_t *img)
 			}
 			font->cache[idx] = g;
 		}
-		gi = get_glyph(font, idx);
 		img_pixels_blend(g, 0, 0, g->w, g->h,
 			img, x, 0, PXL_BLEND_BLEND);
 		x += gi->advance;

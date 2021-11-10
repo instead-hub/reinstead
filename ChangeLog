@@ -1,4 +1,5 @@
 0.7
+  * freetype fix kerning;
   * mp updates;
   * october: fixes;
   * del key (input edit);
