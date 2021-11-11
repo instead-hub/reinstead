@@ -38,13 +38,9 @@ get_glyph(font_t *font, int idx)
 
 	FT_Load_Glyph(font->face, idx, FT_LOAD_DEFAULT);
 	glyph = font->face->glyph;
-	g->advance = glyph->advance.x >> 6;
-	g->width = (glyph->metrics.width >> 6);
-	g->offx = 0;
-	if (glyph->metrics.horiBearingX > 0)
-		g->width += (glyph->metrics.horiBearingX >> 6);
-	else
-		g->offx = glyph->metrics.horiBearingX >> 6;
+	g->advance = glyph->metrics.horiAdvance >> 6;
+	g->width = glyph->metrics.width >> 6;
+	g->offx = glyph->metrics.horiBearingX >> 6;
 	return g;
 }
 
@@ -66,17 +62,15 @@ font_width(font_t *font, const char *text)
 			FT_Get_Kerning(font->face, oidx, idx, 0, &kern);
 		oidx = idx;
 		g = get_glyph(font, idx);
-		x += g->offx + (kern.x >> 6);
+		x += (kern.x >> 6);
 		if (x < 0)
 			x = 0;
+		if (x + g->offx < 0)
+			x += -g->offx;
+		xend = x + g->offx + ((g->width > g->advance)?g->width:g->advance);
 		x += g->advance;
-		xend = g->width;
-		if (g->width > g->advance) {
-			xend = g->width - g->advance;
-		} else
-			xend = 0;
 	}
-	return x + xend;
+	return xend;
 }
 
 font_t*
@@ -128,7 +122,6 @@ int
 font_render(font_t *font, const char *text, img_t *img)
 {
 	int x = 0, y, xx, i, pos, idx, yoff, oidx = 0;
-	int left = 0;
 	FT_Vector kern;
 	img_t *g;
 	const char *p = text;
@@ -145,27 +138,26 @@ font_render(font_t *font, const char *text, img_t *img)
 		if (oidx)
 			FT_Get_Kerning(font->face, oidx, idx, 0, &kern);
 		oidx = idx;
-		x += gi->offx + (kern.x >> 6);
+		x += kern.x >> 6;
 		if (x < 0)
 			x = 0;
+		if (x + gi->offx < 0)
+			x += -gi->offx;
 		FT_Load_Glyph(face, idx, FT_LOAD_DEFAULT);
 		g = font->cache[idx];
 		if (!g) {
 			glyph = face->glyph;
 			FT_Render_Glyph(glyph, FT_RENDER_MODE_NORMAL);
-			left = glyph->bitmap_left;
-			if (left < 0)
-				left = 0;
-			g = img_new(glyph->bitmap.width + left, img->h);
+			g = img_new(glyph->bitmap.width, img->h);
 			memset(g->ptr, 0, g->w * g->h * 4);
 			i = 0;
 			yoff = face->ascender * font->size / face->units_per_EM - glyph->bitmap_top;
 			for (y=0; y < glyph->bitmap.rows; y++) {
 				if (yoff + y >= g->h)
 					break;
-				pos = ((yoff + y) * g->w + left) * 4;
+				pos = ((yoff + y) * g->w) * 4;
 				for (xx = 0; xx < glyph->bitmap.width; xx ++) {
-					if (xx + left >= g->w) {
+					if (xx >= g->w) {
 						i += (glyph->bitmap.width - xx);
 						break;
 					}
@@ -176,7 +168,7 @@ font_render(font_t *font, const char *text, img_t *img)
 			font->cache[idx] = g;
 		}
 		img_pixels_blend(g, 0, 0, g->w, g->h,
-			img, x, 0, PXL_BLEND_BLEND);
+			img, x + gi->offx, 0, PXL_BLEND_BLEND);
 		x += gi->advance;
 	}
 	return 0;
