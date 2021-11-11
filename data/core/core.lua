@@ -401,6 +401,10 @@ function core.init()
 			instead.debug(true)
 		elseif a == "-tts" then
 			conf.tts = true
+		elseif a == '-noautoload' then
+			conf.autoload = false
+		elseif a == '-noautosave' then
+			conf.autosave = false
 		elseif a == '-i' then
 			AUTOSCRIPT = ARGS[k+1] or "autoscript"
 			conf.autoload = false
@@ -412,6 +416,8 @@ function core.init()
 		elseif a == "-scale" then
 			SCALE = tonumber(ARGS[k+1] or "1.0")
 			skip = true
+		else
+			print("Unknown option: "..a)
 		end
 	end
 	if AUTOSCRIPT then
