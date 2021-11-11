@@ -57,6 +57,13 @@ You can build reinstead with freetype instead of stb_truetype.
 $ make WITH_FREETYPE=1
 ```
 
+## With libschrift
+
+You can build reinstead with libschrift (bundled) instead of stb_truetype.
+```
+$ make WITH_SCHRIFT=1
+```
+
 ## System-wide build and install
 
 For simplicity RE:INSTESAD is designed to be run from it's own subdirectory. But
