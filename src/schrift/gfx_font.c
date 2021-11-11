@@ -43,6 +43,12 @@ font_height(font_t *font)
 }
 
 int
+sft_floor(double v)
+{
+	return (v<0)?ceil(v):floor(v);
+}
+
+int
 font_width(font_t *font, const char *text)
 {
 	int x = 0;
@@ -60,17 +66,16 @@ font_width(font_t *font, const char *text)
 			sft_kerning(&font->sft, oglyph, glyph,  &kern);
 		oglyph = glyph;
 		sft_gmetrics(&font->sft, glyph, &metrics);
-		x += ceil(metrics.advanceWidth) + kern.xShift;
-		xend = ceil(metrics.minWidth);
-		if (metrics.leftSideBearing > 0) {
-			xend += metrics.leftSideBearing;
-		}
-		if (xend > metrics.advanceWidth) {
-			xend -= metrics.advanceWidth;
-		} else
-			xend = 0;
+		x += sft_floor(kern.xShift);
+		if (x < 0)
+			x = 0;
+		if (x + sft_floor(metrics.leftSideBearing) < 0)
+			x += -sft_floor(metrics.leftSideBearing);
+		xend = x + sft_floor(metrics.leftSideBearing) +
+			((metrics.minWidth > metrics.advanceWidth)?metrics.minWidth:round(metrics.advanceWidth));
+		x += round(metrics.advanceWidth);
 	}
-	return x + xend;
+	return xend;
 }
 
 font_t*
@@ -144,16 +149,18 @@ font_render(font_t *font, const char *text, img_t *img)
 		if (oglyph)
 			sft_kerning(&font->sft, oglyph, glyph,  &kern);
 		oglyph = glyph;
-		x += kern.xShift;
+		x += sft_floor(kern.xShift);
+		if (x < 0)
+			x = 0;
 		sft_gmetrics(&font->sft, glyph, &metrics);
 		g.width = metrics.minWidth;
 		g.height = metrics.minHeight;
 		sft_render(&font->sft, glyph, g);
 		i = 0;
 		yoff = floor(lm.ascender + metrics.yOffset);
-		xoff = 0;
-		if (metrics.leftSideBearing > 0)
-			xoff = ceil(metrics.leftSideBearing);
+		xoff = sft_floor(metrics.leftSideBearing);
+		if (x + xoff < 0)
+			x += -xoff;
 		for (y = 0; y < g.height; y++) {
 			if (yoff + y >= img->h)
 				break;
@@ -171,7 +178,7 @@ font_render(font_t *font, const char *text, img_t *img)
 				i ++;
 			}
 		}
-		x += ceil(metrics.advanceWidth);
+		x += round(metrics.advanceWidth);
 	}
 	return 0;
 }

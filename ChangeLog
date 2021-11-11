@@ -1,5 +1,6 @@
 0.7
-  * freetype fix kerning;
+  * freetype kerning fix;
+  * schrift kerning fix;
   * -noautoload/-noautosave parameters;
   * mp updates;
   * october: fixes;
