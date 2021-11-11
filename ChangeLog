@@ -1,5 +1,6 @@
 0.7
   * freetype fix kerning;
+  * -noautoload/-noautosave parameters;
   * mp updates;
   * october: fixes;
   * del key (input edit);
