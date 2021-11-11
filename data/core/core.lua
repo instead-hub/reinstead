@@ -357,7 +357,7 @@ local function dir_list(dirs)
 		iface.tts_more(string.format("%s %d\n", v.name, k))
 	end
 	if #GAMES == 0 then
-		mwin:set("No games in \""..dir.."\" found.")
+		mwin:set("No games in \""..dirs[1].."\" found.")
 	end
 	mwin:add "\n"
 	iface.input_kill()
