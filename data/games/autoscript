@@ -54,6 +54,6 @@
 !script
 !restart
 
-!nodebug
+!debug off
 !font 16
 !quit
