@@ -1,7 +1,8 @@
-local VERSION='0.7'
+VERSION='0.7'
 conf = require "config"
 local iface = require "iface"
 local utf = require "utf"
+local util = require "util"
 
 local gameinfo = {}
 
@@ -26,12 +27,6 @@ local fps = 1/conf.fps;
 local GAME = false
 
 local icon = gfx.new(DATADIR..'/icon.png')
-
-local function output(str)
-	str = str:gsub("^\n+",""):gsub("\n+$","")
-	if str ~= "" then return str .. '\n\n' end
-	return str
-end
 
 local busy_time = false
 
@@ -61,66 +56,33 @@ local function instead_done()
 	instead.done()
 end
 
-local function instead_icon(dirpath)
-	local icon = gfx.new(dirpath..'/icon.png')
-	if icon then
-		local w, _ = icon:size()
-		icon = icon:scale(128 * SCALE/w)
+function instead_settings()
+	if not conf.settings then
+		return false
 	end
-	return icon
-end
-
-local function win_icon(icon)
-	if not icon then return end
-	local w, _ = icon:size()
-	if w > 64.0 then
-		icon = icon:scale(64 * SCALE/w)
+	local p = (conf.appdata or DATADIR)..'/settings'
+	local cfg = ''
+	if iface.tts_mode() and not system.is_speak() and not conf.tts then
+		cfg = cfg .. "!tts on\n"
 	end
-	gfx.icon(icon)
-end
-
-local function basename(p)
-	p = p:gsub("^.*[/\\]([^/\\]+)$", "%1")
-	return p
-end
-
-local function game_tag(name, l)
-	local tag
-	l = l:gsub("\r", "")
-	if l:find("^[ \t]*--[ \t]*%$"..name..":") then
-		local _, e = l:find("$"..name..":", 1, true)
-		tag = l:sub(e + 1):gsub("^[ \t]+", ""):gsub("[ \t%$]$", ""):gsub("\\n", "\n")
+	cfg = cfg .. string.format("!font %d\n", conf.fsize)
+	if GAME and conf.settings_game then
+		cfg = cfg .. string.format("!game %s\n", GAME)
 	end
-	return tag
-end
-
-local function instead_tags(game)
-	gameinfo = { }
-	local f = io.open(game..'/main3.lua', "r")
-	if not f then
-		gameinfo.name = game
-		return
+	if util.write(p, cfg) then
+		return true
 	end
-	local n = 16
-	for l in f:lines() do
-		n = n - 1
-		if n < 0 then break end
-		gameinfo.name = gameinfo.name or game_tag("Name", l)
-		gameinfo.author = gameinfo.author or game_tag("Author", l)
-		gameinfo.version = gameinfo.version or game_tag("Version", l)
-		gameinfo.info = gameinfo.info or game_tag("Info", l)
+	if conf.appdata then
+		return false
 	end
-	f:close()
-	gameinfo.name = gameinfo.name or basename(game)
+	return util.write_settings(cfg)
 end
 
 local parser_mode = false
 local menu_mode = false
 
-local function save_path(w)
-	w = w and utf.strip(w):gsub("\\","/")
-	if not w or w == "" then w = 'autosave' else w = basename(w) end
-	return instead_savepath() .."/"..w:gsub("/", "_"):gsub("%.", "_"):gsub('"', "_")
+local function savepath(load)
+	return util.instead_savepath(GAME, load)
 end
 
 local function instead_start(game, load)
@@ -129,27 +91,27 @@ local function instead_start(game, load)
 	menu_mode = false
 	local icon
 	if conf.show_icons then
-		icon = instead_icon(game)
+		icon = util.game_icon(game)
 	end
-	instead_tags(game)
+	gameinfo = util.game_tags(game)
 	mwin:set(false)
 	local r, e = instead.init(game)
 	if not r then
 		mwin:set(string.format("Trying: %q", game)..'\n'..e)
 		return
 	end
-	r = system.mkdir(instead_savepath())
+	r = system.mkdir(util.instead_savedir(GAME))
 	if not r then
-		mwin:set("Can't create "..game..instead_savepath().." dir.")
+		mwin:set("Can't create "..util.instead_savedir(GAME).." dir.")
 		return
 	end
 	system.title(gameinfo.name)
-	win_icon(gfx.new 'icon.png')
+	util.win_icon(gfx.new 'icon.png')
 
 	if load then
-		local f = io.open(save_path(load), "r")
+		local f = io.open(savepath(load), "r")
 		if f then
-			r, e = instead.cmd("load "..save_path(load))
+			r, e = instead.cmd("load "..savepath(load))
 			f:close()
 		else
 			load = false
@@ -167,15 +129,15 @@ local function instead_start(game, load)
 			mwin:add_img(icon)
 		end
 		if load then
-			e = "*** "..basename(save_path(load)) .. "\n" .. (e or '')
-			mwin:add(output(e))
+			e = "*** "..util.basename(savepath(load)) .. "\n" .. (e or '')
+			mwin:add(util.output(e))
 		else
-			mwin:add(output(e))
+			mwin:add(util.output(e))
 		end
 		iface.input_attach()
 	else
 		iface.input_detach()
-		mwin:add(output(e))
+		mwin:add(util.output(e))
 	end
 	iface.tts_more(e)
 	mwin.off = 0
@@ -189,68 +151,6 @@ function instead_clear()
 	cleared = true
 end
 
-local function write(fn, string)
-	local f = io.open(fn, "w")
-	if not f then return false end
-	if not f:write(string) then
-		f:close()
-		return false
-	end
-	return f:close()
-end
-
-function open_settings()
-	if not conf.settings then
-		return false
-	end
-	local f = io.open((conf.appdata or DATADIR)..'/settings', 'r')
-	if f then
-		return f
-	end
-	if conf.appdata then
-		return false
-	end
-	local h = os.getenv('HOME') or os.getenv('home')
-	if h then
-		f = io.open(h.."/.reinstead/settings", "r")
-		if f then
-			return f
-		end
-	end
-	return false
-end
-
-local function datadir(dir)
-	local absolute
-	if PLATFORM == "Windows" then
-		absolute = (dir:sub(2,2) == ':')
-	else
-		absolute = (dir:sub(1,1) == '/')
-	end
-	if not absolute then
-		dir = DATADIR .. '/' .. dir:sub(3)
-	end
-	return dir
-end
-
-function instead_savepath()
-	if not GAME then return "" end
-	if not conf.appdata and system.mkdir("./saves") then
-		return "./saves"
-	end
-	local g = basename(GAME)
-	local h = conf.appdata or os.getenv('HOME') or os.getenv('home')
-	if h then
-		local path = string.format("%s/.reinstead", h)
-		if conf.appdata then path = h end
-		if system.mkdir(path) and
-			system.mkdir(path .."/saves") then
-			return path .. "/saves/"..g
-		end
-	end
-	return "./saves"
-end
-
 local function instead_save(w, silent)
 	need_save = false
 	local r, e
@@ -261,9 +161,9 @@ local function instead_save(w, silent)
 		if not silent then
 			instead_clear()
 		end
-		r, e = instead.cmd("save "..save_path(w))
+		r, e = instead.cmd("save "..savepath(w))
 	end
-	e = output(e)
+	e = util.output(e)
 	if not r then
 		e = "Error! "..w
 	else
@@ -271,7 +171,7 @@ local function instead_save(w, silent)
 		if e ~= '' and type(e) == 'string' then
 			msg = '\n'..e
 		end
-		e = "*** "..basename(save_path(w))..msg
+		e = "*** "..util.basename(savepath(w))..msg
 	end
 	if not silent then
 		mwin:add(e)
@@ -288,7 +188,7 @@ local function instead_load(w)
 		iface.input_kill()
 		return
 	end
-	local rw = save_path(w)
+	local rw = savepath(w)
 	local f = io.open(rw, "r")
 	if not f then
 		iface.input_detach()
@@ -303,34 +203,6 @@ end
 
 local GAMES
 
-function instead_settings()
-	if not conf.settings then
-		return false
-	end
-	local p = (conf.appdata or DATADIR)..'/settings'
-	local cfg = ''
-	if iface.tts_mode() and not system.is_speak() and not conf.tts then
-		cfg = cfg .. "!tts on\n"
-	end
-	cfg = cfg .. string.format("!font %d\n", conf.fsize)
-	if GAME and conf.settings_game then
-		cfg = cfg .. string.format("!game %s\n", GAME)
-	end
-	if write(p, cfg) then
-		return true
-	end
-	if conf.appdata then
-		return false
-	end
-	local h = os.getenv('HOME') or os.getenv('home')
-	if h and system.mkdir(h.."/.reinstead") then
-		if write(h.."/.reinstead/settings", cfg) then
-			return true
-		end
-	end
-	return false
-end
-
 local function dir_list(dirs)
 	dirs = type(dirs) == 'table' and dirs or { dirs }
 	GAMES = {}
@@ -343,22 +215,12 @@ local function dir_list(dirs)
 	if conf.dir_title then
 		mwin:add("<c>"..conf.dir_title.."</c>\n\n")
 	end
-	for _, dir in ipairs(dirs) do
-		dir = datadir(dir)
-		local t = system.readdir(dir)
-		for _, v in ipairs(t or {}) do
-			local dirpath = dir .. '/'.. v
-			local p = dirpath .. '/main3.lua'
-			local f = io.open(p, 'r')
-			if f then
-				instead_tags(dirpath)
-				local name = gameinfo.name
-				if name == dirpath then name = v end
-				f:close()
-				table.insert(GAMES, { path = dirpath, name = name })
-			end
-		end
-	end
+	util.scangames(dirs, function(dirpath, v)
+		local gameinfo = util.game_tags(dirpath)
+		local name = gameinfo.name
+		if name == dirpath then name = v end
+		table.insert(GAMES, { path = dirpath, name = name })
+	end)
 	table.sort(GAMES, function(a, b) return a.path < b.path end)
 	for k, v in ipairs(GAMES) do
 		--mwin:add_img(v.icon)
@@ -377,19 +239,9 @@ local DIRECTORY = false
 
 local function info()
 	if GAME then
-		local t = gameinfo.name
-		if gameinfo.author then t = t .." / "..gameinfo.author end
-		if gameinfo.version then t = t.."\nVersion: "..gameinfo.version end
-		if gameinfo.info then t = t .. "\n"..gameinfo.info end
-		return t
+		return util.gameinfo(gameinfo)
 	end
-	local luaver = _VERSION
-	if type(jit) == 'table' and type(jit.version) == 'string' then
-		luaver = jit.version
-	end
-	return "<c><b>RE:INSTEAD v"..VERSION.." by Peter Kosyh (2021)</b>\n"..
-		"<i>Platform: "..PLATFORM.." / "..luaver.."</i>\n"..
-		"<i>Font renderer: "..FONTRENDERER.."</i></c>\n\n".. (conf.note or '')
+	return util.info()
 end
 
 local loading_settings = false
@@ -440,7 +292,7 @@ function core.init()
 	else
 		AUTOSCRIPT = { }
 	end
-	local f = open_settings()
+	local f = util.open_settings()
 	if f then
 		table.insert(AUTOSCRIPT, 1, f)
 		loading_settings = true
@@ -449,7 +301,7 @@ function core.init()
 		instead.debug(true)
 	end
 	if conf.appdata then
-		conf.appdata = datadir(conf.appdata)
+		conf.appdata = util.datadir(conf.appdata)
 	end
 	print("scale: ", SCALE)
 	if system.is_speak() or conf.tts then
@@ -460,15 +312,15 @@ function core.init()
 end
 
 function core.start()
-	win_icon(icon)
+	util.win_icon(icon)
 	need_restart = false
 
 	if not GAME and conf.autostart then
 		GAME = conf.autostart
 		if GAME:find("./", 1, true) == 1 then
-			GAME = datadir(GAME)
+			GAME = util.datadir(GAME)
 		elseif conf.directory then
-			GAME = datadir(conf.directory)..'/'..GAME
+			GAME = util.datadir(conf.directory)..'/'..GAME
 		end
 	end
 	if GAME then
@@ -516,21 +368,108 @@ local function autoscript_stop()
 	loading_settings = false
 end
 
-local function cmd_aliases(cmd)
-	if type(conf.cmd_aliases) ~= 'table' then
-		return cmd
-	end
-	for k, v in pairs(conf.cmd_aliases) do
-		local s, e = cmd:find(k, 1, true)
-		if e then
-			local c = cmd:sub(e+1, e+1)
-			if c == '' or c == ' ' then
-				cmd = v .. cmd:sub(e + 1)
-				break
+local function commands_mode(input)
+	local cmd = utf.strip(input:sub(2))
+	cmd = util.cmd_aliases(cmd)
+	local r = true
+	local v
+	if cmd == 'restart' then
+		need_restart = true
+		v = ''
+	elseif cmd == 'quit' then
+		return 'break'
+	elseif cmd == 'stop' then
+		autoscript_stop()
+	elseif cmd == 'info' then
+		v = info()
+	elseif cmd == 'tts on' then -- settings?
+		iface.tts_mode(true)
+		iface.tts_replay()
+	elseif cmd == 'tts' then -- toggle
+		iface.tts_mode(not iface.tts_mode())
+	elseif cmd:find("load ", 1, true) == 1 or cmd == "load" then
+		need_load = cmd:sub(6)
+	elseif cmd:find("save ", 1, true) == 1 or cmd == "save" then
+		need_save = cmd:sub(6)
+	elseif cmd:find("rm ", 1, true) == 1 or cmd == "rm" then
+		if not GAME then
+			v = "No game."
+		else
+			os.remove(savepath(utf.strip(cmd:sub(4)) or "autosave"))
+		end
+	elseif cmd == "saves" or cmd == "ls" then
+		if not GAME then
+			v = "No game."
+		else
+			local t = system.readdir(util.instead_savedir(GAME))
+			table.sort(t)
+			v = ''
+			for _, f in ipairs(t) do
+				v = v .. f..'\n'
 			end
 		end
+	elseif cmd:find("font +[0-9]+", 1) == 1 then
+		conf.fsize = (tonumber(cmd:sub(6)) or conf.fsize)
+		if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
+		if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
+		font_changed()
+	elseif cmd == "font" then
+		v = tostring(conf.fsize)
+	elseif cmd:find("game .+", 1) == 1 then
+		if not AUTOSCRIPT[1] or (not GAME and conf.settings_game) then
+			local p = utf.strip(cmd:sub(6))
+			instead_settings() -- if game crashed
+			GAME = util.datadir(p)
+			iface.tts(false)
+			instead_start(GAME, conf.autoload and 'autosave')
+		end
+		r = 'hidden'
+		v = false
+	elseif input:find("/", 1, true) then
+		r, v = instead.cmd(cmd)
+		if r == false and v == '' then v = '?' end
+		r = true
+	else
+		r = nil
 	end
-	return cmd
+	return r, v
+end
+
+local function dir_mode(input)
+	local r, v
+	local n = tonumber(input)
+	if n then n = math.floor(n) end
+	if not n or n > #GAMES or n < 1 then
+		if #GAMES > 1 then
+			dir_list(conf.directory)
+			v = '1 - ' .. tostring(#GAMES).. '?'
+		else
+			v = 'No games.'
+		end
+		r = true
+	else
+		GAME = GAMES[n].path
+		instead_start(GAMES[n].path, conf.autoload and 'autosave')
+		r = 'skip'
+		v = false
+	end
+	return r, v
+end
+
+local function font_adjust(v)
+	if v == '=' or v == '++' then
+		conf.fsize = conf.fsize + 1
+	elseif v == '-' or v == '--' then
+		conf.fsize = conf.fsize - 1
+	else
+		conf.fsize = FONT_DEF
+	end
+	if conf.fsize < FONT_MIN then
+		conf.fsize = FONT_MIN
+	end
+	if conf.fsize > FONT_MAX then
+		conf.fsize = FONT_MAX
+	end
 end
 
 function core.run()
@@ -567,7 +506,7 @@ function core.run()
 		if e == 'save' then
 			instead_settings()
 			if conf.autosave and GAME then
-				instead_save ('autosave', true)
+				instead_save('autosave', true)
 			end
 		end
 		if (e == 'keydown' or e == 'keyup') and v:find"alt" then
@@ -605,19 +544,7 @@ function core.run()
 					system.window_mode 'normal'
 				end
 			elseif (control and (v == '=' or v == '-' or v == '0')) or v == '++' or v == '--' or v == '==' then
-				if v == '=' or v == '++' then
-					conf.fsize = conf.fsize + 1
-				elseif v == '-' or v == '--' then
-					conf.fsize = conf.fsize - 1
-				else
-					conf.fsize = FONT_DEF
-				end
-				if conf.fsize < FONT_MIN then
-					conf.fsize = FONT_MIN
-				end
-				if conf.fsize > FONT_MAX then
-					conf.fsize = FONT_MAX
-				end
+				font_adjust(v)
 				font_changed()
 			elseif (control and v == 'w') or v == 'Ketb' then
 				dirty = iface.input_etb() or dirty
@@ -629,87 +556,14 @@ function core.run()
 				local input = utf.strip(iface.input())
 				if input:find("/", 1, true) == 1 or input:find("!", 1, true) == 1 then
 					cmd_mode = true
-					local cmd = utf.strip(input:sub(2))
-					cmd = cmd_aliases(cmd)
-					r = true
-					if cmd == 'restart' then
-						need_restart = true
-						v = ''
-					elseif cmd == 'quit' then
+					r, v = commands_mode(input)
+					if r == 'break' then
 						break
-					elseif cmd == 'stop' then
-						autoscript_stop()
-					elseif cmd == 'info' then
-						v = info()
-					elseif cmd == 'tts on' then -- settings?
-						iface.tts_mode(true)
-						iface.tts_replay()
-					elseif cmd == 'tts' then -- toggle
-						iface.tts_mode(not iface.tts_mode())
-					elseif cmd:find("load ", 1, true) == 1 or cmd == "load" then
-						need_load = cmd:sub(6)
-					elseif cmd:find("save ", 1, true) == 1 or cmd == "save" then
-						need_save = cmd:sub(6)
-					elseif cmd:find("rm ", 1, true) == 1 or cmd == "rm" then
-						if not GAME then
-							v = "No game."
-						else
-							os.remove(save_path(utf.strip(cmd:sub(4)) or "autosave"))
-						end
-					elseif cmd == "saves" or cmd == "ls" then
-						if not GAME then
-							v = "No game."
-						else
-							local t = system.readdir(instead_savepath())
-							table.sort(t)
-							v = ''
-							for _, f in ipairs(t) do
-								v = v .. f..'\n'
-							end
-						end
-					elseif cmd:find("font +[0-9]+", 1) == 1 then
-						conf.fsize = (tonumber(cmd:sub(6)) or conf.fsize)
-						if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
-						if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
-						font_changed()
-					elseif cmd == "font" then
-						v = tostring(conf.fsize)
-					elseif cmd:find("game .+", 1) == 1 then
-						if not AUTOSCRIPT[1] or (not GAME and conf.settings_game) then
-							local p = utf.strip(cmd:sub(6))
-							instead_settings() -- if game crashed
-							GAME = datadir(p)
-							iface.tts(false)
-							instead_start(GAME, conf.autoload and 'autosave')
-						end
-						r = 'hidden'
-						v = false
-					elseif input:find("/", 1, true) then
-						r, v = instead.cmd(cmd)
-						if r == false and v == '' then v = '?' end
-						r = true
-					else
-						r = nil
 					end
 				end
 				if not r and DIRECTORY and not GAME then
-					local n = tonumber(input)
-					if n then n = math.floor(n) end
-					if not n or n > #GAMES or n < 1 then
-						if #GAMES > 1 then
-							dir_list(conf.directory)
-							v = '1 - ' .. tostring(#GAMES).. '?'
-						else
-							v = 'No games.'
-						end
-						r = true
-					else
-						GAME = GAMES[n].path
-						instead_start(GAMES[n].path, conf.autoload and 'autosave')
-						r = 'skip'
-						v = false
-					end
 					cmd_mode = true
+					r, v = dir_mode(input)
 				elseif not r and not parser_mode then
 					r, v = instead.cmd(string.format("use %s", input))
 					if not r then
@@ -750,7 +604,7 @@ function core.run()
 					iface.tts_more(input..'\n')
 				end
 				if v then
-					mwin:add(output(v))
+					mwin:add(util.output(v))
 					iface.tts_more(v)
 				end
 				iface.input_kill()
@@ -822,7 +676,7 @@ function core.run()
 		if need_restart then
 			instead_settings()
 			if conf.autoload then
-				os.remove (instead_savepath()..'/autosave')
+				os.remove(util.instead_savedir(GAME)..'/autosave')
 			end
 			instead_done()
 			if GAME and not DIRECTORY then

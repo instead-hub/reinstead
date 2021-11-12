@@ -17,4 +17,7 @@ globals = {
 	'instead',
 	'AUTOSCRIPT',
 	'conf',
+	'VERSION',
+	'FONTRENDERER',
+	'APPDATA',
 }

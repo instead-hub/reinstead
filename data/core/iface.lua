@@ -325,7 +325,7 @@ function iface.tts_mode(on)
 	return tts_on
 end
 local last_screen
-function iface.tts_replay(str)
+function iface.tts_replay()
 	if not tts_on or not last_screen or last_screen == '' then
 		return
 	end

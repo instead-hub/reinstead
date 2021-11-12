@@ -224,7 +224,7 @@ local function lookup_off(lay, off)
 	local n = #lay.lines
 	local pos
 	while i <= n do
-		l = lay.lines[i]
+		local l = lay.lines[i]
 		if l.y >= off or l.y + l.h >= off then
 			pos = i
 			if delta < 1 then
