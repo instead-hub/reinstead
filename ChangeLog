@@ -8,6 +8,7 @@
   * fix in reset layout (change font size on the fly);
   * fix window icons changing;
   * conf.cmd_aliases;
+  * Windows: redirect stdout/stderr to errors.txt only if no valid stdout.
   * /stop command in autoscript.
 
 0.6

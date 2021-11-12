@@ -122,8 +122,15 @@ main(int argc, char **argv)
 	#else
 	snprintf(base, sizeof(base), "%s/%s", exepath, "errors.txt");
 	#endif
-	reopen_stderr(base);
-	reopen_stdout(base);
+
+	#if defined(_WIN32)
+	if (GetStdHandle(STD_OUTPUT_HANDLE) == NULL) {
+	#else
+	if (1) {
+	#endif
+		reopen_stderr(base);
+		reopen_stdout(base);
+	}
 #endif
 	free(exepath);
 
