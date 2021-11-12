@@ -70,6 +70,15 @@ local function instead_icon(dirpath, norm)
 	return icon
 end
 
+local function win_icon(icon)
+	if not icon then return end
+	local w, _ = icon:size()
+	if w > 127.0 then
+		icon = icon:scale(127 * SCALE/w)
+	end
+	gfx.icon(icon)
+end
+
 local function basename(p)
 	p = p:gsub("^.*[/\\]([^/\\]+)$", "%1")
 	return p
@@ -135,7 +144,7 @@ local function instead_start(game, load)
 		return
 	end
 	system.title(gameinfo.name)
-	gfx.icon(gfx.new 'icon.png')
+	win_icon(gfx.new 'icon.png')
 
 	if load then
 		local f = io.open(save_path(load), "r")
@@ -451,7 +460,7 @@ function core.init()
 end
 
 function core.start()
-	gfx.icon(icon)
+	win_icon(icon)
 	need_restart = false
 
 	if not GAME and conf.autostart then
