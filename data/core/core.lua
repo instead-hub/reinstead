@@ -273,10 +273,12 @@ local function autoscript_pop(err)
 	end
 	AUTOSCRIPT[1]:close()
 	table.remove(AUTOSCRIPT, 1)
-	if err then
-		AUTOSCRIPT = false
-	end
 	loading_settings = false
+	return true
+end
+
+local function autoscript_stop()
+	while autoscript_pop() do end
 end
 
 function core.init()
@@ -395,7 +397,7 @@ local function commands_mode(input)
 	elseif cmd == 'quit' then
 		return 'break'
 	elseif cmd == 'stop' then
-		autoscript_pop()
+		autoscript_stop()
 	elseif cmd == 'info' then
 		v = info()
 	elseif cmd == 'tts on' then -- settings?
@@ -611,7 +613,7 @@ function core.run()
 				if instead.error() then
 					if type(v) ~= 'string' then v = '' end
 					v = v ..'\n('.. instead.error("")..')'
-					autoscript_pop(true)
+					autoscript_stop()
 				end
 				if not parser_mode and not cmd_mode and false then -- disabled for parser games
 					local _, w = instead.cmd "way"
