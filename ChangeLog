@@ -9,6 +9,7 @@
   * fix window icons changing;
   * conf.cmd_aliases;
   * Windows: redirect stdout/stderr to errors.txt only if no valid stdout.
+  * commands: !script, !debug.
   * /stop command in autoscript.
 
 0.6
