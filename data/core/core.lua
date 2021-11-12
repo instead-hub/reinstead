@@ -267,12 +267,15 @@ local function autoscript_push(fname)
 	end
 end
 
-local function autoscript_pop()
+local function autoscript_pop(err)
 	if not AUTOSCRIPT[1] then
 		return
 	end
 	AUTOSCRIPT[1]:close()
 	table.remove(AUTOSCRIPT, 1)
+	if err then
+		AUTOSCRIPT = false
+	end
 	loading_settings = false
 end
 
@@ -608,7 +611,7 @@ function core.run()
 				if instead.error() then
 					if type(v) ~= 'string' then v = '' end
 					v = v ..'\n('.. instead.error("")..')'
-					autoscript_pop()
+					autoscript_pop(true)
 				end
 				if not parser_mode and not cmd_mode and false then -- disabled for parser games
 					local _, w = instead.cmd "way"
