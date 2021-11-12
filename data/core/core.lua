@@ -436,8 +436,8 @@ local function commands_mode(input)
 				v = v .. f..'\n'
 			end
 		end
-	elseif cmd:find("font +[0-9]+", 1) == 1 then
-		conf.fsize = (tonumber(cmd:sub(6)) or conf.fsize)
+	elseif cmd:find("font ", 1) == 1 then
+		conf.fsize = (tonumber(a[2]) or FONT_DEF)
 		if conf.fsize < FONT_MIN then conf.fsize = FONT_MIN end
 		if conf.fsize > FONT_MAX then conf.fsize = FONT_MAX end
 		font_changed()
