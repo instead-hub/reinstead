@@ -73,8 +73,8 @@ end
 local function win_icon(icon)
 	if not icon then return end
 	local w, _ = icon:size()
-	if w > 127.0 then
-		icon = icon:scale(127 * SCALE/w)
+	if w > 64.0 then
+		icon = icon:scale(64 * SCALE/w)
 	end
 	gfx.icon(icon)
 end
