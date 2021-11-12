@@ -246,6 +246,36 @@ end
 
 local loading_settings = false
 
+local function autoscript_push(fname)
+	local f, e
+	if not fname or fname == '' then fname = 'autoscript' end
+	if type(fname) == 'string' then
+		f, e = io.open(fname, "r")
+		if f then
+			print("Using input file: " .. fname)
+		else
+			print("Input file: " .. e)
+			return
+		end
+	else
+		f = fname
+	end
+	if not AUTOSCRIPT then
+		AUTOSCRIPT = { f }
+	else
+		table.insert(AUTOSCRIPT, 1, f)
+	end
+end
+
+local function autoscript_pop()
+	if not AUTOSCRIPT[1] then
+		return
+	end
+	AUTOSCRIPT[1]:close()
+	table.remove(AUTOSCRIPT, 1)
+	loading_settings = false
+end
+
 function core.init()
 	local skip
 	for k=2, #ARGS do
@@ -267,9 +297,10 @@ function core.init()
 		elseif a == '-noautosave' then
 			conf.autosave = false
 		elseif a == '-i' then
-			AUTOSCRIPT = ARGS[k+1] or "autoscript"
+			local script = ARGS[k+1] or "autoscript"
 			conf.autoload = false
 			skip = true
+			autoscript_push(script)
 		elseif a == '-h' or a == '-help' then
 			print("RE:INSTEAD v"..VERSION)
 			print(string.format("Usage:\n\t%s [gamedir] [-debug] [-i <autoscript>] [-scale <f>]", EXEFILE))
@@ -281,20 +312,9 @@ function core.init()
 			print("Unknown option: "..a)
 		end
 	end
-	if AUTOSCRIPT then
-		local a, e = io.open(AUTOSCRIPT, "r")
-		if a then
-			print("Using input file: " .. AUTOSCRIPT)
-		else
-			print("Input file: " .. e)
-		end
-		AUTOSCRIPT = { a }
-	else
-		AUTOSCRIPT = { }
-	end
 	local f = util.open_settings()
 	if f then
-		table.insert(AUTOSCRIPT, 1, f)
+		autoscript_push(f)
 		loading_settings = true
 	end
 	if conf.debug then
@@ -359,18 +379,11 @@ local function font_changed()
 	dirty = true
 end
 
-local function autoscript_stop()
-	if not AUTOSCRIPT[1] then
-		return
-	end
-	AUTOSCRIPT[1]:close()
-	table.remove(AUTOSCRIPT, 1)
-	loading_settings = false
-end
 
 local function commands_mode(input)
 	local cmd = utf.strip(input:sub(2))
 	cmd = util.cmd_aliases(cmd)
+	local a = utf.split(cmd)
 	local r = true
 	local v
 	if cmd == 'restart' then
@@ -379,14 +392,24 @@ local function commands_mode(input)
 	elseif cmd == 'quit' then
 		return 'break'
 	elseif cmd == 'stop' then
-		autoscript_stop()
+		autoscript_pop()
 	elseif cmd == 'info' then
 		v = info()
 	elseif cmd == 'tts on' then -- settings?
 		iface.tts_mode(true)
 		iface.tts_replay()
+	elseif a[1] == 'debug' then
+		if a[2] == 'off' then
+			v = 'Debug mode off'
+			instead.debug(false)
+		else
+			v = 'Debug mode on'
+			instead.debug(true)
+		end
 	elseif cmd == 'tts' then -- toggle
 		iface.tts_mode(not iface.tts_mode())
+	elseif cmd:find("script ", 1, true) == 1 or cmd == 'script' then
+		autoscript_push(utf.strip(input:sub(8)))
 	elseif cmd:find("load ", 1, true) == 1 or cmd == "load" then
 		need_load = cmd:sub(6)
 	elseif cmd:find("save ", 1, true) == 1 or cmd == "save" then
@@ -416,7 +439,7 @@ local function commands_mode(input)
 	elseif cmd == "font" then
 		v = tostring(conf.fsize)
 	elseif cmd:find("game .+", 1) == 1 then
-		if not AUTOSCRIPT[1] or (not GAME and conf.settings_game) then
+		if not GAME then
 			local p = utf.strip(cmd:sub(6))
 			instead_settings() -- if game crashed
 			GAME = util.datadir(p)
@@ -491,7 +514,7 @@ function core.run()
 		if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
 			nv = AUTOSCRIPT[1] and AUTOSCRIPT[1]:read("*line")
 			if not nv and AUTOSCRIPT[1] then
-				autoscript_stop()
+				autoscript_pop()
 				gfx.flip()
 			end
 			if nv then
@@ -585,7 +608,7 @@ function core.run()
 				if instead.error() then
 					if type(v) ~= 'string' then v = '' end
 					v = v ..'\n('.. instead.error("")..')'
-					autoscript_stop()
+					autoscript_pop()
 				end
 				if not parser_mode and not cmd_mode and false then -- disabled for parser games
 					local _, w = instead.cmd "way"

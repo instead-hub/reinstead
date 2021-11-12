@@ -1,0 +1,59 @@
+!font 1
+!font
+!debug
+
+!game games/awake
+!script
+!restart
+
+!game games/archive
+!script autoscript
+!restart
+
+!game games/archive
+!script autoscript-en
+!restart
+
+!game games/awake
+!script
+!restart
+
+!game games/deadhand
+!script
+!restart
+
+!game games/london
+!script
+!restart
+
+!game games/mars
+!script
+!restart
+
+!game games/moon9
+!script
+!restart
+
+!game games/october
+!script
+!restart
+
+!game games/snowstorm
+!script
+!restart
+
+!game games/summerday
+!script
+!restart
+
+!game games/trial
+!script
+!restart
+
+!game games/urzi
+!script
+!restart
+
+!nodebug
+!font 16
+!quit
