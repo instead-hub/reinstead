@@ -61,9 +61,9 @@ local function instead_done()
 	instead.done()
 end
 
-local function instead_icon(dirpath, norm)
+local function instead_icon(dirpath)
 	local icon = gfx.new(dirpath..'/icon.png')
-	if icon and norm then
+	if icon then
 		local w, _ = icon:size()
 		icon = icon:scale(128 * SCALE/w)
 	end
@@ -129,7 +129,7 @@ local function instead_start(game, load)
 	menu_mode = false
 	local icon
 	if conf.show_icons then
-		icon = instead_icon(game, true)
+		icon = instead_icon(game)
 	end
 	instead_tags(game)
 	mwin:set(false)
