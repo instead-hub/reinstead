@@ -516,6 +516,23 @@ local function autoscript_stop()
 	loading_settings = false
 end
 
+local function cmd_aliases(cmd)
+	if type(conf.cmd_aliases) ~= 'table' then
+		return cmd
+	end
+	for k, v in pairs(conf.cmd_aliases) do
+		local s, e = cmd:find(k, 1, true)
+		if e then
+			local c = cmd:sub(e+1, e+1)
+			if c == '' or c == ' ' then
+				cmd = v .. cmd:sub(e + 1)
+				break
+			end
+		end
+	end
+	return cmd
+end
+
 function core.run()
 	while true do
 		local start = system.time()
@@ -613,6 +630,7 @@ function core.run()
 				if input:find("/", 1, true) == 1 or input:find("!", 1, true) == 1 then
 					cmd_mode = true
 					local cmd = utf.strip(input:sub(2))
+					cmd = cmd_aliases(cmd)
 					r = true
 					if cmd == 'restart' then
 						need_restart = true

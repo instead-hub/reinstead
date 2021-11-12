@@ -34,4 +34,5 @@ return {
 	autoload = true,
 --	debug = true,
 --	tts = true,
+--	cmd_aliases = { ['стоп'] = 'stop', ['шрифт'] = 'font', ['рестарт'] = 'restart', ['заново'] = 'restart', ['выход'] = 'quit' }
 }
