@@ -152,6 +152,8 @@ font_render(font_t *font, const char *text, img_t *img)
 			memset(g->ptr, 0, g->w * g->h * 4);
 			i = 0;
 			yoff = face->ascender * font->size / face->units_per_EM - glyph->bitmap_top;
+			if (yoff < 0)
+				yoff = 0;
 			for (y=0; y < glyph->bitmap.rows; y++) {
 				if (yoff + y >= g->h)
 					break;
