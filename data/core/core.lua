@@ -501,228 +501,230 @@ local function font_adjust(v)
 end
 
 function core.run()
-	while true do
-		local start = system.time()
-		if not dirty and not AUTOSCRIPT[1] then
-			while not system.wait(5) do end
-		else
-			if system.time() - last_render > fps and not loading_settings then
-				mwin:render()
-				gfx.flip()
-				dirty = false
-				last_render = system.time()
-			end
+	local start = system.time()
+	if not dirty and not AUTOSCRIPT[1] then
+		while not system.wait(5) do end
+	else
+		if system.time() - last_render > fps and not loading_settings then
+			mwin:render()
+			gfx.flip()
+			dirty = false
+			last_render = system.time()
 		end
-		local e, v, a, b, nv
-		e, v, a, b = system.poll()
-		-- system.log(string.format("%q %q", e or 'nil', v or 'nil'))
-		if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
-			nv = AUTOSCRIPT[1] and AUTOSCRIPT[1]:read("*line")
-			if not nv and AUTOSCRIPT[1] then
-				autoscript_pop()
-				gfx.flip()
-			end
-			if nv then
-				iface.input_set(nv:gsub("[\r\n]",""))
-				e = 'keydown'
-				v = 'return'
-			end
-		end
-		if e == 'quit' then
-			break
-		end
-		if e == 'save' then
-			instead_settings()
-			if conf.autosave and GAME then
-				instead_save('autosave', true)
-			end
-		end
-		if (e == 'keydown' or e == 'keyup') and v:find"alt" then
-			alt = (e == 'keydown')
-		end
-
-		if (e == 'keydown' or e == 'keyup') and v:find"ctrl" then
-			control = (e == 'keydown')
-		end
-		if e == 'keydown' then
-			if v == 'escape' and not GAME and not DIRECTORY then -- exit
-				break
-			elseif v == 'f5' then
-				iface.tts_replay()
-			elseif v == 'escape' or v == 'ac back' then
-				iface.input_detach()
-				if iface.input() ~= '' then
-					iface.input_set ''
-				else
-					mwin:add(conf.short_help)
-					iface.tts_more(conf.short_help)
-				end
-				iface.input_attach()
-				dirty = true
-			elseif v == 'backspace' or (control and v == 'h') then
-				dirty = iface.input_bs() or dirty
-			elseif v == 'delete' then
-				dirty = iface.input_bs(true) or dirty
-			elseif alt and v == 'return' then
-				alt = false
-				fullscreen = not fullscreen
-				if fullscreen then
-					system.window_mode 'fullscreen'
-				else
-					system.window_mode 'normal'
-				end
-			elseif (control and (v == '=' or v == '-' or v == '0')) or v == '++' or v == '--' or v == '==' then
-				font_adjust(v)
-				font_changed()
-			elseif (control and v == 'w') or v == 'Ketb' then
-				dirty = iface.input_etb() or dirty
-			elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
-				local oh = mwin:texth()
-				local off = mwin.off
-				local r, v
-				local cmd_mode
-				local input = utf.strip(iface.input())
-				if input:find("/", 1, true) == 1 or input:find("!", 1, true) == 1 then
-					cmd_mode = true
-					r, v = commands_mode(input)
-					if r == 'break' then
-						break
-					end
-				end
-				if not r and DIRECTORY and not GAME then
-					cmd_mode = true
-					r, v = dir_mode(input)
-				elseif not r and not parser_mode then
-					r, v = instead.cmd(string.format("use %s", input))
-					if not r then
-						r, v = instead.cmd(string.format("go %s", input))
-					end
-					if r then
-						menu_mode = true
-					end
-				end
-				if not r and not menu_mode and r ~= "" then
-					r, v = instead.cmd(string.format("@metaparser %q", input:gsub("[<>]", "")))
-					if r then
-						parser_mode = true
-					end
-				end
-				if not r then
-					r, v = instead.cmd(string.format("act %s", input))
-				end
-				if instead.error() then
-					if type(v) ~= 'string' then v = '' end
-					v = v ..'\n('.. instead.error("")..')'
-					autoscript_stop()
-				end
-				if not parser_mode and not cmd_mode and false then -- disabled for parser games
-					local _, w = instead.cmd "way"
-					v = v .. '\n'
-					if w ~= "" then
-						v = v .. ">> "..w
-					end
-					_, w = instead.cmd "inv"
-					if w ~= "" then
-						v = v .. "** ".. w
-					end
-				end
-				iface.input_detach()
-				if not loading_settings and r ~= 'skip' and (r or v ~= '') then
-					iface.input_history(input, r ~= 'hidden' and not cleared)
-					iface.tts_more(input..'\n')
-				end
-				if v then
-					mwin:add(util.output(v))
-					iface.tts_more(v)
-				end
-				iface.input_kill()
-				if not cleared then
-					if loading_settings then
-						mwin.off = off
-					else
-						mwin.off = oh
-					end
-				else
-					mwin.off = 0
-				end
-				mwin:scroll(0)
-				dirty = true
-			elseif v == 'up' then
-				dirty = iface.history_prev() or dirty
-			elseif v == 'down' then
-				dirty = iface.history_next() or dirty
-			elseif v == 'left' then
-				dirty = iface.input_left() or dirty
-			elseif v == 'right' then
-				dirty = iface.input_right() or dirty
-			elseif v == 'a' and control or v == 'home' then
-				dirty = iface.input_home() or dirty
-			elseif v == 'e' and control or v == 'end' then
-				dirty = iface.input_end() or dirty
-			elseif ((v == 'k' or v == 'u') and control) or v == 'Knack' then
-				dirty = iface.input_kill() or dirty
-			elseif (v == 'pagedown' or (v == 'n' and control)) and
-				mwin:scroll(mwin.scrollh) then
-				dirty = true
-			elseif (v == 'pageup' or (v == 'p' and control)) and
-				mwin:scroll(-mwin.scrollh) then
-				dirty = true
-			end
-		elseif e == 'edit' then
-			dirty = iface.input_edit(v) or dirty
-		elseif e == 'text' and not control and not alt then
-			if v == ' ' and mwin:scroll(mwin.scrollh) then
-				dirty = true
-			else
-				dirty = iface.input_text(v) or dirty
-			end
-		elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
-			dirty = iface.mouse(e, v, a, b) or dirty
-		elseif e == 'exposed' or e == 'resized' then
-			local iv = iface.input_visible()
-			local oh = mwin.h
-			mwin:resize(gfx.win():size())
-			if iv then
-				mwin:scroll(oh)
-			else
-				mwin:scroll(0)
-			end
-			dirty = true
-		elseif e == 'mousewheel' then
-			if conf.scroll_inverse then
-				v = -v
-			end
-			mwin:scroll(-v *mwin.lay.fsize)
-			dirty = true
-		end
-		if need_save then
-			instead_save(need_save)
-		end
-		if need_load then
-			instead_load(need_load)
-		end
-		if need_restart then
-			instead_settings()
-			if conf.autoload then
-				os.remove(util.instead_savedir(GAME)..'/autosave')
-			end
-			instead_done()
-			if GAME and not DIRECTORY then
-				instead_start(GAME)
-			elseif DIRECTORY then
-				GAME = false
-				core.start()
-			end
-		end
-		local elapsed = system.time() - start
-		if not loading_settings and iface.tts() and system.is_speak() then
-			system.input()
-		end
-		if not AUTOSCRIPT[1] then
-			system.wait(math.max(0, fps - elapsed))
-		end
-		cleared = false
 	end
+	local e, v, a, b, nv
+	e, v, a, b = system.poll()
+	-- system.log(string.format("%q %q", e or 'nil', v or 'nil'))
+	if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
+		nv = AUTOSCRIPT[1] and AUTOSCRIPT[1]:read("*line")
+		if not nv and AUTOSCRIPT[1] then
+			autoscript_pop()
+			gfx.flip()
+		end
+		if nv then
+			iface.input_set(nv:gsub("[\r\n]",""))
+			e = 'keydown'
+			v = 'return'
+		end
+	end
+	if e == 'quit' then
+		return false
+	end
+	if e == 'save' then
+		instead_settings()
+		if conf.autosave and GAME then
+			instead_save('autosave', true)
+		end
+	end
+	if (e == 'keydown' or e == 'keyup') and v:find"alt" then
+		alt = (e == 'keydown')
+	end
+
+	if (e == 'keydown' or e == 'keyup') and v:find"ctrl" then
+		control = (e == 'keydown')
+	end
+	if e == 'keydown' then
+		if v == 'escape' and not GAME and not DIRECTORY then -- exit
+			return false
+		elseif v == 'f5' then
+			iface.tts_replay()
+		elseif v == 'escape' or v == 'ac back' then
+			iface.input_detach()
+			if iface.input() ~= '' then
+				iface.input_set ''
+			else
+				mwin:add(conf.short_help)
+				iface.tts_more(conf.short_help)
+			end
+			iface.input_attach()
+			dirty = true
+		elseif v == 'backspace' or (control and v == 'h') then
+			dirty = iface.input_bs() or dirty
+		elseif v == 'delete' then
+			dirty = iface.input_bs(true) or dirty
+		elseif alt and v == 'return' then
+			alt = false
+			fullscreen = not fullscreen
+			if fullscreen then
+				system.window_mode 'fullscreen'
+			else
+				system.window_mode 'normal'
+			end
+		elseif (control and (v == '=' or v == '-' or v == '0')) or v == '++' or v == '--' or v == '==' then
+			font_adjust(v)
+			font_changed()
+		elseif (control and v == 'w') or v == 'Ketb' then
+			dirty = iface.input_etb() or dirty
+		elseif v == 'return' or v:find 'enter' or (control and v == 'j') then
+			local oh = mwin:texth()
+			local off = mwin.off
+			local r, v
+			local cmd_mode
+			local input = utf.strip(iface.input())
+			if input:find("/", 1, true) == 1 or input:find("!", 1, true) == 1 then
+				cmd_mode = true
+				r, v = commands_mode(input)
+				if r == 'break' then
+					return false
+				end
+			end
+			if not r and DIRECTORY and not GAME then
+				cmd_mode = true
+				r, v = dir_mode(input)
+			elseif not r and not parser_mode then
+				r, v = instead.cmd(string.format("use %s", input))
+				if not r then
+					r, v = instead.cmd(string.format("go %s", input))
+				end
+				if r then
+					menu_mode = true
+				end
+			end
+			if not r and not menu_mode and r ~= "" then
+				r, v = instead.cmd(string.format("@metaparser %q", input:gsub("[<>]", "")))
+				if r then
+					parser_mode = true
+				end
+			end
+			if not r then
+				r, v = instead.cmd(string.format("act %s", input))
+			end
+			if instead.error() then
+				if type(v) ~= 'string' then v = '' end
+				v = v ..'\n('.. instead.error("")..')'
+				autoscript_stop()
+			end
+			if not parser_mode and not cmd_mode and false then -- disabled for parser games
+				local _, w = instead.cmd "way"
+				v = v .. '\n'
+				if w ~= "" then
+					v = v .. ">> "..w
+				end
+				_, w = instead.cmd "inv"
+				if w ~= "" then
+					v = v .. "** ".. w
+				end
+			end
+			iface.input_detach()
+			if not loading_settings and r ~= 'skip' and (r or v ~= '') then
+				iface.input_history(input, r ~= 'hidden' and not cleared)
+				iface.tts_more(input..'\n')
+			end
+			if v then
+				mwin:add(util.output(v))
+				iface.tts_more(v)
+			end
+			iface.input_kill()
+			if not cleared then
+				if loading_settings then
+					mwin.off = off
+				else
+					mwin.off = oh
+				end
+			else
+				mwin.off = 0
+			end
+			mwin:scroll(0)
+			dirty = true
+		elseif v == 'up' then
+			dirty = iface.history_prev() or dirty
+		elseif v == 'down' then
+			dirty = iface.history_next() or dirty
+		elseif v == 'left' then
+			dirty = iface.input_left() or dirty
+		elseif v == 'right' then
+			dirty = iface.input_right() or dirty
+		elseif v == 'a' and control or v == 'home' then
+			dirty = iface.input_home() or dirty
+		elseif v == 'e' and control or v == 'end' then
+			dirty = iface.input_end() or dirty
+		elseif ((v == 'k' or v == 'u') and control) or v == 'Knack' then
+			dirty = iface.input_kill() or dirty
+		elseif (v == 'pagedown' or (v == 'n' and control)) and
+			mwin:scroll(mwin.scrollh) then
+			dirty = true
+		elseif (v == 'pageup' or (v == 'p' and control)) and
+			mwin:scroll(-mwin.scrollh) then
+			dirty = true
+		end
+	elseif e == 'edit' then
+		dirty = iface.input_edit(v) or dirty
+	elseif e == 'text' and not control and not alt then
+		if v == ' ' and mwin:scroll(mwin.scrollh) then
+			dirty = true
+		else
+			dirty = iface.input_text(v) or dirty
+		end
+	elseif e == 'mousedown' or e == 'mousemotion' or e == 'mouseup' then
+		dirty = iface.mouse(e, v, a, b) or dirty
+	elseif e == 'exposed' or e == 'resized' then
+		local iv = iface.input_visible()
+		local oh = mwin.h
+		mwin:resize(gfx.win():size())
+		if iv then
+			mwin:scroll(oh)
+		else
+			mwin:scroll(0)
+		end
+		dirty = true
+	elseif e == 'mousewheel' then
+		if conf.scroll_inverse then
+			v = -v
+		end
+		mwin:scroll(-v *mwin.lay.fsize)
+		dirty = true
+	end
+	if need_save then
+		instead_save(need_save)
+	end
+	if need_load then
+		instead_load(need_load)
+	end
+	if need_restart then
+		instead_settings()
+		if conf.autoload then
+			os.remove(util.instead_savedir(GAME)..'/autosave')
+		end
+		instead_done()
+		if GAME and not DIRECTORY then
+			instead_start(GAME)
+		elseif DIRECTORY then
+			GAME = false
+			core.start()
+		end
+	end
+	local elapsed = system.time() - start
+	if not loading_settings and iface.tts() and system.is_speak() then
+		system.input()
+	end
+	if not AUTOSCRIPT[1] then
+		system.wait(math.max(0, fps - elapsed))
+	end
+	cleared = false
+	return true
+end
+
+function core.done()
 	if conf.autosave and GAME then
 		instead_save 'autosave'
 	end

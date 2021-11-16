@@ -92,13 +92,19 @@ SDL_WaitEventTo(int timeout)
 int
 WaitEvent(float n)
 {
+#ifdef __EMSCRIPTEN__
+	return 1;
+#else
 	return SDL_WaitEventTo((int)(n * 1000));
+#endif
 }
 
 void
 Delay(float n)
 {
+#if !defined(__EMSCRIPTEN__)
 	SDL_Delay(n * 1000);
+#endif
 }
 
 static char*
