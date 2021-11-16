@@ -140,10 +140,17 @@ button_name(int button)
 float
 GetScale(void)
 {
+#ifdef __EMSCRIPTEN__
+	double r = EM_ASM_DOUBLE({
+		return window.devicePixelRatio;
+	});
+	return (float)r;
+#else
 	float dpi;
 	if (SDL_GetDisplayDPI(0, NULL, &dpi, NULL))
 		return 1.0f;
 	return dpi / 96.0f;
+#endif
 }
 
 #ifdef _WIN32
