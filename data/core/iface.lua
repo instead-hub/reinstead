@@ -1,6 +1,7 @@
 local mwin
 local tbox = require "tbox"
 local utf = require "utf"
+local util = require "util"
 local cursor
 
 local iface = {
@@ -301,16 +302,9 @@ function iface.reset()
 	return mwin
 end
 
-local function strip_tags(str)
-	if str == '' or not str then return str end
-	str = utf.strip(str)
-	str = str:gsub("</?[icrb]>", ""):gsub("<g:[^>]*>", ""):gsub("<w:([^>]*)>","%1")
-	return str
-end
-
 function iface.tts_more(str)
 	if not str then return end
-	str = strip_tags(str)
+	str = util.strip_tags(str)
 	tts_text = (tts_text or '')..str
 end
 
@@ -341,7 +335,7 @@ function iface.tts(str)
 		return
 	end
 	str = str or ''
-	str = strip_tags(str)
+	str = util.strip_tags(str)
 	str = (tts_text or '').. str
 	str = str:gsub("\n$", "")
 	if str:find("\n") then
@@ -353,6 +347,20 @@ function iface.tts(str)
 	end
 	tts_text = false
 	return tts_on and str ~= ''
+end
+
+function iface.render()
+	mwin:render()
+	gfx.flip()
+end
+
+function iface.clear()
+	gfx.win():clear(conf.bg)
+	gfx.flip()
+end
+
+function iface.resize()
+	mwin:resize(gfx.win():size())
 end
 
 return iface

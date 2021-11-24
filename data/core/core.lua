@@ -44,15 +44,13 @@ function instead_busy(busy)
 	if t - last_render > 1/10 and t - busy_time > 3 then
 		system.poll()
 		iface.input_attach('Wait, please...')
-		mwin:render()
-		gfx.flip()
+		iface.render()
 		last_render = system.time()
 	end
 end
 
 local function instead_done()
-	mwin:render()
-	gfx.flip()
+	iface.render()
 	instead.done()
 end
 
@@ -354,8 +352,7 @@ function core.start()
 		system.title(conf.title)
 	end
 
-	gfx.win():clear(conf.bg)
-	gfx.flip()
+	iface.clear()
 
 	mwin = iface.win()
 
@@ -507,8 +504,7 @@ function core.run()
 			while not system.wait(5) do end
 		else
 			if system.time() - last_render > fps and not loading_settings then
-				mwin:render()
-				gfx.flip()
+				iface.render()
 				dirty = false
 				last_render = system.time()
 			end
@@ -681,7 +677,7 @@ function core.run()
 		elseif e == 'exposed' or e == 'resized' then
 			local iv = iface.input_visible()
 			local oh = mwin.h
-			mwin:resize(gfx.win():size())
+			iface.resize()
 			if iv then
 				mwin:scroll(oh)
 			else

@@ -191,4 +191,11 @@ function util.scangames(dirs, fn)
 	end
 end
 
+function util.strip_tags(str)
+	if str == '' or not str then return str end
+	str = utf.strip(str)
+	str = str:gsub("</?[icrb]>", ""):gsub("<g:[^>]*>", ""):gsub("<w:([^>]*)>","%1")
+	return str
+end
+
 return util
