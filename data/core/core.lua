@@ -326,7 +326,7 @@ function core.init()
 	if conf.appdata then
 		conf.appdata = util.datadir(conf.appdata)
 	end
-	print("scale: ", SCALE)
+	print(string.format("scale: %.02f", SCALE))
 	if system.is_speak() or conf.tts then
 		system.input()
 		iface.tts_mode(true)
