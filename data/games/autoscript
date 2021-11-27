@@ -54,6 +54,10 @@
 !script
 !restart
 
+!game games/urzi
+!script-en
+!restart
+
 !debug off
 !font 16
 !quit
