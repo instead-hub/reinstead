@@ -1,0 +1,3 @@
+* metaparser updates;
+* "october" game: fixes;
+* fix in reset layout (change font size on the fly).
