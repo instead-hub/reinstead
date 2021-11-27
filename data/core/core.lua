@@ -265,8 +265,12 @@ local function autoscript_push(fname)
 	end
 end
 
+local function autoscript()
+	return AUTOSCRIPT and AUTOSCRIPT[1]
+end
+
 local function autoscript_pop(err)
-	if not AUTOSCRIPT[1] then
+	if not autoscript() then
 		return
 	end
 	AUTOSCRIPT[1]:close()
@@ -496,11 +500,10 @@ local function font_adjust(v)
 		conf.fsize = FONT_MAX
 	end
 end
-
 function core.run()
 	while true do
 		local start = system.time()
-		if not dirty and not AUTOSCRIPT[1] then
+		if not dirty and not autoscript() then
 			while not system.wait(5) do end
 		else
 			if system.time() - last_render > fps and not loading_settings then
@@ -513,8 +516,8 @@ function core.run()
 		e, v, a, b = system.poll()
 		-- system.log(string.format("%q %q", e or 'nil', v or 'nil'))
 		if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
-			nv = AUTOSCRIPT[1] and AUTOSCRIPT[1]:read("*line")
-			if not nv and AUTOSCRIPT[1] then
+			nv = autoscript() and AUTOSCRIPT[1]:read("*line")
+			if not nv and autoscript() then
 				autoscript_pop()
 				gfx.flip()
 			end
@@ -714,7 +717,7 @@ function core.run()
 		if not loading_settings and iface.tts() and system.is_speak() then
 			system.input()
 		end
-		if not AUTOSCRIPT[1] then
+		if not autoscript() then
 			system.wait(math.max(0, fps - elapsed))
 		end
 		cleared = false
