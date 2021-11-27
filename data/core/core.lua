@@ -516,7 +516,7 @@ function core.run()
 		e, v, a, b = system.poll()
 		-- system.log(string.format("%q %q", e or 'nil', v or 'nil'))
 		if e ~= 'quit' and e ~= 'exposed' and e ~= 'resized' then
-			nv = autoscript() and AUTOSCRIPT[1]:read("*line")
+			nv = autoscript() and autoscript():read("*line")
 			if not nv and autoscript() then
 				autoscript_pop()
 				gfx.flip()
