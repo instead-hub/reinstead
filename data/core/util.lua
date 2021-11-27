@@ -104,6 +104,7 @@ function util.datadir(dir)
 		absolute = (dir:sub(1,1) == '/')
 	end
 	if not absolute then
+		dir = dir:gsub("^%./", "")
 		dir = DATADIR .. '/' .. dir
 	end
 	return dir
