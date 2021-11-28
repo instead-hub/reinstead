@@ -136,7 +136,7 @@ void WindowUpdate(int x, int y, int w, int h)
 			h = win_h - y;
 		if (x + w > win_w)
 			w = win_w - x;
-		if (w <= 0 || x <= 0)
+		if (w <= 0 || h <= 0)
 			return;
 		buf = malloc(w * h * 4);
 		if (!buf)
