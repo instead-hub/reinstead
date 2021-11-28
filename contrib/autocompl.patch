@@ -1,11 +1,11 @@
 diff --git a/data/core/core.lua b/data/core/core.lua
-index ee3be90..4eec689 100644
+index 9eb836f..4367ee3 100644
 --- a/data/core/core.lua
 +++ b/data/core/core.lua
-@@ -533,6 +533,12 @@ function core.run()
- 				dirty = true
- 			elseif v == 'backspace' or (control and v == 'h') then
+@@ -562,6 +562,12 @@ function core.run()
  				dirty = iface.input_bs() or dirty
+ 			elseif v == 'delete' then
+ 				dirty = iface.input_bs(true) or dirty
 +			elseif v == 'tab' then
 +				local _, compl = instead.cmd(string.format('@mpcompl %q', iface.input()))
 +				compl = compl:gsub("\n", "")
