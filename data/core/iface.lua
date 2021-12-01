@@ -169,6 +169,7 @@ end
 function iface.input_kill()
 	input = ''
 	old_input = ''
+	history_pos = 0
 	return iface.input_attach(input)
 end
 

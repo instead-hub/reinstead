@@ -551,13 +551,13 @@ function core.run()
 			elseif v == 'escape' or v == 'ac back' then
 				iface.input_detach()
 				if iface.input() ~= '' then
-					iface.input_set ''
+					dirty = iface.input_kill() or dirty
 				else
 					mwin:add(conf.short_help)
 					iface.tts_more(conf.short_help)
+					iface.input_attach()
+					dirty = true
 				end
-				iface.input_attach()
-				dirty = true
 			elseif v == 'backspace' or (control and v == 'h') then
 				dirty = iface.input_bs() or dirty
 			elseif v == 'delete' then
