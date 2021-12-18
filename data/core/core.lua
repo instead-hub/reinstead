@@ -30,6 +30,10 @@ local icon = gfx.new(DATADIR..'/icon.png')
 
 local busy_time = false
 
+function instead_savepath()
+	return util.instead_savedir(GAME)
+end
+
 function instead_busy(busy)
 	if not busy then
 		busy_time = false
