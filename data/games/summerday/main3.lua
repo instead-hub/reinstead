@@ -1597,7 +1597,7 @@ room {
 			end
 			return false
 		end
-		if _'arrow'.fire and seen 'rat' then
+		if _'arrow'.fire and seen 'rat' and have 'bow2' then
 			p [[Ты не для того пришёл сюда, чтобы просто уйти.]]
 			return false
 		end
