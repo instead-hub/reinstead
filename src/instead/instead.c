@@ -409,7 +409,7 @@ int instead_function(char *s, struct instead_args *args)
 				lua_pushnil(L);
 				break;
 			case INSTEAD_NUM:
-				lua_pushnumber(L, atoi(args->val));
+				lua_pushinteger(L, atoi(args->val));
 				break;
 			case INSTEAD_BOOL:
 				if (!strcmp(args->val, "true"))
@@ -575,12 +575,12 @@ err:
 	return -1;
 }
 
-int instead_loadfile(char *name)
+int instead_loadfile(const char *name)
 {
 	return instead_loadscript(name, -1, NULL, 1);
 }
 
-int instead_loadscript(char *name, int argc, char **argv, int exec)
+int instead_loadscript(const char *name, int argc, char **argv, int exec)
 {
 	int status;
 	if (exec && argc >= 0)
@@ -870,11 +870,7 @@ static int luaB_utf_next(lua_State *L) {
 		if (idx < len)
 			l = utf_ff(s + idx, s + len - 1);
 	}
-#if LUA_VERSION_NUM >= 504
 	lua_pushinteger(L, l);
-#else
-	lua_pushnumber(L, l);
-#endif
 	return 1;
 }
 
@@ -892,11 +888,7 @@ static int luaB_utf_prev(lua_State *L) {
 				l = utf_bb(s, s + idx);
 		}
 	}
-#if LUA_VERSION_NUM >= 504
 	lua_pushinteger(L, l);
-#else
-	lua_pushnumber(L, l);
-#endif
 	return 1;
 }
 
@@ -942,7 +934,7 @@ static int luaB_utf_len(lua_State *L) {
 			sym ++;
 		}
 	}
-	lua_pushnumber(L, sym);
+	lua_pushinteger(L, sym);
 	return 1;
 }
 
