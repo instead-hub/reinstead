@@ -31,7 +31,7 @@ jobs:
         with:
           path: |
             doc-pdf
-          key: doc-${{ hashFiles('doc/manual-ru.md') }}
+          key: doc-${{ hashFiles('doc/manual.md') }}
 
       - name: Install Packages
         run: |
@@ -61,7 +61,7 @@ jobs:
         name: Create manual pdf
         run: |
           cd doc
-          make && mkdir ../doc-pdf && cp manual-ru.pdf ../doc-pdf
+          make && mkdir ../doc-pdf && cp manual.pdf ../doc-pdf
 
       - name: build
         run: |
