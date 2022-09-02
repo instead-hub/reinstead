@@ -1,7 +1,7 @@
 set -e
-sdl_ver="2.24.0"
-freetype_ver="2.12.1"
-luajit_ver="2.0.5"
+test -z "$sdl_ver" && sdl_ver="2.24.0"
+test -z "$freetype_ver" && freetype_ver="2.12.1"
+test -z "$luajit_ver" && luajit_ver="2.0.5"
 
 test -d external || mkdir external
 
