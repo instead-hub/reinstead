@@ -1,3 +1,5 @@
+![Build status](https://github.com/instead-hub/reinstead/actions/workflows/CI.yml/badge.svg)
+
 # RE:INSTEAD
 
 Минималистичный плеер парсерных игр INSTEAD для Linux, Windows, Plan9 и Android.

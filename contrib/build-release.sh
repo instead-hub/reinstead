@@ -65,7 +65,7 @@ if [ ! -f external/.stamp_luajit ]; then
 	touch external/.stamp_luajit
 fi
 
-ls -laR external
+# ls -laR external
 
 rm -f src/gfx_font.c # build with freetype
 
