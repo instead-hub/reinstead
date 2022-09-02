@@ -43,7 +43,7 @@ if [ ! -f external/.stamp_freetype2 ]; then
 fi
 
 if [ ! -f external/.stamp_luajit ]; then
-	test LuaJIT-${luajit_ver}.tar.gz || wget https://luajit.org/download/LuaJIT-${luajit_ver}.tar.gz
+	test -f LuaJIT-${luajit_ver}.tar.gz || wget https://luajit.org/download/LuaJIT-${luajit_ver}.tar.gz
 	rm -rf LuaJIT-${luajit_ver}
 
 	tar xf LuaJIT-${luajit_ver}.tar.gz
