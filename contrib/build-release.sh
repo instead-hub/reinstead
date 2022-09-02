@@ -68,10 +68,10 @@ rm -f src/gfx_font.c # build with freetype
 ## linux version
 
 gcc -Wall -O3 -Wl,-Bstatic \
-src/*.c src/instead/*.c src/freetype/*.c \
 -Iexternal/include \
 -Iexternal/include/freetype2 \
 -Iexternal/include/SDL2 \
+src/*.c src/instead/*.c src/freetype/*.c \
 -Lexternal/lib/ \
 -D_REENTRANT -I/usr/include/luajit-2.1 -Isrc/instead -Dunix -Wl,--no-undefined \
 -lSDL2 \
@@ -89,7 +89,7 @@ LDFLAGS="-Lexternal/windows/lib -lSDL2.dll -lSDL2main -lm -lluajit -lfreetype"
 
 i686-w64-mingw32-windres -i windows/resources.rc -o resources.o || exit 1
 
-i686-w64-mingw32-gcc -Wall -static -O3 src/*.c src/instead/*.c src/freetype/*.c resources.o $CFLAGS $LDFLAGS -mwindows -o reinstead.exe || exit 1
+i686-w64-mingw32-gcc -Wall -static -O3 $CFLAGS src/*.c src/instead/*.c src/freetype/*.c resources.o $LDFLAGS -mwindows -o reinstead.exe || exit 1
 i686-w64-mingw32-strip reinstead.exe
 rm -f *.o
 
