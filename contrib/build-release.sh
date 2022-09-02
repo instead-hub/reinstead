@@ -3,7 +3,9 @@ sdl_ver="2.24.0"
 freetype_ver="2.12.1"
 luajit_ver="2.0.5"
 
-if [ ! -f .stamp_SDL2 ]; then
+test -d external || mkdir external
+
+if [ ! -f external/.stamp_SDL2 ]; then
 	test -f SDL2-${sdl_ver}.tar.gz || wget https://github.com/libsdl-org/SDL/releases/download/release-${sdl_ver}/SDL2-${sdl_ver}.tar.gz
 	rm -rf SDL2-${sdl_ver}
 
@@ -20,10 +22,10 @@ if [ ! -f .stamp_SDL2 ]; then
 	./configure --prefix=`pwd`/../external/windows/ --host=i686-w64-mingw32 --enable-shared --enable-static --disable-audio --disable-pthreads --disable-threads --disable-joystick --disable-sensor --disable-power --disable-haptic --disable-filesystem --disable-file --disable-video-vulkan --disable-video-opengl --disable-video-opengles2 --disable-video-vivante --disable-video-cocoa --disable-video-metal --disable-render-metal --disable-video-kmsdrm --disable-video-opengles --disable-video-opengles1 --disable-video-opengles2 --disable-video-vulkan --disable-render-d3d --disable-sdl2-config
 	make && make install
 	cd ..
-	touch .stamp_SDL2
+	touch external/.stamp_SDL2
 fi
 
-if [ ! -f .stamp_freetype2 ]; then
+if [ ! -f external/.stamp_freetype2 ]; then
 	test -f freetype-${freetype_ver}.tar.gz || wget https://download.savannah.gnu.org/releases/freetype/freetype-${freetype_ver}.tar.gz
 	rm -rf freetype-${freetype_ver}
 
@@ -37,10 +39,10 @@ if [ ! -f .stamp_freetype2 ]; then
 	./configure --prefix=`pwd`/../external/windows/ --host=i686-w64-mingw32 --disable-shared --enable-static --without-brotli --without-harfbuzz --without-png --without-bzip2 --without-zlib
 	make && make install
 	cd ..
-	touch .stamp_freetype2
+	touch external/.stamp_freetype2
 fi
 
-if [ ! -f .stamp_luajit ]; then
+if [ ! -f external/.stamp_luajit ]; then
 	test LuaJIT-${luajit_ver}.tar.gz || wget https://luajit.org/download/LuaJIT-${luajit_ver}.tar.gz
 	rm -rf LuaJIT-${luajit_ver}
 
@@ -58,7 +60,7 @@ if [ ! -f .stamp_luajit ]; then
 	done
 	cp src/libluajit.a ../external/windows/lib/
 	cd ..
-	touch .stamp_luajit
+	touch external/.stamp_luajit
 fi
 
 rm -f src/gfx_font.c # build with freetype
