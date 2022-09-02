@@ -33,7 +33,7 @@ jobs:
 
       - name: build
         run: |
-          contrib/build-release.sh
+          ./contrib/build-release.sh
 
       - name: Create Artifact
         run: |
