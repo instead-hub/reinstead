@@ -104,7 +104,11 @@ rm -rf release
 mkdir release
 
 cp reinstead release/reinstead.x86-64.linux
-cp -r reinstead.exe data/ doc/ COPYING ChangeLog windows/Tolk/*.dll external/windows/bin/*.dll release/
+cp -r reinstead.exe data/ COPYING ChangeLog windows/Tolk/*.dll external/windows/bin/*.dll release/
+
+mkdir release/doc
+cp doc/*.md MANIFEST.md README.md release/doc
+
 i686-w64-mingw32-strip release/SDL2.dll
 mkdir release/licenses
 cp windows/Tolk/*.txt release/licenses
