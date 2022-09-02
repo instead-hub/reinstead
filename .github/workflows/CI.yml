@@ -6,43 +6,37 @@ on:
   workflow_dispatch:
   pull_request:
 
-env:
-    luajit_ver: 2.0.5
-    sdl_ver: 2.24.0
-    freetype_ver: 2.12.1
-
 jobs:
   build:
     name: CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Cache libs
-        id: cache-libs
-        uses: actions/cache@v3
-        with:
-          path: |
-            external
-          key: ${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}
-
       - name: Install Packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib wget libsdl2-dev
+          sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib libsdl2-dev libluajit-5.1-dev libfreetype-dev
           sudo apt-get install -y build-essential
 
-      - name: build
+      - name: build-default
         run: |
-          ./contrib/build-release.sh
+          ./make-default.sh
 
-      - name: Create Artifact
+      - name: build-win
         run: |
-          mkdir -p artifact/reinstead
-          cp -r release/* artifact/reinstead
+          ./make-win.sh
 
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: reinstead
-          path: artifact
-          retention-days: 1
+      - name: build-make
+        run: |
+          make clean
+          make
+
+      - name: build-freetype
+        run: |
+          make clean
+          make WITH_FREETYPE=1
+
+      - name: build-schrift
+        run: |
+          make clean
+          make WITH_SCHRIFT=1
