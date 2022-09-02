@@ -25,11 +25,43 @@ jobs:
             external
           key: ${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}
 
+      - name: Cache manual
+        id: cache-doc
+        uses: actions/cache@v3
+        with:
+          path: |
+            doc-pdf
+          key: doc-${{ hashFiles('doc/manual-ru.md') }}
+
       - name: Install Packages
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib wget libsdl2-dev
           sudo apt-get install -y build-essential
+
+      - if: ${{ steps.cache-doc.outputs.cache-hit != 'true' }}
+        name: Install letex
+        run: |
+          echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
+          sudo apt-get install -y texlive-xetex texlive-latex-base texlive-latex-extra texlive-latex-recommended texlive-lang-cyrillic ttf-mscorefonts-installer
+
+      - if: ${{ steps.cache-doc.outputs.cache-hit != 'true' }}
+        name: Install multimarkdown
+        run: |
+          sudo apt-get install -y git
+          git clone https://github.com/fletcher/MultiMarkdown-5.git
+          cd MultiMarkdown-5
+          git submodule init
+          git submodule update
+          make
+          cd build
+          sudo make install
+
+      - if: ${{ steps.cache-doc.outputs.cache-hit != 'true' }}
+        name: Create manual pdf
+        run: |
+          cd doc
+          make && mkdir ../doc-pdf && cp manual-ru.pdf ../doc-pdf
 
       - name: build
         run: |
@@ -39,6 +71,7 @@ jobs:
         run: |
           mkdir -p artifact/reinstead
           cp -r release/* artifact/reinstead
+          cp doc-pdf/*.pdf artifact/reinstead/doc/
 
       - name: Publish Artifact
         uses: actions/upload-artifact@v3
