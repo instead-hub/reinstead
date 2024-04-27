@@ -303,7 +303,7 @@ Useless {
 	nam = 'papers';
 	dsc = [[В углу валяются обрывки бумаги.]];
 	description = [[Неудачные наброски. Их очень много, не хочу их видеть.]];
-	['before_LookUnder,Search'] = function(s)
+	['before_LookUnder,Search,Push,Pull,Transfer'] = function(s)
 		p [[Этот хлам давно пора выкинуть.]]
 		if not _'phone'.seen then
 			p [[Я покопался в набросках и обнаружил там свой телефон.]];
