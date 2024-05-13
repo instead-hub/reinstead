@@ -171,7 +171,7 @@ function util.info()
 	if type(jit) == 'table' and type(jit.version) == 'string' then
 		luaver = jit.version
 	end
-	return "<c><b>RE:INSTEAD v"..VERSION.." by Peter Kosyh (2021)</b>\n"..
+	return "<c><b>RE:INSTEAD v"..VERSION.." by Peter Kosyh (2021-2024)</b>\n"..
 		"<i>Platform: "..PLATFORM.." / "..luaver.."</i>\n"..
 		"<i>Font renderer: "..FONTRENDERER.."</i></c>\n\n".. (conf.note or '')
 end
