@@ -1,4 +1,5 @@
 VERSION='0.8'
+print(PLATFORM)
 conf = require "config"
 local iface = require "iface"
 local utf = require "utf"
