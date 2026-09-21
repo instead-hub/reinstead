@@ -1016,7 +1016,7 @@ function mp:verbs()
 end
 
 local function word_search(t, w, lev)
-	local rlev
+	local arg_nr
 	w = str_split(w, mp.inp_delim)
 	for k = 1, #t - #w + 1 do
 		local found = true
@@ -1024,11 +1024,11 @@ local function word_search(t, w, lev)
 			local found2 = false
 			for ii = k, k + #w - 1 do
 				if type(lev) == 'function' then
-					rlev = lev(w[i], t[ii])
+					arg_nr = lev(w[i], t[ii])
 				else
-					rlev = mp:eq(w[i], t[ii], lev)
+					arg_nr = mp:eq(w[i], t[ii], lev)
 				end
-				if rlev then
+				if arg_nr then
 					found2 = true
 					break
 				end
@@ -1039,7 +1039,7 @@ local function word_search(t, w, lev)
 			end
 		end
 		if found then
-			return k, #w, rlev
+			return k, #w, arg_nr
 		end
 	end
 end
@@ -1080,9 +1080,9 @@ function mp:lookup_verb(words, lev)
 		local lev_v = {}
 		for _, vv in ipairs(v.verb) do
 			local verb = vv.word .. (vv.morph or "")
-			local i, len, rlev
+			local i, len, arg_nr
 			local vwords = mp.strict_mode and { words[1] } or words
-			i, len, rlev = word_search(vwords, verb, lev and self.lev_thresh)
+			i, len, arg_nr = word_search(vwords, verb, lev and self.lev_thresh)
 			if not i and not lev and vv.morph then
 				i, len = self:lookup_short(vwords, vv.word)
 				if i then
@@ -1101,7 +1101,7 @@ function mp:lookup_verb(words, lev)
 			end
 			if i then
 				if lev then
-					table.insert(lev_v, { lev = rlev, verb = v, verb_nr = i, verb_len = len, word_nr = _ } )
+					table.insert(lev_v, { lev = arg_nr, verb = v, verb_nr = i, verb_len = len, word_nr = _ } )
 				else
 					local vc = std.clone(v)
 					for k, d in ipairs(vc.dsc) do
@@ -1592,8 +1592,11 @@ end
 
 
 --- Resolve equally named objects: collect hit.multi and report an exact match.
+-- hit.multi is the list of objects the matched word may refer to; the action
+-- layer picks the nearest one (see mp:multi_select). An exact match (the word
+-- literally equals the object's noun) wins and clears the collected multi.
 -- Returns: hit, multi_add (list), exact (boolean)
-local function disambiguate(self, pat, hit, rlev)
+local function disambiguate(self, pat, hit, arg_nr)
 	local exact
 	local multi_add = {}
 	for _, pp in ipairs(pat) do
@@ -1608,7 +1611,7 @@ local function disambiguate(self, pat, hit, rlev)
 				table.insert(hit.multi, pp.ob)
 			end
 			if hit.ob:noun(hit.alias) ~= pp.ob:noun(pp.alias) then
-				table.insert(multi_add, { word = pp.ob:noun(pp.alias), lev = rlev })
+				table.insert(multi_add, { word = pp.ob:noun(pp.alias), lev = arg_nr })
 			end
 		end
 	end
@@ -1621,8 +1624,14 @@ local function disambiguate(self, pat, hit, rlev)
 end
 
 --- Find the best alternative of a pattern slot among the remaining words.
--- Returns a result table: best, best_len, word, hit, wildcard, required,
--- required_seen, default.
+-- Returns a result table:
+--   best, best_len -- position and length of the best match inside a
+--   word           -- matched word (or the default word for +slots)
+--   hit            -- matched alternative record, or false
+--   wildcard       -- the match was fuzzy (prefix/starteq), not exact
+--   required       -- the last alternative is required
+--   required_seen  -- at least one required alternative was seen
+--   default        -- the last alternative is an optional default (+word)
 local function find_alternative(self, a, pat, v)
 	local res = {
 		best = #a + 1,
@@ -1745,214 +1754,58 @@ function mp:debug_match(matches, hints, unknown, multi)
 	end
 end
 
-function mp:match(verb, w, compl)
-	local matches = {}
-	local hints = {}
-	local unknown = {}
-	local multi = {}
-	local parsed_verb = {}
-	local fixed_verb = verb.verb[verb.word_nr]
-	fixed_verb = fixed_verb.word .. (fixed_verb.morph or '')
-	table.insert(parsed_verb, fixed_verb)
-	for _, d in ipairs(verb.dsc) do -- verb variants
-		local match = { args = {}, vargs = {}, skip = 0, ev = d.ev, wildcards = 0, verb = parsed_verb, defaults = 0, prio = verb.prio or 0 }
-		local a = {}
-		local res
-		for k, v in ipairs(w) do
-			if k < verb.verb_nr or k >= verb.verb_nr + verb.verb_len then
-				table.insert(a, v)
-			end
-		end
-		local skip = {}
-		local all_optional = true
-		local rlev = 1
-		local need_required = false
-		local varg_pat
-		for lev, v in ipairs(d.pat) do -- pattern arguments
-			if v == '*' or v == '~*' then
-				varg_pat = v
-				v = '*'
-			end
-			local noun = not not v:find("^~?{noun}")
-			local slot = d.compiled and d.compiled[lev]
-			local pat
-			if slot and not slot.dynamic then
-				pat = slot.words
-			else
-				pat = self:pattern(v)
-			end
-			res = find_alternative(self, a, pat, v)
-			if res.required_seen then
-				need_required = true
-				all_optional = false
-			end
-			if res.hit then
-				need_required = false
-				if res.hit.ob then
-					res.hit = std.clone(res.hit) -- do not mutate the shared compiled pattern
-					local multi_add, exact
-					res.hit, multi_add, exact = disambiguate(self, pat, res.hit, rlev)
-					if exact then
-						multi = {}
-					end
-					for _, m in ipairs(multi_add) do
-						table.insert(multi, m)
-					end
-					if #multi > 0 and res.hit.multi then
-						table.insert(multi, 1, { word = res.hit.ob:noun(res.hit.alias), lev = rlev })
-						res.hit = false
-						break
-					end
-				end
-				if varg_pat then
-					for i = 1, res.best - 1 do
-						table.insert(match.vargs, a[i])
-						table.insert(match, a[i])
-					end
-					if #match.vargs == 0 then -- * in the pattern center
-						res.hit = false
-						break
-					end
-					rlev = rlev + 1
-				end
-				if (res.wildcard or match.wildcards > 0) and res.best > 1 then -- do not skip words if wildcard used
-					res.hit = false
-					varg_pat = false
-					break
-				end
-				if not varg_pat then
-					match.skip = match.skip + (res.best - 1)
-					for i = 1, res.best - 1 do
-						table.insert(skip, a[i])
-					end
-				end
-				a = tab_sub(a, res.best + res.best_len)
-				varg_pat = false
-				table.insert(match, res.word)
-				table.insert(match.args, res.hit)
-				if res.wildcard then
-					match.wildcards = match.wildcards + 1
-				end
-				rlev = rlev + 1
-			elseif varg_pat then
-				if lev == #d.pat then -- last?
-					if #a == 0 then
-						need_required = true
-					end
-					while #a > 0 do
-						table.insert(match.vargs, a[1])
-						table.insert(match, a[1])
-						table.remove(a, 1)
-					end
-				else
-					need_required = need_required or res.required
-				end
-				if not need_required then
-					res.hit = true
-				else
-					res.hit = false
-					if #a > 0 or #match.vargs > 0 then
-						while #a > 0 do
-							table.insert(match.vargs, a[1])
-							table.insert(match, a[1])
-							table.remove(a, 1)
-						end
-						table.insert(hints, { word = v, lev = rlev, match = match })
-					else
-						table.insert(hints, { word = varg_pat, lev = rlev, match = match })
-					end
-				end
-				if not res.hit then
-					break
-				end
-			elseif res.required then
-				for i = 1, res.best - 1 do
-					table.insert(unknown, { word = a[i], lev = rlev, noun = noun })
-				end
-				if res.best <= 1 and #skip > 0 then
-					for i = 1, #skip do
-						table.insert(unknown, { word = skip[i], lev = rlev, skip = true })
-					end
-				end
-				if not compl and mp.errhints then
-					local objs = {}
-					for _, pp in ipairs(pat) do -- single argument
-						if not pp.synonym and not objs[pp.ob or 0] then
-							local k, _ = word_search(a, pp.word, self.lev_thresh)
-							if k then
-								table.insert(hints, { word = pp.word, lev = rlev, fuzzy = true, match = match })
-								objs[pp.ob or 1] = true
-							end
-						end
-					end
-				end
-				table.insert(hints, { word = v, lev = rlev, match = match })
-				break
-			else
-				if res.word then
-					table.insert(match, res.word)
-					if res.default then
-						match.defaults = match.defaults + 1
-					end
-				end
-				if res.default then
-					table.insert(match.args, { word = res.word, default = true } )
-				else
-					table.insert(match.args, { word = false, optional = true } )
-				end
-				res.hit = true
-			end
-		end
-		if (res and res.hit) or all_optional then
-			match.extra = (#a ~= 0)
-			if not match.extra or match.wildcards == 0 then
-				table.insert(match, 1, fixed_verb)
-				if self:skip_filter(skip) then
-					table.insert(matches, match)
-				end
-				if #match.vargs == 0 and not varg_pat then
-					match.vargs = false
-				end
-			end
+--- Create a match record for a verb descriptor and the remaining words.
+-- The record is both an array of words (verb + matched slot words) and a table
+-- of fields, see the description above mp:match. Returns the record and the
+-- list of words left after the verb.
+local function new_descriptor(verb, d, w, parsed_verb)
+	local match = { args = {}, vargs = {}, skip = 0, ev = d.ev, wildcards = 0, verb = parsed_verb, defaults = 0, prio = verb.prio or 0 }
+	local a = {}
+	for k, v in ipairs(w) do
+		if k < verb.verb_nr or k >= verb.verb_nr + verb.verb_len then
+			table.insert(a, v)
 		end
 	end
+	return match, a
+end
 
-	matches = rank_matches(matches)
-	-- self:debug_match(matches, hints, unknown, multi) -- uncomment to trace match results
-
-	if #matches > 0 and matches[1].extra then
-		local rank = #matches[1]
-		if #unknown > 0 then
-			for _, v in ipairs(unknown) do
-				if v.lev >= rank and not v.skip then
-					matches = {}
-					break
-				end
-			end
-		end
-		if #multi > 0 and #matches > 0 then
-			for _, v in ipairs(multi) do
-				if v.lev >= rank and not v.skip then
-					matches = {}
-					break
-				end
-			end
-		end
+--- Drop partial ("extra") matches if unknown/multi words rank at least as high.
+local function drop_extra(matches, unknown, multi)
+	if #matches == 0 or not matches[1].extra then
+		return matches
 	end
+	local rank = #matches[1]
+	local function ranked(t)
+		for _, v in ipairs(t) do
+			if v.lev >= rank and not v.skip then
+				return true
+			end
+		end
+		return false
+	end
+	if ranked(unknown) or ranked(multi) then
+		return {}
+	end
+	return matches
+end
+
+--- Resolve the final match/hints/unknown/multi sets.
+-- hints/unknown/multi are relevance lists (see lev_sort), each entry has:
+--   hints   -- { word = <expected word>, lev = <arg rank>, match = <match> }
+--              plus fuzzy = true for the "did you mean" candidates
+--   unknown -- { word = <unrecognized word>, lev = <arg rank>, noun = <bool> }
+--              or { word = ..., lev = ..., skip = true } for skipped words
+--   multi   -- { word = <ambiguous noun>, lev = <arg rank> }
+local function finalize(matches, hints, unknown, multi)
 	if #matches > 0 and #unknown > 0 and
 		not matches[1].extra and
 		matches[1].skip == 0 and
 		not matches[1].vargs then
-		hints = {}
-		unknown = {}
-		multi = {}
-		matches = { matches[1] }
-	else
-		hints = lev_sort(hints)
-		unknown = lev_sort(unknown)
-		multi = lev_sort(multi)
+		return { matches[1] }, {}, {}, {}
 	end
-
+	hints = lev_sort(hints)
+	unknown = lev_sort(unknown)
+	multi = lev_sort(multi)
 	if #hints > 0 and #unknown > 0 then
 		if hints.lev > unknown.lev then
 			unknown = {}
@@ -1961,6 +1814,232 @@ function mp:match(verb, w, compl)
 		end
 	end
 	return matches, hints, unknown, multi
+end
+
+--- Return compiled alternatives for a pattern slot, or expand it at parse time.
+-- Each alternative is a record: { word, optional, hidden, default, morph, pat };
+-- noun alternatives also carry ob, alias and optionally multi / synonym.
+local function slot_pattern(self, d, lev, v)
+	local slot = d.compiled and d.compiled[lev]
+	if slot and not slot.dynamic then
+		return slot.words
+	end
+	return self:pattern(v)
+end
+
+--- Handle a matched pattern slot: resolve objects, consume words and vargs.
+-- Returns true if the descriptor must be abandoned.
+local function slot_hit(self, st, out, pat, v)
+	local match, res = st.match, st.res
+	st.need_required = false
+	if res.hit.ob then
+		res.hit = std.clone(res.hit) -- do not mutate the shared compiled pattern
+		local multi_add, exact
+		res.hit, multi_add, exact = disambiguate(self, pat, res.hit, st.arg_nr)
+		if exact then
+			out.multi = {}
+		end
+		for _, m in ipairs(multi_add) do
+			table.insert(out.multi, m)
+		end
+		if #out.multi > 0 and res.hit.multi then
+			table.insert(out.multi, 1, { word = res.hit.ob:noun(res.hit.alias), lev = st.arg_nr })
+			res.hit = false
+			return true
+		end
+	end
+	if st.varg_pat then
+		for i = 1, res.best - 1 do
+			table.insert(match.vargs, st.a[i])
+			table.insert(match, st.a[i])
+		end
+		if #match.vargs == 0 then -- * in the pattern center
+			res.hit = false
+			return true
+		end
+		st.arg_nr = st.arg_nr + 1
+	end
+	if (res.wildcard or match.wildcards > 0) and res.best > 1 then -- do not skip words if wildcard used
+		res.hit = false
+		st.varg_pat = false
+		return true
+	end
+	if not st.varg_pat then
+		match.skip = match.skip + (res.best - 1)
+		for i = 1, res.best - 1 do
+			table.insert(st.skip, st.a[i])
+		end
+	end
+	st.a = tab_sub(st.a, res.best + res.best_len)
+	st.varg_pat = false
+	table.insert(match, res.word)
+	table.insert(match.args, res.hit)
+	if res.wildcard then
+		match.wildcards = match.wildcards + 1
+	end
+	st.arg_nr = st.arg_nr + 1
+end
+
+--- Handle an unmatched *-slot: collect the rest of the words or emit a hint.
+-- Returns true if the descriptor must be abandoned.
+local function slot_varg(self, st, out, v, lev, d)
+	local match, res = st.match, st.res
+	if lev == #d.pat then -- last?
+		if #st.a == 0 then
+			st.need_required = true
+		end
+		while #st.a > 0 do
+			table.insert(match.vargs, st.a[1])
+			table.insert(match, st.a[1])
+			table.remove(st.a, 1)
+		end
+	end
+	if not st.need_required then
+		res.hit = true
+		return false
+	end
+	res.hit = false
+	if #st.a > 0 or #match.vargs > 0 then
+		while #st.a > 0 do
+			table.insert(match.vargs, st.a[1])
+			table.insert(match, st.a[1])
+			table.remove(st.a, 1)
+		end
+		table.insert(out.hints, { word = v, lev = st.arg_nr, match = match })
+	else
+		table.insert(out.hints, { word = st.varg_pat, lev = st.arg_nr, match = match })
+	end
+	return true
+end
+
+--- Handle a missing required slot: collect unknown words and fuzzy hints.
+-- Returns true if the descriptor must be abandoned.
+local function slot_missing(self, st, out, pat, v, noun, compl)
+	local match, res = st.match, st.res
+	for i = 1, res.best - 1 do
+		table.insert(out.unknown, { word = st.a[i], lev = st.arg_nr, noun = noun })
+	end
+	if res.best <= 1 and #st.skip > 0 then
+		for i = 1, #st.skip do
+			table.insert(out.unknown, { word = st.skip[i], lev = st.arg_nr, skip = true })
+		end
+	end
+	if not compl and mp.errhints then
+		local objs = {}
+		for _, pp in ipairs(pat) do -- single argument
+			if not pp.synonym and not objs[pp.ob or 0] then
+				local k, _ = word_search(st.a, pp.word, self.lev_thresh)
+				if k then
+					table.insert(out.hints, { word = pp.word, lev = st.arg_nr, fuzzy = true, match = match })
+					objs[pp.ob or 1] = true
+				end
+			end
+		end
+	end
+	table.insert(out.hints, { word = v, lev = st.arg_nr, match = match })
+	return true
+end
+
+--- Fill an optional slot with its default word or an empty argument.
+local function slot_optional(st)
+	local match, res = st.match, st.res
+	if res.word then
+		table.insert(match, res.word)
+		if res.default then
+			match.defaults = match.defaults + 1
+		end
+	end
+	if res.default then
+		table.insert(match.args, { word = res.word, default = true } )
+	else
+		table.insert(match.args, { word = false, optional = true } )
+	end
+	res.hit = true
+end
+
+--- Accept the descriptor if it matched or consists of optional slots only.
+local function accept_descriptor(self, st, matches, fixed_verb)
+	if not ((st.res and st.res.hit) or st.all_optional) then
+		return
+	end
+	local match = st.match
+	match.extra = (#st.a ~= 0)
+	if not match.extra or match.wildcards == 0 then
+		table.insert(match, 1, fixed_verb)
+		if self:skip_filter(st.skip) then
+			table.insert(matches, match)
+		end
+		if #match.vargs == 0 and not st.varg_pat then
+			match.vargs = false
+		end
+	end
+end
+
+--- Match one verb candidate against the input words.
+-- A match record is an array of words (verb + words of matched slots) with:
+--   ev        -- event to run (descriptor after ':')
+--   verb      -- parsed verb words
+--   args      -- per-slot argument records:
+--                { word = <matched or default word>, ob = <object or nil>,
+--                  alias = <noun alias>, default = / optional = }
+--   vargs     -- words captured by a * slot (list), or false
+--   skip      -- number of words skipped before the matched slots
+--   wildcards -- number of fuzzy (prefix) matched slots
+--   defaults  -- number of default (+word) slots used
+--   prio      -- verb priority (mp:verb prio)
+--   extra     -- true if unmatched words remain after the pattern
+--   nr        -- position before ranking
+-- Returns matches, hints, unknown, multi (see finalize).
+function mp:match(verb, w, compl)
+	local matches = {}
+	local out = { hints = {}, unknown = {}, multi = {} } -- diagnostic collectors, see finalize
+	local parsed_verb = {}
+	local fixed_verb = verb.verb[verb.word_nr]
+	fixed_verb = fixed_verb.word .. (fixed_verb.morph or '')
+	table.insert(parsed_verb, fixed_verb)
+	for _, d in ipairs(verb.dsc) do -- verb variants
+		local match, a = new_descriptor(verb, d, w, parsed_verb)
+		local st = { -- per-descriptor state
+			match = match,         -- match record being built
+			a = a,                 -- words not consumed yet
+			skip = {},             -- words skipped before matched slots
+			all_optional = true,   -- no required alternatives seen
+			arg_nr = 1,            -- current argument rank (kept in hint.lev)
+			need_required = false, -- a required slot was seen but not matched yet
+		}
+		for lev, v in ipairs(d.pat) do -- pattern arguments
+			if v == '*' or v == '~*' then
+				st.varg_pat = v
+				v = '*'
+			end
+			local noun = not not v:find("^~?{noun}")
+			local pat = slot_pattern(self, d, lev, v)
+			st.res = find_alternative(self, st.a, pat, v)
+			if st.res.required_seen then
+				st.need_required = true
+				st.all_optional = false
+			end
+			local stop
+			if st.res.hit then
+				stop = slot_hit(self, st, out, pat, v)
+			elseif st.varg_pat then
+				stop = slot_varg(self, st, out, v, lev, d)
+			elseif st.res.required then
+				stop = slot_missing(self, st, out, pat, v, noun, compl)
+			else
+				slot_optional(st)
+			end
+			if stop then
+				break
+			end
+		end
+		accept_descriptor(self, st, matches, fixed_verb)
+	end
+
+	matches = rank_matches(matches)
+	-- self:debug_match(matches, out.hints, out.unknown, out.multi) -- uncomment to trace match results
+	matches = drop_extra(matches, out.unknown, out.multi)
+	return finalize(matches, out.hints, out.unknown, out.multi)
 end
 
 local function get_events(self, ev)
