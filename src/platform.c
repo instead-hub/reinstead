@@ -104,8 +104,9 @@ Delay(float n)
 static char*
 key_name(int sym)
 {
-	static char dst[16];
-	strcpy(dst, SDL_GetScancodeName(sym));
+	static char dst[32];
+	const char *name = SDL_GetScancodeName(sym);
+	snprintf(dst, sizeof(dst), "%s", name ? name : "");
 	tolow(dst);
 	return dst;
 }
@@ -244,6 +245,8 @@ GetExePath(const char *progname)
 	char proc_path[256];
 	snprintf(proc_path, sizeof(proc_path), "/proc/%d/exe", getpid());
 	len = readlink(proc_path, path, sizeof(path) - 1);
+	if (len < 0)
+		len = 0;
 	path[len] = 0;
 #else
 	strncpy(path, progname, sizeof(path));

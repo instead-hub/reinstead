@@ -202,7 +202,8 @@ gfx_pixels_new(lua_State *L)
 			return 0;
 		src = b; size = w * h * channels;
 		dst = hdr->img.ptr;
-		while ((size -= channels) > 0) {
+		while (size >= (size_t)channels) {
+			size -= channels;
 			if (channels >= 4) /* rgba? */
 				memcpy(dst, src, 4);
 			else if (channels == 2) { /* grey alpha */
@@ -233,8 +234,11 @@ static img_t*
 img_scale(img_t *src, float xscale, float yscale, int smooth)
 {
 	img_t *ret;
-	int w = ceil(src->w * xscale);
-	int h = ceil(src->h * yscale);
+	int w, h;
+	if (!(xscale > 0.0f) || !(yscale > 0.0f))
+		return NULL;
+	w = ceil(src->w * xscale);
+	h = ceil(src->h * yscale);
 	ret = img_new(w, h);
 	if (!ret)
 		return NULL;
@@ -706,7 +710,7 @@ lineAA(img_t *src, int x0, int y0, int x1, int y1,
 		if (2 * e2 >= -dx) {
 			if (x0 == x1)
 				break;
-			if (e2 + dy < ed) {
+			if (e2 + dy < ed && y0 + 1 < h) {
 				col[3] = a - a * (e2 + dy) / ed;
 				pixel(col, ptr + syp);
 			}
@@ -719,7 +723,7 @@ lineAA(img_t *src, int x0, int y0, int x1, int y1,
 		if (2 * e2 <= dy) {
 			if (y0 == y1)
 				break;
-			if (dx - e2 < ed) {
+			if (dx - e2 < ed && x0 + sx >= 0 && x0 + sx < w) {
 				col[3] = a - a * (dx - e2) / ed;
 				pixel(col, optr + sxp);
 			}
@@ -806,7 +810,7 @@ triangle(img_t *src, int x0, int y0, int x1, int y1, int x2, int y2, int r, int 
 	unsigned char *ptr;
 	w = src->w; h = src->h;
 	yd = 4 * w;
-	col[0] = r; col[1] = b; col[2] = g; col[3] = a;
+	col[0] = r; col[1] = g; col[2] = b; col[3] = a;
 
 	if (minx >= w || miny >= h)
 		return;
@@ -847,7 +851,6 @@ fill_circle(img_t *src, int xc, int yc, int radius, int r, int g, int b, int a)
 	int x, y, x1, x2, y1, y2;
 	unsigned char col[4] = { r, g, b, a };
 	int w = src->w, h = src->h;
-	unsigned char *ptr;
 
 	if (xc + radius < 0 || yc + radius < 0)
 		return;
@@ -857,11 +860,9 @@ fill_circle(img_t *src, int xc, int yc, int radius, int r, int g, int b, int a)
 	if (radius <= 0)
 		return;
 
-	ptr = src->ptr;
-	ptr += (w * yc + xc) << 2;
-
 	if (radius == 1) {
-		pixel(col, ptr);
+		if (xc >= 0 && xc < w && yc >= 0 && yc < h)
+			pixel(col, src->ptr + (w * yc + xc) * 4);
 		return;
 	}
 	y1 = -radius; y2 = radius;
@@ -874,12 +875,14 @@ fill_circle(img_t *src, int xc, int yc, int radius, int r, int g, int b, int a)
 		x2 = w - xc - 1;
 	if (yc + radius >= h)
 		y2 = h - yc - 1;
+	if (x1 > x2 || y1 > y2)
+		return;
 	for (y = y1; y <= y2; y ++) {
-		unsigned char *ptrl = ptr + ((y * w + x1) << 2);
+		unsigned char *ptr = src->ptr + (w * (yc + y) + (xc + x1)) * 4;
 		for (x = x1; x <= x2; x++) {
 			if (x*x + y*y < r2 - 1)
-				pixel(col, ptrl);
-			ptrl += 4;
+				pixel(col, ptr);
+			ptr += 4;
 		}
 	}
 }
