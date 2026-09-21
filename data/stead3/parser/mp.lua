@@ -754,64 +754,112 @@ local function starteq(t1, t2)
 	return mp:norm(t1) == mp:norm(t2)
 end
 
+--- Parse a single pattern element (flags ~/+/?, /morph, {token}) into a record.
+-- @return element record
+-- @return token function name for {token}, or nil
+function mp:parse_element(v)
+	local w = { }
+	local ov = v
+	if v:sub(1, 1) == '~' then
+		v = v:sub(2)
+		v = str_strip(v)
+		w.hidden = true
+	end
+	if v:sub(1, 1) == '+' then
+		v = v:sub(2)
+		v = str_strip(v)
+		w.optional = true
+		w.default = true
+	end
+	if v:sub(1, 1) == '?' then
+		v = v:sub(2)
+		v = str_strip(v)
+		w.optional = true
+	end
+	v = v:gsub("%+", " ") -- spaces
+	if v:find("[^/]+/[^/]*$") then
+		local s, e = v:find("/[^/]*$")
+		w.morph = v:sub(s + 1, e)
+		v = v:sub(1, s - 1)
+		v = str_strip(v)
+	end
+	w.pat = v
+	w.key = ov
+	if v:find("^{[^}]+}$") then -- completion function
+		return w, v:gsub("^{", ""):gsub("}$", "")
+	end
+	return w
+end
+
+local function expand_static(w)
+	local vv = {}
+	for _, a in ipairs(mp:pref_pattern(w.pat)) do
+		for _, b in ipairs(mp:suff_pattern(a)) do
+			table.insert(vv, b)
+		end
+	end
+	if #vv == 1 then
+		w.word = w.pat
+		return { w }
+	end
+	local res = {}
+	for _, exv in ipairs(vv) do
+		local ww = std.clone(w)
+		ww.word = exv
+		table.insert(res, ww)
+	end
+	return res
+end
+
+--- Compile a pattern element into a list of alternatives.
+-- If any alternative is a {token}, the element is expanded at parse time.
+function mp:compile_element(v)
+	local pat = str_split(v, "|")
+	local words = {}
+	for _, e in ipairs(pat) do
+		local w, tok = self:parse_element(e)
+		if tok then
+			return { dynamic = true }
+		end
+		for _, rec in ipairs(expand_static(w)) do
+			table.insert(words, rec)
+		end
+	end
+	return { words = words }
+end
+
 function mp:pattern(t, delim)
 	local words = {}
 	local pat = str_split(t, delim or "|")
 	for _, v in ipairs(pat) do
-		local w = { }
-		local ov = v
-		if v:sub(1, 1) == '~' then
-			v = v:sub(2)
-			v = str_strip(v)
-			w.hidden = true
-		end
-		if v:sub(1, 1) == '+' then
-			v = v:sub(2)
-			v = str_strip(v)
-			w.optional = true
-			w.default = true
-		end
-		if v:sub(1, 1) == '?' then
-			v = v:sub(2)
-			v = str_strip(v)
-			w.optional = true
-		end
-		v = v:gsub("%+", " ") -- spaces
-		if v:find("[^/]+/[^/]*$") then
-			local s, e = v:find("/[^/]*$")
-			w.morph = v:sub(s + 1, e)
-			v = v:sub(1, s - 1)
-			v = str_strip(v)
-		end
-		w.pat = v
-		if v:find("^{[^}]+}$") then -- completion function
-			v = v:gsub("^{", ""):gsub("}$", "")
-			if type(self.token[v]) ~= 'function' then
-				std.err("Wrong subst function: ".. v, 2);
+		local w, tok = self:parse_element(v)
+		if tok then
+			if type(self.token[tok]) ~= 'function' then
+				std.err("Wrong subst function: ".. tok, 2);
 			end
-			local key = ov --  .. '/' .. (w.morph or '')
-			local tok = self.cache.tokens[key]
-			if not tok then
-				tok = self.token[v](w)
-				self.cache.tokens[key] = tok
+			local key = w.key
+			local tkn = self.cache.tokens[key]
+			if not tkn then
+				tkn = self.token[tok](w)
+				self.cache.tokens[key] = tkn
 			end
-			while type(tok) == 'string' do
-				tok = self:pattern(tok)
+			while type(tkn) == 'string' do
+				tkn = self:pattern(tkn)
 			end
-			if type(tok) == 'table' then
-				for _, xw in ipairs(tok) do
+			if type(tkn) == 'table' then
+				for _, xw in ipairs(tkn) do
 					table.insert(words, xw)
 				end
 			end
 		else
 			local vv = {}
-			for _, w in ipairs(mp:pref_pattern(v)) do
-				for _, w in ipairs(mp:suff_pattern(w)) do
-					table.insert(vv, w)
+			for _, a in ipairs(mp:pref_pattern(w.pat)) do
+				for _, b in ipairs(mp:suff_pattern(a)) do
+					table.insert(vv, b)
 				end
 			end
 			if #vv == 1 then
-				w.word = v
+				w.word = w.pat
 				table.insert(words, w)
 			else
 				for _, exv in ipairs(vv) do
@@ -942,6 +990,14 @@ function mp:verb(t, w, extend, extend_words)
 		end
 		n = n + 1
 	end
+	verb.prio = t.prio or (extend and rem and rem.prio) or 0
+	for _, d in ipairs(verb.dsc) do
+		local compiled = {}
+		for i, v in ipairs(d.pat) do
+			compiled[i] = self:compile_element(v)
+		end
+		d.compiled = compiled
+	end
 	verb.hint = t.hint
 	table.insert(w.__Verbs, 1, verb)
 	return verb
@@ -1048,6 +1104,9 @@ function mp:lookup_verb(words, lev)
 					table.insert(lev_v, { lev = rlev, verb = v, verb_nr = i, verb_len = len, word_nr = _ } )
 				else
 					local vc = std.clone(v)
+					for k, d in ipairs(vc.dsc) do
+						d.compiled = v.dsc[k].compiled
+					end
 					vc.verb_nr = i
 					vc.verb_len = len
 					vc.word_nr = _
@@ -1099,19 +1158,6 @@ local function tab_sub(t, s, e)
 	end
 	return r
 end
-
---[[
-local function tab_exclude(t, s, e)
-	local r = {}
-	e = e or #t
-	for i = 1, #t do
-		if i < s or i > e then
-			table.insert(r, t[i])
-		end
-	end
-	return r
-end
-]]--
 
 function mp:docompl(str, maxw)
 	local full
@@ -1545,9 +1591,162 @@ function mp:compl_match(words)
 end
 
 
+--- Resolve equally named objects: collect hit.multi and report an exact match.
+-- Returns: hit, multi_add (list), exact (boolean)
+local function disambiguate(self, pat, hit, rlev)
+	local exact
+	local multi_add = {}
+	for _, pp in ipairs(pat) do
+		if pp.ob and pp.ob ~= hit.ob and self:eq(hit.word, pp.word) then
+			if not hit.multi then
+				hit.multi = {}
+			end
+			if not exact and pp.ob:noun(hit.morph, pp.alias) == pp.word then -- exactly match
+				exact = pp.ob
+				table.insert(hit.multi, hit.ob)
+			else
+				table.insert(hit.multi, pp.ob)
+			end
+			if hit.ob:noun(hit.alias) ~= pp.ob:noun(pp.alias) then
+				table.insert(multi_add, { word = pp.ob:noun(pp.alias), lev = rlev })
+			end
+		end
+	end
+	if exact then
+		hit = std.clone(hit)
+		hit.ob = exact
+		return hit, {}, true
+	end
+	return hit, multi_add, false
+end
+
+--- Find the best alternative of a pattern slot among the remaining words.
+-- Returns a result table: best, best_len, word, hit, wildcard, required,
+-- required_seen, default.
+local function find_alternative(self, a, pat, v)
+	local res = {
+		best = #a + 1,
+		best_len = 1,
+		hit = false,
+		wildcard = false,
+		required = false,
+		required_seen = false,
+		default = false,
+	}
+	for _, pp in ipairs(pat) do -- single argument
+		if v == '*' then break end
+		res.required = not pp.optional
+		if not pp.optional then
+			res.required_seen = true
+		end
+		res.default = pp.default
+		if res.default then
+			res.word = pp.word
+		end
+		local new_wildcard
+		local k, len = word_search(a, pp.word)
+		if not k and mp.compare_len > 0 and not pp.synonym then
+			k, len = word_search(a, pp.word, starteq)
+			new_wildcard = true
+		else
+			new_wildcard = false
+		end
+		if (not res.required or mp.strict_mode) and k ~= 1 then
+			k = false -- ?word is only in 1st pos
+		end
+		if k and ((k < res.best or (k == res.best and len > res.best_len)) or
+			(not new_wildcard and res.wildcard and k <= res.best and len >= res.best_len)) then
+			res.wildcard = new_wildcard
+			res.best = k
+			res.word = pp.word
+			res.hit = pp
+			res.best_len = len
+			if pp.synonym or res.word:find("%*$") then -- subst
+				res.word = res.hit.ob:noun(res.hit.morph, res.hit.alias)
+				res.wildcard = true
+			end
+		end
+	end
+	return res
+end
+
+--- Order matches: verb priority, coverage, wildcards, then order of appearance.
+local function rank_matches(matches)
+	for k, v in ipairs(matches) do
+		v.nr = k
+	end
+	table.sort(matches,
+		function(a, b)
+			if (a.prio or 0) ~= (b.prio or 0) then
+				return (a.prio or 0) > (b.prio or 0)
+			end
+			local na, nb = #a - a.defaults, #b - b.defaults
+			if not a.extra and a.skip == 0 then
+				na = na + 100
+			end
+			if not b.extra and b.skip == 0 then
+				nb = nb + 100
+			end
+			if na == nb and a.wildcards == b.wildcards then
+				return a.nr < b.nr
+			end
+			if na == nb then
+				return a.wildcards < b.wildcards
+			end
+			return na > nb
+		end)
+	return matches
+end
+
+--- Dump match results to stderr (debug helper).
+-- Uncomment the call in mp:match to trace parsing.
+function mp:debug_match(matches, hints, unknown, multi)
+	local function words(t)
+		if type(t) ~= 'table' then
+			return "-"
+		end
+		local r = {}
+		for _, v in ipairs(t) do
+			if type(v) == 'table' then
+				r[#r + 1] = tostring(v.word) .. ":" .. tostring(v.lev)
+			else
+				r[#r + 1] = tostring(v)
+			end
+		end
+		return table.concat(r, ",")
+	end
+	for i, m in ipairs(matches or {}) do
+		local args = {}
+		for k, a in ipairs(m.args or {}) do
+			args[k] = tostring(a.word) .. ":" .. (a.ob and a.ob.nam or "-") ..
+				":" .. tostring(a.alias) ..
+				(a.default and ":default" or (a.optional and ":optional" or ":required"))
+		end
+		dprint("mp:match[" .. i .. "]",
+			"ev=" .. tostring(m.ev),
+			"prio=" .. tostring(m.prio),
+			"extra=" .. tostring(m.extra),
+			"skip=" .. tostring(m.skip),
+			"wildcards=" .. tostring(m.wildcards),
+			"defaults=" .. tostring(m.defaults),
+			"nr=" .. tostring(m.nr),
+			"verb=[" .. words(m) .. "]",
+			"args=[" .. table.concat(args, " ") .. "]",
+			"vargs=[" .. words(m.vargs) .. "]")
+	end
+	if hints then
+		dprint("mp:match hints=[" .. words(hints) .. "]")
+	end
+	if unknown then
+		dprint("mp:match unknown=[" .. words(unknown) .. "]")
+	end
+	if multi then
+		dprint("mp:match multi=[" .. words(multi) .. "]")
+	end
+end
+
 function mp:match(verb, w, compl)
 	local matches = {}
-	local found
 	local hints = {}
 	local unknown = {}
 	local multi = {}
@@ -1556,10 +1755,9 @@ function mp:match(verb, w, compl)
 	fixed_verb = fixed_verb.word .. (fixed_verb.morph or '')
 	table.insert(parsed_verb, fixed_verb)
 	for _, d in ipairs(verb.dsc) do -- verb variants
---		local was_noun = false
-		local match = { args = {}, vargs = {}, skip = 0, ev = d.ev, wildcards = 0, verb = parsed_verb, defaults = 0 }
+		local match = { args = {}, vargs = {}, skip = 0, ev = d.ev, wildcards = 0, verb = parsed_verb, defaults = 0, prio = verb.prio or 0 }
 		local a = {}
-		found = (#d.pat == 0)
+		local res
 		for k, v in ipairs(w) do
 			if k < verb.verb_nr or k >= verb.verb_nr + verb.verb_len then
 				table.insert(a, v)
@@ -1569,124 +1767,74 @@ function mp:match(verb, w, compl)
 		local all_optional = true
 		local rlev = 1
 		local need_required = false
-		local default = false
-		local vargs
+		local varg_pat
 		for lev, v in ipairs(d.pat) do -- pattern arguments
 			if v == '*' or v == '~*' then
-				vargs = v -- found
+				varg_pat = v
 				v = '*'
 			end
 			local noun = not not v:find("^~?{noun}")
-			local pat = self:pattern(v) -- pat -- possible words
-			local best = #a + 1
-			local best_len = 1
-			local word
-			local required = false
-			found = false
-			local wildcard = false
-			for _, pp in ipairs(pat) do -- single argument
-				if v == '*' then break end
-				required = not pp.optional
-				if not pp.optional then
-					need_required = true
-					all_optional = false
-				end
-				default = pp.default
-				if default then
-					word = pp.word
-				end
-				local new_wildcard
-				local k, len = word_search(a, pp.word)
-				if not k and mp.compare_len > 0 and not pp.synonym then
-					k, len = word_search(a, pp.word, starteq)
-					new_wildcard = true
-				else
-					new_wildcard = false
-				end
-				if (not required or mp.strict_mode) and k ~= 1 then k = false end -- ?word is only in 1st pos
-				if k and ((k < best or (k == best and len > best_len)) or
-					(not new_wildcard and wildcard and k <= best and len >= best_len)) then
-					wildcard = new_wildcard
-					best = k
-					word = pp.word
-					found = pp
-					best_len = len
-					if pp.synonym or word:find("%*$") then -- subst
-						word = found.ob:noun(found.morph, found.alias)
-						wildcard = true
-					end
-				end
+			local slot = d.compiled and d.compiled[lev]
+			local pat
+			if slot and not slot.dynamic then
+				pat = slot.words
+			else
+				pat = self:pattern(v)
 			end
-			if found then
+			res = find_alternative(self, a, pat, v)
+			if res.required_seen then
+				need_required = true
+				all_optional = false
+			end
+			if res.hit then
 				need_required = false
-				if found.ob then
-					local exact
-					for _, pp in ipairs(pat) do
-						if pp.ob and pp.ob ~= found.ob and self:eq(found.word, pp.word) then
-							if not found.multi then
-								found.multi = {}
-							end
-							if not exact and pp.ob:noun(found.morph, pp.alias) == pp.word then -- excactly match
-								exact = pp.ob
-								table.insert(found.multi, found.ob)
-							else
-								table.insert(found.multi, pp.ob)
-							end
-							if found.ob:noun(found.alias) ~= pp.ob:noun(pp.alias) then
-								table.insert(multi, { word = pp.ob:noun(pp.alias), lev = rlev })
-							end
-						end
-					end
+				if res.hit.ob then
+					res.hit = std.clone(res.hit) -- do not mutate the shared compiled pattern
+					local multi_add, exact
+					res.hit, multi_add, exact = disambiguate(self, pat, res.hit, rlev)
 					if exact then
-						found = std.clone(found)
-						found.ob = exact
 						multi = {}
 					end
-					if #multi > 0 and found.multi then
-						table.insert(multi, 1, { word = found.ob:noun(found.alias), lev = rlev })
-						found = false
+					for _, m in ipairs(multi_add) do
+						table.insert(multi, m)
+					end
+					if #multi > 0 and res.hit.multi then
+						table.insert(multi, 1, { word = res.hit.ob:noun(res.hit.alias), lev = rlev })
+						res.hit = false
 						break
 					end
 				end
-				if vargs then
-					for i = 1, best - 1 do
+				if varg_pat then
+					for i = 1, res.best - 1 do
 						table.insert(match.vargs, a[i])
 						table.insert(match, a[i])
 					end
 					if #match.vargs == 0 then -- * in the pattern center
-						found = false
+						res.hit = false
 						break
 					end
 					rlev = rlev + 1
 				end
-				if (wildcard or match.wildcards > 0) and best > 1 then -- do not skip words if wildcard used
-					found = false
-					vargs = false
+				if (res.wildcard or match.wildcards > 0) and res.best > 1 then -- do not skip words if wildcard used
+					res.hit = false
+					varg_pat = false
 					break
 				end
---				if false then
---					a = tab_exclude(a, best, best + best_len - 1)
---				else
---				if not was_noun then
-				if not vargs then
-					match.skip = match.skip + (best - 1)
-					for i = 1, best - 1 do
+				if not varg_pat then
+					match.skip = match.skip + (res.best - 1)
+					for i = 1, res.best - 1 do
 						table.insert(skip, a[i])
 					end
 				end
---				end
-					a = tab_sub(a, best + best_len)
---					table.remove(a, 1)
---				end
-				vargs = false
-				table.insert(match, word)
-				table.insert(match.args, found)
-				if wildcard then
+				a = tab_sub(a, res.best + res.best_len)
+				varg_pat = false
+				table.insert(match, res.word)
+				table.insert(match.args, res.hit)
+				if res.wildcard then
 					match.wildcards = match.wildcards + 1
 				end
 				rlev = rlev + 1
---				was_noun = not not found.ob
-			elseif vargs then
+			elseif varg_pat then
 				if lev == #d.pat then -- last?
 					if #a == 0 then
 						need_required = true
@@ -1697,12 +1845,12 @@ function mp:match(verb, w, compl)
 						table.remove(a, 1)
 					end
 				else
-					need_required = need_required or required
+					need_required = need_required or res.required
 				end
 				if not need_required then
-					found = true
+					res.hit = true
 				else
-					found = false
+					res.hit = false
 					if #a > 0 or #match.vargs > 0 then
 						while #a > 0 do
 							table.insert(match.vargs, a[1])
@@ -1711,17 +1859,17 @@ function mp:match(verb, w, compl)
 						end
 						table.insert(hints, { word = v, lev = rlev, match = match })
 					else
-						table.insert(hints, { word = vargs, lev = rlev, match = match })
+						table.insert(hints, { word = varg_pat, lev = rlev, match = match })
 					end
 				end
-				if not found then
+				if not res.hit then
 					break
 				end
-			elseif required then
-				for i = 1, best - 1 do
+			elseif res.required then
+				for i = 1, res.best - 1 do
 					table.insert(unknown, { word = a[i], lev = rlev, noun = noun })
 				end
-				if best <= 1 and #skip > 0 then
+				if res.best <= 1 and #skip > 0 then
 					for i = 1, #skip do
 						table.insert(unknown, { word = skip[i], lev = rlev, skip = true })
 					end
@@ -1741,74 +1889,42 @@ function mp:match(verb, w, compl)
 				table.insert(hints, { word = v, lev = rlev, match = match })
 				break
 			else
-				if word then
-					table.insert(match, word)
-					if default then
+				if res.word then
+					table.insert(match, res.word)
+					if res.default then
 						match.defaults = match.defaults + 1
 					end
 				end
-				if default then
-					table.insert(match.args, { word = word, default = true } )
+				if res.default then
+					table.insert(match.args, { word = res.word, default = true } )
 				else
 					table.insert(match.args, { word = false, optional = true } )
 				end
---				table.insert(hints, { word = v, lev = rlev })
-				found = true
+				res.hit = true
 			end
 		end
---		if #multi > 0 then
---			matches = {}
---			break
---		end
-		if found or all_optional then
+		if (res and res.hit) or all_optional then
 			match.extra = (#a ~= 0)
 			if not match.extra or match.wildcards == 0 then
-				table.insert(match, 1, fixed_verb) -- w[verb.verb_nr])
+				table.insert(match, 1, fixed_verb)
 				if self:skip_filter(skip) then
 					table.insert(matches, match)
 				end
-				if #match.vargs == 0 and not vargs then
+				if #match.vargs == 0 and not varg_pat then
 					match.vargs = false
 				end
 			end
 		end
 	end
 
-	for k, v in ipairs(matches) do
-		v.nr = k
---[[
-if false then
-		print("-----------", k)
-		for kk, vv in ipairs(v) do
-			print(vv)
-		end
-end
-]]--
-	end
-
-	table.sort(matches,
-		function(a, b)
-			local na, nb = #a - a.defaults, #b - b.defaults
-			if not a.extra and a.skip == 0 then
-				na = na + 100
-			end
-			if not b.extra and b.skip == 0 then
-				nb = nb + 100
-			end
-			if na == nb and a.wildcards == b.wildcards then
-				return a.nr < b.nr
-			end
-			if na == nb then
-				return a.wildcards < b.wildcards
-			end
-			return na > nb
-		end)
+	matches = rank_matches(matches)
+	-- self:debug_match(matches, hints, unknown, multi) -- uncomment to trace match results
 
 	if #matches > 0 and matches[1].extra then
-		local lev = #matches[1]
+		local rank = #matches[1]
 		if #unknown > 0 then
 			for _, v in ipairs(unknown) do
-				if v.lev >= lev and not v.skip then -- and v.noun then
+				if v.lev >= rank and not v.skip then
 					matches = {}
 					break
 				end
@@ -1816,39 +1932,13 @@ end
 		end
 		if #multi > 0 and #matches > 0 then
 			for _, v in ipairs(multi) do
-				if v.lev >= lev and not v.skip then
+				if v.lev >= rank and not v.skip then
 					matches = {}
 					break
 				end
 			end
 		end
 	end
---[[
-	if #unknown > 0 then
-		local nmatches = {}
-		for _, v in ipairs(matches) do
-			if not v.extra then
-				table.insert(nmatches, v)
-			end
-		end
-		matches = nmatches
-	end
-end
-if false then
-	print "MATCHES: "
-	for _, v in ipairs(matches) do
-		for _, vv in pairs(v) do
-			print(_, vv)
-		end
-	end
-
---	for _, v in ipairs(hints) do
---		for _, vv in ipairs(hints) do
---			print(vv.word, vv.fuzzy, vv.lev)
---		end
---	end
-end
-]]--
 	if #matches > 0 and #unknown > 0 and
 		not matches[1].extra and
 		matches[1].skip == 0 and
@@ -2375,19 +2465,24 @@ function mp:lookup_noun(w, lev)
 	end
 	local uniq = {}
 	local same
+	local res2 = {}
 	for _, v in ipairs(res) do
 		local t = v.ob:noun(v.alias)
 		if not uniq[t] then
-			uniq[t] = v
+			uniq[t] = true
+			table.insert(res2, v)
 		else
 			same = true
 		end
 	end
-	res = {}
-	for _, v in pairs(uniq) do
-		table.insert(res, v)
+	res = res2
+	for i, v in ipairs(res) do
+		v.i = i
 	end
 	table.sort(res, function(a, b)
+		if a.word:len() == b.word:len() then
+			return a.i < b.i
+		end
 		return a.word:len() > b.word:len()
 	end)
 	if same then
@@ -2535,7 +2630,12 @@ function mp:input(str)
 			table.insert(multi, mu)
 		end
 	end
-	table.sort(matches, function(a, b) return #a.match > #b.match end)
+	table.sort(matches, function(a, b)
+		if #a.match == #b.match then
+			return (a.match.prio or 0) > (b.match.prio or 0)
+		end
+		return #a.match > #b.match
+	end)
 	hints = lev_sort(hints)
 	unknown = lev_sort(unknown)
 	multi = lev_sort(multi)

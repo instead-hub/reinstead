@@ -1,6 +1,6 @@
--- Парсерные тесты (headless). Запуск: tests/run-parser-tests.sh
--- Проверяют поведение парсера (data/stead3/parser) на синтетической сцене.
--- Заканчиваются os.exit(0/1), поэтому движок не доходит до autoscript.
+-- Parser tests (headless). Run: tests/run-parser-tests.sh
+-- Check parser behavior (data/stead3/parser) on a synthetic scene.
+-- Finish with os.exit(0/1), so the engine never reaches autoscript.
 
 require "parser/mp-ru"
 require "fmt"
@@ -59,6 +59,10 @@ pl.word = -"я/мр,1л";
 
 game.dsc = 'Парсерные тесты.';
 
+-- two verbs with the same pattern: priority decides the winner
+Verb { "#TestPrioLow", "тестприоритет", "{noun}/вн : TestPrioLow" }
+Verb { "#TestPrioHigh", "тестприоритет", "{noun}/вн : TestPrioHigh", prio = 1 }
+
 local function parse(inp)
 	mp.cache.nouns = mp:nouns()
 	return mp:input(mp:norm(inp))
@@ -69,8 +73,8 @@ local function parsed_ob(n)
 	return a and a.ob
 end
 
--- mp.parsed.args содержит и служебные слова шаблона (например, предлоги),
--- поэтому объекты ищем перебором.
+-- mp.parsed.args also contains pattern service words (e.g. prepositions),
+-- so objects are looked up by scanning.
 local function has_arg_ob(ob)
 	for _, a in ipairs(mp.parsed and mp.parsed.args or {}) do
 		if a.ob == ob then return true end
@@ -96,14 +100,14 @@ local function test_parse()
 	ok("положить камень в ящик: оба объекта",
 		has_arg_ob(stone) and has_arg_ob(std.ref 'box'))
 
-	-- одноимённые объекты: парсер должен выбрать один из них
+	-- objects with the same name: the parser must choose one of them
 	r = parse "взять ключ"
 	local key1, key2 = std.ref 'key1', std.ref 'key2'
 	local chosen = parsed_ob(1)
 	ok("взять ключ: выбран один из ключей",
 		r and (chosen == key1 or chosen == key2), chosen and chosen.nam)
 
-	-- объект без глагола: xaction с default_Event
+	-- object without a verb: xaction with default_Event
 	local xev, xob
 	local oxaction = mp.xaction
 	mp.xaction = function(_, ev, ...)
@@ -115,11 +119,11 @@ local function test_parse()
 	ok("камень: передан объект", xob == stone)
 	mp.xaction = oxaction
 
-	-- пустой ввод подставляется default_Verb ("осмотреть" в mp-ru -> Look)
+	-- empty input is replaced with default_Verb ("осмотреть" in mp-ru -> Look)
 	local r2 = parse ""
 	ok("пустой ввод -> Look (default_Verb)", r2 and mp.parsed.ev == 'Look', mp.parsed and mp.parsed.ev)
 
-	-- неизвестный глагол
+	-- unknown verb
 	local r3, v3 = parse "прыгнуть через луну"
 	ok("неизвестный глагол -> ошибка", r3 == false and v3 ~= nil, v3)
 end
@@ -157,7 +161,7 @@ local function test_patterns()
 end
 
 local function test_completion()
-	-- эмуляция набора: контекст дополнения накапливается по мере ввода
+	-- emulate typing: completion context accumulates as input grows
 	local function complete(inp)
 		mp.inp = ''
 		mp:compl_reset()
@@ -182,9 +186,52 @@ local function test_completion()
 	ok("дополнение 'осмотреть я' содержит 'ящик'", has_word(complete "осмотреть я", 'ящик'))
 end
 
+local function test_grammar()
+	local cases = { "взять", "[|по]йти", "иди[|те]", "?на", "+в", "~под", "смотреть/вн", "в|во" }
+	for _, v in ipairs(cases) do
+		local c = mp:compile_element(v)
+		local p = mp:pattern(v)
+		local same = not c.dynamic and #c.words == #p
+		if same then
+			for i = 1, #p do
+				local a, b = c.words[i], p[i]
+				if a.word ~= b.word or
+					not not a.optional ~= not not b.optional or
+					not not a.hidden ~= not not b.hidden or
+					not not a.default ~= not not b.default or
+					a.morph ~= b.morph then
+					same = false
+					break
+				end
+			end
+		end
+		ok("compile == pattern: " .. v, same)
+	end
+	ok("compile dynamic: {noun}/вн", mp:compile_element("{noun}/вн").dynamic)
+
+	local r = parse "тестприоритет камень"
+	ok("приоритет глагола решает исход",
+		r and mp.parsed.ev == 'TestPrioHigh', mp.parsed and mp.parsed.ev)
+
+	local key1, key2 = std.ref 'key1', std.ref 'key2'
+	local first, stable = nil, true
+	for _ = 1, 20 do
+		parse "взять ключ"
+		local chosen = parsed_ob(1)
+		if not first then
+			first = chosen
+		elseif chosen ~= first then
+			stable = false
+			break
+		end
+	end
+	ok("выбор одноимённого объекта детерминирован",
+		stable and (first == key1 or first == key2))
+end
+
 local function test_regressions()
-	-- 1. mplib.lua: недоступный второй объект должен обнаруживаться, даже
-	-- если первый аргумент — комната (раньше здесь проверялся first).
+	-- 1. mplib.lua: an inaccessible second object must be detected even
+	-- if the first argument is a room (it used to check first).
 	local op = p
 	std.rawset(_G, 'p', function() end)
 	mp.first = std.ref 'main'
@@ -195,8 +242,8 @@ local function test_regressions()
 	mp.first, mp.second = nil, nil
 	std.rawset(_G, 'p', op)
 
-	-- 2. mp.lua: VerbExtend без тега должен давать внятное сообщение
-	-- (раньше ".." связывало сильнее "or" и терялся '#Undefined').
+	-- 2. mp.lua: VerbExtend without a tag must give a clear message
+	-- (".." used to bind tighter than "or", losing '#Undefined').
 	local okk, err = pcall(VerbExtend, { "ещё" })
 	ok("VerbExtend без тега: внятное сообщение",
 		okk == false and tostring(err):find("Extending non existing verb", 1, true) ~= nil,
@@ -209,6 +256,7 @@ function init()
 		test_parse()
 		test_patterns()
 		test_completion()
+		test_grammar()
 		test_regressions()
 	end)
 	if not ok_all then

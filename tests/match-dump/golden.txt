@@ -1,0 +1,955 @@
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камню самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+у камня валун	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик у камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень пёс	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень о валун	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+у камня о дверь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+о я у камня	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=камень	unknown=я,у,камня	multi=
+камню о самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камню камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+наверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+с камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+по камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+внутрь камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+наверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+руками	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+через камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+на камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+с камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+наверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+через камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+внутрь камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камне о самоцвет	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=камень	unknown=камне,о,самоцвет	multi=
+о пёс в камне	r=true	v=nil	x=nil:nil	ev=Consult reverse	args=false:-:nil:- в:-:nil:- камне:stone:1:-	hints=nil:3	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+на камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+в камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень к камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень с камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+к камню камень	r=true	v=nil	x=nil:nil	ev=Walk	args=к:-:nil:- камню:stone:1:-	hints=nil:1	unknown=nil:1	multi=
+с камнем камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камнем камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камнем камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+к камню	r=true	v=nil	x=nil:nil	ev=Walk	args=к:-:nil:- камню:stone:1:-	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камнем камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камню камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камню камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+до камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+к камню	r=true	v=nil	x=nil:nil	ev=Walk	args=к:-:nil:- камню:stone:1:-	hints=	unknown=	multi=
+камня	r=false	v=UNKNOWN_WORD	x=nil:nil	ev=-	args=	hints=камень	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+за камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень на камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень к камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень наверх	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на камень камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=nil:2	unknown=nil:2	multi=
+наверх камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень на камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень к камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень наверх	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на камень камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=nil:2	unknown=nil:2	multi=
+наверх камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень с камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с камня камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень в камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камень камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=nil:1	unknown=nil:1	multi=
+камень камню	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камню камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень в камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень внутрь камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень на камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камень камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=nil:1	unknown=nil:1	multi=
+внутрь камня камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на камень камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=nil:2	unknown=nil:2	multi=
+камень в камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень внутрь камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камень камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=nil:1	unknown=nil:1	multi=
+внутрь камня камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень из камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из камня камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень на камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камнем камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень на камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камнем камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камнем камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камнем камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+в камне	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=камень	unknown=камне	multi=
+под камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камне о пёс	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=камень	unknown=камне,о,пес	multi=
+о камень в камне	r=true	v=nil	x=nil:nil	ev=Consult reverse	args=false:-:nil:- в:-:nil:- камне:stone:1:-	hints=nil:3	unknown=	multi=
+на камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+инвентарь	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+под камнем	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под камень	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камне	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=камень	unknown=камне	multi=
+внутри камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+в камне о ключ	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- ключ:key2:1:-	hints=nil:1	unknown=nil:1	multi=
+о дверь в камне	r=true	v=nil	x=nil:nil	ev=Consult reverse	args=false:-:nil:- в:-:nil:- камне:stone:1:-	hints=nil:3	unknown=	multi=
+из камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в камень	r=true	v=nil	x=nil:nil	ev=Enter	args=в:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+наружу	r=nil	v=nil	x=Walk:@out_to	ev=-	args=	hints=	unknown=	multi=
+на север	r=true	v=nil	x=nil:nil	ev=Walk	args=на:-:nil:- север:@n_to:1:-	hints=	unknown=	multi=
+на камень	r=true	v=nil	x=nil:nil	ev=Enter	args=на:-:nil:- камень:stone:1:-	hints=	unknown=	multi=
+внутрь камня	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+к камню	r=true	v=nil	x=nil:nil	ev=Walk	args=к:-:nil:- камню:stone:1:-	hints=	unknown=	multi=
+наверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+я	r=nil	v=nil	x=Exam:player	ev=-	args=	hints=	unknown=	multi=
+эксперт да	r=true	v=nil	x=nil:nil	ev=Yes	args=	hints=	unknown=	multi=
+эксперт нет	r=true	v=nil	x=nil:nil	ev=No	args=	hints=	unknown=	multi=
+глаголы	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+версия	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+да	r=true	v=nil	x=nil:nil	ev=Yes	args=	hints=	unknown=	multi=
+нет	r=true	v=nil	x=nil:nil	ev=No	args=	hints=	unknown=	multi=
+идти положить на пёс	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={compass1},{noun}/вн,scene,enterable	unknown=пес	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+положить идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=идти	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+закрыть открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=открыть	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме осмотреть	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+с с	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+осмотреть	r=true	v=nil	x=nil:nil	ev=Look	args=	hints=nil:1	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+чтонибудь	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+положить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,held,~{noun}/вн,held,~в|~во,~внутрь,~на	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+дверь	r=nil	v=nil	x=Exam:door	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+идти	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints=на,на|в|во,внутрь,к,{compass2}	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+открыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/тв,held	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+ключ	r=nil	v=nil	x=Exam:key1	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+закрыть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,~{noun}/вн,~{noun}/тв,held	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+в	r=nil	v=nil	x=Walk:@e_to	ev=-	args=	hints=	unknown=	multi=
+ящик	r=nil	v=nil	x=Exam:box	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+взять	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	hints={noun}/вн,scene,~из|~с|~со|~у	unknown=	multi=
+валун	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+с	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+пёс	r=nil	v=nil	x=Exam:dog	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+кроме	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+север	r=nil	v=nil	x=Walk:@n_to	ev=-	args=	hints=	unknown=	multi=
+под	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+и	r=true	v=nil	x=nil:nil	ev=Inv	args=	hints=	unknown=	multi=
+самоцвет	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+слово	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+вверх	r=nil	v=nil	x=Walk:@u_to	ev=-	args=	hints=	unknown=	multi=
+из	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
+камень	r=nil	v=nil	x=Exam:stone	ev=-	args=	hints=	unknown=	multi=
+не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	hints=	unknown=	multi=
