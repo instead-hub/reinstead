@@ -8,7 +8,14 @@
 img_t *
 img_new(int w, int h)
 {
-	img_t *img = malloc(sizeof(img_t) + w * h * 4);
+	size_t size;
+	img_t *img;
+	if (w < 0 || h < 0)
+		return NULL;
+	size = sizeof(img_t) + (size_t)w * (size_t)h * 4;
+	img = malloc(size);
+	if (!img)
+		return NULL;
 	img->w = w;
 	img->h = h;
 	img->ptr = (unsigned char *)(img + 1);
@@ -168,7 +175,7 @@ pixels_new(lua_State *L, int w, int h)
 
 	if (w <=0 || h <= 0)
 		return NULL;
-	size = w * h * 4;
+	size = (size_t)w * h * 4;
 	hdr = lua_newuserdata(L, sizeof(*hdr) + size);
 	if (!hdr)
 		return 0;
@@ -198,8 +205,10 @@ gfx_pixels_new(lua_State *L)
 		b = stbi_load(fname, &w, &h, &channels, 0);
 		if (!b)
 			return 0;
-		if (!(hdr = pixels_new(L, w, h)))
+		if (!(hdr = pixels_new(L, w, h))) {
+			stbi_image_free(b);
 			return 0;
+		}
 		src = b; size = w * h * channels;
 		dst = hdr->img.ptr;
 		while (size >= (size_t)channels) {
@@ -1341,8 +1350,9 @@ static void
 img_colorize(img_t *img, color_t *col)
 {
 	unsigned char *ptr = img->ptr;
-	size_t size = img->w * img->h * 4;
-	while (size -= 4) { /* colorize! */
+	size_t size = (size_t)img->w * img->h * 4;
+	while (size >= 4) { /* colorize! */
+		size -= 4;
 		memcpy(ptr, col, 3);
 		ptr[3] = ptr[3] * col->a / 255;
 		ptr += 4;

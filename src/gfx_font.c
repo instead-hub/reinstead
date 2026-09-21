@@ -27,8 +27,14 @@ load_glyphset(font_t *font, int idx)
 	int res;
 	unsigned char c;
 	glyphset_t *set = calloc(1, sizeof(glyphset_t));
+	if (!set)
+		return NULL;
 retry:
 	set->image = img_new(w, h);
+	if (!set->image) {
+		free(set);
+		return NULL;
+	}
 	s = stbtt_ScaleForMappingEmToPixels(&font->stbfont, 1) /
 		stbtt_ScaleForPixelHeight(&font->stbfont, 1);
 	res = stbtt_BakeFontBitmap(font->data, 0,
@@ -83,6 +89,8 @@ font_width(font_t *font, const char *text)
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		glyphset_t *set = get_glyphset(font, codepoint);
+		if (!set)
+			break;
 		stbtt_bakedchar *g = &set->glyphs[codepoint & 0xff];
 		if (ocp)
 			kern = stbtt_GetCodepointKernAdvance(&font->stbfont, ocp, codepoint);
@@ -156,6 +164,8 @@ font_render(font_t *font, const char *text, img_t *img)
 	while (*p) {
 		p = utf8_to_codepoint(p, &codepoint);
 		set = get_glyphset(font, codepoint);
+		if (!set)
+			break;
 		g = &set->glyphs[codepoint & 0xff];
 		if (ocp)
 			kern = stbtt_GetCodepointKernAdvance(&font->stbfont, ocp, codepoint);

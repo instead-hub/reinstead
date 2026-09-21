@@ -110,11 +110,15 @@ font_load(const char *filename, float size)
 		font->height = round((face->ascender - face->descender) * size / font->face->units_per_EM + 0.5);
 	return font;
 err:
-	if (font->cache)
-		free(font->cache);
-	if (font->glyphs)
-		free(font->glyphs);
-	free(font);
+	if (font) {
+		if (font->cache)
+			free(font->cache);
+		if (font->glyphs)
+			free(font->glyphs);
+		if (font->face)
+			FT_Done_Face(font->face);
+		free(font);
+	}
 	return NULL;
 }
 
@@ -149,6 +153,10 @@ font_render(font_t *font, const char *text, img_t *img)
 			glyph = face->glyph;
 			FT_Render_Glyph(glyph, FT_RENDER_MODE_NORMAL);
 			g = img_new(glyph->bitmap.width, img->h);
+			if (!g) {
+				x += gi->advance;
+				continue;
+			}
 			memset(g->ptr, 0, g->w * g->h * 4);
 			i = 0;
 			yoff = face->ascender * font->size / face->units_per_EM - glyph->bitmap_top;

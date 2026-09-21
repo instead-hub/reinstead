@@ -155,13 +155,22 @@ font_render(font_t *font, const char *text, img_t *img)
 		sft_gmetrics(&font->sft, glyph, &metrics);
 		g.width = metrics.minWidth;
 		g.height = metrics.minHeight;
+		if (g.width > 256)
+			g.width = 256;
+		if (g.height > 256)
+			g.height = 256;
 		sft_render(&font->sft, glyph, g);
 		i = 0;
 		yoff = floor(lm.ascender + metrics.yOffset);
 		xoff = sft_floor(metrics.leftSideBearing);
 		if (x + xoff < 0)
 			x += -xoff;
-		for (y = 0; y < g.height; y++) {
+		y = 0;
+		if (yoff < 0) {
+			y = -yoff;
+			i = y * g.width;
+		}
+		for (; y < g.height; y++) {
 			if (yoff + y >= img->h)
 				break;
 			pos = ((y + yoff)* img->w + x + xoff) * 4;
