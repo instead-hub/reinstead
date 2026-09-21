@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2022 Peter Kosyh <p.kosyh at gmail.com>
+ * Copyright 2009-2026 Peter Kosyh <pkosyh at yandex.ru>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files
@@ -29,16 +29,16 @@
 
 #define DATA_IDF INSTEAD_IDF
 #ifdef _USE_SDL
-#ifndef __EMSCRIPTEN__
-static SDL_mutex *sem;
+#if !defined(__EMSCRIPTEN__)
+static SDL_Mutex *sem;
 #endif
 void instead_lock(void) {
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__)
 	SDL_LockMutex(sem);
 #endif
 }
 void instead_unlock(void) {
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__)
 	SDL_UnlockMutex(sem);
 #endif
 }
@@ -70,8 +70,6 @@ static char *API = NULL;
 static char *MAIN = NULL;
 
 #define STEAD_API_PATH instead_api_path
-
-#define ERR_MSG_MAX 512
 
 static struct list_head extensions = LIST_HEAD_INIT(extensions);
 
@@ -140,13 +138,9 @@ void instead_err_msg(const char *s)
 {
 	if (err_msg)
 		free(err_msg);
-	if (s) {
+	if (s)
 		err_msg = strdup(s);
-		if (err_msg && strlen(err_msg) > ERR_MSG_MAX) {
-			err_msg[ERR_MSG_MAX - 4] = 0;
-			strcat(err_msg, "...");
-		}
-	} else
+	else
 		err_msg = NULL;
 }
 
@@ -325,6 +319,17 @@ int instead_bretval(int n)
 	return lua_toboolean(L, n - N);
 }
 
+static int instead_bstatus(int n)
+{
+	int N;
+	if (!L)
+		return 0;
+	N = lua_gettop(L);  /* number of arguments */
+	if (n - N >= 0 || lua_isnil(L, n - N))
+		return 1;
+	return lua_toboolean(L, n - N);
+}
+
 int instead_iretval(int n)
 {
 	int N;
@@ -348,7 +353,7 @@ char *instead_file_cmd(char *s, int *rc)
 	instead_function("iface:cmd", args);
 	s = instead_retval(0);
 	if (rc)
-		*rc = !instead_bretval(1);
+		*rc = !instead_bstatus(1);
 	instead_clear();
 	extensions_hook(cmd);
 	return s;
@@ -370,7 +375,7 @@ char *instead_cmd(char *s, int *rc)
 	free(s);
 	s = instead_retval(0);
 	if (rc)
-		*rc = !instead_bretval(1);
+		*rc = !instead_bstatus(1);
 	instead_clear();
 	extensions_hook(cmd);
 	return s;
@@ -386,7 +391,7 @@ int instead_function(char *s, struct instead_args *args)
 	int method = 0;
 	if (!L)
 		return -1;
-	strcpy(f, s);
+	snprintf(f, sizeof(f), "%s", s);
 	p = strchr(f, '.');
 	if (!p)
 		p = strchr(f, ':');
@@ -565,7 +570,6 @@ int instead_load(char **info)
 		goto err2;
 	if (info) {
 		*info = instead_retval(0);
-		*info = instead_fromgame(*info);
 	}
 	instead_clear();
 	return rc;
@@ -757,7 +761,7 @@ static int luaB_maxn (lua_State *L) {
 }
 
 static int luaB_srandom(lua_State *L) {
-	mt_random_seed(luaL_optnumber(L, 1, time(NULL)));
+	instead_random_seed(luaL_optnumber(L, 1, time(NULL)));
 	return 0;
 }
 
@@ -766,7 +770,7 @@ static int luaB_random(lua_State *L) {
 	unsigned long r = 0;
 	long a = luaL_optnumber(L, 1, -1);
 	long b = luaL_optnumber(L, 2, -1);
-	r = mt_random();
+	r = instead_random();
 	if (a >=0 && b > a) {
 		r = a + (r % (b - a + 1));
 		lua_pushinteger(L, r);
@@ -774,7 +778,7 @@ static int luaB_random(lua_State *L) {
 		r = (r % a) + 1;
 		lua_pushinteger(L, r);
 	} else {
-		rt = mt_random_double();
+		rt = instead_random_double();
 		lua_pushnumber(L, rt);
 	}
 	return 1;
@@ -786,7 +790,7 @@ static int luaB_get_realpath(lua_State *L) {
 	const char *path = luaL_optstring(L, 1, NULL);
 	if (!path)
 		return 0;
-	strncpy(realpath, path, sizeof(realpath));
+	strncpy(realpath, path, sizeof(realpath) - 1);
 	realpath[sizeof(realpath) - 1] = 0;
 	unix_path(realpath);
 	path = getrealpath(realpath, outpath);
@@ -980,8 +984,6 @@ static int instead_platform(void)
 	snprintf(plat, sizeof(plat) - 1, "PLATFORM='ANDROID'");
 #elif defined(_WIN32)
 	snprintf(plat, sizeof(plat) - 1, "PLATFORM='WIN32'");
-#elif defined(SAILFISHOS)
-	snprintf(plat, sizeof(plat) - 1, "PLATFORM='SFOS'");
 #else
 	snprintf(plat, sizeof(plat) - 1, "PLATFORM='UNIX'");
 #endif
@@ -998,8 +1000,9 @@ static int instead_package(const char *path)
 	if (!stead_path)
 		return -1;
 	strcpy(stead_path, "package.path=\"");
-	if (path)
+	if (path) {
 		strcat(stead_path, "./?.lua;");
+	}
 
 #ifdef INSTEAD_LEGACY
 	p = instead_local_stead_path(wd);
@@ -1094,6 +1097,8 @@ static int instead_detect_api(const char *path)
 		if (api)
 			goto out;
 		p = getfilepath(path, INSTEAD_MAIN);
+		if (!p)
+			return -1;
 		if (!access(dirpath(p), R_OK))
 			api = 2;
 		free(p);
@@ -1135,7 +1140,7 @@ int instead_init_lua(const char *path, int detect)
 	unix_path(instead_cwd_path);
 	instead_cwd_path[sizeof(instead_cwd_path) - 1] = 0;
 	strncpy(instead_game_path, path, sizeof(instead_game_path) - 1);
-	instead_cwd_path[sizeof(instead_game_path) - 1] = 0;
+	instead_game_path[sizeof(instead_game_path) - 1] = 0;
 
 	if (detect && (api = instead_detect_api(path)) < 0) {
 		fprintf(stderr, "Can not detect game format: %s\n", path);
@@ -1180,7 +1185,7 @@ int instead_init_lua(const char *path, int detect)
 		instead_eval("STANDALONE=false");
 	instead_clear();
 	srand(time(NULL));
-	mt_random_init();
+	instead_random_init();
 	luaopen_lfs(L);
 	return 0;
 }
@@ -1215,7 +1220,7 @@ int instead_init(const char *path)
 		goto err;
 	}
 #ifdef _USE_SDL
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__)
 	sem = SDL_CreateMutex();
 	if (!sem)
 		goto err;
@@ -1266,7 +1271,7 @@ void instead_done(void)
 	if (wasL)
 		extensions_hook(done);
 #ifdef _USE_SDL
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__)
 	if (sem)
 		SDL_DestroyMutex(sem);
 	sem = NULL;

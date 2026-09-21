@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2017 Peter Kosyh <p.kosyh at gmail.com>
+ * Copyright 2009-2026 Peter Kosyh <pkosyh at yandex.ru>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files
@@ -131,7 +131,7 @@ int	idf_magic(const char *fname)
 int idf_setdir(idf_t idf, const char *path)
 {
 	if (idf && path)
-		strcpy(idf->cwd, path);
+		snprintf(idf->cwd, sizeof(idf->cwd), "%s", path);
 	return 0;
 }
 
@@ -340,7 +340,7 @@ err1:
 int idf_create(const char *file, const char *path)
 {
 	int rc = -1, i;
-	FILE *fd;
+	FILE *fd = NULL;
 	char *p;
 	unsigned long off = 0;
 	long dict_size = 0;
@@ -671,71 +671,58 @@ int idf_read(idff_t fil, void *ptr, int size, int maxnum)
 }
 
 #ifdef _USE_SDL
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
-#if SDL_VERSION_ATLEAST(2,0,0)
-static Sint64 idfrw_seek(struct SDL_RWops *context, Sint64 offset, int whence)
-#else
-static int idfrw_seek(struct SDL_RWops *context, int offset, int whence)
-#endif
+static Sint64 idfrw_seek(void *context, Sint64 offset, SDL_IOWhence whence)
 {
-	idff_t fil = (idff_t)context->hidden.unknown.data1;
+	idff_t fil = (idff_t)context;
 	return idf_seek(fil, offset, whence);
 }
-#if SDL_VERSION_ATLEAST(2,0,0)
-static size_t idfrw_read(struct SDL_RWops *context, void *ptr, size_t size, size_t maxnum)
-#else
-static int idfrw_read(struct SDL_RWops *context, void *ptr, int size, int maxnum)
-#endif
+
+static size_t idfrw_read(void *context, void *ptr, size_t size, SDL_IOStatus *status)
 {
-	idff_t fil = (idff_t)context->hidden.unknown.data1;
-	return idf_read(fil, ptr, size, maxnum);
+	idff_t fil = (idff_t)context;
+	return idf_read(fil, ptr, 1, size);
 }
 
-static 	int idfrw_close(struct SDL_RWops *context)
+static 	bool idfrw_close(void *context)
 {
-	if (context) {
-		idff_t fil = (idff_t)context->hidden.unknown.data1;
-		idf_close(fil);
-		SDL_FreeRW(context);
-	}
-	return 0;
+	idff_t fil = (idff_t)context;
+	idf_close(fil);
+	return true;
 }
-#if SDL_VERSION_ATLEAST(2,0,0)
-static Sint64 idfrw_size(struct SDL_RWops *context)
+
+static Sint64 idfrw_size(void *context)
 {
-	idff_t fil = (idff_t)context->hidden.unknown.data1;
+	idff_t fil = (idff_t)context;
 	if (!fil || !fil->dir)
 		return -1;
 	return fil->dir->size;
 }
-#endif
 
-SDL_RWops *RWFromIdf(idf_t idf, const char *fname)
+SDL_IOStream *RWFromIdf(idf_t idf, const char *fname)
 {
 	idff_t fil = NULL;
-	SDL_RWops *n;
+	SDL_IOStream *n;
 	fil = idf_open(idf, fname);
 	if (!fil) {
 		if (!idf || !idf->idfonly)
-			return SDL_RWFromFile(dirpath(fname), "rb");
+			return SDL_IOFromFile(dirpath(fname), "rb");
 		return NULL;
 	}
-	n = SDL_AllocRW();
-	if (!n)
-		goto err;
-#if SDL_VERSION_ATLEAST(2,0,0)
-	n->size = idfrw_size;
-#endif
-	n->seek = idfrw_seek;
-	n->read = idfrw_read;
-	n->close = idfrw_close;
-	n->hidden.unknown.data1 = fil;
+	SDL_IOStreamInterface iface;
+	SDL_INIT_INTERFACE(&iface);
+
+	iface.size = idfrw_size;
+	iface.seek = idfrw_seek;
+	iface.read = idfrw_read;
+	iface.close = idfrw_close;
+
+	n = SDL_OpenIO(&iface, fil);
+	if (!n) {
+		idf_close(fil);
+		return NULL;
+	}
 	return n;
-err:
-	if (n)
-		SDL_FreeRW(n);
-	free(fil);
-	return NULL;
 }
 #endif

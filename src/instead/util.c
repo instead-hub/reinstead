@@ -24,7 +24,7 @@
 
 #include "system.h"
 #include "util.h"
-#include "tinymt32.h"
+#include "xoshiro128.h"
 
 int get_utf8(const char *sp, unsigned long *sym_out)
 {
@@ -134,8 +134,10 @@ int is_empty(const char *str)
 {
 	if (!str || !*str)
 		return 1;
-	while (*str && !is_space(*str++))
-		return 0;
+	while (*str) {
+		if (!is_space(*str++))
+			return 0;
+	}
 	return 1;
 }
 
@@ -229,7 +231,12 @@ void unix_path(char *path)
 char *decode(iconv_t hiconv, const char *s)
 {
 	size_t s_size, chs_size, outsz, insz;
-	char *inbuf, *outbuf, *chs_buf;
+	char *outbuf, *chs_buf;
+#if defined(_USE_SDL_ICONV)
+	const char *inbuf;
+#else
+	char *inbuf;
+#endif
 	if (!s || hiconv == (iconv_t)(-1))
 		return NULL;
 	s_size = strlen(s) + 1;
@@ -239,7 +246,11 @@ char *decode(iconv_t hiconv, const char *s)
 	outsz = chs_size;
 	outbuf = chs_buf;
 	insz = s_size;
-	inbuf = (char*)s;
+#if defined(_USE_SDL_ICONV)
+	inbuf = s;
+#else
+	inbuf = (char *)s;
+#endif
 	while (insz) {
 		if (iconv(hiconv, &inbuf, &insz, &outbuf, &outsz)
 						== (size_t)(-1))
@@ -254,26 +265,26 @@ exitf:
 }
 #endif
 
-static tinymt32_t trandom;
+static xoshiro128_t trandom;
 
-void mt_random_init(void)
+void instead_random_init(void)
 {
-	tinymt32_init(&trandom, time(NULL));
+	xoshiro128_init(&trandom, time(NULL));
 }
 
-void mt_random_seed(unsigned long seed)
+void instead_random_seed(unsigned long seed)
 {
-	tinymt32_init(&trandom, seed);
+	xoshiro128_init(&trandom, seed);
 }
 
-unsigned long mt_random(void)
+unsigned long instead_random(void)
 {
-	return tinymt32_generate_uint32(&trandom);
+	return xoshiro128_next(&trandom);
 }
 
-double mt_random_double(void)
+double instead_random_double(void)
 {
-	return tinymt32_generate_32double(&trandom);
+	return xoshiro128_double(&trandom);
 }
 
 #if defined(_WIN32)

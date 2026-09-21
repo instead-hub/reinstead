@@ -38,7 +38,7 @@ CFILES= \
 	src/instead/util.c \
 	src/instead/cache.c \
 	src/instead/instead.c \
-	src/instead/tinymt32.c \
+	src/instead/xoshiro128.c \
 	src/instead/list.c \
 	src/instead_lib.c
 

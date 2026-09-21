@@ -44,18 +44,17 @@ extern char *dirpath(const char *path);
 extern void tolow(char *p);
 extern int is_absolute_path(const char *p);
 
-extern void mt_random_init(void);
-extern void mt_random_seed(unsigned long seed);
-extern unsigned long mt_random(void);
-extern double mt_random_double(void);
+extern void instead_random_init(void);
+extern void instead_random_seed(unsigned long seed);
+extern unsigned long instead_random(void);
+extern double instead_random_double(void);
 
 #define FREE(v) do { if ((v)) free((v)); v = NULL; } while(0)
 
 #ifdef _USE_SDL
- #include <SDL_config.h>
- #include <SDL_mutex.h>
+ #include <SDL3/SDL_mutex.h>
  #ifdef _USE_SDL_ICONV
-  #include <SDL_stdinc.h>
+  #include <SDL3/SDL_stdinc.h>
   #define iconv SDL_iconv
   #define iconv_t SDL_iconv_t
   #define iconv_open SDL_iconv_open
