@@ -407,11 +407,12 @@ top:
 	case SDL_TEXTEDITING:
 		if (e.text.text[0] && e.text.text[strlen(e.text.text) - 1] == '\001') { /* more */
 			e.text.text[strlen(e.text.text) - 1] = 0;
-			if (strlen(edit_str) + strlen(e.text.text) + 1 < sizeof(edit_str))
-				strcat(edit_str, e.text.text);
+			strncat(edit_str, e.text.text,
+				sizeof(edit_str) - strlen(edit_str) - 1);
 			goto top;
 		}
-		strcat(edit_str, e.text.text);
+		strncat(edit_str, e.text.text,
+			sizeof(edit_str) - strlen(edit_str) - 1);
 		lua_pushstring(L, "edit");
 		lua_pushstring(L, edit_str);
 		edit_str[0] = 0;
