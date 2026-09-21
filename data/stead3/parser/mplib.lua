@@ -1068,7 +1068,7 @@ function mp:check_touch()
 		end
 		return true
 	end
-	if self.second and not self.second:access() and not self.first:type'room' then
+	if self.second and not self.second:access() and not self.second:type'room' then
 		p (mp:mesg('ACCESS2') or "{#Second} is not accessible.")
 		if std.here() ~= std.me():where() then
 			mp:message 'EXITBEFORE'

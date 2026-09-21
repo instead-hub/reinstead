@@ -895,7 +895,7 @@ function mp:verb(t, w, extend, extend_words)
 		n = 2
 	end
 	if extend and (not rem or not verb.tag) then
-		std.err("Extending non existing verb "..verb.tag or '#Undefined', 2)
+		std.err("Extending non existing verb "..(verb.tag or '#Undefined'), 2)
 	end
 	if extend then
 		verb.verb = rem.verb
