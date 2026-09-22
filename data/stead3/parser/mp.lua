@@ -1046,6 +1046,45 @@ function mp:verbs()
 	return t
 end
 
+--- First character of a normalized word (memoized).
+local first_char_cache = {}
+local first_char_n = 0
+local function first_char(w)
+	local c = first_char_cache[w]
+	if c == nil then
+		c = mp.utf.char(mp:norm(w), 1) or false
+		if first_char_n > 4096 then
+			first_char_cache = {}
+			first_char_n = 0
+		end
+		first_char_cache[w] = c
+		first_char_n = first_char_n + 1
+	end
+	return c or nil
+end
+
+--- Set of the first characters of normalized words (cheap prefilter).
+-- A word can only match if its first character is present in the input.
+local function first_chars(words)
+	local set = {}
+	for _, w in ipairs(words) do
+		local c = first_char(w)
+		if c then
+			set[c] = true
+		end
+	end
+	return set
+end
+
+--- Shallow copy of a table (one level).
+local function shallow(t)
+	local r = {}
+	for k, v in pairs(t) do
+		r[k] = v
+	end
+	return r
+end
+
 local function word_search(t, w, lev)
 	local arg_nr
 	w = str_split(w, mp.inp_delim)
@@ -1107,13 +1146,19 @@ end
 function mp:lookup_verb(words, lev)
 	local ret = {}
 	local w = self:verbs()
+	local vwords = mp.strict_mode and { words[1] } or words
+	local first = not lev and first_chars(vwords)
 	for _, v in ipairs(w) do -- verbs
 		local lev_v = {}
 		for _, vv in ipairs(v.verb) do
 			local verb = vv.word .. (vv.morph or "")
 			local i, len, arg_nr
-			local vwords = mp.strict_mode and { words[1] } or words
-			i, len, arg_nr = word_search(vwords, verb, lev and self.lev_thresh)
+			local fc = first and first_char(vv.word)
+			if first and fc and not first[fc] then
+				i = false
+			else
+				i, len, arg_nr = word_search(vwords, verb, lev and self.lev_thresh)
+			end
 			if not i and not lev and vv.morph then
 				i, len = self:lookup_short(vwords, vv.word)
 				if i then
@@ -1134,10 +1179,7 @@ function mp:lookup_verb(words, lev)
 				if lev then
 					table.insert(lev_v, { lev = arg_nr, verb = v, verb_nr = i, verb_len = len, word_nr = _ } )
 				else
-					local vc = std.clone(v)
-					for k, d in ipairs(vc.dsc) do
-						d.compiled = v.dsc[k].compiled
-					end
+					local vc = shallow(v) -- verb.verb/dsc are read-only in match
 					vc.verb_nr = i
 					vc.verb_len = len
 					vc.word_nr = _
@@ -1630,8 +1672,11 @@ end
 local function disambiguate(self, pat, hit, arg_nr)
 	local exact
 	local multi_add = {}
+	local hc = first_char(hit.word)
 	for _, pp in ipairs(pat) do
-		if pp.ob and pp.ob ~= hit.ob and self:eq(hit.word, pp.word) then
+		if pp.ob and pp.ob ~= hit.ob and
+			(not hc or first_char(pp.word) == hc) and
+			self:eq(hit.word, pp.word) then
 			if not hit.multi then
 				hit.multi = {}
 			end
@@ -1673,6 +1718,7 @@ local function find_alternative(self, a, pat, v)
 		required_seen = false,
 		default = false,
 	}
+	local first = first_chars(a)
 	for _, pp in ipairs(pat) do -- single argument
 		if v == '*' then break end
 		res.required = not pp.optional
@@ -1683,13 +1729,17 @@ local function find_alternative(self, a, pat, v)
 		if res.default then
 			res.word = pp.word
 		end
-		local new_wildcard
-		local k, len = word_search(a, pp.word)
-		if not k and mp.compare_len > 0 and not pp.synonym then
-			k, len = word_search(a, pp.word, starteq)
-			new_wildcard = true
+		local new_wildcard = false
+		local k, len
+		local fc = first_char(pp.word)
+		if fc and not first[fc] then
+			k = false
 		else
-			new_wildcard = false
+			k, len = word_search(a, pp.word)
+			if not k and mp.compare_len > 0 and not pp.synonym then
+				k, len = word_search(a, pp.word, starteq)
+				new_wildcard = true
+			end
 		end
 		if (not res.required or mp.strict_mode) and k ~= 1 then
 			k = false -- ?word is only in 1st pos
@@ -3204,14 +3254,26 @@ function std.obj:hasnt(attr)
 	return not self:has(attr)
 end
 
+local attr_cache = {}
+
+local function attr_parse(attr)
+	local c = attr_cache[attr]
+	if not c then
+		local a = std.strip(attr)
+		local val = (a:find("~", 1, true) ~= 1)
+		a = a:gsub("^~", "")
+		c = { name = '__attr__' .. a, val = val }
+		attr_cache[attr] = c
+	end
+	return c
+end
+
 function std.obj:has(attr)
-	attr = std.strip(attr)
-	local val =  (attr:find("~", 1, true) ~= 1)
-	attr = attr:gsub("^~", "")
-	if val then
-		return self['__attr__' .. attr]
+	local c = attr_parse(attr)
+	if c.val then
+		return self[c.name]
 	else
-		return not self['__attr__' .. attr]
+		return not self[c.name]
 	end
 end
 
