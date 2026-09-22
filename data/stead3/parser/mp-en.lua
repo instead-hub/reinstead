@@ -741,8 +741,8 @@ mp.keyboard = {
 }
 
 function mp:err_noun(noun)
-	if noun == '*' then return "{$fmt em|<word>}" end
-	return "{$fmt em|noun}"
+	if noun == '*' then return "<word>" end
+	return "noun"
 end
 
 function mp:before_Enter(w)

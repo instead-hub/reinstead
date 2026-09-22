@@ -97,7 +97,8 @@ function mp:err(err)
 		else
 			if need_noun then
 				if second_noun then
-					mp:message('INCOMPLETE_SECOND_NOUN', second_noun .." " ..mp:err_noun(need_noun))
+					mp:message('INCOMPLETE_SECOND_NOUN',
+						second_noun .. " " .. iface:em(mp:err_noun(need_noun)))
 				else
 					mp:message('INCOMPLETE_NOUN', parsed)
 				end
@@ -140,7 +141,6 @@ function mp:err(err)
 				end
 				if cont then
 					cont = mp:err_noun(cont)
-					cont = cont:match("^{%$fmt em|(.*)}$") or cont
 					if not dups[cont] then
 						tail = cont
 					end

@@ -654,12 +654,11 @@ local function hints(w)
 end
 
 function mp:err_noun(noun)
-	if noun == '*' then return "{$fmt em|<любое слово>}" end
+	if noun == '*' then return "<любое слово>" end
 	local hint = std.split(noun, "/")
-	local rc = "{$fmt em|"
+	local acc = 'кто/что'
 	if #hint == 2 then
 		local h = hints(hint[2])
-		local acc = 'кто/что'
 		if h["им"] then
 			acc = 'кто/что'
 		elseif h["рд"] then
@@ -673,12 +672,8 @@ function mp:err_noun(noun)
 		elseif h["пр"] or h["пр2"] then
 			acc = 'ком/чём'
 		end
-		rc = rc ..  acc
-	else
-		rc = rc .. "кто/что"
 	end
-	rc = rc .. "}"
-	return rc
+	return acc
 end
 
 function mp.shortcut.vo(hint)
