@@ -1653,6 +1653,7 @@ function mp:compl_match(words)
 		if #matches > 0 and #matches[1].match > hints.lev then
 			return res, false, not not matches[1].match.vargs
 		end
+		v = v:match("^(.-)\1") or v -- strip the continuation placeholder
 		local pat = self:pattern(v)
 		for _, p in ipairs(pat) do
 			table.insert(res, p)
@@ -1996,8 +1997,19 @@ end
 
 --- Handle a missing required slot: collect unknown words and fuzzy hints.
 -- Returns true if the descriptor must be abandoned.
-local function slot_missing(self, st, out, pat, v, noun, compl)
+local function slot_missing(self, st, out, pat, v, noun, compl, d, lev)
 	local match, res = st.match, st.res
+	-- placeholder of the next noun/star slot, e.g. "{noun}/рд" for "из|с|со|у"
+	local cont
+	if not noun then
+		for i = lev + 1, #d.pat do
+			local el = d.pat[i]:gsub("^[~+?]", "")
+			if el == '*' or el == '~*' or el:find("^{noun}") then
+				cont = el:gsub("^~", "")
+				break
+			end
+		end
+	end
 	for i = 1, res.best - 1 do
 		table.insert(out.unknown, { word = st.a[i], lev = st.arg_nr, noun = noun })
 	end
@@ -2018,7 +2030,7 @@ local function slot_missing(self, st, out, pat, v, noun, compl)
 			end
 		end
 	end
-	table.insert(out.hints, { word = v, lev = st.arg_nr, match = match })
+	table.insert(out.hints, { word = cont and (v .. "\1" .. cont) or v, lev = st.arg_nr, match = match })
 	return true
 end
 
@@ -2116,7 +2128,7 @@ function mp:match(verb, w, compl)
 			elseif st.varg_pat then
 				stop = slot_varg(self, st, out, v, lev, d)
 			elseif st.res.required then
-				stop = slot_missing(self, st, out, pat, v, noun, compl)
+				stop = slot_missing(self, st, out, pat, v, noun, compl, d, lev)
 			else
 				slot_optional(st)
 			end

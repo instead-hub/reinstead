@@ -129,6 +129,13 @@ local function test_parse()
 		r == false and mp.extra and mp:match_words(mp.extra) == "взять камень",
 		mp.extra and mp:match_words(mp.extra))
 
+	-- missing required slot: hint carries the continuation placeholder
+	r = parse "взять камень в руки"
+	local hinted = table.concat(mp.hints, "|")
+	ok("подсказка с плейсхолдером следующего слота",
+		hinted:find("\1{noun}", 1, true) ~= nil, hinted)
+	ok("падеж плейсхолдера", mp:err_noun("{noun}/рд"):find("кого/чего", 1, true) ~= nil)
+
 	-- unknown verb
 	local r3, v3 = parse "прыгнуть через луну"
 	ok("неизвестный глагол -> ошибка", r3 == false and v3 ~= nil, v3)

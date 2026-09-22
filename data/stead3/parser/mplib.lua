@@ -110,6 +110,7 @@ function mp:err(err)
 		end
 		local words = {}
 		local dups = {}
+		local tail
 		for _, v in ipairs(self.hints) do
 			if v:find("^~?{noun}") or v == '*' or v == '~*' then
 				if v:sub(1,1) == '~' then v = v:sub(2) end
@@ -119,6 +120,10 @@ function mp:err(err)
 					dups[v] = true
 				end
 			else
+				local main, cont = v:match("^(.-)\1(.*)$")
+				if main then
+					v = main
+				end
 				local pat = self:pattern(v)
 				local empty = true
 				for _, vv in ipairs(pat) do
@@ -131,6 +136,13 @@ function mp:err(err)
 					if (empty or not vv.hidden) and not dups[vv.word] then
 						table.insert(words, vv.word)
 						dups[vv.word] = true
+					end
+				end
+				if cont then
+					cont = mp:err_noun(cont)
+					cont = cont:match("^{%$fmt em|(.*)}$") or cont
+					if not dups[cont] then
+						tail = cont
 					end
 				end
 			end
@@ -159,7 +171,10 @@ function mp:err(err)
 			end
 			pr(iface:em(v))
 		end
-		if #words > 0 then
+		if tail then
+			pr(" ", iface:em(tail))
+		end
+		if #words > 0 or tail then
 			p "?"
 		end
 		if self.extra then

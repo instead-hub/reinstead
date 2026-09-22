@@ -366,7 +366,7 @@ local function fmt_words(t)
 		if type(v) == 'table' then
 			table.insert(r, tostring(v.word) .. ":" .. tostring(v.lev))
 		else
-			table.insert(r, tostring(v))
+			table.insert(r, (tostring(v):gsub("\1", "|>")))
 		end
 	end
 	return table.concat(r, ",")
