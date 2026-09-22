@@ -627,6 +627,38 @@ function mp.token.noun_obj(w)
 	return mp.token.noun(w)
 end
 
+--- Cached word forms of an object for a morph hint.
+-- Returns the form list and the alias records. The cache lives on the object
+-- and is invalidated when ob.word changes; dynamic words (functions) are not
+-- cached. Cached forms are read-only for the parser.
+function mp:noun_forms(ob, attr)
+	attr = attr or ''
+	local w = ob.word
+	if type(w) ~= 'string' or ob.raw_word ~= nil then
+		local d = {}
+		local r = ob:noun(attr, d)
+		return r, d
+	end
+	local c = ob.__noun_cache
+	if not c or c.word ~= w then
+		c = { word = w, forms = {}, n = 0 }
+		std.rawset(ob, '__noun_cache', c)
+	end
+	local e = c.forms[attr]
+	if not e then
+		if c.n > 12 then
+			c.forms = {}
+			c.n = 0
+		end
+		local d = {}
+		local r = ob:noun(attr, d)
+		e = { r, d }
+		c.forms[attr] = e
+		c.n = c.n + 1
+	end
+	return e[1], e[2]
+end
+
 function mp.token.noun(w)
 	local attr = w.morph or ''
 	local oo
@@ -647,8 +679,7 @@ function mp.token.noun(w)
 	}
 	local syms = {}
 	for _, o in ipairs(oo) do
-		local d = {}
-		local r = o:noun(attr, d)
+		local r, d = mp:noun_forms(o, attr)
 		if o == std.me() and mp.myself then
 			for _, vm in ipairs(mp:myself(o, w.morph) or {}) do
 				table.insert(ww, { optional = w.optional, word = vm, morph = attr, ob = o, alias = o.alias,
@@ -2528,8 +2559,7 @@ function mp:lookup_noun(w, lev)
 	local res = {}
 	local oo = self.cache.nouns
 	for _, o in ipairs(oo) do
-		local ww = {}
-		o:noun(ww)
+		local _, ww = mp:noun_forms(o, nil)
 		for _, d in ipairs(ww) do
 			k, len = word_search(w, d.word, lev)
 			if k and len == #w then
