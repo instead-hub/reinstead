@@ -2608,10 +2608,16 @@ function mp:lookup_noun(w, lev)
 	local k, len
 	local res = {}
 	local oo = self.cache.nouns
+	local first = not lev and first_chars(w)
 	for _, o in ipairs(oo) do
 		local _, ww = mp:noun_forms(o, nil)
 		for _, d in ipairs(ww) do
-			k, len = word_search(w, d.word, lev)
+			local fc = first and first_char(d.word)
+			if first and fc and not first[fc] then
+				k = false
+			else
+				k, len = word_search(w, d.word, lev)
+			end
 			if k and len == #w then
 				d.ob = o
 				table.insert(res, d)
@@ -3201,21 +3207,23 @@ function std.obj:It(hint)
 end
 
 function mp:traceinside(w, fn)
-	local ww = w and w.obj or std.here().obj
-	while #ww > 0 do
-		local nww = {}
-		for _, o in ipairs(ww) do
-			local r, v = fn(o)
-			if r ~= nil then
-				return r
-			end
-			if v ~= false then
-				for _, vv in ipairs(o.obj) do
-					table.insert(nww, vv)
-				end
+	local ww = {}
+	for _, o in ipairs(w and w.obj or std.here().obj) do
+		table.insert(ww, o)
+	end
+	local i = 1
+	while i <= #ww do
+		local o = ww[i]
+		i = i + 1
+		local r, v = fn(o)
+		if r ~= nil then
+			return r
+		end
+		if v ~= false then
+			for _, vv in ipairs(o.obj) do
+				table.insert(ww, vv)
 			end
 		end
-		ww = nww
 	end
 end
 
@@ -3225,18 +3233,17 @@ end
 function mp:trace(w, fn)
 	local ww = {}
 	w:where(ww)
-	while #ww > 0 do
-		local nww = {}
-		for _, o in ipairs(ww) do
-			local r, v = fn(o)
-			if r ~= nil then
-				return r
-			end
-			if v ~= false then
-				o:where(nww)
-			end
+	local i = 1
+	while i <= #ww do
+		local o = ww[i]
+		i = i + 1
+		local r, v = fn(o)
+		if r ~= nil then
+			return r
 		end
-		ww = nww
+		if v ~= false then
+			o:where(ww)
+		end
 	end
 end
 

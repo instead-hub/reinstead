@@ -508,29 +508,33 @@ function std.obj:access()
 	if mp.scope:lookup(self) then
 		return true
 	end
-	mp:trace(std.me(), function(v)
---		if v:has 'concealed' then
---			return nil, false
---		end
+	local ww = {}
+	std.me():where(ww)
+	local i = 1
+	while i <= #ww do
+		local v = ww[i]
+		i = i + 1
 		plw[v] = true
-		if v:has 'container' then -- or v:has 'supporter' then
-			return nil, false
+		if not v:has 'container' then
+			v:where(ww)
 		end
-	end)
-	return mp:trace(self, function(v)
---		if v:has 'concealed' then
---			return nil, false
---		end
+	end
+	ww = {}
+	self:where(ww)
+	i = 1
+	while i <= #ww do
+		local v = ww[i]
+		i = i + 1
 		if check_persist(v) then
 			return true
 		end
 		if plw[v] then
 			return true
 		end
-		if v:has 'container' and not v:has 'open' then
-			return nil, false
+		if not (v:has 'container' and not v:has 'open') then
+			v:where(ww)
 		end
-	end)
+	end
 end
 
 function mp:distance(v, wh)
@@ -591,19 +595,23 @@ function std.obj:visible()
 		return true
 	end
 
-	mp:trace(std.me(), function(v)
---		if v:has 'concealed' then
---			return nil, false
---		end
+	local ww = {}
+	std.me():where(ww)
+	local i = 1
+	while i <= #ww do
+		local v = ww[i]
+		i = i + 1
 		table.insert(plw, v)
-		if v:has 'container' and not v:has 'transparent' and not v:has 'open' then
-			return nil, false
+		if not (v:has 'container' and not v:has 'transparent' and not v:has 'open') then
+			v:where(ww)
 		end
-	end)
-	return mp:trace(self, function(v)
---		if v:has 'concealed' then
---			return nil, false
---		end
+	end
+	ww = {}
+	self:where(ww)
+	i = 1
+	while i <= #ww do
+		local v = ww[i]
+		i = i + 1
 		if check_persist(v) then
 			return true
 		end
@@ -612,10 +620,10 @@ function std.obj:visible()
 				return true
 			end
 		end
-		if v:has 'container' and not v:has 'transparent' and not v:has 'open' then
-			return nil, false
+		if not (v:has 'container' and not v:has 'transparent' and not v:has 'open') then
+			v:where(ww)
 		end
-	end)
+	end
 end
 
 -- dialogs
