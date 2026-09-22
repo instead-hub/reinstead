@@ -213,6 +213,9 @@ mp.msg.UNKNOWN_OBJ = function(w)
 	end
 end
 mp.msg.NOTHING_OBJ = "Ничего подходящего нет."
+mp.msg.INCOMPLETE_EXTRA = function(w)
+	p ("Или просто: ", iface:em(w), ".")
+end
 mp.msg.UNKNOWN_WORD = function(w)
 	if not w then
 		p "Фраза не распознана."

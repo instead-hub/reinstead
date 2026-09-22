@@ -162,6 +162,9 @@ function mp:err(err)
 		if #words > 0 then
 			p "?"
 		end
+		if self.extra then
+			mp:message('INCOMPLETE_EXTRA', mp:match_words(self.extra))
+		end
 	elseif err == "MULTIPLE" then
 		pr (mp:mesg 'MULTIPLE', " ", self.multi[1])
 		for k = 2, #self.multi do

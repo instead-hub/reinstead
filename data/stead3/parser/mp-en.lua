@@ -379,6 +379,9 @@ mp.msg.UNKNOWN_OBJ = function(w)
 		p ("(", w, ").")
 	end
 end
+mp.msg.INCOMPLETE_EXTRA = function(w)
+	p ("Or simply: ", iface:em(w), ".")
+end
 mp.msg.UNKNOWN_WORD = function(w)
 	if not w then
 		p "Phrase not recognized."

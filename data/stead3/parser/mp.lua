@@ -309,6 +309,7 @@ mp = std.obj {
 		hints = {};
 		unknown = {};
 		multi = {};
+		extra = false;
 		token = {};
 		shortcut = {};
 		snapshot = false;
@@ -1865,7 +1866,7 @@ local function drop_extra(matches, unknown, multi)
 		return false
 	end
 	if ranked(unknown) or ranked(multi) then
-		return {}
+		return {}, matches[1]
 	end
 	return matches
 end
@@ -2056,6 +2057,15 @@ local function accept_descriptor(self, st, matches, fixed_verb)
 	end
 end
 
+--- Text of the matched words of a match (for hints), e.g. "взять камень".
+function mp:match_words(m)
+	local w = {}
+	for i = 1, #m do
+		w[i] = tostring(m[i])
+	end
+	return table.concat(w, " ")
+end
+
 --- Match one verb candidate against the input words.
 -- A match record is an array of words (verb + words of matched slots) with:
 --   ev        -- event to run (descriptor after ':')
@@ -2119,8 +2129,10 @@ function mp:match(verb, w, compl)
 
 	matches = rank_matches(matches)
 	-- self:debug_match(matches, out.hints, out.unknown, out.multi) -- uncomment to trace match results
-	matches = drop_extra(matches, out.unknown, out.multi)
-	return finalize(matches, out.hints, out.unknown, out.multi)
+	local extra
+	matches, extra = drop_extra(matches, out.unknown, out.multi)
+	local m, h, u, mu = finalize(matches, out.hints, out.unknown, out.multi)
+	return m, h, u, mu, extra
 end
 
 local function get_events(self, ev)
@@ -2714,6 +2726,7 @@ function mp:input(str)
 	self.hints = hints
 	self.unknown = unknown
 	self.multi = multi
+	self.extra = false
 
 	if (self.default_Verb or std.here().default_Verb) and str == "" then
 		str = std.here().default_Verb or self.default_Verb
@@ -2781,7 +2794,7 @@ function mp:input(str)
 	end
 	local matches = {}
 	for _, v in ipairs(verbs) do
-		local m, h, u, mu = self:match(v, w)
+		local m, h, u, mu, ex = self:match(v, w)
 		if #m > 0 then
 			table.insert(matches, { verb = v, match = m[1] })
 		end
@@ -2793,6 +2806,9 @@ function mp:input(str)
 		end
 		if #mu > 0 then
 			table.insert(multi, mu)
+		end
+		if ex and (not self.extra or #ex > #self.extra) then
+			self.extra = ex
 		end
 	end
 	table.sort(matches, function(a, b)

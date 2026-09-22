@@ -123,6 +123,12 @@ local function test_parse()
 	local r2 = parse ""
 	ok("пустой ввод -> Look (default_Verb)", r2 and mp.parsed.ev == 'Look', mp.parsed and mp.parsed.ev)
 
+	-- extra words: the parser remembers the matched prefix for hints
+	r = parse "взять камень в руки"
+	ok("лишние слова: подсказка-префикс",
+		r == false and mp.extra and mp:match_words(mp.extra) == "взять камень",
+		mp.extra and mp:match_words(mp.extra))
+
 	-- unknown verb
 	local r3, v3 = parse "прыгнуть через луну"
 	ok("неизвестный глагол -> ошибка", r3 == false and v3 ~= nil, v3)

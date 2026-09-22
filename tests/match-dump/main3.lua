@@ -433,6 +433,7 @@ local function snap(inp, r, v)
 		"hints=" .. fmt_words(mp.hints),
 		"unknown=" .. fmt_words(mp.unknown),
 		"multi=" .. fmt_words(mp.multi),
+		"extra=" .. (mp.extra and mp:match_words(mp.extra) or "-"),
 	}, "\t"))
 end
 
