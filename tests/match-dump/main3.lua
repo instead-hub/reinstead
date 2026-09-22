@@ -232,11 +232,24 @@ local function swapped(words, a, b)
 end
 
 local function gen_corpus()
-	local corpus = {}
+	local corpus, sample = {}, {}
 	local n = 0
-	local function push(words)
+	local ncase = 0
+	local function push(words, important)
 		if words and #words > 0 then
-			table.insert(corpus, table.concat(words, " "))
+			local s = table.concat(words, " ")
+			table.insert(corpus, s)
+			ncase = ncase + 1
+			if important or (ncase % 12) == 0 then
+				table.insert(sample, s)
+			end
+		end
+	end
+	local function push_str(inp, important)
+		table.insert(corpus, inp)
+		ncase = ncase + 1
+		if important or (ncase % 12) == 0 then
+			table.insert(sample, inp)
 		end
 	end
 	local function mutate(words, with_verb)
@@ -298,7 +311,7 @@ local function gen_corpus()
 		end
 	end
 	for _, inp in ipairs(explicit) do
-		table.insert(corpus, inp)
+		push_str(inp, true)
 	end
 	-- compass movement, word orders and input shortenings
 	local compass = {
@@ -318,7 +331,7 @@ local function gen_corpus()
 		"о камень", "осм камень", "см камень", "вкл камень", "выкл камень",
 	}
 	for _, inp in ipairs(compass) do
-		table.insert(corpus, inp)
+		push_str(inp, true)
 	end
 	-- targeted: every object noun/alias with Take/Exam, to cover shared aliases
 	for _, o in ipairs(mp.cache.nouns) do
@@ -326,8 +339,8 @@ local function gen_corpus()
 		o:noun(ww)
 		for _, w in ipairs(ww) do
 			if w.word and w.word ~= '' then
-				table.insert(corpus, "взять " .. w.word)
-				table.insert(corpus, "осмотреть " .. w.word)
+				push_str("взять " .. w.word, true)
+				push_str("осмотреть " .. w.word, true)
 			end
 		end
 	end
@@ -337,9 +350,9 @@ local function gen_corpus()
 		for _ = 1, len do
 			table.insert(w, vocab[1 + rnd(#vocab)])
 		end
-		table.insert(corpus, table.concat(w, " "))
+		push(w)
 	end
-	return corpus
+	return corpus, sample
 end
 
 local last_xact = {}
@@ -363,6 +376,32 @@ local function match_words(p)
 	local r = {}
 	for i = 1, #p do
 		table.insert(r, tostring(p[i]))
+	end
+	return table.concat(r, ",")
+end
+
+-- emulate typing to build the completion context, then return candidates
+local function complete(inp)
+	mp.inp = ''
+	mp:compl_reset()
+	mp:compl_fill(mp:compl '')
+	local c
+	for i = 1, #inp do
+		mp.inp = inp:sub(1, i)
+		c = mp:compl(mp.inp)
+		mp:compl_fill(c)
+	end
+	return mp.completions
+end
+
+local function fmt_compl(t)
+	local r = {}
+	for _, v in ipairs(t or {}) do
+		if type(v) == 'table' then
+			table.insert(r, tostring(v.word) .. (v.hidden and "~" or ""))
+		else
+			table.insert(r, tostring(v))
+		end
 	end
 	return table.concat(r, ",")
 end
@@ -411,7 +450,7 @@ local function run_dump()
 	mp.cache.nouns = mp:nouns()
 	local cur_inp = '?'
 	local ok, err = xpcall(function()
-		local corpus = gen_corpus()
+		local corpus, sample = gen_corpus()
 		for _, inp in ipairs(corpus) do
 			cur_inp = inp
 			last_xact = {}
@@ -420,11 +459,20 @@ local function run_dump()
 			local r, v = mp:input(mp:norm(inp))
 			f:write(snap(inp, r, v), "\n")
 		end
+		f:close()
+		local cf = io.open(dir .. 'out-compl.txt', 'w')
+		for _, inp in ipairs(sample) do
+			cur_inp = inp
+			mp.cache.nouns = mp:nouns()
+			local comp = complete(inp)
+			local tab = mp:docompl(inp)
+			cf:write(inp .. "\t" .. fmt_compl(comp) .. "\t" .. tostring(tab) .. "\n")
+		end
+		cf:close()
 	end, function(e) return tostring(e) .. " @ [" .. tostring(cur_inp) .. "]" end)
 	if not ok then
 		print("DUMP FAIL: " .. tostring(err))
 	end
-	f:close()
 	print("match-dump done")
 	os.exit(0)
 end

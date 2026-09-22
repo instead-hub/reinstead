@@ -21,13 +21,17 @@ rc=0
 # timeout guards against hanging if tests never reach os.exit()
 SDL_VIDEODRIVER=dummy timeout 120 "$BIN" -appdata "$APPDATA" -noautosave "$ROOT/tests/parser-tests" || rc=1
 
-# golden snapshot of mp:match behavior on a deterministic corpus
-SDL_VIDEODRIVER=dummy timeout 300 "$BIN" -appdata "$APPDATA" -noautosave "$DUMP" >/dev/null 2>&1 || rc=1
-if diff -u "$DUMP/golden.txt" "$DUMP/out.txt"; then
-	rm -f "$DUMP/out.txt"
-else
-	echo "match-dump: golden mismatch" >&2
-	rc=1
-fi
+# golden snapshots of mp:match and mp:compl on a deterministic corpus
+SDL_VIDEODRIVER=dummy timeout 600 "$BIN" -appdata "$APPDATA" -noautosave "$DUMP" >/dev/null 2>&1 || rc=1
+for pair in "golden.txt:out.txt" "golden-compl.txt:out-compl.txt"; do
+	golden=${pair%%:*}
+	out=${pair##*:}
+	if diff -u "$DUMP/$golden" "$DUMP/$out"; then
+		rm -f "$DUMP/$out"
+	else
+		echo "match-dump: $golden mismatch" >&2
+		rc=1
+	fi
+done
 
 exit $rc
