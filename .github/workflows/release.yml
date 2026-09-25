@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve version
         id: ver
@@ -52,14 +52,14 @@ jobs:
 
       - name: Cache libs
         id: cache-libs
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: external
           key: libs-v2-${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}-${{ hashFiles('contrib/build-release.sh') }}
 
       - name: Cache manual
         id: cache-doc
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: doc-pdf
           key: doc-${{ env.mmd_ver }}-${{ hashFiles('doc/manual.md', 'doc/manual.tex', 'doc/preamble.tex', 'doc/Makefile', 'doc/img/**') }}
@@ -96,9 +96,12 @@ jobs:
       - name: Package
         run: |
           VER='${{ steps.ver.outputs.version }}'
-          mkdir -p artifact
-          (cd release && zip -r "../artifact/reinstead-$VER.zip" .)
-          cp "doc-pdf/manual.pdf" "artifact/reinstead-$VER-manual.pdf"
+          mkdir -p artifact/reinstead
+          cp -r release/. artifact/reinstead/
+          cp doc-pdf/manual.pdf artifact/reinstead/doc/
+          (cd artifact && zip -r "reinstead-$VER.zip" reinstead)
+          rm -rf artifact/reinstead
+          cp doc-pdf/manual.pdf "artifact/reinstead-$VER-manual.pdf"
 
       - name: Create draft release
         env:
@@ -108,7 +111,7 @@ jobs:
           gh release create "$VER" --draft --title "RE:INSTEAD $VER" --generate-notes artifact/*
 
       - name: Publish Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reinstead-${{ steps.ver.outputs.version }}
           path: artifact
