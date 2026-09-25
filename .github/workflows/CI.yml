@@ -2,41 +2,86 @@ name: CI
 
 on:
   push:
-    branches: [master]
   workflow_dispatch:
   pull_request:
 
+env:
+  SDL3_VER: "3.4.16"
+
 jobs:
   build:
-    name: CI
-    runs-on: ubuntu-latest
+    name: CI (${{ matrix.sdl }})
+    runs-on: ubuntu-26.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sdl: sdl2
+            sdlv: "2"
+          - sdl: sdl3
+            sdlv: "3"
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_COMPRESS: "true"
+      CCACHE_MAXSIZE: 500M
     steps:
       - uses: actions/checkout@v7
+
       - name: Install Packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib libsdl2-dev libluajit-5.1-dev libfreetype-dev
-          sudo apt-get install -y build-essential
+          sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib libsdl2-dev libsdl3-dev libluajit-5.1-dev libfreetype-dev
+          sudo apt-get install -y build-essential ccache wget
+          sudo ln -sf /usr/bin/ccache /usr/lib/ccache/cc
+          sudo ln -sf /usr/bin/ccache /usr/lib/ccache/gcc
+          sudo ln -sf /usr/bin/ccache /usr/lib/ccache/i686-w64-mingw32-gcc
+          sudo ln -sf /usr/bin/ccache /usr/lib/ccache/i686-w64-mingw32-g++
+          echo "/usr/lib/ccache" >> "$GITHUB_PATH"
+
+      - name: Cache ccache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ runner.os }}-${{ matrix.sdl }}-${{ env.SDL3_VER }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ runner.os }}-${{ matrix.sdl }}-${{ env.SDL3_VER }}-
+
+      - if: matrix.sdl == 'sdl3'
+        name: Cache mingw SDL3
+        id: cache-sdl3-mingw
+        uses: actions/cache@v6
+        with:
+          path: windows/SDL3
+          key: sdl3-mingw-${{ runner.os }}-${{ env.SDL3_VER }}
+
+      - if: matrix.sdl == 'sdl3' && steps.cache-sdl3-mingw.outputs.cache-hit != 'true'
+        name: Fetch mingw SDL3
+        run: |
+          wget -q "https://github.com/libsdl-org/SDL/releases/download/release-$SDL3_VER/SDL3-devel-$SDL3_VER-mingw.tar.gz"
+          tar xf "SDL3-devel-$SDL3_VER-mingw.tar.gz"
+          mkdir -p windows/SDL3
+          cp -r "SDL3-$SDL3_VER/i686-w64-mingw32/." windows/SDL3/
 
       - name: build-default
-        run: |
-          ./make-default.sh
+        run: SDLVER=${{ matrix.sdl }} ./make-default.sh
 
       - name: build-win
-        run: |
-          ./make-win.sh
+        run: SDLV=${{ matrix.sdlv }} ./make-win.sh
 
       - name: build-make
         run: |
           make clean
-          make
+          make SDLVER=${{ matrix.sdl }}
 
       - name: build-freetype
         run: |
           make clean
-          make WITH_FREETYPE=1
+          make WITH_FREETYPE=1 SDLVER=${{ matrix.sdl }}
 
       - name: build-schrift
         run: |
           make clean
-          make WITH_SCHRIFT=1
+          make WITH_SCHRIFT=1 SDLVER=${{ matrix.sdl }}
+
+      - name: ccache stats
+        run: ccache --show-stats

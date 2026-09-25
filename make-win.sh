@@ -1,7 +1,7 @@
 SDLV="${SDLV:-2}"
 if [ "$SDLV" = "3" ]; then
-	SDL_CFLAGS="-Iwindows/ -Iwindows/SDL3 -DUSE_SDL3"
-	SDL_LDFLAGS="-Lwindows/SDL3 -lSDL3 -lm"
+	SDL_CFLAGS="-Iwindows/ -Iwindows/SDL3/include -DUSE_SDL3"
+	SDL_LDFLAGS="-Lwindows/SDL3/lib -lSDL3 -lm"
 else
 	SDL_CFLAGS="-Iwindows/ -Iwindows/SDL2"
 	SDL_LDFLAGS="-Lwindows/SDL2 -lSDL2 -lSDL2main -lm"
