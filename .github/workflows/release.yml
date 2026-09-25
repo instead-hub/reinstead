@@ -2,59 +2,91 @@ name: release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version/tag, e.g. 0.9. Defaults to VERSION from data/core/core.lua"
+        required: false
+        type: string
 
 env:
-    luajit_ver: 2.0.5
-    sdl_ver: 2.24.0
-    freetype_ver: 2.12.1
+  luajit_ver: 2.0.5
+  sdl_ver: 2.24.0
+  freetype_ver: 2.12.1
+  mmd_ver: 5.4.0
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   build:
     name: release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          VER='${{ inputs.version }}'
+          if [ -z "$VER" ]; then
+            VER=$(sed -n "s/^VERSION='\\(.*\\)'/\\1/p" data/core/core.lua)
+          fi
+          if [ -z "$VER" ]; then
+            echo "Can not resolve version" >&2
+            exit 1
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Check tag
+        run: |
+          VER='${{ steps.ver.outputs.version }}'
+          if git ls-remote --exit-code --tags origin "$VER" >/dev/null 2>&1; then
+            echo "Tag $VER already exists" >&2
+            exit 1
+          fi
+
       - name: Cache libs
         id: cache-libs
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: |
-            external
-          key: ${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}
+          path: external
+          key: ${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}-${{ hashFiles('contrib/build-release.sh') }}
 
       - name: Cache manual
         id: cache-doc
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: |
-            doc-pdf
-          key: doc-${{ hashFiles('doc/manual.md') }}
+          path: doc-pdf
+          key: doc-${{ hashFiles('doc/manual.md', 'doc/Makefile', 'doc/img/**') }}
 
       - name: Install Packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib wget libsdl2-dev
+          sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib wget zip
           sudo apt-get install -y build-essential
 
-      - if: ${{ steps.cache-doc.outputs.cache-hit != 'true' }}
-        name: Install letex
+      - if: steps.cache-doc.outputs.cache-hit != 'true'
+        name: Install latex
         run: |
           echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
           sudo apt-get install -y texlive-xetex texlive-latex-base texlive-latex-extra texlive-latex-recommended texlive-lang-cyrillic ttf-mscorefonts-installer
 
-      - if: ${{ steps.cache-doc.outputs.cache-hit != 'true' }}
+      - if: steps.cache-doc.outputs.cache-hit != 'true'
         name: Install multimarkdown
         run: |
-          sudo apt-get install -y git
-          git clone https://github.com/fletcher/MultiMarkdown-5.git
+          git clone --depth 1 --branch "$mmd_ver" https://github.com/fletcher/MultiMarkdown-5.git
           cd MultiMarkdown-5
-          git submodule init
-          git submodule update
+          git submodule update --init --recursive
           make
           cd build
           sudo make install
 
-      - if: ${{ steps.cache-doc.outputs.cache-hit != 'true' }}
+      - if: steps.cache-doc.outputs.cache-hit != 'true'
         name: Create manual pdf
         run: |
           cd doc
@@ -64,15 +96,23 @@ jobs:
         run: |
           ./contrib/build-release.sh
 
-      - name: Create Artifact
+      - name: Package
         run: |
-          mkdir -p artifact/reinstead
-          cp -r release/* artifact/reinstead
-          cp doc-pdf/*.pdf artifact/reinstead/doc/
+          VER='${{ steps.ver.outputs.version }}'
+          mkdir -p artifact
+          (cd release && zip -r "../artifact/reinstead-$VER.zip" .)
+          cp "doc-pdf/manual.pdf" "artifact/reinstead-$VER-manual.pdf"
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER='${{ steps.ver.outputs.version }}'
+          gh release create "$VER" --draft --title "RE:INSTEAD $VER" --generate-notes artifact/*
 
       - name: Publish Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: reinstead
+          name: reinstead-${{ steps.ver.outputs.version }}
           path: artifact
-          retention-days: 1
+          retention-days: 7
