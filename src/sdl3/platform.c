@@ -108,9 +108,7 @@ WindowCreate(void)
 	if (!SDL_CreateWindowAndRenderer("reinstead", mode->w * 0.5, mode->h * 0.8,
 		SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY, &window, &renderer))
 		return -1;
-#ifndef __ANDROID__
 	SDL_StartTextInput(window);
-#endif
 	name = SDL_GetRendererName(renderer);
 	renderer_soft = name && !strcmp(name, SDL_SOFTWARE_RENDERER);
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
