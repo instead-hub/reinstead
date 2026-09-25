@@ -21,7 +21,7 @@ room {
 	nam = 'main';
 	word = -"зал/мр";
 	dsc = 'Тестовая комната.';
-	obj = { 'stone', 'box', 'key1', 'key2' };
+	obj = { 'stone', 'box', 'key1', 'key2', 'redcrystal', 'bluecrystal' };
 }
 
 obj {
@@ -41,6 +41,18 @@ obj {
 	nam = 'gem';
 	-"самоцвет";
 	dsc = 'Самоцвет в ящике.';
+}
+
+obj {
+	nam = 'redcrystal';
+	-"красный кристалл,кристалл";
+	dsc = 'Красный кристалл.';
+}
+
+obj {
+	nam = 'bluecrystal';
+	-"синий кристалл,кристалл";
+	dsc = 'Синий кристалл.';
 }
 
 obj {
@@ -135,6 +147,11 @@ local function test_parse()
 	ok("подсказка с плейсхолдером следующего слота",
 		hinted:find("\1{noun}", 1, true) ~= nil, hinted)
 	ok("падеж плейсхолдера", mp:err_noun("{noun}/рд"):find("кого/чего", 1, true) ~= nil)
+
+	-- shared short word (comma form): the parser must report both objects
+	local r4, v4 = parse "взять кристалл"
+	ok("взять кристалл -> MULTIPLE", r4 == false and v4 == 'MULTIPLE', v4)
+	ok("в MULTIPLE оба кристалла", #(mp.multi or {}) == 2, #(mp.multi or {}))
 
 	-- unknown verb
 	local r3, v3 = parse "прыгнуть через луну"
