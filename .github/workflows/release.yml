@@ -12,7 +12,7 @@ env:
   luajit_ver: 2.0.5
   sdl_ver: 2.32.10
   freetype_ver: 2.12.1
-  mmd_ver: 5.4.0
+  mmd_ver: 6.8.0
 
 permissions:
   contents: write
@@ -62,7 +62,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: doc-pdf
-          key: doc-${{ hashFiles('doc/manual.md', 'doc/manual.tex', 'doc/preamble.tex', 'doc/Makefile', 'doc/img/**') }}
+          key: doc-${{ env.mmd_ver }}-${{ hashFiles('doc/manual.md', 'doc/manual.tex', 'doc/preamble.tex', 'doc/Makefile', 'doc/img/**') }}
 
       - name: Install Packages
         run: |
@@ -78,12 +78,10 @@ jobs:
       - if: steps.cache-doc.outputs.cache-hit != 'true'
         name: Install multimarkdown
         run: |
-          git clone --depth 1 --branch "$mmd_ver" https://github.com/fletcher/MultiMarkdown-5.git
-          cd MultiMarkdown-5
-          git submodule update --init --recursive
-          make
-          cd build
-          sudo make install
+          git clone --depth 1 --branch "$mmd_ver" https://github.com/fletcher/MultiMarkdown-6.git
+          make -C MultiMarkdown-6 release
+          make -C MultiMarkdown-6/build -j"$(nproc)"
+          sudo cmake --install MultiMarkdown-6/build
 
       - if: steps.cache-doc.outputs.cache-hit != 'true'
         name: Create manual pdf
