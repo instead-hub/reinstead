@@ -10,7 +10,7 @@ on:
 
 env:
   luajit_ver: 2.0.5
-  sdl_ver: 2.32.10
+  sdl_ver: 3.4.16
   freetype_ver: 2.12.1
   mmd_ver: 6.8.0
 
@@ -55,7 +55,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: external
-          key: libs-v2-${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}-${{ hashFiles('contrib/build-release.sh') }}
+          key: libs-v3-${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}-${{ hashFiles('contrib/build-release*.sh') }}
 
       - name: Cache manual
         id: cache-doc
@@ -67,8 +67,9 @@ jobs:
       - name: Install Packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib wget zip
-          sudo apt-get install -y build-essential
+          sudo apt-get install -y gcc-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib wget zip
+          sudo apt-get install -y build-essential cmake
+          sudo apt-get install -y libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxrender-dev libdbus-1-dev libwayland-dev wayland-protocols libxkbcommon-dev libegl1-mesa-dev libdecor-0-dev
 
       - if: steps.cache-doc.outputs.cache-hit != 'true'
         name: Install latex
@@ -91,7 +92,7 @@ jobs:
 
       - name: build
         run: |
-          ./contrib/build-release.sh
+          ./contrib/build-release-sdl3.sh
 
       - name: Package
         run: |

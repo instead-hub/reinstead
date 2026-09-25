@@ -2,11 +2,7 @@
 #define __PLATFORM_SDL_H
 
 #ifdef USE_SDL3
-# if defined(__has_include) && __has_include(<SDL3/SDL.h>)
-#  include <SDL3/SDL.h>
-# else
-#  include <SDL.h>
-# endif
+# include <SDL3/SDL.h>
 #else
 # include <SDL.h>
 #endif

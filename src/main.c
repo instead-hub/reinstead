@@ -3,6 +3,9 @@
 #include "instead.h"
 #include "util.h"
 #include "gfx.h" /* to get font_renderer */
+#ifdef USE_SDL3
+#include <SDL3/SDL_main.h>
+#endif
 extern int system_init(lua_State *L);
 
 static int
