@@ -173,7 +173,7 @@ void
 Icon(unsigned char *ptr, int w, int h)
 {
 	SDL_Surface *surf;
-	surf = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_ABGR8888, ptr, w * 4);
+	surf = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, ptr, w * 4);
 	if (!surf)
 		return;
 	SDL_SetWindowIcon(window, surf);
@@ -194,11 +194,11 @@ WindowPixels(int *w, int *h)
 		destroyed = 1;
 	}
 	if (!winbuff)
-		winbuff = SDL_CreateSurface(*w, *h, SDL_PIXELFORMAT_ABGR8888);
+		winbuff = SDL_CreateSurface(*w, *h, SDL_PIXELFORMAT_RGBA32);
 	if (!winbuff)
 		return NULL;
 	if (!texture) {
-		texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888,
+		texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
 			SDL_TEXTUREACCESS_STREAMING, *w, *h);
 		if (texture)
 			SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
