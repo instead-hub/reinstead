@@ -2052,20 +2052,24 @@ local function slot_optional(st)
 end
 
 --- Accept the descriptor if it matched or consists of optional slots only.
+-- A wildcard match with leftover words is not accepted, but is returned so
+-- that mp:err can suggest the matched prefix (e.g. for a pronoun + extra words).
 local function accept_descriptor(self, st, matches, fixed_verb)
 	if not ((st.res and st.res.hit) or st.all_optional) then
 		return
 	end
 	local match = st.match
 	match.extra = (#st.a ~= 0)
-	if not match.extra or match.wildcards == 0 then
+	if match.extra and match.wildcards > 0 then
 		table.insert(match, 1, fixed_verb)
-		if self:skip_filter(st.skip) then
-			table.insert(matches, match)
-		end
-		if #match.vargs == 0 and not st.varg_pat then
-			match.vargs = false
-		end
+		return match
+	end
+	table.insert(match, 1, fixed_verb)
+	if self:skip_filter(st.skip) then
+		table.insert(matches, match)
+	end
+	if #match.vargs == 0 and not st.varg_pat then
+		match.vargs = false
 	end
 end
 
@@ -2100,6 +2104,7 @@ function mp:match(verb, w, compl)
 	local fixed_verb = verb.verb[verb.word_nr]
 	fixed_verb = fixed_verb.word .. (fixed_verb.morph or '')
 	table.insert(parsed_verb, fixed_verb)
+	local extra_hint
 	for _, d in ipairs(verb.dsc) do -- verb variants
 		local match, a = new_descriptor(verb, d, w, parsed_verb)
 		local st = { -- per-descriptor state
@@ -2136,13 +2141,17 @@ function mp:match(verb, w, compl)
 				break
 			end
 		end
-		accept_descriptor(self, st, matches, fixed_verb)
+		local ex = accept_descriptor(self, st, matches, fixed_verb)
+		if ex and (not extra_hint or #ex > #extra_hint) then
+			extra_hint = ex
+		end
 	end
 
 	matches = rank_matches(matches)
 	-- self:debug_match(matches, out.hints, out.unknown, out.multi) -- uncomment to trace match results
 	local extra
 	matches, extra = drop_extra(matches, out.unknown, out.multi)
+	extra = extra or extra_hint
 	local m, h, u, mu = finalize(matches, out.hints, out.unknown, out.multi)
 	return m, h, u, mu, extra
 end

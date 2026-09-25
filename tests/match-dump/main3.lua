@@ -469,6 +469,7 @@ local function run_dump()
 			cur_inp = inp
 			last_xact = {}
 			std.rawset(mp, 'parsed', false)
+			mp.cache = { tokens = {} }
 			mp.cache.nouns = mp:nouns()
 			local r, v = mp:input(mp:norm(inp))
 			f:write(snap(inp, r, v), "\n")
@@ -477,6 +478,7 @@ local function run_dump()
 		local cf = io.open(dir .. 'out-compl.txt', 'w')
 		for _, inp in ipairs(sample) do
 			cur_inp = inp
+			mp.cache = { tokens = {} }
 			mp.cache.nouns = mp:nouns()
 			local comp = complete(inp)
 			local tab = mp:docompl(inp)

@@ -76,6 +76,7 @@ Verb { "#TestPrioLow", "тестприоритет", "{noun}/вн : TestPrioLow"
 Verb { "#TestPrioHigh", "тестприоритет", "{noun}/вн : TestPrioHigh", prio = 1 }
 
 local function parse(inp)
+	mp.cache = { tokens = {} } -- as mp:parse does between commands
 	mp.cache.nouns = mp:nouns()
 	return mp:input(mp:norm(inp))
 end
@@ -152,6 +153,14 @@ local function test_parse()
 	local r4, v4 = parse "взять кристалл"
 	ok("взять кристалл -> MULTIPLE", r4 == false and v4 == 'MULTIPLE', v4)
 	ok("в MULTIPLE оба кристалла", #(mp.multi or {}) == 2, #(mp.multi or {}))
+
+	-- pronoun + extra words: the prefix hint is still produced
+	mp.first_it = stone
+	r = parse "взять его в руки"
+	ok("местоимение + лишние слова: extra-подсказка",
+		r == false and mp.extra and mp:match_words(mp.extra) == "взять камень",
+		mp.extra and mp:match_words(mp.extra))
+	mp.first_it = false
 
 	-- unknown verb
 	local r3, v3 = parse "прыгнуть через луну"

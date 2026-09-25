@@ -751,9 +751,9 @@
 копа очень наружу выход	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=-
 копа но наружу выход	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=-
 копа наружу там выход	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=-
-копа наружу выход это	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=-
-копа наружу выход блабла	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=-
-копа наружу выход ктото	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=-
+копа наружу выход это	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=копать наружу выходом
+копа наружу выход блабла	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=копать наружу выходом
+копа наружу выход ктото	r=true	v=nil	x=nil:nil	ev=Dig reverse	args=наружу:@out_to:1:r выход:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=копать,наружу,выход,vargs=-	hints=	unknown=	multi=	extra=копать наружу выходом
 копа наружу ыход	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=выход	unknown=ыход	multi=	extra=копать наружу
 назад	r=nil	v=nil	x=Walk:@out_to	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 слуша назад	r=true	v=nil	x=nil:nil	ev=Listen	args=назад:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=слушать,назад,vargs=-	hints=	unknown=	multi=	extra=-
@@ -849,9 +849,9 @@
 жечь очень вниз низ	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=-
 жечь но вниз низ	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=-
 жечь вниз там низ	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=-
-жечь вниз низ это	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=-
-жечь вниз низ блабла	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=-
-жечь вниз низ ктото	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=-
+жечь вниз низ это	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=жечь вниз низом
+жечь вниз низ блабла	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=жечь вниз низом
+жечь вниз низ ктото	r=true	v=nil	x=nil:nil	ev=Burn reverse	args=вниз:@d_to:1:r низ:@d_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=жечь,вниз,низ,vargs=-	hints=	unknown=	multi=	extra=жечь вниз низом
 жечь вниз из	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints={noun}/тв,held,~{noun}/вн	unknown=из	multi=	extra=жечь вниз
 наверх вверх	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 показ наверх вверх	r=true	v=nil	x=nil:nil	ev=Show	args=наверх:@u_to:1:r вверх:@u_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=показать,наверх,вверх,vargs=-	hints=	unknown=	multi=	extra=-
@@ -888,9 +888,9 @@
 дать очень вход наружу	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=-
 дать но вход наружу	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=-
 дать вход там наружу	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=-
-дать вход наружу это	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=-
-дать вход наружу блабла	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=-
-дать вход наружу ктото	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=-
+дать вход наружу это	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=дать входу наружу
+дать вход наружу блабла	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=дать входу наружу
+дать вход наружу ктото	r=true	v=nil	x=nil:nil	ev=Give	args=вход:@in_to:1:r наружу:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=дать,вход,наружу,vargs=-	hints=	unknown=	multi=	extra=дать входу наружу
 дать вход нружу	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints={noun}/дт,live,~{noun}/вн,held	unknown=нружу	multi=	extra=-
 выходу назад	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=из|с|со|>{noun}/рд,scene,в|через|на|>{noun}/вн,scene,enterable	unknown=выходу	multi=	extra=назад
 дать выходу назад	r=true	v=nil	x=nil:nil	ev=Give reverse	args=выходу:@out_to:1:r назад:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=дать,выходу,назад,vargs=-	hints=	unknown=	multi=	extra=-
@@ -913,9 +913,9 @@
 трога очень зал	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
 трога но зал	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
 трога там зал	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
-трога зал это	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
-трога зал блабла	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
-трога зал ктото	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
+трога зал это	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=трогать зала
+трога зал блабла	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=трогать зала
+трога зал ктото	r=true	v=nil	x=nil:nil	ev=Touch	args=зал:main:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=трогать,зал,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=трогать зала
 трога ал	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints={noun}/вн,~до|>{noun}/рд,~к|>{noun}/дт,~{noun}/рд	unknown=ал	multi=	extra=-
 до валуна	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 трога до валуна	r=true	v=nil	x=nil:nil	ev=Touch	args=до:-:nil:r валуна:stone:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=трогать,до,валуна,vargs=-	hints=	unknown=	multi=	extra=-
@@ -1295,16 +1295,16 @@
 брос восток на юг ктото	r=true	v=nil	x=nil:nil	ev=ThrowAt	args=восток:@e_to:1:r на:-:nil:r юг:@s_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=бросить,восток,на,юг,vargs=-	hints=nil:3	unknown=nil:3	multi=	extra=-
 во запад северо-запад	r=true	v=nil	x=nil:nil	ev=Enter	args=во:-:nil:r северо-запад:@nw_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=идти,во,северо-запад,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
 брос во запад северо-запад	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=	unknown=	multi=	extra=-
-северо-запад запад во брос	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints={noun}/вн	unknown=запад	multi=	extra=-
+северо-запад запад во брос	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints={noun}/вн	unknown=запад	multi=	extra=бросить северо-запад западу
 во брос запад северо-запад	r=true	v=nil	x=nil:nil	ev=Enter	args=во:-:nil:r северо-запад:@nw_to:1:r	fields=skip=1,wild=0,def=0,extra=true,prio=0,words=идти,во,северо-запад,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
 брос запад во северо-запад	r=true	v=nil	x=nil:nil	ev=ThrowAt	args=запад:@w_to:1:r во:-:nil:r северо-запад:@nw_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=бросить,запад,во,северо-запад,vargs=-	hints=	unknown=	multi=	extra=-
 ктото брос во запад северо-запад	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
 брос очень во запад северо-запад	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
 брос во но запад северо-запад	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
 брос во запад там северо-запад	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r запад:@w_to:1:r северо-запад:@nw_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=бросить,во,запад,северо-запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
-брос во запад северо-запад это	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
-брос во запад северо-запад блабла	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
-брос во запад северо-запад ктото	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
+брос во запад северо-запад это	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=бросить северо-запад западу
+брос во запад северо-запад блабла	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=бросить северо-запад западу
+брос во запад северо-запад ктото	r=true	v=nil	x=nil:nil	ev=ThrowAt reverse	args=во:-:nil:r северо-запад:@nw_to:1:r запад:@w_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=бросить,во,северо-запад,запад,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=бросить северо-запад западу
 брос во запад северо-апад	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=запад	unknown=апад	multi=	extra=бросить северо-запад
 вниз низу	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 брос вниз низу	r=true	v=nil	x=nil:nil	ev=ThrowAt	args=вниз:@d_to:1:r низу:@d_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=бросить,вниз,низу,vargs=-	hints=	unknown=	multi=	extra=-
@@ -1524,7 +1524,7 @@
 запереть север северо-востоком это	r=true	v=nil	x=nil:nil	ev=Lock	args=север:@n_to:1:r северо-востоком:@ne_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=запереть,север,северо-востоком,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
 запереть север северо-востоком блабла	r=true	v=nil	x=nil:nil	ev=Lock	args=север:@n_to:1:r северо-востоком:@ne_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=запереть,север,северо-востоком,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
 запереть север северо-востоком ктото	r=true	v=nil	x=nil:nil	ev=Lock	args=север:@n_to:1:r северо-востоком:@ne_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=запереть,север,северо-востоком,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
-запереть север северо-встоком	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=север	unknown=северо,встоком	multi=	extra=-
+запереть север северо-встоком	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=север	unknown=северо,встоком	multi=	extra=запереть север севером
 восток на юг	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 запереть восток на юг	r=true	v=nil	x=nil:nil	ev=Lock	args=восток:@e_to:1:r на:-:nil:r юг:@s_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=запереть,восток,на,юг,vargs=-	hints=	unknown=	multi=	extra=-
 юг на восток запереть	r=true	v=nil	x=nil:nil	ev=Lock	args=юг:@s_to:1:r на:-:nil:r восток:@e_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=запереть,юг,на,восток,vargs=-	hints=	unknown=	multi=	extra=-
@@ -1597,9 +1597,9 @@
 закры очень внутрь вход	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
 закры но внутрь вход	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
 закры внутрь там вход	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
-закры внутрь вход это	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
-закры внутрь вход блабла	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
-закры внутрь вход ктото	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
+закры внутрь вход это	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=закрыть внутрь входом
+закры внутрь вход блабла	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=закрыть внутрь входом
+закры внутрь вход ктото	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=внутрь:@in_to:1:r вход:@in_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=закрыть,внутрь,вход,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=закрыть внутрь входом
 закры внутрь вод	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints={noun}/тв,held,~на|>{noun}/вн,held,~{noun}/вн	unknown=вод	multi=	extra=закрыть внутрь
 наружу выходом	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 отпереть наружу выходом	r=true	v=nil	x=nil:nil	ev=Unlock	args=наружу:@out_to:1:r выходом:@out_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=отпереть,наружу,выходом,vargs=-	hints=	unknown=	multi=	extra=-
@@ -1623,9 +1623,9 @@
 отпереть очень назад север	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=-
 отпереть но назад север	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=-
 отпереть назад там север	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=-
-отпереть назад север это	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=-
-отпереть назад север блабла	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=-
-отпереть назад север ктото	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=-
+отпереть назад север это	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=отпереть назад севером
+отпереть назад север блабла	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=отпереть назад севером
+отпереть назад север ктото	r=true	v=nil	x=nil:nil	ev=Unlock reverse	args=назад:@out_to:1:r север:@n_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=отпереть,назад,север,vargs=-	hints=	unknown=	multi=	extra=отпереть назад севером
 отпереть назад евер	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=север	unknown=евер	multi=	extra=-
 северо-восток	r=nil	v=nil	x=Walk:@ne_to	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 откр северо-восток	r=true	v=nil	x=nil:nil	ev=Open	args=северо-восток:@ne_to:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=открыть,северо-восток,vargs=-	hints=nil:2	unknown=	multi=	extra=-
@@ -1739,9 +1739,9 @@
 осмотр очень на валун	r=true	v=nil	x=nil:nil	ev=Search	args=на:-:nil:r валуне:stone:1:r	fields=skip=1,wild=1,def=0,extra=false,prio=0,words=осмотреть,на,валуне,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
 осмотр но на валун	r=true	v=nil	x=nil:nil	ev=Search	args=на:-:nil:r валуне:stone:1:r	fields=skip=1,wild=1,def=0,extra=false,prio=0,words=осмотреть,на,валуне,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
 осмотр на там валун	r=true	v=nil	x=nil:nil	ev=Exam	args=на:-:nil:o валун:stone:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=осмотреть,на,валун,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
-осмотр на валун это	r=true	v=nil	x=nil:nil	ev=Exam	args=на:-:nil:o валун:stone:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=осмотреть,на,валун,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
-осмотр на валун блабла	r=true	v=nil	x=nil:nil	ev=Exam	args=на:-:nil:o валун:stone:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=осмотреть,на,валун,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
-осмотр на валун ктото	r=true	v=nil	x=nil:nil	ev=Exam	args=на:-:nil:o валун:stone:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=осмотреть,на,валун,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=-
+осмотр на валун это	r=true	v=nil	x=nil:nil	ev=Exam	args=на:-:nil:o валун:stone:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=осмотреть,на,валун,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=осмотреть на валуне
+осмотр на валун блабла	r=true	v=nil	x=nil:nil	ev=Exam	args=на:-:nil:o валун:stone:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=осмотреть,на,валун,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=осмотреть на валуне
+осмотр на валун ктото	r=true	v=nil	x=nil:nil	ev=Exam	args=на:-:nil:o валун:stone:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=осмотреть,на,валун,vargs=-	hints=nil:1	unknown=nil:1	multi=	extra=осмотреть на валуне
 осмотр на алун	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=валун,валуне	unknown=алун	multi=	extra=осмотреть
 осмотр валун	r=true	v=nil	x=nil:nil	ev=Exam	args=false:-:nil:o валун:stone:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=осмотреть,валун,vargs=-	hints=	unknown=	multi=	extra=-
 валун осмотр	r=true	v=nil	x=nil:nil	ev=Exam	args=false:-:nil:o валун:stone:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=осмотреть,валун,vargs=-	hints=	unknown=	multi=	extra=-
@@ -1846,7 +1846,7 @@
 осмотр во красном алмазе про кристал	r=true	v=nil	x=nil:nil	ev=Consult	args=во:-:nil:r красном алмазе:redgem:1:r про:-:nil:o	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=осмотреть,во,красном алмазе,про,кристал,vargs=кристал	hints=nil:1	unknown=nil:1	multi=nil:2	extra=-
 об валун во маленьком камне	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 осмотр об валун во маленьком камне	r=true	v=nil	x=nil:nil	ev=Consult reverse	args=об:-:nil:o во:-:nil:r маленьком камне:smallstone:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=осмотреть,об,валун,во,маленьком камне,vargs=валун	hints=nil:3	unknown=	multi=	extra=-
-маленьком камне во валун об осмотр	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=~*	unknown=	multi=	extra=-
+маленьком камне во валун об осмотр	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=~*	unknown=	multi=	extra=осмотреть маленьком камне во валуне
 об осмотр валун во маленьком камне	r=true	v=nil	x=nil:nil	ev=Consult reverse	args=об:-:nil:o во:-:nil:r маленьком камне:smallstone:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=осмотреть,об,валун,во,маленьком камне,vargs=валун	hints=nil:3	unknown=	multi=	extra=-
 осмотр валун об во маленьком камне	r=true	v=nil	x=nil:nil	ev=Consult reverse	args=false:-:nil:o во:-:nil:r маленьком камне:smallstone:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=осмотреть,валун,об,во,маленьком камне,vargs=валун,об	hints=nil:3	unknown=	multi=	extra=-
 ктото осмотр об валун во маленьком камне	r=true	v=nil	x=nil:nil	ev=Consult reverse	args=false:-:nil:o во:-:nil:r маленьком камне:smallstone:1:r	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=осмотреть,ктото,об,валун,во,маленьком камне,vargs=ктото,об,валун	hints=nil:3	unknown=	multi=	extra=-
@@ -2803,7 +2803,7 @@
 камень камень ящик ящик не	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 мешок на пёс перемешать пробросить	r=true	v=nil	x=nil:nil	ev=DumpVarg	args=	fields=skip=0,wild=0,def=0,extra=false,prio=0,words=перемешать,мешок,на,пес,пробросить,vargs=мешок,на,пес,пробросить	hints=	unknown=	multi=	extra=-
 самоцвет камень пробросить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=за|>{noun}/вн	unknown=самоцвет	multi=	extra=-
-закрыть вверх зал перемешать очень	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=вверх:@u_to:1:r зал:main:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=закрыть,вверх,зал,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=-
+закрыть вверх зал перемешать очень	r=true	v=nil	x=nil:nil	ev=Lock reverse	args=вверх:@u_to:1:r зал:main:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=закрыть,вверх,зал,vargs=-	hints=nil:2	unknown=nil:2	multi=	extra=закрыть вверх залом
 на	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 заката из заката заката пробросить	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints={noun}/вн	unknown=заката,из	multi=	extra=-
 заката	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
@@ -3438,7 +3438,7 @@
 вверх не пробросить смешать из	r=true	v=nil	x=nil:nil	ev=DumpOpt	args=false:-:nil:o вверх:@u_to:1:r	fields=skip=0,wild=0,def=0,extra=true,prio=0,words=смешать,вверх,vargs=-	hints=	unknown=	multi=	extra=-
 смешать кристалл пробросить осмотреть смешать	r=false	v=MULTIPLE	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=красный кристалл,синий кристалл	extra=-
 кристалл ящик осмотреть кристалл пёс	r=false	v=MULTIPLE	x=nil:nil	ev=-	args=	fields=-	hints=инвентарь,~под|>{noun}/тв,~под|>{noun}/вн,~в|~во|~на|>{noun}/пр,2,~внутри|>{noun}/рд,~в|~во|>{noun}/вн,~в|~во|>{noun}/пр,2,~в|~во	unknown=кристалл,ящик,пес	multi=красный кристалл,синий кристалл	extra=осмотреть
-ящик вверх закрыть на ящик	r=true	v=nil	x=nil:nil	ev=Lock	args=ящик:box:1:r на:-:nil:r ящик:box:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=закрыть,ящик,на,ящик,vargs=-	hints=	unknown=	multi=	extra=-
+ящик вверх закрыть на ящик	r=true	v=nil	x=nil:nil	ev=Lock	args=ящик:box:1:r на:-:nil:r ящик:box:1:r	fields=skip=1,wild=0,def=0,extra=false,prio=0,words=закрыть,ящик,на,ящик,vargs=-	hints=	unknown=	multi=	extra=закрыть ящиком вверх
 вверх взять осмотреть	r=false	v=INCOMPLETE	x=nil:nil	ev=-	args=	fields=-	hints=из|с|со|у|>{noun}/рд,inside,holder	unknown=осмотреть	multi=	extra=взять вверх
 за	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
 ящик зал пёс	r=false	v=UNKNOWN_VERB	x=nil:nil	ev=-	args=	fields=-	hints=	unknown=	multi=	extra=-
