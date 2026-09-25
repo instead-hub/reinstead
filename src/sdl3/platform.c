@@ -1,4 +1,3 @@
-static int destroyed = 0;
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *texture = NULL;
@@ -62,7 +61,11 @@ WaitEvent(float n)
 float
 GetScale(void)
 {
-	float scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+	float scale;
+	if (window)
+		scale = SDL_GetWindowDisplayScale(window);
+	else
+		scale = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
 	if (scale <= 0.0f)
 		return 1.0f;
 	return scale;

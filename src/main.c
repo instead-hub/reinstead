@@ -85,13 +85,13 @@ main(int argc, char **argv)
 	lua_pushstring(L, GetPlatform());
 	lua_setglobal(L, "PLATFORM");
 
-	lua_pushnumber(L, GetScale());
-	lua_setglobal(L, "SCALE");
-
 	if (WindowCreate()) {
 		fprintf(stderr, "Can not create window!\n");
 		return 1;
 	}
+
+	lua_pushnumber(L, GetScale());
+	lua_setglobal(L, "SCALE");
 
 	for (i = 0; lua_libs[i].name; i++)
 		luaL_requiref(L, lua_libs[i].name, lua_libs[i].func, 1);
