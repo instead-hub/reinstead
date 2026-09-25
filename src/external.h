@@ -13,7 +13,7 @@
 extern char *dirname(char *);
 #endif
 #ifdef __ANDROID__
-#include <SDL_system.h>
+#include "platform_sdl.h"
 #endif
 #include <stdio.h>
 #include <string.h>

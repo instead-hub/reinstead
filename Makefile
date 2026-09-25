@@ -1,7 +1,19 @@
 all:	reinstead
-	
-CFLAGS=$(shell pkg-config --cflags sdl2) $(shell pkg-config --cflags luajit) -Isrc/instead -Dunix -Wall -O3
-LDFLAGS=$(shell pkg-config --libs sdl2) $(shell pkg-config --libs luajit) -lm
+
+SDLVER ?= sdl2
+
+ifeq ($(SDLVER),sdl3)
+SDL_CFLAGS=$(shell pkg-config --cflags sdl3)
+SDL_LDFLAGS=$(shell pkg-config --libs sdl3)
+SDL_DEFINE=-DUSE_SDL3
+else
+SDL_CFLAGS=$(shell pkg-config --cflags sdl2)
+SDL_LDFLAGS=$(shell pkg-config --libs sdl2)
+SDL_DEFINE=
+endif
+
+CFLAGS=$(SDL_CFLAGS) $(shell pkg-config --cflags luajit) -Isrc/instead -Dunix -Wall -O3 $(SDL_DEFINE)
+LDFLAGS=$(SDL_LDFLAGS) $(shell pkg-config --libs luajit) -lm
 
 # uncomment for system-wide install
 # PREFIX=/usr/local
@@ -26,7 +38,7 @@ uninstall:
 endif
 
 CFILES= \
-	src/platform.c \
+	src/platform_sdl.c \
 	src/stb_image.c \
 	src/lua-compat.c \
 	src/stb_image_resize.c \
@@ -61,4 +73,4 @@ reinstead:  $(OFILES)
 	$(CC) $(CFLAGS) $(^) $(LDFLAGS) -o $(@)
 
 clean:
-	$(RM) -f src/lua/*.o src/*.o src/instead/*.o src/freetype/*.o src/schrift/*.o reinstead
+	$(RM) -f src/lua/*.o src/*.o src/instead/*.o src/freetype/*.o src/schrift/*.o src/sdl2/*.o src/sdl3/*.o reinstead

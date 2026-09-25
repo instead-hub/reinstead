@@ -103,7 +103,7 @@ main(int argc, char **argv)
 	lua_setglobal(L, "FONTRENDERER");
 
 #ifdef __ANDROID__
-	snprintf(base, sizeof(base), "%s", SDL_AndroidGetInternalStoragePath());
+	snprintf(base, sizeof(base), "%s", SDL_ANDROID_INTERNAL_STORAGE());
 #else
 	snprintf(base, sizeof(base), "%s/%s", dirname((char*)exepath), "data");
 #endif
@@ -118,7 +118,7 @@ main(int argc, char **argv)
 
 #if defined(_WIN32) || defined(PLAN9) || defined(__ANDROID__)
 	#ifdef __ANDROID__
-	snprintf(base, sizeof(base), "%s/%s", SDL_AndroidGetInternalStoragePath(), "errors.txt");
+	snprintf(base, sizeof(base), "%s/%s", SDL_ANDROID_INTERNAL_STORAGE(), "errors.txt");
 	#else
 	snprintf(base, sizeof(base), "%s/%s", exepath, "errors.txt");
 	#endif
