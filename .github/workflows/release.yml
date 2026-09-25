@@ -97,23 +97,23 @@ jobs:
       - name: Package
         run: |
           VER='${{ steps.ver.outputs.version }}'
-          mkdir -p artifact/reinstead
-          cp -r release/. artifact/reinstead/
-          cp doc-pdf/manual.pdf artifact/reinstead/doc/
-          (cd artifact && zip -r "reinstead-$VER.zip" reinstead)
-          rm -rf artifact/reinstead
-          cp doc-pdf/manual.pdf "artifact/reinstead-$VER-manual.pdf"
+          rm -rf dist
+          mkdir -p dist/reinstead
+          cp -r release/. dist/reinstead/
+          cp doc-pdf/manual.pdf dist/reinstead/doc/
+          (cd dist && zip -r "reinstead-$VER.zip" reinstead)
+          cp doc-pdf/manual.pdf "dist/reinstead-$VER-manual.pdf"
 
       - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VER='${{ steps.ver.outputs.version }}'
-          gh release create "$VER" --draft --title "RE:INSTEAD $VER" --generate-notes artifact/*
+          gh release create "$VER" --draft --title "RE:INSTEAD $VER" --generate-notes "dist/reinstead-$VER.zip" "dist/reinstead-$VER-manual.pdf"
 
       - name: Publish Artifact
         uses: actions/upload-artifact@v7
         with:
           name: reinstead-${{ steps.ver.outputs.version }}
-          path: artifact
+          path: dist
           retention-days: 7
