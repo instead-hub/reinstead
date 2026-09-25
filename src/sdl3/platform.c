@@ -1,3 +1,4 @@
+static int destroyed = 0;
 static SDL_Window *window = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *texture = NULL;
