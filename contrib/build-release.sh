@@ -60,7 +60,7 @@ if [ ! -f external/.stamp_SDL2 ] || [ ! -f external/include/SDL2/SDL.h ] || [ ! 
 fi
 
 if [ ! -f external/.stamp_freetype2 ] || [ ! -f external/include/freetype2/ft2build.h ] || [ ! -f external/windows/include/freetype2/ft2build.h ]; then
-	fetch https://download.savannah.gnu.org/releases/freetype/freetype-${freetype_ver}.tar.gz freetype-${freetype_ver}.tar.gz "$freetype_sum"
+	fetch https://downloads.sourceforge.net/project/freetype/freetype2/${freetype_ver}/freetype-${freetype_ver}.tar.gz freetype-${freetype_ver}.tar.gz "$freetype_sum"
 	rm -rf freetype-${freetype_ver}
 
 	tar xf freetype-${freetype_ver}.tar.gz
