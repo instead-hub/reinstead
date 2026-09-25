@@ -10,7 +10,7 @@ on:
 
 env:
   luajit_ver: 2.0.5
-  sdl_ver: 2.24.0
+  sdl_ver: 2.32.10
   freetype_ver: 2.12.1
   mmd_ver: 5.4.0
 
@@ -55,14 +55,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: external
-          key: ${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}-${{ hashFiles('contrib/build-release.sh') }}
+          key: libs-v2-${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}-${{ hashFiles('contrib/build-release.sh') }}
 
       - name: Cache manual
         id: cache-doc
         uses: actions/cache@v4
         with:
           path: doc-pdf
-          key: doc-${{ hashFiles('doc/manual.md', 'doc/Makefile', 'doc/img/**') }}
+          key: doc-${{ hashFiles('doc/manual.md', 'doc/manual.tex', 'doc/preamble.tex', 'doc/Makefile', 'doc/img/**') }}
 
       - name: Install Packages
         run: |
@@ -73,8 +73,7 @@ jobs:
       - if: steps.cache-doc.outputs.cache-hit != 'true'
         name: Install latex
         run: |
-          echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
-          sudo apt-get install -y texlive-xetex texlive-latex-base texlive-latex-extra texlive-latex-recommended texlive-lang-cyrillic ttf-mscorefonts-installer
+          sudo apt-get install -y texlive-xetex texlive-latex-base texlive-latex-extra texlive-latex-recommended texlive-lang-cyrillic fonts-dejavu fonts-liberation
 
       - if: steps.cache-doc.outputs.cache-hit != 'true'
         name: Install multimarkdown

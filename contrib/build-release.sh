@@ -1,5 +1,5 @@
 set -eu
-sdl_ver="${sdl_ver:-2.24.0}"
+sdl_ver="${sdl_ver:-2.32.10}"
 freetype_ver="${freetype_ver:-2.12.1}"
 luajit_ver="${luajit_ver:-2.0.5}"
 
@@ -22,7 +22,7 @@ fetch() {
 
 # checksums of the pinned tarballs (update when versions change)
 case "$sdl_ver" in
-	2.24.0) sdl_sum="91e4c34b1768f92d399b078e171448c6af18cafda743987ed2064a28954d6d97" ;;
+	2.32.10) sdl_sum="5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165" ;;
 	*) sdl_sum="" ;;
 esac
 case "$freetype_ver" in
@@ -36,14 +36,15 @@ esac
 
 test -d external || mkdir external
 
-if [ ! -f external/.stamp_SDL2 ]; then
+if [ ! -f external/.stamp_SDL2 ] || [ ! -f external/include/SDL2/SDL.h ] || [ ! -f external/windows/include/SDL2/SDL.h ]; then
 	fetch https://github.com/libsdl-org/SDL/releases/download/release-${sdl_ver}/SDL2-${sdl_ver}.tar.gz SDL2-${sdl_ver}.tar.gz "$sdl_sum"
 	rm -rf SDL2-${sdl_ver}
 
 	tar xf SDL2-${sdl_ver}.tar.gz
 	cd SDL2-${sdl_ver}
 	./configure --prefix=`pwd`/../external/ --disable-shared --enable-static --disable-audio --disable-pthreads --disable-threads --disable-joystick --disable-sensor --disable-power --disable-haptic --disable-filesystem --disable-file --disable-video-vulkan --disable-video-opengl --disable-video-opengles2 --disable-video-vivante --disable-video-cocoa --disable-video-metal --disable-render-metal --disable-video-kmsdrm --disable-video-opengles --disable-video-opengles1 --disable-video-opengles2 --disable-video-vulkan --disable-render-d3d --disable-sdl2-config
-	make -j"$(nproc)" && make install
+	make -j"$(nproc)"
+	make install
 	cd ..
 
 	rm -rf SDL2-${sdl_ver}
@@ -51,33 +52,36 @@ if [ ! -f external/.stamp_SDL2 ]; then
 	tar xf SDL2-${sdl_ver}.tar.gz
 	cd SDL2-${sdl_ver}
 	./configure --prefix=`pwd`/../external/windows/ --host=i686-w64-mingw32 --enable-shared --enable-static --disable-audio --disable-pthreads --disable-threads --disable-joystick --disable-sensor --disable-power --disable-haptic --disable-filesystem --disable-file --disable-video-vulkan --disable-video-opengl --disable-video-opengles2 --disable-video-vivante --disable-video-cocoa --disable-video-metal --disable-render-metal --disable-video-kmsdrm --disable-video-opengles --disable-video-opengles1 --disable-video-opengles2 --disable-video-vulkan --disable-render-d3d --disable-sdl2-config
-	make -j"$(nproc)" && make install
+	make -j"$(nproc)"
+	make install
 	cd ..
 	rm -rf SDL2-${sdl_ver}
 	touch external/.stamp_SDL2
 fi
 
-if [ ! -f external/.stamp_freetype2 ]; then
+if [ ! -f external/.stamp_freetype2 ] || [ ! -f external/include/freetype2/ft2build.h ] || [ ! -f external/windows/include/freetype2/ft2build.h ]; then
 	fetch https://download.savannah.gnu.org/releases/freetype/freetype-${freetype_ver}.tar.gz freetype-${freetype_ver}.tar.gz "$freetype_sum"
 	rm -rf freetype-${freetype_ver}
 
 	tar xf freetype-${freetype_ver}.tar.gz
 	cd freetype-${freetype_ver}
 	./configure --prefix=`pwd`/../external/  --disable-shared --enable-static --without-brotli --without-harfbuzz --without-png --without-bzip2 --without-zlib --without-pthread
-	make -j"$(nproc)" && make install
+	make -j"$(nproc)"
+	make install
 	cd ..
 	rm -rf freetype-${freetype_ver}
 	tar xf freetype-${freetype_ver}.tar.gz
 	cd freetype-${freetype_ver}
 
 	./configure --prefix=`pwd`/../external/windows/ --host=i686-w64-mingw32 --disable-shared --enable-static --without-brotli --without-harfbuzz --without-png --without-bzip2 --without-zlib
-	make -j"$(nproc)" && make install
+	make -j"$(nproc)"
+	make install
 	cd ..
 	rm -rf freetype-${freetype_ver}
 	touch external/.stamp_freetype2
 fi
 
-if [ ! -f external/.stamp_luajit ]; then
+if [ ! -f external/.stamp_luajit ] || [ ! -f external/lib/libluajit.a ] || [ ! -f external/windows/lib/libluajit.a ]; then
 	rm -rf LuaJIT-${luajit_ver}
 	git clone -q --single-branch --branch v2.0 https://github.com/LuaJIT/LuaJIT.git LuaJIT-${luajit_ver}
 	cd LuaJIT-${luajit_ver}

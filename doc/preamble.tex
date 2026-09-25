@@ -1,0 +1,37 @@
+\documentclass[12pt,]{article}
+
+\usepackage{cmap}
+\usepackage{tocloft}
+% \usepackage[T2A]{fontenc}
+%\usepackage[english,russian]{babel}
+\usepackage{polyglossia}
+% \usepackage[russian]{datetime}
+\usepackage{upquote}
+
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+
+\usepackage{fontspec}
+\usepackage{xltxtra,xunicode}
+\defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+\setmainfont{DejaVu Sans}
+\setsansfont{DejaVu Sans}
+\setmonofont{Liberation Mono}
+\defaultfontfeatures[ListingFont]{}
+\setmonofont[Mapping=,Ligatures=NoCommon]{Liberation Mono}
+
+\usepackage[setpagesize=false, % page size defined by xetex
+            unicode=false, % unicode breaks when used with xetex
+            xetex]{hyperref}
+
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={},
+            pdftitle={RE:INSTEAD},
+            colorlinks=true,
+            urlcolor=blue,
+            linkcolor=magenta,
+            pdfborder={0 0 0}}
+
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
