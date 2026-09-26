@@ -11,8 +11,3 @@ for d in theme modules games main3.lua theme.ini README COPYING; do
 	cp -r $d dist/metaparser
 done
 
-#cd doc && make && cd ..
-
-#mkdir -p release/metaparser/doc
-
-#cp doc/*.pdf doc/*.md release/metaparser/doc

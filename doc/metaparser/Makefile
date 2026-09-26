@@ -8,6 +8,6 @@ mp-manual-ru.tex: manual-ru.md
 	sed -i -e 's/{verbatim}/{verbatimtab}[4]/g' mp-manual-ru.tex
 
 metaparser-manual-ru.pdf: manual-ru.tex mp-manual-ru.tex
-	xelatex manual-ru.tex
-	xelatex manual-ru.tex
-	xelatex manual-ru.tex
+	xelatex -jobname=metaparser-manual-ru manual-ru.tex
+	xelatex -jobname=metaparser-manual-ru manual-ru.tex
+	xelatex -jobname=metaparser-manual-ru manual-ru.tex
