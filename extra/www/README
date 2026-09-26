@@ -1,0 +1,45 @@
+# www
+
+Minimal site generator for RE:INSTEAD games, playable in the browser with
+metaparser-js.
+
+## Build
+
+```
+make -C extra/metaparser-js      # builds the player (extra/metaparser-js/build/dist)
+python3 extra/www/generate.py    # writes the site to extra/www/build
+python3 -m http.server -d extra/www/build
+```
+
+## Conventions
+
+A game is published when its directory contains `main3.lua` and `icon.png`:
+
+* `icon.png` — card and page image;
+* `main3.lua` — the `$Name`, `$Author` and `$Info` header fields give the
+  title, the author and the short info for the card; the `(ru)` variants
+  (`$Name(ru)`, `$Author(ru)`, ...) win;
+* `dsc.txt` — optional, long description for the game page, may contain
+  simple HTML.
+
+Games are taken from `data/games` (`--games DIR`), the player from
+`extra/metaparser-js/build/dist` (`--mp DIR`), the output goes to
+`extra/www/build` (`--out DIR`).
+
+The generated site:
+
+```
+build/index.html              game cards
+build/games/<name>/index.html game page with the icon and description
+build/games/<name>/<name>.zip game archive, <name>/ inside
+build/mp/                     metaparser-js distribution
+build/style.css
+```
+
+The archives are packed with `<name>/` as the top level directory, as
+metaparser-js expects for `<name>.zip`; `saves/` and `autoscript` are left out.
+
+The markup lives in `templates/`: `page.html` (skeleton), `index.html` (game
+list), `card.html` (one card) and `game.html` (game page). Placeholders are
+`string.Template` names, so `$title`, `$cards` and so on are substituted by the
+generator.

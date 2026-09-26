@@ -1,0 +1,68 @@
+:root {
+	color-scheme: light;
+}
+
+body {
+	max-width: 48rem;
+	margin: 0 auto;
+	padding: 1.5rem;
+	font: 16px/1.6 system-ui, sans-serif;
+	color: #222;
+	background: #fff;
+}
+
+h1 { font-size: 1.6rem; margin: 0 0 1rem; }
+h2 { font-size: 1.15rem; margin: .75rem 0 .25rem; }
+
+a { color: #14509c; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.about, .footer { color: #666; }
+.footer { margin-top: 2rem; font-size: .9rem; }
+
+.cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+	gap: 1.25rem;
+}
+
+.card {
+	border: 1px solid #ddd;
+	border-radius: .5rem;
+	padding: 1rem;
+}
+
+.card img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: .25rem;
+}
+
+.card .author, .game .author { color: #666; margin: .25rem 0; }
+.card .info { margin: .25rem 0 0; }
+
+.back { margin: 0 0 1rem; }
+
+.game {
+	border: 1px solid #ddd;
+	border-radius: .5rem;
+	padding: 1.25rem;
+}
+
+.game .icon {
+	display: block;
+	width: 100%;
+	max-width: 16rem;
+	height: auto;
+	border-radius: .25rem;
+}
+
+.game .dsc { white-space: pre-line; }
+
+.play a {
+	display: inline-block;
+	padding: .5rem 1rem;
+	border: 1px solid #14509c;
+	border-radius: .25rem;
+}
