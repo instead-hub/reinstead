@@ -5,7 +5,7 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 ## Build
 
 - `make` — default (LuaJIT + SDL2 via pkg-config). SDL3: `make SDLVER=sdl3` (pkg-config `sdl3`).
-- `./make-default.sh` — bundled Lua (`src/lua`), no LuaJIT; `SDLVER=sdl3 ./make-default.sh` for SDL3. Also `./make-tcc.sh`, `./make-win.sh` (`SDLV=3`), `make WITH_FREETYPE=1`, `make WITH_SCHRIFT=1`.
+- `./make-default.sh` — bundled Lua (`src/lua`), no LuaJIT; `SDLVER=sdl3 ./make-default.sh` for SDL3. Also `./make-tcc.sh`, `make WITH_FREETYPE=1`, `make WITH_SCHRIFT=1`.
 - Platform: `src/platform_sdl.c` holds the SDL-shared part and includes `src/sdl2/platform.c` or `src/sdl3/platform.c` (`-DUSE_SDL3` selects SDL3). `src/platform.h` is the only platform header. Plan9 (`src/plan9/platform.c`) is standalone.
 - `./clean.sh` or `make clean`; binary is `./reinstead`.
 - Build artifacts (`*.o`, `reinstead`, `data/settings`) are untracked — never commit them.
@@ -13,10 +13,10 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 
 ## Tests (headless)
 
-- `./tests/run-parser-tests.sh` (needs a built `./reinstead`; override with `BIN=...`). Runs parser unit checks (`tests/parser-tests`) and golden diffs (`tests/match-dump/golden.txt` = `mp:match` snapshots, `golden-compl.txt` = `mp:compl`).
+- `./tests/run-parser-tests.sh` (needs a built `./reinstead`; override with `BIN=...`). Runs parser unit checks (`tests/parser-tests`) and golden diffs (`tests/match-dump/golden.txt` = `mp:match` snapshots, `golden-compl.txt` = `mp:compl`; `tests/noun-forms/golden.txt` = noun declension forms).
 - Single test game directly:
   `SDL_VIDEODRIVER=dummy ./reinstead -appdata "$(mktemp -d)" -noautosave "$PWD/tests/parser-tests"`
-- Golden regeneration is only for intentional parser behavior changes: run the dump game directly (it writes `out.txt` / `out-compl.txt` next to `tests/match-dump/main3.lua`), then copy them to `golden*.txt`. To validate a refactor, compare against a previous `mp.lua`: `git show <rev>:data/stead3/parser/mp.lua` swapped in, run the dump, `diff`.
+- Golden regeneration is only for intentional parser behavior changes: run the dump game directly (it writes `out.txt` / `out-compl.txt` next to `tests/match-dump/main3.lua`), then copy them to `golden*.txt`. The noun forms golden is regenerated the same way (`tests/noun-forms/out.txt` → `golden.txt`). To validate a refactor, compare against a previous `mp.lua`: `git show <rev>:data/stead3/parser/mp.lua` swapped in, run the dump, `diff`.
 
 ## Running games / autoscripts
 
