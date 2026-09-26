@@ -1,0 +1,86 @@
+# Shared part of the instead-cli build.
+#
+# Linux:   make
+# Windows: make -f Makefile.mingw
+# Dist:    make dist  (both clients, needs the mingw cross compiler)
+#
+# The client is built with the bundled Lua from ../../src/lua, the engine
+# sources come from ../../src/instead, the runtime tree (stead/) is
+# assembled from ../../data/stead3.
+
+ENGINE      := ../../src/instead
+ENGINE_ROOT := ../../src
+LUA         := ../../src/lua
+STEAD3      := ../../data/stead3
+
+VERSION   ?= $(shell date +%y%m%d)
+DESTDIR   ?= ./release/
+BIN       ?= ./
+STEADPATH ?= ./stead
+
+INSTALLD ?= install -d -m 0755
+INSTALLB ?= install -m 0755
+
+BUILD ?= build
+DIST  := build/dist
+
+CPPFLAGS += -I. -I$(ENGINE_ROOT) -I$(ENGINE) -I$(LUA)
+CFLAGS   += -O2 -Wall -DSTEAD_PATH=\"$(STEADPATH)/\" -DVERSION=\"$(VERSION)\"
+
+SRC   := main.c instead_lib.c $(notdir $(wildcard $(ENGINE)/*.c)) \
+         $(notdir $(wildcard $(LUA)/*.c))
+VPATH := . $(ENGINE_ROOT) $(ENGINE) $(LUA)
+OBJ   := $(addprefix $(BUILD)/,$(SRC:.c=.o))
+
+.DEFAULT_GOAL := all
+
+.PHONY: all linux windows dist stead run install clean
+
+all: instead-cli$(EXE)
+
+$(BUILD)/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
+
+instead-cli$(EXE): $(OBJ)
+	$(CC) $(OBJ) $(LDFLAGS) -o $@
+
+# Cross builds, both used by dist.
+linux:
+	$(MAKE) -f Makefile
+
+windows:
+	$(MAKE) -f Makefile.mingw
+
+# build/dist: both clients plus the runtime tree, ready to run.
+dist: linux windows stead
+	rm -rf $(DIST)
+	@mkdir -p $(DIST)
+	$(INSTALLB) instead-cli $(DIST)/instead-cli
+	$(INSTALLB) instead-cli.exe $(DIST)/instead-cli.exe
+	cp -R $(STEADPATH) $(DIST)/stead
+	rm -f $(DIST)/stead/.stead.stamp
+
+# Runtime tree: stead/tiny.lua plus stead/stead3 taken from data/stead3.
+stead: $(STEADPATH)/.stead.stamp
+
+$(STEADPATH)/.stead.stamp: tiny.lua $(shell find $(STEAD3) -type f 2>/dev/null)
+	rm -rf $(STEADPATH)/stead3
+	@mkdir -p $(STEADPATH)/stead3
+	cp -R $(STEAD3)/. $(STEADPATH)/stead3/
+	cp tiny.lua $(STEADPATH)/tiny.lua
+	touch $@
+
+run: all stead
+	@test -n "$(GAME)" || { echo "usage: make run GAME=../../data/games/trial"; exit 1; }
+	./instead-cli$(EXE) $(GAME)
+
+install: all stead
+	$(INSTALLD) $(DESTDIR)$(BIN)
+	$(INSTALLB) instead-cli$(EXE) $(DESTDIR)$(BIN)/instead-cli$(EXE)
+	$(INSTALLD) $(DESTDIR)$(STEADPATH)
+	cp -R $(STEADPATH)/stead3 $(DESTDIR)$(STEADPATH)/
+	$(INSTALLB) $(STEADPATH)/tiny.lua $(DESTDIR)$(STEADPATH)/tiny.lua
+
+clean:
+	$(RM) -rf build instead-cli$(EXE) $(STEADPATH)

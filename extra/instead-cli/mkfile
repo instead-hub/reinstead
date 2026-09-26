@@ -1,0 +1,44 @@
+</$objtype/mkfile
+
+# instead-cli on Plan9 (9front). The sources live in the reinstead tree:
+# ../../src/instead, ../../src/instead_lib.c and the bundled Lua in
+# ../../src/lua, built in place with mkfile.lua (the mkfile of the 9front
+# Lua port). The runtime is taken from ../../data/stead3.
+
+CC=pcc
+CFLAGS= -DVERSION="1.6" -D_POSIX_SOURCE -DPLAN9 -DUNIX -DSTEAD_PATH="/sys/games/lib/instead/" \
+	-I../../src/lua -I../../src/instead -I../../src
+LIBS=../../src/lua/liblua.a
+
+all:V: $O.instead-cli
+
+$LIBS:
+	cp mkfile.lua ../../src/lua/mkfile
+	cd ../../src/lua && mk
+
+OFILES=\
+	../../src/instead/cache.$O\
+	../../src/instead/idf.$O\
+	../../src/instead/instead.$O\
+	../../src/instead/lfs.$O\
+	../../src/instead/list.$O\
+	../../src/instead/util.$O\
+	../../src/instead/xoshiro128.$O\
+	../../src/instead_lib.$O\
+	main.$O
+
+%.$O: %.c
+	$CC $CFLAGS -c -o $target $stem.c
+
+$O.instead-cli: $OFILES $LIBS
+	$CC $CFLAGS -o $target $OFILES $LIBS
+
+install:V:all
+	mkdir -p /sys/games/lib/instead/stead3
+	dircp ../../data/stead3 /sys/games/lib/instead/stead3
+	cp tiny.lua /sys/games/lib/instead
+	cp $O.instead-cli /$objtype/bin/instead-cli
+
+clean:V:
+	rm -f $OFILES $O.instead-cli $LIBS
+	rm -f ../../src/lua/mkfile

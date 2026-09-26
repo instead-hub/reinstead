@@ -1,0 +1,24 @@
+# instead-cli: Windows build with mingw-w64 (static).
+#
+#   make -f Makefile.mingw
+#
+# The client is built with the bundled Lua (../../src/lua) and links statically.
+#
+# mingw-w64 on Debian/Ubuntu has no iconv, so by default the client works
+# in UTF-8: run it with -cp65001 (or switch the console to UTF-8). Build
+# with ICONV=1 if your toolchain provides libiconv.
+
+CC  := i686-w64-mingw32-gcc
+EXE := .exe
+
+BUILD := build/mingw
+
+CFLAGS  += -mconsole
+LDFLAGS += -static -lm
+
+ifdef ICONV
+CFLAGS  += -D_HAVE_ICONV
+LDFLAGS += -liconv
+endif
+
+include Makefile.common
