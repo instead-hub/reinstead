@@ -11,14 +11,41 @@ body {
 	background: #fff;
 }
 
-h1 { font-size: 1.6rem; margin: 0 0 1rem; }
-h2 { font-size: 1.15rem; margin: .75rem 0 .25rem; }
+h1 { font-size: 1.6rem; margin: 0 0 .5rem; }
+h2 { font-size: 1.15rem; margin: 0 0 .5rem; }
 
 a { color: #14509c; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-.about, .footer { color: #666; }
-.footer { margin-top: 2rem; font-size: .9rem; }
+hr {
+	border: 0;
+	border-top: 1px solid #ddd;
+	margin: 1.5rem 0;
+}
+
+.headline {
+	display: flex;
+	align-items: center;
+	gap: 1.5rem;
+}
+
+.headline .logo {
+	width: 128px;
+	height: auto;
+	flex: none;
+}
+
+@media (max-width: 30rem) {
+	.headline {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}
+
+#about p, #feedback p { margin: .5rem 0; }
+#about .small { font-size: .9rem; color: #666; }
+
+.footer { margin-top: 2rem; font-size: .9rem; color: #666; }
 
 .cards {
 	display: grid;

@@ -33,6 +33,7 @@ build/index.html              game cards
 build/games/<name>/index.html game page with the icon and description
 build/games/<name>/<name>.zip game archive, <name>/ inside
 build/mp/                     metaparser-js distribution
+build/compass-logo.png        site logo
 build/style.css
 ```
 

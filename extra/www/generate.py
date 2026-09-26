@@ -136,7 +136,7 @@ def game_page(game):
 def index_page(games):
     cards = "\n".join(card_html(g) for g in games)
     body = render("index.html", cards=cards)
-    return page("Игры", body, 0)
+    return page("МЕТАПАРСЕР: интерактивная литература", body, 0)
 
 
 def load_games(games_dir):
@@ -191,6 +191,7 @@ def main():
     (out / "games").mkdir(parents=True)
     shutil.copytree(mp_dir, out / "mp")
     shutil.copyfile(HERE / "style.css", out / "style.css")
+    shutil.copyfile(HERE / "compass-logo.png", out / "compass-logo.png")
     (out / "index.html").write_text(index_page(games), encoding="utf-8")
 
     for game in games:
