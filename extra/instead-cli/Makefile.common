@@ -38,7 +38,7 @@ OBJ   := $(addprefix $(BUILD)/,$(SRC:.c=.o))
 
 all: instead-cli$(EXE)
 
-$(BUILD)/%.o: %.c
+$(BUILD)/%.o: %.c | $(EXTRA_DEPS)
 	@mkdir -p $(@D)
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
