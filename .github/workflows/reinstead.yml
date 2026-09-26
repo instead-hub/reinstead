@@ -63,7 +63,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: doc-pdf
-          key: doc-${{ env.mmd_ver }}-${{ hashFiles('doc/manual.md', 'doc/manual.tex', 'doc/preamble.tex', 'doc/Makefile', 'doc/img/**') }}
+          key: doc-${{ env.mmd_ver }}-${{ hashFiles('doc/manual.md', 'doc/manual.tex', 'doc/preamble.tex', 'doc/Makefile', 'doc/img/**', 'doc/metaparser/**') }}
 
       - name: Install Packages
         run: |
@@ -89,7 +89,9 @@ jobs:
         name: Create manual pdf
         run: |
           cd doc
-          make && mkdir ../doc-pdf && cp manual.pdf ../doc-pdf
+          make && mkdir ../doc-pdf && cp reinstead.pdf ../doc-pdf
+          make -C metaparser
+          cp metaparser/metaparser-manual-ru.pdf ../doc-pdf/
 
       - name: build
         run: |
@@ -102,9 +104,11 @@ jobs:
           rm -rf dist
           mkdir -p dist/reinstead
           cp -r release/. dist/reinstead/
-          cp doc-pdf/manual.pdf dist/reinstead/doc/
+          cp doc-pdf/reinstead.pdf dist/reinstead/doc/
+          cp doc-pdf/metaparser-manual-ru.pdf dist/reinstead/doc/
           (cd dist && zip -r "reinstead-$VER.zip" reinstead)
-          cp doc-pdf/manual.pdf "dist/reinstead-$VER-manual.pdf"
+          cp doc-pdf/reinstead.pdf "dist/reinstead-$VER-manual.pdf"
+          cp doc-pdf/metaparser-manual-ru.pdf "dist/metaparser-$VER-manual-ru.pdf"
           echo "artifact=reinstead-$VER" >> "$GITHUB_OUTPUT"
 
       - name: Publish Artifact

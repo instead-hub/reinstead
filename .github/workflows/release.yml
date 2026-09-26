@@ -112,6 +112,7 @@ jobs:
           gh release create "$VER" --draft --title "RE:INSTEAD $VER" --generate-notes \
             "dist/reinstead-$VER.zip" \
             "dist/reinstead-$VER-manual.pdf" \
+            "dist/metaparser-$VER-manual-ru.pdf" \
             "dist/metaparser-js-$VER.zip" \
             "dist/instead-cli-$VER.zip" \
             "dist/metaparser-instead-$VER.zip"
