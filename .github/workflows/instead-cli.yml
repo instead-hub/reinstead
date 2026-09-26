@@ -57,8 +57,10 @@ jobs:
         id: pack
         run: |
           VER='${{ steps.ver.outputs.version }}'
-          mkdir -p dist
-          (cd extra/instead-cli/build/dist && zip -r "$GITHUB_WORKSPACE/dist/instead-cli-$VER.zip" .)
+          rm -rf dist
+          mkdir -p dist/instead-cli
+          cp -r extra/instead-cli/build/dist/. dist/instead-cli/
+          (cd dist && zip -r "instead-cli-$VER.zip" instead-cli)
           echo "artifact=instead-cli-$VER" >> "$GITHUB_OUTPUT"
 
       - name: Publish Artifact
