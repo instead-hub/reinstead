@@ -34,7 +34,7 @@ OBJ   := $(addprefix $(BUILD)/,$(SRC:.c=.o))
 
 .DEFAULT_GOAL := all
 
-.PHONY: all linux windows dist stead run install clean
+.PHONY: all linux windows dist stead run install clean libiconv
 
 all: instead-cli$(EXE)
 
@@ -42,7 +42,7 @@ $(BUILD)/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $< -o $@
 
-instead-cli$(EXE): $(OBJ)
+instead-cli$(EXE): $(OBJ) $(EXTRA_DEPS)
 	$(CC) $(OBJ) $(LDFLAGS) -o $@
 
 # Cross builds, both used by dist.

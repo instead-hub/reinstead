@@ -2,23 +2,25 @@
 #
 #   make -f Makefile.mingw
 #
-# The client is built with the bundled Lua (../../src/lua) and links statically.
-#
-# mingw-w64 on Debian/Ubuntu has no iconv, so by default the client works
-# in UTF-8: run it with -cp65001 (or switch the console to UTF-8). Build
-# with ICONV=1 if your toolchain provides libiconv.
+# The client is built with the bundled Lua (../../src/lua) and links statically,
+# including GNU libiconv, which is built for mingw by ./libiconv.sh: mingw-w64
+# itself ships no iconv.
 
 CC  := i686-w64-mingw32-gcc
 EXE := .exe
 
 BUILD := build/mingw
 
-CFLAGS  += -mconsole
-LDFLAGS += -static -lm
+ICONV_DIR   ?= external
+ICONV_STAMP := $(ICONV_DIR)/.stamp
 
-ifdef ICONV
-CFLAGS  += -D_HAVE_ICONV
-LDFLAGS += -liconv
-endif
+CFLAGS  += -mconsole -D_HAVE_ICONV -I$(ICONV_DIR)/include
+LDFLAGS += -static -lm -L$(ICONV_DIR)/lib -liconv
+EXTRA_DEPS := $(ICONV_STAMP)
 
 include Makefile.common
+
+libiconv: $(ICONV_STAMP)
+
+$(ICONV_STAMP):
+	./libiconv.sh

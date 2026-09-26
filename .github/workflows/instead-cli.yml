@@ -42,6 +42,12 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y build-essential gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 zip
 
+      - name: Cache libiconv
+        uses: actions/cache@v6
+        with:
+          path: extra/instead-cli/external
+          key: libiconv-${{ runner.os }}-${{ hashFiles('extra/instead-cli/libiconv.sh') }}
+
       - name: Build
         run: make -C extra/instead-cli dist
 

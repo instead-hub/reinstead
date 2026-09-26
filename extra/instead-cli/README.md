@@ -35,9 +35,10 @@ current directory elsewhere, so run them from `build/dist`.
 stead3 layer taken from `../../data/stead3`. `make run` builds the binary
 and the tree and starts the given game.
 
-iconv is used for codepage conversion when available. It comes with the C
-library on Linux; mingw-w64 has none, so the Windows client works in UTF-8
-(`-cp65001`) unless built with `make -f Makefile.mingw ICONV=1`.
+iconv is used for codepage conversion. On Linux it comes with the C library;
+mingw-w64 ships none, so the Windows build builds GNU libiconv for mingw with
+`./libiconv.sh` (static, into `external/`, kept by `make clean`) — `make
+-f Makefile.mingw` does it automatically.
 
 System wide setup (changing STEADPATH needs a rebuild):
 
