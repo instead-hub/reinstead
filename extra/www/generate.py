@@ -128,12 +128,15 @@ def game_page(game, iframe=False):
     else:
         about = text_html(game["info"])
     back = "../index-iframe.html" if iframe else "../../index.html"
+    name = game["name"]
+    play = f"../../mp/index.html?../games/{name}/{name}.zip" + ("&iframe=1" if iframe else "")
     body = render("game.html",
-                  name=esc(game["name"]),
+                  name=esc(name),
                   title=esc(game["title"]),
                   author=esc(game["author"]),
                   about=about,
-                  back=back)
+                  back=back,
+                  play=esc(play))
     if iframe:
         body = f'<div class="container">\n{body}</div>'
     return page(f"Игра «{game['title']}»", body, 2, "iframe" if iframe else "")
@@ -156,7 +159,7 @@ def patch_player(path):
     """Add the back button to the player: it is shown only when the player
     runs inside an iframe (the VK app) and leads back to the iframe page."""
     back = """<div class="status TextGrid" id="iframe-back" hidden><a href="../index-iframe.html"><b>назад </b></a></div>
-<script>if (window.self !== window.top) document.getElementById('iframe-back').hidden = false;</script>
+<script>if (window.self !== window.top || /(^|&)iframe=1(&|$)/.test(location.search)) document.getElementById('iframe-back').hidden = false;</script>
 """
     css = """<style>
 .TextGrid {
