@@ -224,7 +224,8 @@ top:
 		return 0;
 
 	switch (e.type) {
-	case SDL_EVENT_DID_ENTER_BACKGROUND:
+//	case SDL_EVENT_DID_ENTER_BACKGROUND:
+	case SDL_EVENT_WILL_ENTER_BACKGROUND:
 		lua_pushstring(L, "save");
 		return 1;
 	case SDL_EVENT_QUIT:
