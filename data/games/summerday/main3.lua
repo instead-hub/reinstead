@@ -1,7 +1,7 @@
 --$Name:Один день лета
 --$Version:1.2
 --$Author:Пётр Косых$
---$Info:Игра на Инстедоз-6$
+--$Info:Приключения из детства.$
 
 require "fmt"
 if instead.tiny then

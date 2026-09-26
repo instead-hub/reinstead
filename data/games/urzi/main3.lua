@@ -2,7 +2,7 @@
 --$Name(ru): Урзи$
 --$Version: 1.05$
 --$Author: Антон Жучков (fireton)$
---$Info: English translation by Alexander Sorokin$
+--$Info:Маленькая кошачья история.$
 
 require "fmt"
 obj {

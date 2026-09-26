@@ -1,6 +1,7 @@
 --$Name:Метель$
 --$Author:Peter Kosyh & Pakowacz$
 --$Version:2.1$
+--$Info:Что тебя ждёт за снежной пеленой?$
 require "parser/mp-ru"
 require "fmt"
 fmt.dash = true

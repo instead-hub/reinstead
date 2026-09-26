@@ -1,6 +1,7 @@
 -- $Name:Испытание Марсом$
 -- $Version: 0.09$
 -- $Author: Irremann$
+--$Info:Научно-фантастический рассказ об аварии на марсианской базе.$
 
 require "parser/mp-ru"
 require "fmt"

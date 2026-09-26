@@ -1,6 +1,7 @@
 -- $Name:Пробуждение$
 -- $Version: 0.04$
 -- $Author: Irremann$
+--$Info:Небольшой интерактивный постапокалиптический рассказ.$
 
 require "parser/mp-ru"
 require "fmt"

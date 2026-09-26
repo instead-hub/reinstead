@@ -1,6 +1,6 @@
 --$Name:Другой Марс$
 --$Author:Пётр Косых$
---$Info:июль 2018$
+--$Info:Игра по мотивам произведений Р. Шекли.$
 --$Version:1.7$
 
 local gfx_mode = std.ref'@sprite'.scr()

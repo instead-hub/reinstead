@@ -2,6 +2,7 @@
 --$Name(ru): Архив$
 --$Version: 1.1$
 --$Author:Peter Kosyh$
+--$Info:Происшествие в гиперпространстве.$
 --$Author(ru):Пётр Косых$
 
 require "fmt"
