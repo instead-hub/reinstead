@@ -8,13 +8,6 @@ on:
         required: false
         type: string
 
-env:
-  luajit_ver: 2.0.5
-  sdl_ver: 3.4.16
-  freetype_ver: 2.12.1
-  mmd_ver: 6.8.0
-  emscripten_ver: 6.0.10
-
 permissions:
   contents: write
 
@@ -23,10 +16,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: release
+  version:
+    name: version
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
@@ -53,95 +45,43 @@ jobs:
             exit 1
           fi
 
-      - name: Cache libs
-        id: cache-libs
-        uses: actions/cache@v6
-        with:
-          path: external
-          key: libs-v3-${{ runner.os }}-${{ env.luajit_ver }}-${{ env.sdl_ver }}-${{ env.freetype_ver }}-${{ hashFiles('contrib/build-release*.sh') }}
-
-      - name: Cache manual
-        id: cache-doc
-        uses: actions/cache@v6
-        with:
-          path: doc-pdf
-          key: doc-${{ env.mmd_ver }}-${{ hashFiles('doc/manual.md', 'doc/manual.tex', 'doc/preamble.tex', 'doc/Makefile', 'doc/img/**') }}
-
-      - name: Install Packages
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y gcc-mingw-w64-i686 g++-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib wget zip
-          sudo apt-get install -y build-essential cmake
-          sudo apt-get install -y libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev libxrender-dev libdbus-1-dev libwayland-dev wayland-protocols libxkbcommon-dev libegl1-mesa-dev libdecor-0-dev
-
-      - if: steps.cache-doc.outputs.cache-hit != 'true'
-        name: Install latex
-        run: |
-          sudo apt-get install -y texlive-xetex texlive-latex-base texlive-latex-extra texlive-latex-recommended texlive-lang-cyrillic fonts-dejavu fonts-liberation
-
-      - if: steps.cache-doc.outputs.cache-hit != 'true'
-        name: Install multimarkdown
-        run: |
-          git clone --depth 1 --branch "$mmd_ver" https://github.com/fletcher/MultiMarkdown-6.git
-          make -C MultiMarkdown-6 release
-          make -C MultiMarkdown-6/build -j"$(nproc)"
-          sudo cmake --install MultiMarkdown-6/build
-
-      - if: steps.cache-doc.outputs.cache-hit != 'true'
-        name: Create manual pdf
-        run: |
-          cd doc
-          make && mkdir ../doc-pdf && cp manual.pdf ../doc-pdf
-
-      - name: build
-        run: |
-          ./contrib/build-release-sdl3.sh
-
-      - name: Package
-        run: |
-          VER='${{ steps.ver.outputs.version }}'
-          rm -rf dist
-          mkdir -p dist/reinstead
-          cp -r release/. dist/reinstead/
-          cp doc-pdf/manual.pdf dist/reinstead/doc/
-          (cd dist && zip -r "reinstead-$VER.zip" reinstead)
-          cp doc-pdf/manual.pdf "dist/reinstead-$VER-manual.pdf"
-
-      - name: Create draft release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VER='${{ steps.ver.outputs.version }}'
-          gh release create "$VER" --draft --title "RE:INSTEAD $VER" --generate-notes "dist/reinstead-$VER.zip" "dist/reinstead-$VER-manual.pdf"
-
-      - name: Publish Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: reinstead-${{ steps.ver.outputs.version }}
-          path: dist
-          retention-days: 7
+  reinstead:
+    name: reinstead
+    needs: version
+    uses: ./.github/workflows/reinstead.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
 
   metaparser_js:
     name: metaparser-js
-    needs: build
+    needs: version
     uses: ./.github/workflows/metaparser-js.yml
     with:
-      version: ${{ needs.build.outputs.version }}
+      version: ${{ needs.version.outputs.version }}
 
-  metaparser_js_asset:
-    name: metaparser-js asset
+  draft:
+    name: draft release
     runs-on: ubuntu-22.04
-    needs: [build, metaparser_js]
+    needs: [version, reinstead, metaparser_js]
     steps:
-      - name: Download artifact
+      - name: Download reinstead
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.reinstead.outputs.artifact }}
+          path: dist
+
+      - name: Download metaparser-js
         uses: actions/download-artifact@v8
         with:
           name: ${{ needs.metaparser_js.outputs.artifact }}
           path: dist
 
-      - name: Add to draft release
+      - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VER='${{ needs.build.outputs.version }}'
-          gh release upload "$VER" dist/metaparser-js-*.zip
+          VER='${{ needs.version.outputs.version }}'
+          gh release create "$VER" --draft --title "RE:INSTEAD $VER" --generate-notes \
+            "dist/reinstead-$VER.zip" \
+            "dist/reinstead-$VER-manual.pdf" \
+            "dist/metaparser-js-$VER.zip"
