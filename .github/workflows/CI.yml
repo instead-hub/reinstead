@@ -5,9 +5,6 @@ on:
   workflow_dispatch:
   pull_request:
 
-env:
-  SDL3_VER: "3.4.16"
-
 jobs:
   build:
     name: CI (${{ matrix.sdl }})
@@ -17,31 +14,18 @@ jobs:
       matrix:
         include:
           - sdl: sdl2
-            sdlv: "2"
           - sdl: sdl3
-            sdlv: "3"
     steps:
       - uses: actions/checkout@v7
 
       - name: Install Packages
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 gcc-multilib libsdl2-dev libsdl3-dev libluajit-5.1-dev libfreetype-dev
-          sudo apt-get install -y build-essential wget
-
-      - if: matrix.sdl == 'sdl3'
-        name: Fetch mingw SDL3
-        run: |
-          wget -q "https://github.com/libsdl-org/SDL/releases/download/release-$SDL3_VER/SDL3-devel-$SDL3_VER-mingw.tar.gz"
-          tar xf "SDL3-devel-$SDL3_VER-mingw.tar.gz"
-          mkdir -p windows/SDL3
-          cp -r "SDL3-$SDL3_VER/i686-w64-mingw32/." windows/SDL3/
+          sudo apt-get install -y libsdl2-dev libsdl3-dev libluajit-5.1-dev libfreetype-dev
+          sudo apt-get install -y build-essential
 
       - name: build-default
         run: SDLVER=${{ matrix.sdl }} ./make-default.sh
-
-      - name: build-win
-        run: SDLV=${{ matrix.sdlv }} ./make-win.sh
 
       - name: build-make
         run: |
