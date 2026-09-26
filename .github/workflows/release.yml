@@ -64,10 +64,12 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [version, reinstead, metaparser_js]
     steps:
+      - uses: actions/checkout@v7
+
       - name: Download reinstead
         uses: actions/download-artifact@v8
         with:
-          name: ${{ needs.reinstead.outputs.artifact }}
+          name: ${{ needs.reinestead.outputs.artifact }}
           path: dist
 
       - name: Download metaparser-js
