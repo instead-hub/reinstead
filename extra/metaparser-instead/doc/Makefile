@@ -1,0 +1,13 @@
+all:	metaparser-manual-ru.pdf
+
+clean:
+	rm -f *.aux *.log *.out *.toc mp-manual-ru.tex
+
+mp-manual-ru.tex: manual-ru.md
+	multimarkdown manual-ru.md -t latex -o mp-manual-ru.tex
+	sed -i -e 's/{verbatim}/{verbatimtab}[4]/g' mp-manual-ru.tex
+
+metaparser-manual-ru.pdf: manual-ru.tex mp-manual-ru.tex
+	xelatex manual-ru.tex
+	xelatex manual-ru.tex
+	xelatex manual-ru.tex
