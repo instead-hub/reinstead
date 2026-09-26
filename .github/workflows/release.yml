@@ -69,7 +69,7 @@ jobs:
       - name: Download reinstead
         uses: actions/download-artifact@v8
         with:
-          name: ${{ needs.reinestead.outputs.artifact }}
+          name: ${{ needs.reinstead.outputs.artifact }}
           path: dist
 
       - name: Download metaparser-js
