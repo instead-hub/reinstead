@@ -34,7 +34,8 @@ build/index-iframe.html       same for embedding (no contacts, site invite)
 build/games/<name>/index.html game page with the icon and description
 build/games/<name>/index-iframe.html  same for embedding
 build/games/<name>/<name>.zip game archive, <name>/ inside
-build/mp/                     metaparser-js distribution
+build/mp/                     metaparser-js distribution; the player gets a
+                              back button when embedded in an iframe
 build/compass-logo.png        site logo
 build/favicon.png             site favicon
 build/style.css

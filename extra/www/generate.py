@@ -152,6 +152,36 @@ def index_iframe_page(games):
     return page("RE:INSTEAD", body, 0, "iframe")
 
 
+def patch_player(path):
+    """Add the back button to the player: it is shown only when the player
+    runs inside an iframe (the VK app) and leads back to the iframe page."""
+    back = """<div class="status TextGrid" id="iframe-back" hidden><a href="../index-iframe.html"><b>назад </b></a></div>
+<script>if (window.self !== window.top) document.getElementById('iframe-back').hidden = false;</script>
+"""
+    css = """<style>
+.TextGrid {
+	width: 100%;
+	text-align: right;
+	position: fixed;
+	margin: 0 -1em;
+	z-index: 2;
+}
+
+.TextGrid a {
+	text-decoration: none;
+	background-color: black;
+	color: white;
+	border-radius: .2em;
+	padding: .2em;
+}
+</style>
+"""
+    html = path.read_text(encoding="utf-8")
+    html = html.replace("</head>", css + "</head>", 1)
+    html = html.replace("<body>", "<body>\n" + back, 1)
+    path.write_text(html, encoding="utf-8")
+
+
 def load_games(games_dir):
     games = []
     for game_dir in sorted(games_dir.iterdir()):
@@ -203,6 +233,7 @@ def main():
     shutil.rmtree(out, ignore_errors=True)
     (out / "games").mkdir(parents=True)
     shutil.copytree(mp_dir, out / "mp")
+    patch_player(out / "mp" / "index.html")
     shutil.copyfile(HERE / "style.css", out / "style.css")
     shutil.copyfile(HERE / "compass-logo.png", out / "compass-logo.png")
     shutil.copyfile(HERE / "favicon.png", out / "favicon.png")
