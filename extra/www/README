@@ -30,17 +30,19 @@ The generated site:
 
 ```
 build/index.html              game cards
+build/index-iframe.html       same for embedding (no contacts, site invite)
 build/games/<name>/index.html game page with the icon and description
 build/games/<name>/<name>.zip game archive, <name>/ inside
 build/mp/                     metaparser-js distribution
 build/compass-logo.png        site logo
+build/favicon.png             site favicon
 build/style.css
 ```
 
 The archives are packed with `<name>/` as the top level directory, as
 metaparser-js expects for `<name>.zip`; `saves/` and `autoscript` are left out.
 
-The markup lives in `templates/`: `page.html` (skeleton), `index.html` (game
-list), `card.html` (one card) and `game.html` (game page). Placeholders are
-`string.Template` names, so `$title`, `$cards` and so on are substituted by the
-generator.
+The markup lives in `templates/`: `page.html` (skeleton), `index.html` and
+`index-iframe.html` (game list), `card.html` (one card) and `game.html` (game
+page). Placeholders are `string.Template` names, so `$title`, `$cards` and so
+on are substituted by the generator.

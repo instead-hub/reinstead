@@ -139,6 +139,13 @@ def index_page(games):
     return page("RE:INSTEAD", body, 0)
 
 
+def index_iframe_page(games):
+    """Same cards, but for embedding: no contacts, invites to the full site."""
+    cards = "\n".join(card_html(g) for g in games)
+    body = render("index-iframe.html", cards=cards)
+    return page("RE:INSTEAD", body, 0)
+
+
 def load_games(games_dir):
     games = []
     for game_dir in sorted(games_dir.iterdir()):
@@ -195,6 +202,7 @@ def main():
     shutil.copyfile(HERE / "favicon.png", out / "favicon.png")
 
     (out / "index.html").write_text(index_page(games), encoding="utf-8")
+    (out / "index-iframe.html").write_text(index_iframe_page(games), encoding="utf-8")
 
     for game in games:
         d = out / "games" / game["name"]
