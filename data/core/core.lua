@@ -1,4 +1,4 @@
-VERSION='0.8'
+VERSION='3.0'
 print(PLATFORM)
 conf = require "config"
 local iface = require "iface"

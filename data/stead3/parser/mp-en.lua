@@ -7,39 +7,39 @@ local mp = _'@metaparser'
 local mrd = require "morph/mrd"
 
 function mrd:init(l)  -- no dictionary!
-	self.lang = l
+  self.lang = l
 end
 
 std.mod_init(
-	function()
-	mp:init(lang)
+  function()
+  mp:init(lang)
 end)
 game.dsc = function()
-	p ([[METAPARSER3 Version: ]]..mp.version.."^")
-	p [[http://instead-hub.github.io^^
+  p ([[METAPARSER3 Version: ]]..mp.version.."^")
+  p [[http://instead-hub.github.io^^
 Enter "HELP" for help.
 ^]]
 end
 local utf = mp.utf
 
 std.obj.the_noun = function(s, ...)
-	local t = s:noun(...)
-	if s:hint'proper' or s:hint'surname' then
-		return t
-	end
-	return "the "..t
+  local t = s:noun(...)
+  if s:hint'proper' or s:hint'surname' then
+    return t
+  end
+  return "the "..t
 end
 
 std.obj.a_noun = function(s, ...)
-	local t = s:noun(...)
-	if s:hint'plural' then
-		return t
-	end
-	if lang.is_vowel(utf.char(t, 1)) then
-		return "an "..t
-	else
-		return "a "..t
-	end
+  local t = s:noun(...)
+  if s:hint'plural' then
+    return t
+  end
+  if lang.is_vowel(utf.char(t, 1)) then
+    return "an "..t
+  else
+    return "a "..t
+  end
 end
 
 _'@all'.word = -"all"
@@ -62,65 +62,65 @@ _'@out_to'.word = "out,outside";
 _'@in_to'.word = "in,inside"
 
 mp.shorten = {
-	["n"] = "north";
-	["e"] = "east";
-	["w"] = "west";
-	["s"] = "south";
-	["ne"] = "northeast";
-	["se"] = "southeast";
-	["sw"] = "southwest";
-	["nw"] = "northwest";
-	["u"] = "up";
-	["d"] = "down";
+  ["n"] = "north";
+  ["e"] = "east";
+  ["w"] = "west";
+  ["s"] = "south";
+  ["ne"] = "northeast";
+  ["se"] = "southeast";
+  ["sw"] = "southwest";
+  ["nw"] = "northwest";
+  ["u"] = "up";
+  ["d"] = "down";
 }
 
 mp.shorten_expert = {
-	["x"] = "examine";
-	["x *"] = "examine";
-	["i"] = "inventory";
-	["z"] = "wait";
+  ["x"] = "examine";
+  ["x *"] = "examine";
+  ["i"] = "inventory";
+  ["z"] = "wait";
 }
 
 mp.shorten_custom = {
-	["to *"] = "walk";
-	["in *"] = "walk";
-	["into *"] = "walk";
-	["on *"] = "walk";
+  ["to *"] = "walk";
+  ["in *"] = "walk";
+  ["into *"] = "walk";
+  ["on *"] = "walk";
 }
 
 function mp:skip_filter(w)
-	for _, v in ipairs(w) do
-		if v == 'no' or v == 'not' then
-			return false
-		end
-	end
-	return true
+  for _, v in ipairs(w) do
+    if v == 'no' or v == 'not' then
+      return false
+    end
+  end
+  return true
 end
 function mp:ignore_filter(w)
-	if w == 'the' or w == 'a' or w == 'an' then
-		return true
-	end
-	return false
+  if w == 'the' or w == 'a' or w == 'an' then
+    return true
+  end
+  return false
 end
 _'@compass'.before_Default = function() p('"{#First}" is the direction. You can not ', mp.parsed[1], ' {#firstit}.') end
 
 function mp.msg.SCORE(d)
-	if d > 0 then
-		pn ("{$fmt em|(Score is increased by ", d, ")}")
-	else
-		pn ("{$fmt em|(Score is decreased by ", d, ")}")
-	end
+  if d > 0 then
+    pn ("{$fmt em|(Score is increased by ", d, ")}")
+  else
+    pn ("{$fmt em|(Score is decreased by ", d, ")}")
+  end
 end
 
 mp.door.word = "door"
 mp.msg.TITLE_SCORE = function()
-	if mp.maxscore then
-		pr ("Score: ", mp.score, "/", mp.maxscore)
-	end
-	pr ("Score: ", mp.score)
+  if mp.maxscore then
+    pr ("Score: ", mp.score, "/", mp.maxscore)
+  end
+  pr ("Score: ", mp.score)
 end
 mp.msg.TITLE_TURNS = function()
-	pr ("Turns: ", game:time() - 1)
+  pr ("Turns: ", game:time() - 1)
 end
 mp.msg.YES = "Yes"
 mp.msg.WHEN_DARK = "Darkness."
@@ -130,204 +130,204 @@ mp.msg.COMPASS_EXAM_NO = "Nothing interesting in that direction."
 mp.msg.ENUM = "items."
 mp.msg.CUTSCENE_HELP = "Press <Enter> or enter {$fmt em|next} to continue."
 if instead.tiny then
-	mp.msg.CUTSCENE_MORE = "^{$fmt em|(more)}"
+  mp.msg.CUTSCENE_MORE = "^{$fmt em|(more)}"
 end
 mp.msg.DLG_HELP = "Enter number to select the phrase."
 mp.msg.NO_ALL = "This verb can not be used with all."
 mp.msg.DROPPING_ALL = function(w)
-	pn (iface:em("(dropping "..w:the_noun()..")"))
+  pn (iface:em("(dropping "..w:the_noun()..")"))
 end
 mp.msg.TAKING_ALL = function(w)
-	pn (iface:em("(taking "..w:the_noun()..")"))
+  pn (iface:em("(taking "..w:the_noun()..")"))
 end
 mp.msg.TAKE_BEFORE = function(w)
-	pn (iface:em("(taking "..w:the_noun().." first)"))
+  pn (iface:em("(taking "..w:the_noun().." first)"))
 end
 mp.msg.DISROBE_BEFORE = function(w)
-	pn (iface:em("(disrobing "..w:the_noun().." first)"))
+  pn (iface:em("(disrobing "..w:the_noun().." first)"))
 end
 
 mp.msg.CLOSE_BEFORE = function(w)
-	pn (iface:em("(closing "..w:the_noun() .. " first)"))
+  pn (iface:em("(closing "..w:the_noun() .. " first)"))
 end
 
 local function str_split(str, delim)
-	local a = std.split(str, delim)
-	for k, _ in ipairs(a) do
-		a[k] = std.strip(a[k])
-	end
-	return a
+  local a = std.split(str, delim)
+  for k, _ in ipairs(a) do
+    a[k] = std.strip(a[k])
+  end
+  return a
 end
 
 function mp.shortcut.thenoun(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 1 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then
-		return ""
-	end
-	return ob:the_noun()
+  local w = str_split(hint, ",")
+  if #w ~= 1 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then
+    return ""
+  end
+  return ob:the_noun()
 end
 
 function mp.shortcut.anoun(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 2 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then
-		return ""
-	end
-	return ob:a_noun()
+  local w = str_split(hint, ",")
+  if #w ~= 2 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then
+    return ""
+  end
+  return ob:a_noun()
 end
 
 function mp.shortcut.thefirst()
-	return mp.first:the_noun()
+  return mp.first:the_noun()
 end
 
 function mp.shortcut.thesecond()
-	return mp.second:the_noun()
+  return mp.second:the_noun()
 end
 
 function mp.shortcut.is(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 1 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then return "" end
-	if ob:hint'plural' then
-		return 'are'
-	end
-	return 'is'
+  local w = str_split(hint, ",")
+  if #w ~= 1 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then return "" end
+  if ob:hint'plural' then
+    return 'are'
+  end
+  return 'is'
 end
 
 function mp.shortcut.have(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 1 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then return "" end
-	if ob:hint'plural' or ob:hint'first' or ob:hint'second' then
-		return 'have'
-	end
-	return 'has'
+  local w = str_split(hint, ",")
+  if #w ~= 1 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then return "" end
+  if ob:hint'plural' or ob:hint'first' or ob:hint'second' then
+    return 'have'
+  end
+  return 'has'
 end
 
 function mp.shortcut.does(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 1 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then return "" end
-	if ob:hint'plural' or ob:hint'first' or ob:hint'second' then
-		return 'do'
-	end
-	return 'does'
+  local w = str_split(hint, ",")
+  if #w ~= 1 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then return "" end
+  if ob:hint'plural' or ob:hint'first' or ob:hint'second' then
+    return 'do'
+  end
+  return 'does'
 end
 
 function mp.shortcut.doesnt(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 1 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then return "" end
-	if ob:hint'plural' or ob:hint'first' or ob:hint'second' then
-		return "don't"
-	end
-	return "doesn't"
+  local w = str_split(hint, ",")
+  if #w ~= 1 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then return "" end
+  if ob:hint'plural' or ob:hint'first' or ob:hint'second' then
+    return "don't"
+  end
+  return "doesn't"
 end
 
 function mp.shortcut.present(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 2 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then return "" end
-	if ob:hint'plural' or ob:hint'first' or ob:hint'second' then
-		return w[2]
-	end
-	return w[2]..'s'
+  local w = str_split(hint, ",")
+  if #w ~= 2 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then return "" end
+  if ob:hint'plural' or ob:hint'first' or ob:hint'second' then
+    return w[2]
+  end
+  return w[2]..'s'
 end
 
 function mp.shortcut.yourself(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 1 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then return "" end
-	return mp:myself(ob)[1]
+  local w = str_split(hint, ",")
+  if #w ~= 1 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then return "" end
+  return mp:myself(ob)[1]
 end
 
 function mp.shortcut.thats(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 1 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then return "" end
-	if ob == std.me() then
-		if ob:hint'first' then return "i'm" end
-		return ob:noun()..(ob:hint'plural' and "'re" or "'s")
-	elseif ob:has'plural' then
-		return "they're"
-	elseif ob:has'female' then
-		return "she's"
-	elseif ob:has'male' then
-		return "he's"
-	end
-	return "that's"
+  local w = str_split(hint, ",")
+  if #w ~= 1 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then return "" end
+  if ob == std.me() then
+    if ob:hint'first' then return "i'm" end
+    return ob:noun()..(ob:hint'plural' and "'re" or "'s")
+  elseif ob:has'plural' then
+    return "they're"
+  elseif ob:has'female' then
+    return "she's"
+  elseif ob:has'male' then
+    return "he's"
+  end
+  return "that's"
 end
 
 function mp.shortcut.his(hint)
-	local w = str_split(hint, ",")
-	local ob
-	if #w ~= 1 then
-		ob = std.me()
-	else
-		ob = mp:shortcut_obj(w[1])
-	end
-	if not ob then return "" end
-	if ob == std.me() then
-		if ob:hint'first' then
-			return "my"
-		end
-		if ob:hint'second' then
-			return ob:hint'plural' and "yours" or "your"
-		end
-	end
-	if ob:has'plural' then
-		return "their"
-	elseif ob:has'female' then
-		return "her"
-	elseif ob:has'male' then
-		return "his"
-	end
-	return "its"
+  local w = str_split(hint, ",")
+  local ob
+  if #w ~= 1 then
+    ob = std.me()
+  else
+    ob = mp:shortcut_obj(w[1])
+  end
+  if not ob then return "" end
+  if ob == std.me() then
+    if ob:hint'first' then
+      return "my"
+    end
+    if ob:hint'second' then
+      return ob:hint'plural' and "yours" or "your"
+    end
+  end
+  if ob:has'plural' then
+    return "their"
+  elseif ob:has'female' then
+    return "her"
+  elseif ob:has'male' then
+    return "his"
+  end
+  return "its"
 end
 
 function mp.shortcut.that(hint)
-	local w = str_split(hint, ",")
-	if #w ~= 1 then
-		return ""
-	end
-	local ob = mp:shortcut_obj(w[1])
-	if not ob then return "" end
-	if ob == std.me() then
-		if ob:hint'first' then return "i" end
-		return ob:noun()
-	end
-	if ob:has'plural' then
-		return "those"
-	end
-	return "that"
+  local w = str_split(hint, ",")
+  if #w ~= 1 then
+    return ""
+  end
+  local ob = mp:shortcut_obj(w[1])
+  if not ob then return "" end
+  if ob == std.me() then
+    if ob:hint'first' then return "i" end
+    return ob:noun()
+  end
+  if ob:has'plural' then
+    return "those"
+  end
+  return "that"
 end
 
 mp.msg.SCENE = "{#Me} {#is/#me} {#if_has/#here,supporter,on,in} {#thenoun/#here}.";
@@ -335,60 +335,60 @@ mp.msg.INSIDE_SCENE = "{#Me} {#is/#me} {#if_has/#where,supporter,on,in} {#thenou
 mp.msg.TITLE_INSIDE = "{#if_has/#where,supporter,on,in} {#thenoun/#where}";
 
 mp.msg.COMPASS_EXAM = function(dir, ob)
-	if dir == 'u_to' then
-		p "Upwards there"
-	elseif dir == 'd_to' then
-		p "Downwards there"
-	elseif dir == 'out_to' or dir == 'in_to' then
-		p "In that direction there"
-	else
-		p "In the {#first} direction there"
-	end
-	if ob:hint'plural' then
-		p "are"
-	else
-		p "is"
-	end
-	p (ob:the_noun(),".")
+  if dir == 'u_to' then
+    p "Upwards there"
+  elseif dir == 'd_to' then
+    p "Downwards there"
+  elseif dir == 'out_to' or dir == 'in_to' then
+    p "In that direction there"
+  else
+    p "In the {#first} direction there"
+  end
+  if ob:hint'plural' then
+    p "are"
+  else
+    p "is"
+  end
+  p (ob:the_noun(),".")
 end
 
 mp.msg.enter = "<Enter>"
 mp.msg.EMPTY = 'Excuse me?'
 mp.msg.UNKNOWN_VERB = function(w)
-	p ("Unknown verb ", iface:em(w), ".")
+  p ("Unknown verb ", iface:em(w), ".")
 end
 mp.msg.UNKNOWN_VERB_HINT = function(w)
-	p ("The most similar word is ", iface:em(w), ".")
+  p ("The most similar word is ", iface:em(w), ".")
 end
 mp.msg.INCOMPLETE = "The sentence must be supplemented."
 mp.msg.INCOMPLETE_NOUN = function(w)
-	if w then
-		p ('What do you want to apply the command "'..w..'" to?')
-	else
-		p "What do you want to apply the command to?"
-	end
+  if w then
+    p ('What do you want to apply the command "'..w..'" to?')
+  else
+    p "What do you want to apply the command to?"
+  end
 end
 mp.msg.INCOMPLETE_SECOND_NOUN = function(w)
-	p ('Clarify the command: "', w, '"?')
+  p ('Clarify the command: "', w, '"?')
 end
 mp.msg.UNKNOWN_OBJ = function(w)
-	if not w then
-		p "Nothing is known about this thing here."
-	else
-		p "Nothing is known about this thing here "
-		p ("(", w, ").")
-	end
+  if not w then
+    p "Nothing is known about this thing here."
+  else
+    p "Nothing is known about this thing here "
+    p ("(", w, ").")
+  end
 end
 mp.msg.INCOMPLETE_EXTRA = function(w)
-	p ("Or simply: ", iface:em(w), ".")
+  p ("Or simply: ", iface:em(w), ".")
 end
 mp.msg.UNKNOWN_WORD = function(w)
-	if not w then
-		p "Phrase not recognized."
-	else
-		p "Phrase not recognized "
-		p ("(",w,").")
-	end
+  if not w then
+    p "Phrase not recognized."
+  else
+    p "Phrase not recognized "
+    p ("(",w,").")
+  end
 end
 mp.msg.NOTHING_OBJ = "Nothing."
 mp.msg.HINT_WORDS = "Maybe you meant"
@@ -396,23 +396,23 @@ mp.msg.AND = "and"
 mp.msg.OR = "or"
 mp.msg.MULTIPLE = "Here is"
 mp.msg.LIVE_ACTION = function(w)
-	p (mp:It(w), " would not like it.")
+  p (mp:It(w), " would not like it.")
 end
 mp.msg.NO_LIVE_ACTION = "{#Me} can only do that to something animate."
 mp.msg.NOTINV = function(t)
-	p (lang.cap(t:the_noun()) .. " must be taken first.")
+  p (lang.cap(t:the_noun()) .. " must be taken first.")
 end
 mp.msg.HAS_WORN = function(_)
-	return "worn"
+  return "worn"
 end
 mp.msg.HAS_OPEN = function(_)
-	return "opened"
+  return "opened"
 end
 mp.msg.HAS_ON = function(_)
-	return "switched on"
+  return "switched on"
 end
 mp.msg.HAS_LIGHT = function(_)
-	return "providing light"
+  return "providing light"
 end
 
 mp.msg.EXITBEFORE = "May be, {#me} should to {#if_has/#where,supporter,get off,get out of} {#thenoun/#where}."
@@ -427,43 +427,43 @@ mp.msg.Look.HEREIS = "Here is"
 mp.msg.Look.HEREARE = "Here is"
 
 mp.msg.NOROOM = function(w)
-	if w == std.me() then
-		p ("{#Me} {#is/#me} {#have/#me} too many things.")
-	elseif w:has'supporter' then
-		p ("There is no space on ", w:the_noun(), ".")
-	else
-		p ("There is no space in ", w:the_noun(), ".")
-	end
+  if w == std.me() then
+    p ("{#Me} {#is/#me} {#have/#me} too many things.")
+  elseif w:has'supporter' then
+    p ("There is no space on ", w:the_noun(), ".")
+  else
+    p ("There is no space in ", w:the_noun(), ".")
+  end
 end
 
 mp.msg.Exam.SWITCHSTATE = "{#Thefirst} {#is/#first} switched {#if_has/#first,on,on,off}."
 mp.msg.Exam.NOTHING = function(w)
-	p "There is nothing "
-	if w:has 'supporter' then
-		mp:pnoun (w, "on {#thefirst}.")
-	else
-		mp:pnoun (w, "in {#thefirst}.")
-	end
+  p "There is nothing "
+  if w:has 'supporter' then
+    mp:pnoun (w, "on {#thefirst}.")
+  else
+    mp:pnoun (w, "in {#thefirst}.")
+  end
 end
 mp.msg.Exam.CONTENT = function(w, oo)
-	local single = not oo[1]:hint 'plural'
-	if std.me():where() == w or std.here() == w then
-		p "{#Me} can see"
-		mp:multidsc(oo)
-		p " here."
-		return
-	end
-	if single then
-		p "There is"
-	else
-		p "There are"
-	end
-	mp:multidsc(oo)
-	if w:has 'supporter' then
-		mp:pnoun (w, " on {#thefirst}.")
-	else
-		mp:pnoun (w, " in {#thefirst}.")
-	end
+  local single = not oo[1]:hint 'plural'
+  if std.me():where() == w or std.here() == w then
+    p "{#Me} can see"
+    mp:multidsc(oo)
+    p " here."
+    return
+  end
+  if single then
+    p "There is"
+  else
+    p "There are"
+  end
+  mp:multidsc(oo)
+  if w:has 'supporter' then
+    mp:pnoun (w, " on {#thefirst}.")
+  else
+    mp:pnoun (w, " in {#thefirst}.")
+  end
 end
 mp.msg.Exam.DEFAULT = "{#Me} {#does/#me} not see anything unusual in {#thefirst}.";
 mp.msg.Exam.SELF = "{#Me} {#does/#me} not see anything unusual in {#yourself/#me}.";
@@ -486,7 +486,7 @@ mp.msg.Walk.NOWHERE = "Where?"
 mp.msg.Walk.INV = "{#Me} {#is/#me} holding this."
 
 mp.msg.Enter.EXITBEFORE = "{#Me} {#present/#me,need} to "..
-	"{#if_has/#where,supporter,get off from,leave} {#thenoun/#where} first."
+  "{#if_has/#where,supporter,get off from,leave} {#thenoun/#where} first."
 
 mp.msg.Exit.NOTHERE = "But {#me} {#is/#me} not {#if_has/#first,supporter,on,in} {#thefirst}."
 mp.msg.Exit.NOWHERE = "But {#me} {#have/#me} no way to exit."
@@ -685,76 +685,76 @@ mp.keyboard_backspace = '<backspace>'
 mp.msg.GAMEOVER_HELP = [[Use restart to restart game.]];
 
 function mp:myself(ob)
-	if ob:hint'first' then
-		return { "myself", "self", "me" }
-	end
-	if ob:hint'second' then
-		return { "yourself", "myself", "self", "me" }
-	end
-	if ob:hint'plural' then
-		return { "themselves", "ourselves", "self" }
-	end
-	if ob:hint'female' then
-		return { "herself", "myself", "self", "me" }
-	end
-	if ob:hint'male' then
-		return { "himself", "myself", "self", "me" }
-	end
-	return { "itself", "myself", "self", "me" }
+  if ob:hint'first' then
+    return { "myself", "self", "me" }
+  end
+  if ob:hint'second' then
+    return { "yourself", "myself", "self", "me" }
+  end
+  if ob:hint'plural' then
+    return { "themselves", "ourselves", "self" }
+  end
+  if ob:hint'female' then
+    return { "herself", "myself", "self", "me" }
+  end
+  if ob:hint'male' then
+    return { "himself", "myself", "self", "me" }
+  end
+  return { "itself", "myself", "self", "me" }
 end
 
 function mp:it(w)
-	if w == std.me() then
-		if w:hint'first' then
-			return "me"
-		elseif w:hint'second' then
-			return "you"
-		end
-	end
-	if w:hint'plural' then
-		return "they"
-	elseif w:hint'female' then
-		return "she"
-	elseif w:hint'male' then
-		return "he"
-	end
-	return "it"
+  if w == std.me() then
+    if w:hint'first' then
+      return "me"
+    elseif w:hint'second' then
+      return "you"
+    end
+  end
+  if w:hint'plural' then
+    return "they"
+  elseif w:hint'female' then
+    return "she"
+  elseif w:hint'male' then
+    return "he"
+  end
+  return "it"
 end
 
 function mp:synonyms(w, hint)
-	local t = self:it(w, hint)
-	w = { t }
-	if t == 'he' then
-		w[2] = 'him'
-	elseif t == 'she' then
-		w[2] = 'her'
-	elseif t == 'they' then
-		w[2] = 'them'
-	end
-	return w
+  local t = self:it(w, hint)
+  w = { t }
+  if t == 'he' then
+    w[2] = 'him'
+  elseif t == 'she' then
+    w[2] = 'her'
+  elseif t == 'they' then
+    w[2] = 'them'
+  end
+  return w
 end
 
 mp.keyboard = {
-	'A','B','C','D','E','F','G','H','I','J','K',
-	'L','M','N','O','P','Q','R','S','T','U','V',
-	'W','X','Y','Z'
+  'A','B','C','D','E','F','G','H','I','J','K',
+  'L','M','N','O','P','Q','R','S','T','U','V',
+  'W','X','Y','Z'
 }
 
 function mp:err_noun(noun)
-	if noun == '*' then return "<word>" end
-	return "noun"
+  if noun == '*' then return "<word>" end
+  return "noun"
 end
 
 function mp:before_Enter(w)
-	if mp:compass_dir(w) then
-		mp:xaction("Walk", w)
-		return
-	end
-	return false
+  if mp:compass_dir(w) then
+    mp:xaction("Walk", w)
+    return
+  end
+  return false
 end
 
 mp.msg.HELP = function()
-	p [[{$fmt b|INSTRUCTIONS}^^
+  p [[{$fmt b|INSTRUCTIONS}^^
 
 Enter your actions in verb noun form. For example:^
 > open door^
@@ -769,448 +769,448 @@ To examine whole scene, enter "exam" or press "Enter".^
 To exam your inventory, enter "inv".^
 ^
 Use compass directions to walk. For example: "go north" or "north" or just "n". There are also up and down directions, outside and inside.]]
-	if not instead.tiny then
-		p [[^^You may use the "TAB" key for autocompletion.]]
-	else
-		p [[^^Use "save" and "load" to save and load game.]]
-		if instead.tiny then
-			p [[For ex. "save 1".]]
-		end
-		p [[Restart game: "restart".]]
-		if instead.reinstead then
-			p [[^^Also available: !restart, !quit, !info, !save, !load and !font <size>.]]
-		end
-	end
+  if not instead.tiny then
+    p [[^^You may use the "TAB" key for autocompletion.]]
+  else
+    p [[^^Use "save" and "load" to save and load game.]]
+    if instead.tiny then
+      p [[For ex. "save 1".]]
+    end
+    p [[Restart game: "restart".]]
+    if instead.reinstead then
+      p [[^^Also available: !restart, !quit, !info, !save, !load and !font <size>.]]
+    end
+  end
 
 end
 
 function mp.token.compass1(_)
-	return "{noun_obj}/@n_to,compass|{noun_obj}/@ne_to,compass|"..
-		"{noun_obj}/@e_to,compass|{noun_obj}/@se_to,compass|"..
-		"{noun_obj}/@s_to,compass|{noun_obj}/@sw_to,compass|"..
-		"{noun_obj}/@w_to,compass|{noun_obj}/@nw_to,compass"
+  return "{noun_obj}/@n_to,compass|{noun_obj}/@ne_to,compass|"..
+    "{noun_obj}/@e_to,compass|{noun_obj}/@se_to,compass|"..
+    "{noun_obj}/@s_to,compass|{noun_obj}/@sw_to,compass|"..
+    "{noun_obj}/@w_to,compass|{noun_obj}/@nw_to,compass"
 end
 
 function mp.token.compass2(_)
-	return "{noun_obj}/@u_to,compass|{noun_obj}/@d_to,compass|{noun_obj}/@in_to,compass|{noun_obj}/@out_to,compass"
+  return "{noun_obj}/@u_to,compass|{noun_obj}/@d_to,compass|{noun_obj}/@in_to,compass|{noun_obj}/@out_to,compass"
 end
 
 std.mod_init(function(_)
 Verb { "#Walk",
-	"go,walk,run,enter,come",
-	"{compass1} : Walk",
-	"in|into|inside|on {noun}/scene,enterable : Enter",
-	"{noun}/scene : Walk",
-	"{compass2}: Walk",
-	"outside|out|away: Exit"
+  "go,walk,run,enter,come",
+  "{compass1} : Walk",
+  "in|into|inside|on {noun}/scene,enterable : Enter",
+  "{noun}/scene : Walk",
+  "{compass2}: Walk",
+  "outside|out|away: Exit"
 }
 
 Verb { "#Enter",
-	"enter",
-	"{noun}/scene,enterable : Enter"
+  "enter",
+  "{noun}/scene,enterable : Enter"
 }
 
 Verb { "#Sit",
-	"sit,stand",
-	"?down in|into|inside|on {noun}/scene,enterable : Enter" }
+  "sit,stand",
+  "?down in|into|inside|on {noun}/scene,enterable : Enter" }
 
 Verb { "#Lie",
-	"lie",
-	"down in|into|inside|on {noun}/scene,enterable : Enter" }
+  "lie",
+  "down in|into|inside|on {noun}/scene,enterable : Enter" }
 
 Verb { "#Exit",
-	"exit,out,leave",
-	"?from {noun}/scene : Exit",
-	": Exit"}
+  "exit,out,leave",
+  "?from {noun}/scene : Exit",
+  ": Exit"}
 
 Verb { "#Exam",
-	"examine,exam,check,describe,watch,look",
-	"{noun} : Exam",
-	" : Look",
-	"inventory : Inv",
-	"~ under {noun} : LookUnder",
-	"~ in|inside|into|through|on {noun} : Search",
-	"~ ?at {noun} : Exam",
-	"~ up * in {noun} : Consult reverse",
+  "examine,exam,check,describe,watch,look",
+  "{noun} : Exam",
+  " : Look",
+  "inventory : Inv",
+  "~ under {noun} : LookUnder",
+  "~ in|inside|into|through|on {noun} : Search",
+  "~ ?at {noun} : Exam",
+  "~ up * in {noun} : Consult reverse",
 }
 
 Verb { "#Search",
-	"search,investigate",
-	"{noun} : Search",
-	"in|into|inside|on|through {noun} : Search",
-	"under {noun} : LookUnder",
+  "search,investigate",
+  "{noun} : Search",
+  "in|into|inside|on|through {noun} : Search",
+  "under {noun} : LookUnder",
 }
 
 Verb { "#Open",
-	"open",
-	"{noun} : Open",
-	"{noun} with {noun}/held : Unlock"
+  "open",
+  "{noun} : Open",
+  "{noun} with {noun}/held : Unlock"
 }
 
 Verb { "#Unlock",
-	"unlock",
-	"{noun} with {noun}/held : Unlock"
+  "unlock",
+  "{noun} with {noun}/held : Unlock"
 }
 
 Verb { "#Close",
-	"close",
-	"{noun} : Close",
-	"{noun} with {noun}/held : Lock",
+  "close",
+  "{noun} : Close",
+  "{noun} with {noun}/held : Lock",
 }
 
 Verb { "#Lock",
-	"lock",
-	"{noun} with {noun}/held : Lock",
+  "lock",
+  "{noun} with {noun}/held : Lock",
 }
 
 Verb { "#Inv",
-	"inv/entory",
-	"Inv" }
+  "inv/entory",
+  "Inv" }
 
 Verb { "#Take",
-	"take,get,pick,hold,carry,peel",
-	"{noun}/scene : Take",
-	"{noun}/scene from {noun}/inside,holder : Remove",
-	"off {noun}/worn : Disrobe",
+  "take,get,pick,hold,carry,peel",
+  "{noun}/scene : Take",
+  "{noun}/scene from {noun}/inside,holder : Remove",
+  "off {noun}/worn : Disrobe",
 }
 
 Verb { "#Drop",
-	"drop,discard",
-	"{noun}/held : Drop",
-	"{noun}/held in|into|down {noun}/inside : Insert",
-	"{noun}/held on|onto {noun} : PutOn",
+  "drop,discard",
+  "{noun}/held : Drop",
+  "{noun}/held in|into|down {noun}/inside : Insert",
+  "{noun}/held on|onto {noun} : PutOn",
 }
 
 Verb { "#Insert",
-	"insert",
-	"{noun}/held in|into|inside {noun}/inside : Insert",
+  "insert",
+  "{noun}/held in|into|inside {noun}/inside : Insert",
 }
 
 Verb { "#Put",
-	"~put",
-	"~ {noun}/held : Drop",
-	"~ {noun}/held in|into|inside {noun}/inside : Insert",
-	"~ {noun}/held on|onto {noun} : PutOn",
-	"~ on {noun}/held : Wear",
-	"~ down {noun}/held : Drop",
-	"~ {noun}/held down: Drop",
+  "~put",
+  "~ {noun}/held : Drop",
+  "~ {noun}/held in|into|inside {noun}/inside : Insert",
+  "~ {noun}/held on|onto {noun} : PutOn",
+  "~ on {noun}/held : Wear",
+  "~ down {noun}/held : Drop",
+  "~ {noun}/held down: Drop",
 }
 
 Verb {
-	"#ThrowAt",
-	"throw",
-	"{noun}/held at|against|in|into|on|onto {noun} : ThrowAt",
-	"~ {noun}/held : Drop",
+  "#ThrowAt",
+  "throw",
+  "{noun}/held at|against|in|into|on|onto {noun} : ThrowAt",
+  "~ {noun}/held : Drop",
 }
 
 Verb {
-	"#Wear",
-	"wear,don",
-	"{noun}/held : Wear",
+  "#Wear",
+  "wear,don",
+  "{noun}/held : Wear",
 }
 
 Verb {
-	"#Disrobe",
-	"disrobe,shed,doff",
-	"{noun}/worn : Disrobe",
+  "#Disrobe",
+  "disrobe,shed,doff",
+  "{noun}/worn : Disrobe",
 }
 
 Verb {
-	"#Remove",
-	"remove",
-	"~ {noun}/held : Disrobe",
-	"{noun} from {noun} : Remove",
-	"~ {noun}/scene : Take",
+  "#Remove",
+  "remove",
+  "~ {noun}/held : Disrobe",
+  "{noun} from {noun} : Remove",
+  "~ {noun}/scene : Take",
 }
 
 Verb {
-	"#SwitchOn",
-	"switch",
-	"on {noun}: SwitchOn",
-	"~ {noun} : SwitchOn",
-	"~ {noun} on : SwitchOn",
+  "#SwitchOn",
+  "switch",
+  "on {noun}: SwitchOn",
+  "~ {noun} : SwitchOn",
+  "~ {noun} on : SwitchOn",
 }
 
 Verb {
-	"#SwitchOff",
-	"switch",
-	"off {noun}: SwitchOff",
-	"~ {noun} off : SwitchOff",
+  "#SwitchOff",
+  "switch",
+  "off {noun}: SwitchOff",
+  "~ {noun} off : SwitchOff",
 }
 
 Verb {
-	"#Eat",
-	"eat",
-	"{noun}/held : Eat",
+  "#Eat",
+  "eat",
+  "{noun}/held : Eat",
 }
 
 Verb {
-	"#Taste",
-	"taste,lick",
-	"{noun} : Taste"
+  "#Taste",
+  "taste,lick",
+  "{noun} : Taste"
 }
 
 Verb {
-	"#Drink",
-	"drink,sip,swallow",
-	"{noun}/held : Drink",
+  "#Drink",
+  "drink,sip,swallow",
+  "{noun}/held : Drink",
 }
 
 Verb {
-	"#Push",
-	"push,move,press,shift,clear",
-	"{noun} : Push",
-	"{noun} to {noun} : Transfer",
-	"{noun} ?to {compass2} : Transfer",
+  "#Push",
+  "push,move,press,shift,clear",
+  "{noun} : Push",
+  "{noun} to {noun} : Transfer",
+  "{noun} ?to {compass2} : Transfer",
 }
 
 Verb {
-	"#Transfer",
-	"transfer",
-	"{noun} to {noun} : Transfer",
-	"{noun} ?to {compass2} : Transfer",
+  "#Transfer",
+  "transfer",
+  "{noun} to {noun} : Transfer",
+  "{noun} ?to {compass2} : Transfer",
 }
 
 Verb {
-	"#Pull",
-	"pull,drag",
-	"{noun} : Pull",
+  "#Pull",
+  "pull,drag",
+  "{noun} : Pull",
 }
 
 Verb {
-	"#Turn",
-	"turn,rotate,screw,twist,unscrew",
-	"{noun} : Turn",
-	"~ {noun} on : SwitchOn",
-	"~ {noun} off : SwitchOff",
-	"~ on {noun} : SwitchOn",
-	"~ off {noun} : SwitchOff",
+  "#Turn",
+  "turn,rotate,screw,twist,unscrew",
+  "{noun} : Turn",
+  "~ {noun} on : SwitchOn",
+  "~ {noun} off : SwitchOff",
+  "~ on {noun} : SwitchOn",
+  "~ off {noun} : SwitchOff",
 }
 
 Verb {
-	"#Wait",
-	"wait",
-	"Wait"
+  "#Wait",
+  "wait",
+  "Wait"
 }
 
 Verb {
-	"#Rub",
-	"rub,clean,dust,polish,scrub,shine,sweep,wipe",
-	"{noun} : Rub"
+  "#Rub",
+  "rub,clean,dust,polish,scrub,shine,sweep,wipe",
+  "{noun} : Rub"
 }
 
 Verb {
-	"#Sing",
-	"sing",
-	"Sing"
+  "#Sing",
+  "sing",
+  "Sing"
 }
 
 Verb {
-	"#Touch",
-	"touch,feel,fondle,grope",
-	"{noun} : Touch",
+  "#Touch",
+  "touch,feel,fondle,grope",
+  "{noun} : Touch",
 }
 
 Verb {
-	"#Give",
-	"give,feed,offer,pay",
-	"?over {noun}/held to {noun}/live : Give",
-	"~ {noun}/live {noun}/held : Give reverse",
+  "#Give",
+  "give,feed,offer,pay",
+  "?over {noun}/held to {noun}/live : Give",
+  "~ {noun}/live {noun}/held : Give reverse",
 }
 
 Verb {
-	"#Show",
-	"show,display,present",
-	"{noun}/held to {noun}/live : Show",
-	"~ {noun}/live {noun}/held : Show reverse",
+  "#Show",
+  "show,display,present",
+  "{noun}/held to {noun}/live : Show",
+  "~ {noun}/live {noun}/held : Show reverse",
 }
 
 Verb {
-	"#Burn",
-	"burn,light",
-	"{noun} : Burn",
-	"{noun} with {noun}/held : Burn",
+  "#Burn",
+  "burn,light",
+  "{noun} : Burn",
+  "{noun} with {noun}/held : Burn",
 }
 
 Verb {
-	"#Wake",
-	"wake,awake,awaken",
-	"?up : Wake",
-	"?up {noun}/вн ?up : WakeOther",
+  "#Wake",
+  "wake,awake,awaken",
+  "?up : Wake",
+  "?up {noun}/вн ?up : WakeOther",
 }
 
 Verb {
-	"#Kiss",
-	"kiss,embrace,hug",
-	"{noun}/live : Kiss"
+  "#Kiss",
+  "kiss,embrace,hug",
+  "{noun}/live : Kiss"
 }
 
 Verb {
-	"#Think",
-	"think",
-	"Think"
+  "#Think",
+  "think",
+  "Think"
 }
 
 Verb {
-	"#Smell",
-	"smell,sniff",
-	"Smell",
-	"{noun} : Smell"
+  "#Smell",
+  "smell,sniff",
+  "Smell",
+  "{noun} : Smell"
 }
 
 Verb {
-	"#Listen",
-	"listen,hear",
-	"Listen",
-	"?to {noun}: Listen",
+  "#Listen",
+  "listen,hear",
+  "Listen",
+  "?to {noun}: Listen",
 }
 
 Verb {
-	"#Dig",
-	"dig",
-	"Dig",
-	"{noun}/scene : Dig",
-	"{noun}/scene with {noun}/held : Dig",
+  "#Dig",
+  "dig",
+  "Dig",
+  "{noun}/scene : Dig",
+  "{noun}/scene with {noun}/held : Dig",
 }
 
 Verb {
-	"#Cut",
-	"cut,chop,prune,slice",
-	"{noun} : Cut",
-	"{noun} with {noun}/held: Cut",
+  "#Cut",
+  "cut,chop,prune,slice",
+  "{noun} : Cut",
+  "{noun} with {noun}/held: Cut",
 }
 
 Verb {
-	"#Tear",
-	"tear",
-	"?apart {noun} : Tear",
+  "#Tear",
+  "tear",
+  "?apart {noun} : Tear",
 }
 
 Verb {
-	"#Tie",
-	"tie,attach,fasten,fix",
-	"{noun} : Tie",
-	"{noun} to {noun} : Tie",
+  "#Tie",
+  "tie,attach,fasten,fix",
+  "{noun} : Tie",
+  "{noun} to {noun} : Tie",
 }
 
 Verb {
-	"#Blow",
-	"blow",
-	"{noun} : Blow",
+  "#Blow",
+  "blow",
+  "{noun} : Blow",
 }
 
 Verb {
-	"#Attack",
-	"attack,break,crack,destroy,fight,hit,kill,murder,punch,smash,thump,torture,wreck,kick",
-	"{noun} : Attack"
+  "#Attack",
+  "attack,break,crack,destroy,fight,hit,kill,murder,punch,smash,thump,torture,wreck,kick",
+  "{noun} : Attack"
 }
 
 Verb {
-	"#Sleep",
-	"sleep,nap",
-	"Sleep",
+  "#Sleep",
+  "sleep,nap",
+  "Sleep",
 }
 
 Verb {
-	"#Swim",
-	"swim,dive",
-	"Swim",
+  "#Swim",
+  "swim,dive",
+  "Swim",
 }
 
 Verb {
-	"#Consult",
-	"read",
-	"* in {noun}: Consult reverse",
-	"~ {noun} : Exam",
+  "#Consult",
+  "read",
+  "* in {noun}: Consult reverse",
+  "~ {noun} : Exam",
 }
 
 Verb {
-	"#Fill",
-	"fill",
-	"{noun} : Fill",
+  "#Fill",
+  "fill",
+  "{noun} : Fill",
 }
 
 Verb {
-	"#Jump",
-	"jump,hop,skip",
-	"Jump",
-	"over {noun}/scene : JumpOver",
-	"~ {compass2} : Walk",
+  "#Jump",
+  "jump,hop,skip",
+  "Jump",
+  "over {noun}/scene : JumpOver",
+  "~ {compass2} : Walk",
 }
 
 Verb {
-	"#Wave",
-	"wave",
-	"WaveHands",
-	"{noun}/held : Wave"
+  "#Wave",
+  "wave",
+  "WaveHands",
+  "{noun}/held : Wave"
 }
 
 Verb {
-	"#Climb",
-	"climb,scale",
-	"{noun}/scene : Climb",
-	"~ up|over {noun}/scene : Climb",
-	"~ in|into {noun}/scene : Enter",
-	"~ {compass2}: Walk",
+  "#Climb",
+  "climb,scale",
+  "{noun}/scene : Climb",
+  "~ up|over {noun}/scene : Climb",
+  "~ in|into {noun}/scene : Enter",
+  "~ {compass2}: Walk",
 }
 
 Verb {
-	"#GetOff",
-	"get",
-	"off {noun}/scene : GetOff",
-	"~ out|off|up : Exit",
-	"~ in|into|on|onto {noun} : Enter",
+  "#GetOff",
+  "get",
+  "off {noun}/scene : GetOff",
+  "~ out|off|up : Exit",
+  "~ in|into|on|onto {noun} : Enter",
 }
 
 Verb {
-	"#Buy",
-	"buy,purchase",
-	"{noun}/scene : Buy"
+  "#Buy",
+  "buy,purchase",
+  "{noun}/scene : Buy"
 }
 
 Verb {
-	"#Talk",
-	"talk",
-	"with|to {noun}/live : Talk"
+  "#Talk",
+  "talk",
+  "with|to {noun}/live : Talk"
 }
 
 Verb {
-	"#Tell",
-	"tell",
-	"{noun}/live about * : Tell",
-	"~ {noun}/live to * : AskTo",
+  "#Tell",
+  "tell",
+  "{noun}/live about * : Tell",
+  "~ {noun}/live to * : AskTo",
 }
 
 Verb {
-	"#Ask",
-	"ask",
-	"{noun}/live about * : Ask",
-	"~ {noun}/live to * : AskTo",
-	"~ that {noun}/live to * : AskTo",
+  "#Ask",
+  "ask",
+  "{noun}/live about * : Ask",
+  "~ {noun}/live to * : AskTo",
+  "~ that {noun}/live to * : AskTo",
 }
 
 Verb {
-	"#AskFor",
-	"ask",
-	"{noun}/live for * : AskFor",
+  "#AskFor",
+  "ask",
+  "{noun}/live for * : AskFor",
 }
 
 Verb {
-	"#Answer",
-	"answer,say,shout,speak",
-	"* to {noun}/live : Answer reverse",
+  "#Answer",
+  "answer,say,shout,speak",
+  "* to {noun}/live : Answer reverse",
 }
 
 Verb {
-	"#Yes",
-	"yes",
-	"Yes",
+  "#Yes",
+  "yes",
+  "Yes",
 }
 
 Verb {
-	"#No",
-	"no",
-	"No",
+  "#No",
+  "no",
+  "No",
 }
 
 Verb {
@@ -1219,107 +1219,107 @@ Verb {
 }
 
 if DEBUG then
-	MetaVerb {
-		"#MetaWord",
-		"~_word",
-		"* : MetaWord"
-	}
-	MetaVerb {
-		"#MetaNoun",
-		"~_noun",
-		"* : MetaNoun"
-	}
-	MetaVerb {
-		"#MetaTrace",
-		"~_trace",
-		"on : MetaTraceOn",
-		"off : MetaTraceOff",
-	}
-	MetaVerb {
-		"#MetaDump",
-		"~_dump",
-		"MetaDump"
-	}
+  MetaVerb {
+    "#MetaWord",
+    "~_word",
+    "* : MetaWord"
+  }
+  MetaVerb {
+    "#MetaNoun",
+    "~_noun",
+    "* : MetaNoun"
+  }
+  MetaVerb {
+    "#MetaTrace",
+    "~_trace",
+    "on : MetaTraceOn",
+    "off : MetaTraceOff",
+  }
+  MetaVerb {
+    "#MetaDump",
+    "~_dump",
+    "MetaDump"
+  }
 end
 
 mp.msg.MetaTranscript.ON = function(file)
-	p ("Logging is started: ", file)
+  p ("Logging is started: ", file)
 end
 
 mp.msg.MetaTranscript.OFF = function(file)
-	p ("Logging is stopped: ", file)
+  p ("Logging is stopped: ", file)
 end
 
 mp.msg.MetaTranscript.FILE = function(file)
-	p ("Log file: ", file)
+  p ("Log file: ", file)
 end
 
 MetaVerb {
-	"#MetaTranscript",
-	"~transcript",
-	"on : MetaTranscriptOn",
-	"off : MetaTranscriptOff",
-	"MetaTranscript",
+  "#MetaTranscript",
+  "~transcript",
+  "on : MetaTranscriptOn",
+  "off : MetaTranscriptOff",
+  "MetaTranscript",
 }
 
 MetaVerb {
-	"#MetaSave",
-	"~save",
-	"MetaSave"
+  "#MetaSave",
+  "~save",
+  "MetaSave"
 }
 
 MetaVerb {
-	"#MetaExpert",
-	"~parser",
-	"expert on : MetaExpertOn",
-	"expert off : MetaExpertOff",
-	"verbs : MetaVerbs",
-	"version : MetaVersion",
+  "#MetaExpert",
+  "~parser",
+  "expert on : MetaExpertOn",
+  "expert off : MetaExpertOff",
+  "verbs : MetaVerbs",
+  "version : MetaVersion",
 }
 
 MetaVerb {
-	"#MetaLoad",
-	"~load",
-	"MetaLoad"
+  "#MetaLoad",
+  "~load",
+  "MetaLoad"
 }
 
 if DEBUG then
 MetaVerb {
-	"#MetaAutoplay",
-	"~autoplay",
-	"MetaAutoplay"
+  "#MetaAutoplay",
+  "~autoplay",
+  "MetaAutoplay"
 }
 end
 
 mp.msg.MetaRestart.RESTART = "Restart?";
 
 MetaVerb {
-	"#MetaRestart",
-	"~restart",
-	"MetaRestart"
+  "#MetaRestart",
+  "~restart",
+  "MetaRestart"
 }
 MetaVerb {
-	"#MetaHelp",
-	"~help,instructions",
-	"MetaHelp",
+  "#MetaHelp",
+  "~help,instructions",
+  "MetaHelp",
 }
 end, 1)
 
 std.mod_start(function()
-	if mp.undo > 0 then
-		mp.msg.MetaUndo.EMPTY = "Nothing to undo."
-		MetaVerb {
-			"#MetaUndo",
-			"~undo",
-			"MetaUndo",
-		}
-	end
-	if mp.score then
-		MetaVerb {
-		"~ счёт",
-		"MetaScore",
-		}
-	end
+  if mp.undo > 0 then
+    mp.msg.MetaUndo.EMPTY = "Nothing to undo."
+    MetaVerb {
+      "#MetaUndo",
+      "~undo",
+      "MetaUndo",
+    }
+  end
+  if mp.score then
+    MetaVerb {
+    "~ счёт",
+    "MetaScore",
+    }
+  end
 end)
 -- Dialog
 std.phr.default_Event = "Exam"
