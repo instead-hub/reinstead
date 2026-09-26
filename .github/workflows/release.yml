@@ -59,10 +59,17 @@ jobs:
     with:
       version: ${{ needs.version.outputs.version }}
 
+  instead_cli:
+    name: instead-cli
+    needs: version
+    uses: ./.github/workflows/instead-cli.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
   draft:
     name: draft release
     runs-on: ubuntu-22.04
-    needs: [version, reinstead, metaparser_js]
+    needs: [version, reinstead, metaparser_js, instead_cli]
     steps:
       - uses: actions/checkout@v7
 
@@ -78,6 +85,12 @@ jobs:
           name: ${{ needs.metaparser_js.outputs.artifact }}
           path: dist
 
+      - name: Download instead-cli
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.instead_cli.outputs.artifact }}
+          path: dist
+
       - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -86,4 +99,5 @@ jobs:
           gh release create "$VER" --draft --title "RE:INSTEAD $VER" --generate-notes \
             "dist/reinstead-$VER.zip" \
             "dist/reinstead-$VER-manual.pdf" \
-            "dist/metaparser-js-$VER.zip"
+            "dist/metaparser-js-$VER.zip" \
+            "dist/instead-cli-$VER.zip"

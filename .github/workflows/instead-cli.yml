@@ -1,0 +1,69 @@
+name: instead-cli
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for the artifact name. Defaults to VERSION from data/core/core.lua"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: "Version for the artifact name. Defaults to VERSION from data/core/core.lua"
+        required: false
+        type: string
+    outputs:
+      artifact:
+        description: "Name of the uploaded artifact"
+        value: ${{ jobs.build.outputs.artifact }}
+      version:
+        description: "Resolved version"
+        value: ${{ jobs.build.outputs.version }}
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    outputs:
+      artifact: ${{ steps.pack.outputs.artifact }}
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve version
+        id: ver
+        run: |
+          VER='${{ inputs.version }}'
+          if [ -z "$VER" ]; then
+            VER=$(sed -n "s/^VERSION='\\(.*\\)'/\\1/p" data/core/core.lua)
+          fi
+          if [ -z "$VER" ]; then
+            echo "Can not resolve version" >&2
+            exit 1
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Install Packages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential gcc-mingw-w64-i686 mingw-w64-i686-dev binutils-mingw-w64-i686 zip
+
+      - name: Build
+        run: make -C extra/instead-cli dist
+
+      - name: Package
+        id: pack
+        run: |
+          VER='${{ steps.ver.outputs.version }}'
+          mkdir -p dist
+          (cd extra/instead-cli/build/dist && zip -r "$GITHUB_WORKSPACE/dist/instead-cli-$VER.zip" .)
+          echo "artifact=instead-cli-$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.pack.outputs.artifact }}
+          path: dist/instead-cli-*.zip
+          retention-days: 7
