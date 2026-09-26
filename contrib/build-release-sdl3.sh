@@ -64,7 +64,7 @@ if [ ! -f external/.stamp_SDL3 ] || [ ! -f external/include/SDL3/SDL.h ] || [ ! 
 		-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX=`pwd`/external/windows \
-		-DSDL_SHARED=ON -DSDL_STATIC=OFF \
+		-DSDL_SHARED=OFF -DSDL_STATIC=ON \
 		-DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_INSTALL_TESTS=OFF \
 		$sdl_subsystems
 	cmake --build sdl3-win -j"$(nproc)"
@@ -148,7 +148,8 @@ strip reinstead
 ## Windows version
 
 CFLAGS="-Isrc/instead -Iexternal/windows/include -Iexternal/windows/include/freetype2 -DUSE_SDL3"
-LDFLAGS="-Lexternal/windows/lib -lSDL3.dll -lm -lluajit -lfreetype"
+# static SDL3 pulls in the windows system libraries, see sdl3.pc
+LDFLAGS="-Lexternal/windows/lib -lSDL3 -lm -lluajit -lfreetype -lkernel32 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lversion -luuid -ladvapi32 -lsetupapi -lshell32"
 
 i686-w64-mingw32-windres -i windows/resources.rc -o resources.o || exit 1
 
@@ -162,12 +163,11 @@ rm -rf release
 mkdir release
 
 cp reinstead release/reinstead.x86-64.linux
-cp -r reinstead.exe data/ COPYING ChangeLog windows/Tolk/*.dll external/windows/bin/*.dll release/
+cp -r reinstead.exe data/ COPYING ChangeLog windows/Tolk/*.dll release/
 
 mkdir release/doc
 cp doc/*.md MANIFEST.md README.md release/doc
 
-i686-w64-mingw32-strip release/SDL3.dll
 mkdir release/licenses
 cp windows/Tolk/*.txt release/licenses
 cp COPYING release/licenses
