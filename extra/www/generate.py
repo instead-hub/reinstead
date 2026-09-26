@@ -108,29 +108,35 @@ def text_html(text):
     return "\n".join(f"<p>{esc(p)}</p>" for p in parts)
 
 
-def page(title, body, depth):
-    return render("page.html", title=esc(title), css="../" * depth + "style.css", body=body)
+def page(title, body, depth, bodyclass=""):
+    return render("page.html", title=esc(title), css="../" * depth + "style.css",
+                  body=body, bodyclass=f' class="{bodyclass}"' if bodyclass else "")
 
 
-def card_html(game):
+def card_html(game, page="index.html"):
     return render("card.html",
                   name=esc(game["name"]),
                   title=esc(game["title"]),
                   author=esc(game["author"]),
-                  info=esc(game["info"]))
+                  info=esc(game["info"]),
+                  page=page)
 
 
-def game_page(game):
+def game_page(game, iframe=False):
     if game["dsc"]:
         about = f'<div class="dsc">\n{game["dsc"]}\n</div>'
     else:
         about = text_html(game["info"])
+    back = "../index-iframe.html" if iframe else "../../index.html"
     body = render("game.html",
                   name=esc(game["name"]),
                   title=esc(game["title"]),
                   author=esc(game["author"]),
-                  about=about)
-    return page(f"Игра «{game['title']}»", body, 2)
+                  about=about,
+                  back=back)
+    if iframe:
+        body = f'<div class="container">\n{body}</div>'
+    return page(f"Игра «{game['title']}»", body, 2, "iframe" if iframe else "")
 
 
 def index_page(games):
@@ -141,9 +147,9 @@ def index_page(games):
 
 def index_iframe_page(games):
     """Same cards, but for embedding: no contacts, invites to the full site."""
-    cards = "\n".join(card_html(g) for g in games)
+    cards = "\n".join(card_html(g, "index-iframe.html") for g in games)
     body = render("index-iframe.html", cards=cards)
-    return page("RE:INSTEAD", body, 0)
+    return page("RE:INSTEAD", body, 0, "iframe")
 
 
 def load_games(games_dir):
@@ -210,6 +216,7 @@ def main():
         shutil.copyfile(game["dir"] / "icon.png", d / "icon.png")
         make_zip(game["dir"], d / f"{game['name']}.zip", game["name"])
         (d / "index.html").write_text(game_page(game), encoding="utf-8")
+        (d / "index-iframe.html").write_text(game_page(game, iframe=True), encoding="utf-8")
         print(f"{game['name']}: {game['title']} — {game['author']}")
 
     print(f"\n{len(games)} game(s) in {out}")

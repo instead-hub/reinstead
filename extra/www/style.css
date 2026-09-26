@@ -23,6 +23,16 @@ hr {
 	margin: 1.5rem 0;
 }
 
+/* the iframe page scrolls inside the VK iframe height */
+body.iframe { max-width: none; }
+
+.container {
+	height: 600px;
+	overflow-y: auto;
+	max-width: 64em;
+	margin: 0 auto;
+}
+
 .headline {
 	display: flex;
 	align-items: center;
