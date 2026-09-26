@@ -1,12 +1,13 @@
 #!/bin/sh
-# Headless run of parser tests (tests/parser-tests, tests/match-dump).
-# Requires a built reinstead: make
+# Headless run of parser tests (tests/parser-tests, tests/match-dump,
+# tests/noun-forms). Requires a built reinstead: make
 set -u
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 BIN=${BIN:-$ROOT/reinstead}
 APPDATA=$(mktemp -d)
 DUMP="$ROOT/tests/match-dump"
+FORMS="$ROOT/tests/noun-forms"
 
 if [ ! -x "$BIN" ]; then
 	echo "No binary $BIN — build it first: make" >&2
@@ -33,5 +34,14 @@ for pair in "golden.txt:out.txt" "golden-compl.txt:out-compl.txt"; do
 		rc=1
 	fi
 done
+
+# golden snapshot of the noun declension forms
+SDL_VIDEODRIVER=dummy timeout 120 "$BIN" -appdata "$APPDATA" -noautosave "$FORMS" >/dev/null 2>&1 || rc=1
+if diff -u "$FORMS/golden.txt" "$FORMS/out.txt"; then
+	rm -f "$FORMS/out.txt"
+else
+	echo "noun-forms: golden mismatch" >&2
+	rc=1
+fi
 
 exit $rc
