@@ -1,0 +1,83 @@
+name: metaparser-js
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for the artifact name. Defaults to VERSION from data/core/core.lua"
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: "Version for the artifact name. Defaults to VERSION from data/core/core.lua"
+        required: false
+        type: string
+    outputs:
+      artifact:
+        description: "Name of the uploaded artifact"
+        value: ${{ jobs.build.outputs.artifact }}
+      version:
+        description: "Resolved version"
+        value: ${{ jobs.build.outputs.version }}
+
+env:
+  emscripten_ver: 6.0.10
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    outputs:
+      artifact: ${{ steps.pack.outputs.artifact }}
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve version
+        id: ver
+        run: |
+          VER='${{ inputs.version }}'
+          if [ -z "$VER" ]; then
+            VER=$(sed -n "s/^VERSION='\\(.*\\)'/\\1/p" data/core/core.lua)
+          fi
+          if [ -z "$VER" ]; then
+            echo "Can not resolve version" >&2
+            exit 1
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Cache emsdk
+        id: cache-emsdk
+        uses: actions/cache@v6
+        with:
+          path: emsdk
+          key: emsdk-${{ runner.os }}-${{ env.emscripten_ver }}
+
+      - name: Install emsdk
+        if: steps.cache-emsdk.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git
+          ./emsdk/emsdk install "$emscripten_ver"
+          ./emsdk/emsdk activate "$emscripten_ver"
+
+      - name: Build
+        run: |
+          source ./emsdk/emsdk_env.sh
+          ./src/metaparser-js/build.sh
+
+      - name: Package
+        id: pack
+        run: |
+          VER='${{ steps.ver.outputs.version }}'
+          mkdir -p dist
+          (cd src/metaparser-js/build/dist && zip -r "$GITHUB_WORKSPACE/dist/metaparser-js-$VER.zip" .)
+          echo "artifact=metaparser-js-$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Publish Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.pack.outputs.artifact }}
+          path: dist/metaparser-js-*.zip
+          retention-days: 7

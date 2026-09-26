@@ -1,0 +1,56 @@
+# metaparser-js
+
+RE:INSTEAD (METAPARSER 3) in a browser: WebAssembly plus a small JS glue.
+
+## Build
+
+Only Emscripten is required. Lua comes from `../lua`, zlib is built by
+Emscripten itself (the `USE_ZLIB` port), so nothing has to be downloaded.
+
+    EMSDK=/path/to/emsdk ./build.sh
+
+If `emcc` is already in `PATH`, use make directly:
+
+    make            # wasm + js fallback + build/dist
+    make wasm       # WebAssembly only
+    make js         # JS fallback only (WASM=0, deprecated but working)
+    make smoke      # check under node, no browser
+    make serve      # serve build/dist locally
+    make clean
+
+The result is in `build/dist`:
+
+    index.html                 loader page
+    lib/*                      jquery slim, mp.js, mp.css, favicon
+    metaparser-wasm.{js,wasm,data}
+    metaparser-js.{js,data}    fallback without WebAssembly
+
+`build.sh smoke` additionally builds a modular node version and runs the
+demo game (`data/games/trial`) to make sure the parser answers. It needs no
+browser, so it is handy for CI.
+
+## Running
+
+Files must be served over HTTP: a `file://` page is not allowed to load the
+game.
+
+    cd build/dist && python3 -m http.server 8000
+
+The game is taken from `data.zip` next to `index.html`, or from a link such
+as `https://…/index.html?mygame.zip`, or from the meta tag in `index.html`:
+
+    <meta name="gamefile" content="yourgame.zip">
+
+If you want the WASM build only, drop `metaparser-js.*` and replace the WASM
+detector in `index.html` with `<script async src="metaparser-wasm.js"></script>`.
+
+## Build notes
+
+* `compat/` holds small shim headers (`externals.h`, `utils.h`, `ints.h`)
+  that the minizip part is missing: `unpack.c`, `ioapi.h` and `unzip.c` came
+  from a project with a different directory layout.
+* minizip is built with `-DNOUNCRYPT`: game archives are not password
+  protected, and `crypt.c` is not part of this tree.
+* `-DGAMES_PATH="/games"` is where an uploaded zip is unpacked.
+* `morph/morphs.mrd` (the full 8 MB dictionary) is left out of the image:
+  games ship their own `dict.mrd`.

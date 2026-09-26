@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<title>МЕТАПАРСЕР</title>
+	<script src="lib/jquery.slim.min.js"></script>
+	<script src="lib/mp.js"></script>
+	<link rel="icon" type="image/png" sizes="64x64" href="lib/favicon.png">
+	<link rel="stylesheet" href="lib/mp.css">
+<!--	<meta name="gamefile" content="snowstorm.zip"> -->
+	<meta name="viewport" content="width=device-width,user-scalable=no">
+</head>
+<body>
+	<div id="about">
+		<h1>МЕТАПАРСЕР</h1>
+		<p>&gt; пожалуйста, подождите...</p>
+		<noscript><p>METAPARSER requires Javascript. Please enable it in your browser.</p></noscript>
+	</div>
+	<div id="metaparser">
+		<div id="transcript" role="list" aria-live="polite" aria-atomic="false" aria-relevant="additions"></div>
+	</div>
+</body>
+	<script>
+	const supported = (() => {
+		try {
+			if (typeof WebAssembly === "object"
+			&& typeof WebAssembly.instantiate === "function") {
+				const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+				if (module instanceof WebAssembly.Module)
+				return new WebAssembly.Instance(module) instanceof WebAssembly.Instance;
+			}
+		} catch (e) {
+		}
+		return false;
+	})();
+	var script = document.createElement('script');
+	script.type = 'text/javascript';
+	script.src = supported ? "metaparser-wasm.js" : "metaparser-js.js"
+	document.body.appendChild(script);
+	</script>
+</html>

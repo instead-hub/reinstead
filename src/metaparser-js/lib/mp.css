@@ -1,0 +1,61 @@
+html
+{
+	overflow-y: scroll;
+	-webkit-text-size-adjust: none;
+}
+
+body
+{
+	background: #FFF;
+	color: #000;
+	background-color: #ffffe8;
+	font-family: Georgia, Palatino, serif;
+	font-size: 16px;
+	margin: 0.5em;
+	text-align: center;
+}
+
+#metaparser
+{
+	max-width: 40em;
+}
+
+#transcript
+{
+	white-space: pre-wrap;
+}
+
+/* Line input */
+.TextInput
+{
+	background: none;
+	border: 0;
+	color: inherit;
+	display: inline;
+	font: inherit;
+	outline: 0;
+	padding: 0;
+}
+
+#metaparser img
+{
+	max-width: 40em;
+	max-height: 20em;
+}
+
+#metaparser
+{
+	margin: 1em auto 1em auto;
+	text-align: left;
+}
+
+#gameport
+{
+	height: 100%;
+	line-height: 1.4;
+	margin: 0;
+	overflow: hidden;
+	position: absolute;
+	text-align: left;
+	width: 100%;
+}
