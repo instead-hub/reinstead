@@ -59,6 +59,13 @@ jobs:
     with:
       version: ${{ needs.version.outputs.version }}
 
+  metaparser_instead:
+    name: metaparser-instead
+    needs: version
+    uses: ./.github/workflows/metaparser-instead.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+
   instead_cli:
     name: instead-cli
     needs: version
@@ -69,7 +76,7 @@ jobs:
   draft:
     name: draft release
     runs-on: ubuntu-22.04
-    needs: [version, reinstead, metaparser_js, instead_cli]
+    needs: [version, reinstead, metaparser_js, metaparser_instead, instead_cli]
     steps:
       - uses: actions/checkout@v7
 
@@ -83,6 +90,12 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: ${{ needs.metaparser_js.outputs.artifact }}
+          path: dist
+
+      - name: Download metaparser-instead
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.metaparser_instead.outputs.artifact }}
           path: dist
 
       - name: Download instead-cli
@@ -100,4 +113,5 @@ jobs:
             "dist/reinstead-$VER.zip" \
             "dist/reinstead-$VER-manual.pdf" \
             "dist/metaparser-js-$VER.zip" \
-            "dist/instead-cli-$VER.zip"
+            "dist/instead-cli-$VER.zip" \
+            "dist/metaparser-instead-$VER.zip"
