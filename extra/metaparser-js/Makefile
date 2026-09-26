@@ -1,6 +1,6 @@
 # Build metaparser-js: RE:INSTEAD as WebAssembly (plus a JS fallback) with Emscripten.
 #
-# Only Emscripten is required: Lua comes from ../lua, zlib is built by
+# Only Emscripten is required: Lua comes from ../../src/lua, zlib is built by
 # Emscripten itself (the USE_ZLIB port). If emcc is not in PATH, use
 # ./build.sh — it activates emsdk and works around its bundled node on
 # musl systems.
@@ -26,9 +26,9 @@ FS     := $(BUILD)/fs
 OBJ    := $(BUILD)/obj
 COMPAT := compat
 
-ENGINE      := ../instead
-ENGINE_ROOT := ..
-LUA         := ../lua
+ENGINE      := ../../src/instead
+ENGINE_ROOT := ../../src
+LUA         := ../../src/lua
 DATA        := ../../data/stead3
 
 # Demo game used by the smoke check.

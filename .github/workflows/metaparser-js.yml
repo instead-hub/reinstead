@@ -65,14 +65,14 @@ jobs:
       - name: Build
         run: |
           source ./emsdk/emsdk_env.sh
-          ./src/metaparser-js/build.sh
+          ./extra/metaparser-js/build.sh
 
       - name: Package
         id: pack
         run: |
           VER='${{ steps.ver.outputs.version }}'
           mkdir -p dist
-          (cd src/metaparser-js/build/dist && zip -r "$GITHUB_WORKSPACE/dist/metaparser-js-$VER.zip" .)
+          (cd extra/metaparser-js/build/dist && zip -r "$GITHUB_WORKSPACE/dist/metaparser-js-$VER.zip" .)
           echo "artifact=metaparser-js-$VER" >> "$GITHUB_OUTPUT"
 
       - name: Publish Artifact

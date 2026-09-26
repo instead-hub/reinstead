@@ -4,7 +4,7 @@ RE:INSTEAD (METAPARSER 3) in a browser: WebAssembly plus a small JS glue.
 
 ## Build
 
-Only Emscripten is required. Lua comes from `../lua`, zlib is built by
+Only Emscripten is required. Lua comes from `../../src/lua`, zlib is built by
 Emscripten itself (the `USE_ZLIB` port), so nothing has to be downloaded.
 
     EMSDK=/path/to/emsdk ./build.sh
