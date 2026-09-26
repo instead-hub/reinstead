@@ -32,18 +32,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Resolve version
+      - uses: ./.github/actions/version
         id: ver
-        run: |
-          VER='${{ inputs.version }}'
-          if [ -z "$VER" ]; then
-            VER=$(sed -n "s/^VERSION='\\(.*\\)'/\\1/p" data/core/core.lua)
-          fi
-          if [ -z "$VER" ]; then
-            echo "Can not resolve version" >&2
-            exit 1
-          fi
-          echo "version=$VER" >> "$GITHUB_OUTPUT"
+        with:
+          version: ${{ inputs.version }}
 
       - name: Build
         run: cd extra/metaparser-instead && ./release.sh
