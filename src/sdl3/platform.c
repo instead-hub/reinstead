@@ -280,6 +280,9 @@ top:
 		lua_pushstring(L, edit_str);
 		edit_str[0] = 0;
 		return 2;
+	case SDL_EVENT_WINDOW_FOCUS_LOST:
+		lua_pushstring(L, "save");
+		return 1;
 #endif
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 		if (e.button.button == 1) { SDL_CaptureMouse(true); }
