@@ -1,3 +1,9 @@
+3.0
+  * metaparser moved to reinstead;
+  * all extra/ projects;
+  * SDL3 ready;
+  * refactoring, bug fixes.
+
 0.8
   * fix deadlock in summerday;
   * updated parser;
