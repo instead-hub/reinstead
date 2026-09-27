@@ -22,6 +22,10 @@
 !script
 !restart
 
+!game games/deadhand
+!script autoscript-en
+!restart
+
 !game games/london
 !script
 !restart
