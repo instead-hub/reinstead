@@ -1,10 +1,10 @@
 ![Build status](https://github.com/instead-hub/reinstead/actions/workflows/CI.yml/badge.svg)
+- [МАНИФЕСТ](MANIFEST.md)
 
 # RE:INSTEAD
 
 Минималистичный плеер парсерных игр INSTEAD для Linux, Windows, Plan9 и Android.
 
-- [МАНИФЕСТ](MANIFEST.md)
 - [INSTALL](INSTALL.md)
 - [INSTEAD](https://instead.hugeping.ru)
 - [МЕТАПАРСЕР](https://instead.hugeping.ru/page/metaparser/)
