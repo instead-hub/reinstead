@@ -40,7 +40,7 @@ mingw-w64 ships none, so the Windows build builds GNU libiconv for mingw with
 `./libiconv.sh` (static, into `external/`, kept by `make clean`) — `make
 -f Makefile.mingw` does it automatically.
 
-System wide setup (changing STEADPATH needs a rebuild):
+System-wide setup (changing STEADPATH needs a rebuild):
 
 ```
 $ make clean
@@ -64,7 +64,7 @@ The bundled Lua is built in place with `mkfile.lua`, the mkfile of the
 
 ./instead-cli <gamedir path>
 
-To pass internal command to STEAD use '/' prefix. Some internal commands:
+To pass an internal command to STEAD, use the '/' prefix. Some internal commands:
 
 * /save filename
 * /load filename
@@ -84,7 +84,7 @@ Options:
 * -x - execute lua script;
 * -e - echo input command;
 * -m - enable multimedia output;
-* -mcmd - enable run cmd on multimedia. Examples: -m/usr/bin/xdg-open (Linux), -m/bin/plumb (Plan9), -m"start\"\"" (Windows).
+* -mcmd - enable running a cmd on multimedia. Examples: -m/usr/bin/xdg-open (Linux), -m/bin/plumb (Plan9), -m"start\"\"" (Windows).
 
 ## Links
 
