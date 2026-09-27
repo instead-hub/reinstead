@@ -66,7 +66,7 @@ $ make WITH_SCHRIFT=1
 
 ## System-wide build and install
 
-For simplicity RE:INSTESAD is designed to be run from it's own subdirectory. But
+For simplicity RE:INSTEAD is designed to be run from its own subdirectory. But
 you can define DATADIR to select data directory. Check Makefile PREFIX
 commented line.
 
