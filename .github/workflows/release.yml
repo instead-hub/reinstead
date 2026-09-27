@@ -96,6 +96,12 @@ jobs:
           name: ${{ needs.instead_cli.outputs.artifact }}
           path: dist
 
+      - name: Create source archive
+        run: |
+          VER='${{ needs.version.outputs.version }}'
+          mkdir -p dist
+          git archive --format=tar.gz --prefix="reinstead-$VER/" -o "dist/reinstead-$VER.tar.gz" HEAD
+
       - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -107,4 +113,5 @@ jobs:
             "dist/metaparser-$VER-manual-ru.pdf" \
             "dist/metaparser-js-$VER.zip" \
             "dist/instead-cli-$VER.zip" \
-            "dist/metaparser-instead-$VER.zip"
+            "dist/metaparser-instead-$VER.zip" \
+            "dist/reinstead-$VER.tar.gz"
