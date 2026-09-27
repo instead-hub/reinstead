@@ -7,7 +7,9 @@ CC ?= gcc
 
 BUILD := build/linux
 
+ICONV_LIBS ?=
+
 CFLAGS  += -Dunix -D_HAVE_ICONV
-LDFLAGS += -lm
+LDFLAGS += -lm $(ICONV_LIBS)
 
 include Makefile.common
