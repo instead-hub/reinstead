@@ -244,7 +244,10 @@ function Input(output)
 	var self = this;
 	self.input = $('<input>', {
 		class: 'TextInput',
-		autocapitalize: 'off',
+		/* 'off' is not a valid value here; 'none' keeps the mobile
+		** keyboard from offering the autofill bar above the text field. */
+		autocapitalize: 'none',
+		autocomplete: 'off',
 		keydown: function(event)
 		{
 			var  keyCode = self.keyCode = event.which, cancel;
