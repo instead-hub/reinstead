@@ -11,6 +11,7 @@ msg['ru'] = {
 	saved: "Игра сохранена",
 	loaded: "Игра восстановлена",
 	imported: "Импортировано",
+	command: "Команда",
 }
 
 msg['en'] = {
@@ -20,6 +21,7 @@ msg['en'] = {
 	saved: "Saved",
 	loaded: "Restored",
 	imported: "Imported",
+	command: "Command",
 }
 
 function _(id)
@@ -250,6 +252,9 @@ function Input(output)
 		type: 'search',
 		autocapitalize: 'none',
 		autocomplete: 'off',
+		spellcheck: false,
+		enterkeyhint: 'go',
+		'aria-label': _('command'),
 		keydown: function(event)
 		{
 			var  keyCode = self.keyCode = event.which, cancel;
