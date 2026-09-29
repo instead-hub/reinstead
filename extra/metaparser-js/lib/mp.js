@@ -244,11 +244,10 @@ function Input(output)
 	var self = this;
 	self.input = $('<input>', {
 		class: 'TextInput',
-		/* 'off' is not a valid value here; 'none' keeps the mobile
-		** keyboard from offering the autofill bar above the text field,
-		** and a query-like name stops Chrome from offering passwords,
-		** cards and addresses. */
+		/* a search field: the keyboard stops offering passwords, cards
+		** and addresses. 'off' is not a valid autocapitalize value. */
 		name: 'q',
+		type: 'search',
 		autocapitalize: 'none',
 		autocomplete: 'off',
 		keydown: function(event)

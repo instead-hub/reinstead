@@ -29,6 +29,8 @@ body
 /* Line input */
 .TextInput
 {
+	-webkit-appearance: none;
+	appearance: none;
 	background: none;
 	border: 0;
 	color: inherit;
@@ -36,6 +38,13 @@ body
 	font: inherit;
 	outline: 0;
 	padding: 0;
+}
+
+.TextInput::-webkit-search-cancel-button,
+.TextInput::-webkit-search-decoration
+{
+	-webkit-appearance: none;
+	appearance: none;
 }
 
 #metaparser img
