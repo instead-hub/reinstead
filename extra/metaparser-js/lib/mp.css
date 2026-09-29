@@ -12,6 +12,7 @@ body
 	font-family: Georgia, Palatino, serif;
 	font-size: 16px;
 	margin: 0.5em;
+	padding-bottom: var(--kb, 0px);
 	text-align: center;
 }
 

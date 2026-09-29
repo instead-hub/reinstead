@@ -36,7 +36,29 @@ $(function()
 	var elem = $('<span>&nbsp;</span>').appendTo($body);
 	bodylineheight = elem.height();
 	elem.remove();
+	if (window.visualViewport) {
+		/* Only a resize may move the input line (keyboard, address bar);
+		** a scroll event also fires while the user scrolls the text back,
+		** so it must not fight them. */
+		window.visualViewport.addEventListener('resize', function() { syncViewport(true); });
+		window.visualViewport.addEventListener('scroll', function() { syncViewport(false); });
+	}
+	syncViewport(false);
 });
+
+/* The on-screen keyboard shrinks the visual viewport only, so keep the
+** document high enough to scroll the input line above the keyboard.
+** scroll=true also brings the input line into view. */
+function syncViewport(scroll)
+{
+	var vv = window.visualViewport, kb = 0;
+	if (vv) {
+		kb = Math.max(0, document.documentElement.clientHeight - vv.height - vv.offsetTop);
+	}
+	document.documentElement.style.setProperty('--kb', kb + 'px');
+	if (scroll && input)
+		input.scroll();
+}
 
 var selection = window.getSelection ||
 	function() { return document.selection ? document.selection.createRange().text : '' };
@@ -175,7 +197,8 @@ function fmtCommand(command)
 
 var scrollPages = window.scrollByPages || function( pages )
 {
-	var height = document.documentElement.clientHeight,
+	var vv = window.visualViewport,
+	height = vv ? vv.height : document.documentElement.clientHeight,
 	delta = height - Math.min( height / 10, bodylineheight * 2 );
 	scrollBy( 0, delta * pages );
 }
@@ -344,10 +367,20 @@ function Input(output)
 		span.appendTo(this.output);
 		this.getLine();
 	}
+	/* The input line follows the text, so scroll it into the visible area:
+	** the keyboard does not resize the layout viewport, so the old
+	** scrollTop() math left it below the bottom edge. */
 	this.scroll = function()
 	{
-		var laststruct = this.output.children().last();
-		this.scrollParent.scrollTop(laststruct.offset().top - bodylineheight);
+		var el = this.promptline.get(0);
+		if (!el)
+			return;
+		var vv = window.visualViewport;
+		var height = vv ? vv.height : document.documentElement.clientHeight;
+		var offset = vv ? vv.offsetTop : 0;
+		var bottom = offset + el.getBoundingClientRect().bottom;
+		if (bottom > height - bodylineheight / 2)
+			window.scrollBy(0, bottom - height + bodylineheight / 2);
 	}
 	this.prev_next = function(change)
 	{
