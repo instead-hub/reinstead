@@ -97,3 +97,27 @@ fn walk(where: obj): ~~~lua
 fn walkin(where: obj): ~~~lua
   walkin(where)
   ~~~
+
+fn take(w: obj): ~~~lua
+  take(w)
+  ~~~
+
+fn drop(w: obj): ~~~lua
+  drop(w)
+  ~~~
+
+fn content(w: obj): ~~~lua
+  mp:content(w)
+  ~~~
+
+fn walkout(): ~~~lua
+  walkout()
+  ~~~
+
+fn visits(w: obj) -> num: ~~~lua
+  return visits(w)
+  ~~~
+
+fn event() -> str: ~~~lua
+  return mp.event
+  ~~~

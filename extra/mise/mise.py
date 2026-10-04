@@ -226,7 +226,7 @@ def read_fence(lines, i, line_no):
         raw, ind = lines[i]
         if raw.strip() == "~~~":
             return body, i + 1
-        body.append((raw, ind))
+        body.append((raw, ind, i + 1))
         i += 1
     parse_error(line_no, "unterminated fence ~~~")
 
@@ -306,14 +306,14 @@ def dedent_rest(text):
 def parse_logic(lines, i, indent):
     stmts = []
     while i < len(lines):
-        raw, ind = lines[i]
+        raw, ind, lno = lines[i]
         if not raw.strip():
             i += 1
             continue
         if ind < indent:
             break
         if ind > indent:
-            parse_error(i + 1, "unexpected indent: %r" % raw)
+            parse_error(lno, "unexpected indent: %r" % raw)
         text = strip_comment(raw.strip())
         while not long_balanced(text) and i + 1 < len(lines):
             i += 1
@@ -323,16 +323,16 @@ def parse_logic(lines, i, indent):
             i += 1
             continue
         if text == "stop":
-            stmts.append(("return", None))
+            stmts.append(("return", None, lno))
             i += 1
             continue
         if text == "pass":
-            stmts.append(("return", "false"))
+            stmts.append(("return", "false", lno))
             i += 1
             continue
         m = re.match(r"^return\b\s*(.*)$", text, re.S)
         if m:
-            stmts.append(("return", m.group(1) or None))
+            stmts.append(("return", m.group(1) or None, lno))
             i += 1
             continue
         m = re.match(r"^if\s+(.+):$", text, re.S)
@@ -343,12 +343,12 @@ def parse_logic(lines, i, indent):
             while j < len(lines) and not lines[j][0].strip():
                 j += 1
             if j >= len(lines) or lines[j][1] <= ind:
-                parse_error(i + 1, "empty if")
+                parse_error(lno, "empty if")
             body, j = parse_logic(lines, j, lines[j][1])
             branches[0] = (branches[0][0], body)
             i = j
             while i < len(lines):
-                raw2, ind2 = lines[i]
+                raw2, ind2, _lno2 = lines[i]
                 if not raw2.strip():
                     i += 1
                     continue
@@ -359,7 +359,7 @@ def parse_logic(lines, i, indent):
                     while j < len(lines) and not lines[j][0].strip():
                         j += 1
                     if j >= len(lines) or lines[j][1] <= ind:
-                        parse_error(i + 1, "empty elseif")
+                        parse_error(lines[i][2], "empty elseif")
                     b2, j = parse_logic(lines, j, lines[j][1])
                     branches.append((cond, b2))
                     i = j
@@ -368,12 +368,12 @@ def parse_logic(lines, i, indent):
                     while j < len(lines) and not lines[j][0].strip():
                         j += 1
                     if j >= len(lines) or lines[j][1] <= ind:
-                        parse_error(i + 1, "empty else")
+                        parse_error(lines[i][2], "empty else")
                     else_body, j = parse_logic(lines, j, lines[j][1])
                     i = j
                 else:
                     break
-            stmts.append(("if", branches, else_body))
+            stmts.append(("if", branches, else_body, lno))
             continue
         m = re.match(r"^for\s+(.+):$", text, re.S)
         if m:
@@ -382,18 +382,18 @@ def parse_logic(lines, i, indent):
             while j < len(lines) and not lines[j][0].strip():
                 j += 1
             if j >= len(lines) or lines[j][1] <= ind:
-                parse_error(i + 1, "empty for")
+                parse_error(lno, "empty for")
             body, j = parse_logic(lines, j, lines[j][1])
-            stmts.append(("for", header, body))
+            stmts.append(("for", header, body, lno))
             i = j
             continue
         m = re.match(r"^set\s+(.+?)\s*(\+=|-=|=)\s*(.+)$", text, re.S)
         if m:
             stmts.append(("set", m.group(1).strip(), m.group(2),
-                          m.group(3).strip()))
+                          m.group(3).strip(), lno))
             i += 1
             continue
-        stmts.append(("stmt", text))
+        stmts.append(("stmt", text, lno))
         i += 1
     return stmts, i
 
@@ -932,10 +932,15 @@ def transpile_for(header, env, where):
     m = re.match(r"^([^\W\d]\w*)\s*=\s*(.*)$", parts[0], re.UNICODE)
     if not m:
         raise LintError("bad for header in %s: %s" % (where, header))
-    start, _ = transpile_exprlist(m.group(2), env, where)
+    start, st = transpile_exprlist(m.group(2), env, where)
+    if st and st[0] not in ("num", "any"):
+        raise LintError("%s: for bound must be num, got %s" % (where, st[0]))
     codes = [start]
     for p in parts[1:]:
-        c, _ = transpile_exprlist(p, env, where)
+        c, ct = transpile_exprlist(p, env, where)
+        if ct and ct[0] not in ("num", "any"):
+            raise LintError("%s: for bound must be num, got %s"
+                            % (where, ct[0]))
         codes.append(c)
     return ("for %s = %s" % (m.group(1), ", ".join(codes)),
             {m.group(1): "num"})
@@ -946,7 +951,8 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None):
     out = []
     for st in stmts:
         kind = st[0]
-        where = "~~~do"
+        lno = st[-1] if isinstance(st[-1], int) else None
+        where = ("~~~do:%d" % lno) if lno else "~~~do"
         if kind == "return":
             code = ""
             rtype = "nil"
@@ -1034,7 +1040,8 @@ def read_long(lines, i, first, line_no):
 def fence_value(tag, lines, start, line_no):
     body, i = read_fence(lines, start, line_no)
     if tag == "~~~lua":
-        return Lua(reindent("\n".join(raw for raw, _ in body), "")), i
+        return Lua(reindent("\n".join(raw for raw, _ind, _lno in body),
+                            "")), i
     j = 0
     while j < len(body) and not body[j][0].strip():
         j += 1
@@ -1195,6 +1202,16 @@ FNS = set()
 USE_RE = re.compile(r"^use\s+([\w.+-]+)$")
 
 
+def check_use(name, prm):
+    if name not in FN_SIGS or not prm:
+        return
+    plist, _ret, variadic = FN_SIGS[name]
+    n = len(param_env(prm))
+    if not variadic and len(plist) > n:
+        raise Error("fn %s takes %d parameter(s), event provides %d"
+                    % (name, len(plist), n))
+
+
 def use_name(v):
     if isinstance(v, (Text, Bare)):
         m = USE_RE.match(v.s.strip())
@@ -1202,7 +1219,7 @@ def use_name(v):
             name = m.group(1)
             if name not in FNS:
                 raise Error("unknown fn in use: " + name)
-            return "fn_" + name
+            return name
     return None
 
 
@@ -1259,7 +1276,8 @@ def lua_body(v, key, indent=""):
     prm = params or FIELD_PARAMS.get(base, "s")
     uname = use_name(v)
     if uname:
-        return uname
+        check_use(uname, prm)
+        return "fn_" + uname
     if isinstance(v, Lua):
         body = reindent(v.s, indent + IND)
         return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
@@ -1304,7 +1322,8 @@ def emit_on(block, indent, target=""):
             prm = params or ("s, ev, w" if years[0] in ("Any", "Default")
                              else "s, w, wh")
             if uname:
-                src = uname
+                check_use(uname, prm)
+                src = "fn_" + uname
             elif isinstance(val, Lua):
                 body = reindent(val.s, indent + IND)
                 src = "function(%s)\n%s\n%s" % (prm, body, indent + "end")
@@ -1654,24 +1673,19 @@ def emit_setup(block):
     for key, val in block.items:
         if key in ("take", "fmt", "init"):
             continue
-        if key == "hero":
+        if key in ("hero", "game") and isinstance(val, Block):
+            target = "pl." if key == "hero" else "game."
             for hk, hv in val.items:
                 if hk == "on":
-                    lines.extend(emit_on(hv, "", "pl."))
-                elif hk == "words":
+                    lines.extend(emit_on(hv, "", target))
+                elif key == "hero" and hk == "words":
                     lines.append('pl.word = -"%s"' % hv.s)
                 else:
-                    lines.append("pl.%s = %s" % (hk, lua_body(hv, hk)))
+                    lines.append("%s%s = %s" % (target, hk,
+                                                lua_body(hv, hk)))
             continue
         if key == "on":
             lines.extend(emit_on(val, "", "game."))
-            continue
-        if key == "game" and isinstance(val, Block):
-            for gk, gv in val.items:
-                if gk == "on":
-                    lines.extend(emit_on(gv, "", "game."))
-                else:
-                    lines.append("game.%s = %s" % (gk, lua_body(gv, gk)))
             continue
         if key == "dsc":
             lines.append("game.dsc = %s" % lua_body(val, "dsc"))
@@ -1763,32 +1777,30 @@ def collect_ids(root):
 
 
 def check_refs(root, ids):
-    def walk(block, key):
-        val = block.get(key) if isinstance(block, Block) else None
-        if val is None:
+    def refs(key, val):
+        if isinstance(val, Block):
             return
-        refs = val if isinstance(val, list) else [val]
-        for r in refs:
-            if isinstance(r, (Bare,)) and r.s not in ids:
+        for r in (val if isinstance(val, list) else [val]):
+            if isinstance(r, Bare) and r.s not in ids:
                 raise Error("unknown reference in %s: %s" % (key, r.s))
-    for key, val in root.items:
-        if not isinstance(val, Block):
-            continue
-        for k2 in ("with", "contains", "inside", "found_in"):
-            walk(val, k2)
-        for k2, v2 in val.items:
-            if k2 in ("with", "parts") and isinstance(v2, Block):
-                for nk, nv in v2.items:
-                    for k3 in ("with", "contains", "inside", "found_in"):
-                        walk(nv, k3)
+
+    def walk(block):
+        for key, val in block.items:
+            if key in ("with", "contains", "inside", "found_in"):
+                refs(key, val)
+            if isinstance(val, Block):
+                walk(val)
+            elif isinstance(val, list):
+                for x in val:
+                    if isinstance(x, Block):
+                        walk(x)
+
+    walk(root)
     setup = root.get("setup")
     if isinstance(setup, Block):
         take = setup.get("take")
         if take:
-            refs = take if isinstance(take, list) else [take]
-            for r in refs:
-                if isinstance(r, (Bare,)) and r.s not in ids:
-                    raise Error("unknown reference in take: " + r.s)
+            refs("take", take)
 
 
 def scan_lua_defs(text, funcs, vars_):
@@ -1854,11 +1866,9 @@ def apply_includes(root, seen=None):
     return root
 
 
-def transpile(src):
+def prescan(root):
     global IDS, EXTRA_EVENTS, FNS, VARS, FUNCS, FN_SIGS, GLOBAL_TYPES
     FNS = set()
-    root = parse_source(src)
-    apply_includes(root)
     ids = collect_ids(root)
     IDS = set(ids)
     EXTRA_EVENTS = {}
@@ -1911,8 +1921,15 @@ def transpile(src):
     FUNCS = fn_names | game_funcs | {"_"}
     FNS = fn_names
     check_refs(root, ids)
+
+
+def transpile(src):
+    root = parse_source(src)
+    apply_includes(root)
+    prescan(root)
     header = []
     body = []
+    fn_body = []
     reqs = []
     for key, val in root.items:
         if key in ("name", "version", "author", "info"):
@@ -1950,8 +1967,8 @@ def transpile(src):
                 raise Error("fn %s must be a ~~~do/~~~lua block"
                             % name)
             FNS.add(name)
-            body.append("local function fn_%s(%s)\n%s\nend"
-                        % (name, prm, hb))
+            fn_body.append("local function fn_%s(%s)\n%s\nend"
+                           % (name, prm, hb))
         elif re.match(r"^patch\s+.+$", key):
             body.append(emit_patch(key[6:].strip(), val))
         elif key == "setup":
@@ -1962,6 +1979,7 @@ def transpile(src):
             body.append("\n".join(emit_global(val)))
         else:
             body.append(emit_decl(key, val, ""))
+    body = fn_body + body
     lang = root.get("lang")
     lang = lang.s if isinstance(lang, Bare) else "ru"
     pre = ["-- generated by mise.py; do not edit", ""] + header + [

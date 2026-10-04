@@ -202,10 +202,12 @@ Take: ~~~do
 | `return expr` | `return expr` |
 | `set x = expr`, `set x += expr`, `set x -= expr` | присваивание |
 | `if cond:` / `elseif cond:` / `else:` | `if ... then ... end` |
-| `for header:` | `for ... do ... end` |
+| `for header:` | `for ... do ... end` (числовые границы — `num`) |
 | `local a, b = ...` | локальные переменные |
 | `break` | выход из цикла |
 | вызов `f(...)` (fn) или присваивание | оператор |
+
+Ошибки внутри `~~~do` сообщаются с номером строки (`~~~do:12`).
 
 `~~~do` — жёсткое подмножество Lua, проверяемое на этапе компиляции:
 запрещены `while`/`repeat`/`goto`, анонимные функции, `function`,
@@ -290,9 +292,10 @@ obj Кабель:
 - `use имя` работает в `on:`/`before:`/`after:`/`post:`, в полях
   (`daemon: use x`), у глаголов (`on`/`before`/`after`) и в `talk:`
   (`do: use x`);
-- `fn` должен быть объявлен **до** использования (это локальная
-  функция);
-- неизвестное имя в `use` — ошибка компиляции.
+- все `fn` эмитятся в начало файла (хойстинг), порядок объявления
+  не важен;
+- `use имя` проверяет, что у `fn` не больше параметров, чем передаёт
+  событие (`s, w, wh` / `s, ev, w`); неизвестное имя — ошибка.
 
 Типы у обработчиков событий и полей задаются автоматически:
 `s`/`w`/`wh` — `obj`, `ev`/`to` — `str`, `load` — `bool`; глобальные
@@ -317,6 +320,12 @@ obj Кабель:
 | `compass_dir` | `(obj) -> str` | `mp:compass_dir` |
 | `once_tag` | `(obj, str) -> bool` | `s:once(tag)` |
 | `once` | `(obj) -> bool` | `s:once()` |
+| `take` | `(obj)` | `take(w)` |
+| `drop` | `(obj)` | `drop(w)` |
+| `content` | `(obj)` | `mp:content(w)` |
+| `walkout` | `()` | `walkout()` |
+| `visits` | `(obj) -> num` | `visits(w)` |
+| `event` | `() -> str` | `mp.event` |
 | `rnd` | `(...) -> num` | `rnd(...)` |
 | `xaction` | `(str, obj)` | `mp:xaction` |
 | `daemonStart` | `(obj)` | `DaemonStart(w)` |

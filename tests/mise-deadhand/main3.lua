@@ -109,6 +109,38 @@ local function fn_walkin(where)
   walkin(where)
 end
 
+local function fn_take(w)
+  take(w)
+end
+
+local function fn_drop(w)
+  drop(w)
+end
+
+local function fn_content(w)
+  mp:content(w)
+end
+
+local function fn_walkout()
+  walkout()
+end
+
+local function fn_visits(w)
+  return visits(w)
+end
+
+local function fn_event()
+  return mp.event
+end
+
+local function fn_in_room(r)
+  return here() ^ r
+end
+
+local function fn_it(w)
+  return w:It()
+end
+
 const 'DH_TO' (2)
 const 'pres' ([[-- пссст. .. ..ворить? ... (пауза) ... Если кто-то сейчас болтается там... и слышит меня. Мне остаётся только сказать, простите.
 Вы навсегда останетесь в наших сердцах. Верные сыны Земли, Отечества... Ещё раз, простите нас и примите мои соболезнования.^^
@@ -142,14 +174,6 @@ global 'perimetr_ask' (0)
 global 'timeout' (600)
 global 'good_to' (0)
 global 'know2' (false)
-
-local function fn_in_room(r)
-  return here() ^ r
-end
-
-local function fn_it(w)
-  return w:It()
-end
 
 pl.description = [[Ты -- астронавт в скафандре.]]
 pl.before_LetGo = [[Не стоит разбрасываться в космосе вещами.]];
