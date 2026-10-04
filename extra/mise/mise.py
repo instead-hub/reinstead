@@ -756,6 +756,30 @@ class ExprEmit:
                 if not plist:
                     self.err("fn %s takes no receiver" % nv)
                 self.check(t, plist[0][1], code)
+                nk, nv2 = self.peek()
+                if (not variadic and len(plist) == 1
+                        and not (nk == "str"
+                                 or (nk == "op" and nv2 == "("))):
+                    code = "fn_%s(%s)" % (nv, code)
+                    t = ret
+                    kind = "call"
+                    val = None
+                    continue
+                if (not variadic and len(plist) == 2
+                        and self.peek()[0] == "name"
+                        and self.peek()[1] not in KEYWORDS
+                        and self.peek()[1] not in ("nil", "true", "false")):
+                    nm = self.next()[1]
+                    pt = plist[1][1]
+                    if pt != "str":
+                        self.err("fn %s: argument %s is %s; use parentheses"
+                                 % (nv, plist[1][0], pt))
+                    arg = lua_str(nm)
+                    code = "fn_%s(%s, %s)" % (nv, code, arg)
+                    t = ret
+                    kind = "call"
+                    val = None
+                    continue
                 args, n = self.arglist([pt for _pn, pt in plist[1:]])
                 try:
                     check_arity(nv, plist[1:], variadic, n)
@@ -801,7 +825,25 @@ class ExprEmit:
                     self.err("call of field/expression is not allowed in "
                              "~~~do (wrap it in fn)")
             else:
+                if (kind == "name" and val in FN_SIGS
+                        and not FN_SIGS[val][0]):
+                    code = "%s()" % code
+                    t = FN_SIGS[val][1]
+                    kind = "call"
+                    val = None
                 return code, t, kind, val
+
+
+def expr_cont(s):
+    c = s[0]
+    if c == "#":
+        return False
+    if c == "-":
+        return not (len(s) > 1 and s[1].isdigit())
+    if c in "=<>~+*/%^.,)]}:":
+        return True
+    m = re.match(r"[^\W\d]\w*", s, re.UNICODE)
+    return bool(m and m.group(0) in KEYWORDS)
 
 
 def no_paren_call(text, env, where):
@@ -813,9 +855,12 @@ def no_paren_call(text, env, where):
     rest = m.group(2).strip()
     if not rest or not (len(plist) == 1 or variadic):
         return None
-    if not plist and not say_expr_start(rest, env):
-        return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
-    if plist and plist[0][1] == "str" and not say_expr_start(rest, env):
+    if not plist:
+        if expr_cont(rest):
+            return None
+        if not say_expr_start(rest, env):
+            return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
+    elif plist[0][1] == "str" and not say_expr_start(rest, env):
         return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
     exp = plist[0][1] if len(plist) == 1 else None
     try:
@@ -845,10 +890,8 @@ def transpile_exprlist(text, env, where, expected=None):
 
 def transpile_stmt(text, env, where):
     s = text.strip()
-    if s in FN_SIGS:
-        plist, _ret, _variadic = FN_SIGS[s]
-        if not plist:
-            return "fn_%s()" % s
+    if s in FN_SIGS and not FN_SIGS[s][0]:
+        return "fn_%s()" % s
     raw = no_paren_call(text, env, where)
     if raw is not None:
         return raw[0]
@@ -912,7 +955,7 @@ def transpile_stmt(text, env, where):
     if p.peek()[0] != "eof":
         p.err("unexpected %r" % p.peek()[1])
     if lk == "name" and lv in FN_SIGS:
-        p.err("fn %s requires arguments" % lv)
+        p.err("fn %s must be called with ()" % lv)
     if lk not in ("name", "field", "call"):
         p.err("unsupported statement")
     return lhs

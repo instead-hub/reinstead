@@ -280,7 +280,7 @@ room space:
       daemonStop(s)
       place(tetr)
       if isDaemon(radio):
-        line
+        line()
       say Тебе показалось, что ты видишь какой-то яркий объект.
       daemonStop(s)
     ~~~
