@@ -119,6 +119,12 @@ class ExprEmit:
                 break
         return ", ".join(codes), types
 
+    def check_arity(self, name, plist, variadic, n):
+        try:
+            check_arity(name, plist, variadic, n)
+        except LintError as e:
+            self.err(str(e))
+
     def check(self, t, exp, code):
         if exp in (None, "any") or t in ("any", exp):
             return
@@ -175,10 +181,7 @@ class ExprEmit:
         if name in self.ctx.fn_sigs:
             plist, ret, variadic = self.ctx.fn_sigs[name]
             args, n = self.arglist([pt for _pn, pt in plist])
-            try:
-                check_arity(name, plist, variadic, n)
-            except LintError as e:
-                self.err(str(e))
+            self.check_arity(name, plist, variadic, n)
             return args, ret
         if name == "_":
             if self.peek()[0] == "str":
@@ -411,10 +414,7 @@ class ExprEmit:
                     val = None
                     continue
                 args, n = self.arglist([pt for _pn, pt in plist[1:]])
-                try:
-                    check_arity(nv, plist[1:], variadic, n)
-                except LintError as e:
-                    self.err(str(e))
+                self.check_arity(nv, plist[1:], variadic, n)
                 if args:
                     code = "fn_%s(%s, %s)" % (nv, code, args)
                 else:
@@ -433,10 +433,7 @@ class ExprEmit:
                     plist, rt, variadic = self.ctx.fn_sigs[val]
                     if not plist:
                         self.err("fn %s takes no arguments" % val)
-                    try:
-                        check_arity(val, plist, variadic, 1)
-                    except LintError as e:
-                        self.err(str(e))
+                    self.check_arity(val, plist, variadic, 1)
                     exp = plist[0][1]
                 save = self.i
                 self.expected = exp

@@ -3,7 +3,7 @@ import re
 
 from .common import *
 from .parse import parse_source
-from .emit import *
+from .emit import PRESETS, decl_key, parse_fn_sig
 
 def collect_ids(root):
     ids = {}

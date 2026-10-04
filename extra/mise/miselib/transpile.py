@@ -5,11 +5,13 @@ from . import state as S
 from .common import *
 from .parse import parse_source
 from .prescan import apply_includes, prescan
-from .emit import *
+from .emit import Emitter, parse_fn_sig
+from .emitlogic import emit_logic
 
 
 def transpile(src, src_dir=""):
     ctx = S.Ctx(src_dir)
+    em = Emitter(ctx)
     root = parse_source(src)
     apply_includes(root, ctx)
     prescan(root, ctx)
@@ -38,7 +40,7 @@ def transpile(src, src_dir=""):
                          key)
             if not m:
                 raise Error("bad class: " + key)
-            body.append(emit_class(val, m.group(1), m.group(2), ctx))
+            body.append(em.cls(val, m.group(1), m.group(2)))
         elif re.match(r"^fn\s+[\w.+-]+", key):
             name, plist, ret, variadic = parse_fn_sig(key)
             prm = ", ".join(pn for pn, _pt in plist)
@@ -48,7 +50,8 @@ def transpile(src, src_dir=""):
                 hb = reindent(val.s, IND)
             elif isinstance(val, Logic):
                 hb = "\n".join(emit_logic(val.stmts, IND,
-                                          param_env(prm, name, ctx), ret, name, ctx))
+                                          em.param_env(prm, name), ret, name,
+                                          ctx=ctx))
             else:
                 raise Error("fn %s must be a | block"
                             % name)
@@ -56,15 +59,15 @@ def transpile(src, src_dir=""):
             fn_body.append("local function fn_%s(%s)\n%s\nend"
                            % (name, prm, hb))
         elif re.match(r"^patch\s+.+$", key):
-            body.append(emit_patch(key[6:].strip(), val, ctx))
+            body.append(em.patch(key[6:].strip(), val))
         elif key == "setup":
-            body.append("\n".join(emit_setup(val, ctx)))
+            body.append("\n".join(em.setup(val)))
         elif key == "const":
-            body.append("\n".join(emit_const(val, ctx)))
+            body.append("\n".join(em.const(val)))
         elif key == "global":
-            body.append("\n".join(emit_global(val, ctx)))
+            body.append("\n".join(em.glob(val)))
         else:
-            body.append(emit_decl(key, val, "", ctx))
+            body.append(em.decl(key, val, ""))
     body = fn_body + body
     lang = root.get("lang")
     lang = lang.s if isinstance(lang, Bare) else "ru"
