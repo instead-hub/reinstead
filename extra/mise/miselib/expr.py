@@ -422,9 +422,9 @@ class ExprEmit:
                 kind = "call"
                 val = None
             elif (kind == "name"
-                  and ((k == "name" and v not in S.KEYWORDS
-                        and v not in ("nil", "true", "false"))
-                       or (k == "op" and v == "#"))):
+                  and ((k == "name" and v not in S.KEYWORDS)
+                       or (k == "op" and v in ("#", "-"))
+                       or k == "num")):
                 exp = None
                 rt = "any"
                 variadic = False
@@ -479,43 +479,8 @@ def expr_cont(s):
     m = re.match(r"[^\W\d]\w*", s, re.UNICODE)
     return bool(m and m.group(0) in S.KEYWORDS)
 
-TOP_OPS = (" and ", " or ", " == ", " ~= ", " <= ", " >= ", " < ",
-           " > ", " .. ", " + ", " - ", " * ", " / ", " % ", " ^ ")
-
-def split_top_op(text):
-    depth = 0
-    quote = None
-    i = 0
-    while i < len(text):
-        c = text[i]
-        if quote:
-            if c == "\\":
-                i += 2
-                continue
-            if c == quote:
-                quote = None
-            i += 1
-            continue
-        if c in "\"'":
-            quote = c
-            i += 1
-            continue
-        if c in "([{":
-            depth += 1
-            i += 1
-            continue
-        if c in ")]}":
-            depth -= 1
-            i += 1
-            continue
-        if depth == 0:
-            for op in TOP_OPS:
-                if text.startswith(op, i):
-                    return text[:i], op.strip(), text[i + len(op):]
-        i += 1
-    return None
-
 def no_paren_call(text, env, where):
+    """Raw-text forms only; typed one-arg calls are parsed by ExprEmit."""
     m = re.match(r"^([^\W\d]\w*)\s+([^(\s].*)$", text.strip(), re.S)
     if not m or m.group(1) not in S.FN_SIGS:
         return None
@@ -529,25 +494,13 @@ def no_paren_call(text, env, where):
             return None
         if not say_expr_start(rest, env):
             return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
-    elif plist[0][1] == "str" and not say_expr_start(rest, env):
+    elif not variadic and plist[0][1] != "str":
+        return None
+    elif not say_expr_start(rest, env):
         return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
-    exp = plist[0][1] if len(plist) == 1 else None
-    if len(plist) == 1 and exp != "str":
-        cut = split_top_op(rest)
-        if cut:
-            head, op, after = cut
-            code, types = transpile_exprlist(head, env, where, exp)
-            check_arity(name, plist, variadic, len(types))
-            for (pn, pt), t in zip(plist, types):
-                if pt != "any" and t not in ("any", pt):
-                    raise LintError("fn %s: argument %s expects %s, got %s"
-                                    % (name, pn, pt, t))
-            tcode, _ = transpile_exprlist(after, env, where)
-            rtype = ("bool" if op in ("==", "~=", "<", ">", "<=", ">=", "^")
-                     else "any")
-            return ("fn_%s(%s) %s %s" % (name, code, op, tcode), [rtype])
     try:
-        code, types = transpile_exprlist(rest, env, where, exp)
+        code, types = transpile_exprlist(
+            rest, env, where, plist[0][1] if plist else None)
     except LintError:
         if plist and plist[0][1] == "str":
             return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
