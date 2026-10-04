@@ -375,7 +375,7 @@ obj {
     end
   end;
   before_Give = function(s, w)
-    if w ^ _'королева' then
+    if w == _'королева' then
       fn_walk(_'badend4')
       return
     end
@@ -702,7 +702,7 @@ obj {
     end
   end;
   each_turn = function(s)
-    if fn_here() ^ _'пещера2' and fn_has(s, "light") and not fn_here().solved then
+    if fn_here() == _'пещера2' and fn_has(s, "light") and not fn_here().solved then
       fn_say("В ту же секунду ты слышишь хлопанье крыльев и успеваешь заметить,\nкак множество чёрных теней бросаются к тебе с потолка. Инстинктивно ты успеваешь выключить фонарик. Удивительно, но это успокаивает тварей. Некоторое время ты слышишь шум их крыльев. Затем всё затихает.")
       fn_attr(s, "~light")
       return
@@ -753,7 +753,7 @@ obj {
     end
   end;
   before_Give = function(s, w)
-    if w ^ _'#мама' then
+    if w == _'#мама' then
       fn_say("Ты протягиваешь телефон матери, она молча забирает его и кладёт в бардачок.")
       if not s.seen then
         s.seen = true
@@ -880,19 +880,19 @@ game.dsc = false
 pl.word = -"ты/жр,2л"
 pl.description = "Тебя зовут Вера. Тебе почти 13 лет."
 pl.before_LetGo = function(s, w, ww)
-  if w ^ _'телефон' then
+  if w == _'телефон' then
     local s = w
     if s.compass and ww ~= fn_player() then
       fn_say("В телефоне есть компас, который тебе нужен.")
       return
     end
     return false
-  elseif w ^ _'скрипка' and fn_here() ^ _'пещера2' and fn_thedark(fn_here()) then
+  elseif w == _'скрипка' and fn_here() == _'пещера2' and fn_thedark(fn_here()) then
     fn_say("Ты не хочешь расставаться со своей скрипкой.")
     return
-  elseif w ^ _'осколки' then
+  elseif w == _'осколки' then
     local s = w
-    if not fn_here() ^ _'пещера2' then
+    if not (fn_here() == _'пещера2') then
       return false
     end
     fn_say("Ты бросаешь осколки кристалла на пол пещеры. Маленькие светящиеся огоньки рассыпаются по ледяной поверхности. В тот же момент, пещеру заполняет шум хлопающих крыльев.")
@@ -1101,7 +1101,7 @@ Area {
     end
   end;
   before_Walk = function(s, w, wh)
-    if fn_where(fn_player()) ^ _'машина' then
+    if fn_where(fn_player()) == _'машина' then
       fn_say("Машина не заводится. Придётся выйти и идти пешком.")
       return
     end
@@ -1176,7 +1176,7 @@ obj {
   end;
   init_dsc = "Ты видишь на поляне оленя.";
   ["life_Give,Show"] = function(s, w)
-    if not w ^ _'перо' then
+    if not (w == _'перо') then
       return false
     end
     if s.sit then
@@ -1372,14 +1372,14 @@ Area {
         if fn_where(s) ^ 'В лесу' and fn_where(s) ^ 'В лесу' and _'В лесу'.depth == 0 and fn_rnd(3) == 1 then
           fn_say("Хлопая крыльями сова улетела в сторону поля.")
           fn_move(s, _'поле')
-        elseif fn_here() ^ _'поле' and fn_where(s) ^ _'поле' and s.talked and fn_rnd(3) == 1 then
+        elseif fn_here() == _'поле' and fn_where(s) == _'поле' and s.talked and fn_rnd(3) == 1 then
           fn_say("Хлопая крыльями сова улетела в сторону леса.")
           fn_move(s, _'В лесу')
         end
         return
       end;
       dsc = function(s)
-        if fn_where(s) ^ _'поле' then
+        if fn_where(s) == _'поле' then
           fn_say("На машине сидит сова.")
         else
           fn_say("На ветке сосны сидит сова.")
@@ -1409,7 +1409,7 @@ Area {
       talked = false;
       before_Exam = function(s, w, wh)
         fn_say("Тебе кажется, что это полярная сова. Только у неё странные глаза.")
-        if fn_here() ^ _'поле' then
+        if fn_here() == _'поле' then
           fn_line()
           fn_call_before(_'#глаза совы', 'Exam')
         end
@@ -1462,7 +1462,7 @@ obj {
   -"перо";
   nam = "перо";
   init_dsc = function(s)
-    if fn_hasnt(s, "moved") and fn_where(fn_player()) ^ _'машина' then
+    if fn_hasnt(s, "moved") and fn_where(fn_player()) == _'машина' then
       return
     end
     fn_say("На крыше машины лежит белое перо.")
@@ -1578,7 +1578,7 @@ Area {
     fn_say("По этому направлению нет ничего интересного. Такая же ледяная стена.")
   end;
   onexit = function(s, t)
-    if t ^ _'пещера' and not fn_visited(_'пещера') then
+    if t == _'пещера' and not fn_visited(_'пещера') then
       pic_set('23-pan')
     end
   end;
@@ -1676,7 +1676,7 @@ room {
     if not w then
       w = _'скрипка'
     end
-    if not w ^ _'скрипка' then
+    if not (w == _'скрипка') then
       return false
     end
     if _'#кристаллы'.try == 0 or _'#кристаллы'.broken then
@@ -1781,7 +1781,7 @@ room {
       before_Light = "Свет испускаемый осколками очень тусклый для этого.";
       before_Exam = "Осколки кристалла пульсируют слабым фиолетовым свечением.";
       before_Take = function(s, w, wh)
-        if fn_here() ^ _'пещера2' and fn_here().solved then
+        if fn_here() == _'пещера2' and fn_here().solved then
           fn_say("Ты боишься беспокоить летучих мышей.")
           return
         end
@@ -1798,7 +1798,7 @@ obj {
   before_Exam = "Глубокий разлом во льду. Света фонарика недостаточно, чтобы оценить его глубину. К счастью, ширина разлома не превышает двух метров.";
   before_JumpOver = function(s, w, wh)
     fn_say("Ты разбегаешься и прыгаешь через пропасть...")
-    if fn_here() ^ _'обрыв' then
+    if fn_here() == _'обрыв' then
       fn_walk(_'Другая сторона')
     else
       fn_walk(_'обрыв')
@@ -1814,7 +1814,7 @@ room {
   nam = "пещера2";
   dsc = function(s)
     fn_line("Стены этой части пещеры испещрены небольшими отверстиями.")
-    if fn_from() ^ _'пещера' then
+    if fn_from() == _'пещера' then
       fn_say("Ты попала сюда с юго-востока. Пещера продолжается на юго-запад.")
     else
       fn_say("Ты попала сюда с юго-запада. Пещера продолжается на юго-восток.")
@@ -1826,7 +1826,7 @@ room {
     end
   end;
   out_to = function(s)
-    if fn_from() ^ _'пещера' then
+    if fn_from() == _'пещера' then
       return 'пещера'
     else
       return 'обрыв'
@@ -2006,7 +2006,7 @@ obj {
     end
   end;
   ["life_Give,Show,ThrowAt"] = function(s, w)
-    if w ^ _'перо' then
+    if w == _'перо' then
       if fn_disabled(_'ворота') then
         fn_say("Едва ты достала перо, как статуя сдвинулась с места. Сделав два шага по направлению к тебе,\nстрашный ледяной человек остановился.^")
         fn_enable(_'ворота')
@@ -2213,7 +2213,7 @@ room {
   end;
   near = false;
   onexit = function(s, to)
-    if to ^ 'королева-диалог' or to ^ _'badend2' or to ^ _'badend4' then
+    if to ^ 'королева-диалог' or to == _'badend2' or to == _'badend4' then
       return
     end
     if not s.near then
@@ -2248,7 +2248,7 @@ room {
     if not w then
       return false
     end
-    if not w ^ _'королева' and not w ^ _'#трон' then
+    if not (w == _'королева') and not (w == _'#трон') then
       return false
     end
     if e == 'Exam' or s.near then
@@ -2300,7 +2300,7 @@ room {
         return false
       end;
       door_to = function(s)
-        if fn_here() ^ _'комната' then
+        if fn_here() == _'комната' then
           return 'Тронный зал'
         else
           return 'комната'
@@ -2616,11 +2616,11 @@ obj {
       fn_say("Она за стеклом.")
       return
     end
-    if fn_visited(_'сова2-диалог1') and not fn_where(_'зеркало') ^ _'#стена' then
+    if fn_visited(_'сова2-диалог1') and not (fn_where(_'зеркало') == _'#стена') then
       fn_say("-- Повесь зеркало на стену, дитя. Скорее!")
       return
     end
-    if not fn_visited(_'сова2-диалог1') and not fn_where(_'зеркало') ^ _'#стена' then
+    if not fn_visited(_'сова2-диалог1') and not (fn_where(_'зеркало') == _'#стена') then
       return 'сова2-диалог1'
     end
     if not fn_visited(_'сова2-диалог2') then
@@ -2647,14 +2647,14 @@ room {
       fn_say("Правда, мебель стоит неправильно и на стене нет зеркала. Интересно, куда оно подевалось?")
     else
       fn_say("Правда, мебель стоит неправильно.")
-      if fn_where(_'зеркало') ^ _'#стена' then
+      if fn_where(_'зеркало') == _'#стена' then
         fn_say("На стене висит зеркало.")
       end
     end
     if fn_seen('королева2') then
       fn_say("^^В комнате, прислонившись к стене, стоит Снежная Королева. Ты видишь как поверхность зеркала мерцает фиолетовым светом.")
     end
-    if fn_where(_'сова2') and fn_where(_'сова2') ^ _'#стол' then
+    if fn_where(_'сова2') and fn_where(_'сова2') == _'#стол' then
       fn_say("^^Полярная сова по прежнему сидит на твоём столе.")
     end
   end;
@@ -2675,7 +2675,7 @@ room {
     end
   end;
   onexit = function(s, t)
-    if fn_seen('королева2') and not t ^ _'комната2' then
+    if fn_seen('королева2') and not (t == _'комната2') then
       fn_say("Если переход в зеркале закроется, ты никогда не вернёшься домой. Надо спешить!")
       return false
     end
@@ -2842,7 +2842,7 @@ room {
     return 'портал1'
   end;
   ["before_Drop,ThrowAt"] = function(s, w)
-    if not w ^ _'перо' then
+    if not (w == _'перо') then
       return false
     end
     if fn_check_held(w) then
@@ -2966,7 +2966,7 @@ room {
   title = "У ледяного огня";
   warm = 0;
   after_Disrobe = function(s, w)
-    if w ^ _'браслет' then
+    if w == _'браслет' then
       s.warm = 0
     end
     return false
@@ -3068,7 +3068,7 @@ obj {
     if fn_check_held(s) then
       return
     end
-    if w ^ _'#стена' and fn_here() ^ _'комната' then
+    if w == _'#стена' and fn_here() == _'комната' then
       fn_move(s, w)
       fn_say("Ты нашла в стене одинокий шуруп и повесила на него зеркало.")
       return
@@ -3076,13 +3076,13 @@ obj {
     return false
   end;
   before_Search = function(s)
-    if fn_here() ^ _'комната' and not _'сова2'.finside and not s.seen then
+    if fn_here() == _'комната' and not _'сова2'.finside and not s.seen then
       _'сова2'.num = 0
       fn_daemonStart(_'сова2')
     end
     s.seen = true
     fn_say("Вместо своего отражения, ты видишь в зеркале свою маму! {$fmt em|Настоящую} маму.")
-    if fn_where(s) ^ _'#стена' then
+    if fn_where(s) == _'#стена' then
       fn_say("Ты видишь в зеркале комнату. Все вещи в ней находятся на своих местах.")
     end
     if fn_seen('королева2') then
@@ -3180,7 +3180,7 @@ room {
     if not w then
       w = _'скрипка'
     end
-    if not w ^ _'скрипка' then
+    if not (w == _'скрипка') then
       return false
     end
     if not fn_tiny() then

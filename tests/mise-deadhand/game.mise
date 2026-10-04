@@ -195,7 +195,7 @@ verb Tune:
     - {noun}/вн : Tune
     - частоту|канал : Tune
   on: |
-    if not w or w ^ radio:
+    if not w or w == radio:
       set w = radio
       if w:hasnt on:
         say Радио выключено.
@@ -399,7 +399,7 @@ room ship:
   title: шлюз
   words: шлюзовой отсек
   onenter: |
-    if f ^ space2:
+    if f == space2:
       say Ты влетел в шлюзовой отсек.
   out_to: gate
   in_to: gate2

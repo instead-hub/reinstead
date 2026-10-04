@@ -462,7 +462,7 @@ Verb { "[|по|под|в|за]лететь,[|по|под|в|за]лети", "к 
 
 Verb { '#Tune', "[на|под|пере|перена]строить,[на|под|пере|перена]строй,смен/ить,замен/ить,переключ/иить", "{noun}/вн : Tune", "частоту|канал : Tune" }
 mp.Tune = function(s, w, wh)
-  if not w or w ^ _'radio' then
+  if not w or w == _'radio' then
     w = _'radio'
     if fn_hasnt(w, "on") then
       fn_say("Радио выключено.")
@@ -695,7 +695,7 @@ room {
   nam = "ship";
   title = "шлюз";
   onenter = function(s, f)
-    if f ^ _'space2' then
+    if f == _'space2' then
       fn_say("Ты влетел в шлюзовой отсек.")
     end
   end;
