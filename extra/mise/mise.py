@@ -822,6 +822,11 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
             continue
         if key == "text" and len(texts) > 1:
             continue
+        if re.match(r"^(before|after|post)\s+\S", key):
+            one = Block()
+            one.items = [(key, val)]
+            lines.extend(emit_on(one, fi))
+            continue
         fbase, _ = parse_key(key)
         if fbase in ("any", "default"):
             one = Block()
@@ -1276,6 +1281,11 @@ def transpile(src):
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 reqs.append(v.s if hasattr(v, "s") else str(v))
+        elif key == "events":
+            vals = val if isinstance(val, list) else [val]
+            for v in vals:
+                name = v.s if hasattr(v, "s") else str(v)
+                EXTRA_EVENTS[name.lower()] = name
         elif key == "lua":
             body.append(val.s)
         elif re.match(r"^class\s+[A-Z]", key):

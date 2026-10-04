@@ -373,9 +373,9 @@ obj {
     end
   end;
   each_turn = function(s)
-    if here() ^ 'пещера2' and s:has'light' and not here().solved then
+    if here() ^ 'пещера2' and s:has 'light' and not here().solved then
       p "В ту же секунду ты слышишь хлопанье крыльев и успеваешь заметить,\nкак множество чёрных теней бросаются к тебе с потолка. Инстинктивно ты успеваешь выключить фонарик. Удивительно, но это успокаивает тварей. Некоторое время ты слышишь шум их крыльев. Затем всё затихает."
-      s:attr'~light'
+      s:attr '~light'
       return
     end
     if here():has 'light' and s:has 'light' then
@@ -670,7 +670,7 @@ obj {
       when_closed = [[Твоё внимание привлекает бардачок.]];
       when_open = [[Бардачок открыт.]];
       before_Exam = function(s)
-        if s:hasnt'open' then
+        if s:hasnt 'open' then
           p "Бардачок закрыт."
           return
         end
@@ -780,7 +780,7 @@ Area {
     return "#лес"
   end;
   before_Listen = function(s)
-    if _'радио':hasnt'on' then
+    if _'радио':hasnt 'on' then
       p "Стоит звенящая тишина.";
     else
       p "Ты слышишь шум радиопомех из машины."
@@ -1057,7 +1057,7 @@ Area {
       nam = '#деревья';
       ["before_Enter,Climb"] = [[Первые ветки находятся высоко. У тебя не получится забраться.]];
       before_Exam = function(s)
-        if s:hint'plural' then
+        if s:hint 'plural' then
           p "Деревья покрыты снегом.";
         else
           p "Ветви дерева покрыты снегом.";
@@ -1672,7 +1672,7 @@ obj {
   function(s) if s:has'animate' then p (-"ледяной человек/ед,мр,од|человек|статуя|голем/ед,мр,од"); else p (-"статуя|ледяной человек|человек"); end  end;
   nam = 'голем';
   description = function(s)
-    if s:has'animate' then
+    if s:has 'animate' then
       p "Высота ледяного человека около двух метров. У него есть руки и ноги, но вместо головы лишь небольшой выступ."
       if visited 'королева-диалог' and disabled 'дверь' then
         p "Сейчас голем стоит у северной части зала и ждет тебя."
@@ -1682,7 +1682,7 @@ obj {
     end
   end;
   init_dsc = function(s)
-    if s:has'animate' then
+    if s:has 'animate' then
       p "У стены стоит ледяной человек."
     else
       p "Твоё внимание привлекает огромная ледяная статуя."
@@ -1696,7 +1696,7 @@ obj {
         p "-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты.^"
         p "После этих слов голем размахнулся и ударил своим кулаком в стену."
         p "Стена с треском раскололась и в ней образовался проход."
-        s:attr'animate'
+        s:attr 'animate'
       else
         if not visited 'Тронный зал' then
           p "-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты."
@@ -1766,7 +1766,7 @@ room {
         if disabled 'ворота' then
           return false
         end
-        if _'голем':hasnt'moved' then
+        if _'голем':hasnt 'moved' then
           move('голем', 'Тронный зал')
         end
         walk 'Тронный зал';
@@ -1900,7 +1900,7 @@ room {
       return
     end
     if not s.near then
-      if _'браслет':hasnt'worn' then
+      if _'браслет':hasnt 'worn' then
         if to ^ 'Зал с зеркалами' then
           p "Сейчас не лучшее время для прогулок."
           return false
@@ -2285,7 +2285,7 @@ obj {
       s:daemonStop()
       s.finside = true
       move(s, '#стол')
-      s:attr'~scenery'
+      s:attr '~scenery'
     end
   end;
   description = [[Похоже, это та самая сова, которая привела тебя в это место. Ты боишься смотреть в её чёрные глаза.]];
@@ -2416,7 +2416,7 @@ room {
       -"шкаф";
       description = function(s)
         p "Платяной шкаф с твоей одеждой."
-        if s:has'open' then
+        if s:has 'open' then
           p "Шкаф открыт."
         end
         return false
@@ -2612,7 +2612,7 @@ room {
   nam = 'ледяное-пламя';
   cant_go = [[Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла искать здесь что-нибудь кроме пустоты.]];
   daemon = function(s)
-    if _'браслет':has'worn' then
+    if _'браслет':has 'worn' then
       s.warm = s.warm + 1
       if s.warm == 3 then
         p "Ты чувствуешь, как браслет согревает твою руку."
@@ -2879,7 +2879,7 @@ cutscene {
     remove 'сова2'
     move('королева2', 'комната')
     _'королева2'.violin = true
-    _'зеркало':attr'enterable'
+    _'зеркало':attr 'enterable'
   end;
   next_to = [[комната]];
   title = false;
@@ -2899,7 +2899,7 @@ cutscene {
   exit = function(s)
     remove 'сова2'
     move('королева2', 'комната')
-    _'зеркало':attr'enterable'
+    _'зеркало':attr 'enterable'
   end;
   next_to = [[комната]];
   title = false;

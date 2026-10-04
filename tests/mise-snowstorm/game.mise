@@ -4,6 +4,7 @@ author: Peter Kosyh & Pakowacz
 info: Что тебя ждёт за снежной пеленой?
 lang: ru
 fmt: dash, quotes
+events: Say
 
 global:
   blizzard: 0
@@ -91,7 +92,7 @@ room "В машине":
       else:
         p "В машине играет радио."
     ~~~
-  before_Cry(s): ~~~do
+  before cry(s): ~~~do
     if seen '#мама':
       p "-- Прекрати истерику! -- произносит мать."
     else:
@@ -153,7 +154,7 @@ room "В машине":
       on:
         ask, tell, talk(s): ~~~do
           if visited 'разговор1':
-            if _'телефон'.seen and have 'телефон':
+            if телефон.seen and have 'телефон':
               p "-- Я не буду с тобой разговаривать, пока ты не отдашь мне телефон! Ну же!"
               return
             if blizzard > 0:
@@ -189,7 +190,7 @@ room "В машине":
       words: "бардачок"
       on:
         exam(s): ~~~do
-          if _'телефон':inside 'бардачок':
+          if телефон:inside 'бардачок':
             p "Бардачок закрыт."
             return
           p "Тебе нет до него дела."
@@ -224,7 +225,7 @@ room "В машине":
           if not disabled '#заправка':
             p "За стеклом ты видишь смутный силуэт заправки.";
             return
-          if visited 'разговор1' and _'телефон'.seen:
+          if visited 'разговор1' and телефон.seen:
             if blizzard == 0:
               pn "Разглядывая белоснежный пейзаж, ты замечаешь вдали нечто странное."
               enable '#метель'
@@ -294,10 +295,10 @@ obj телефон:
   attrs: switchable, on, multi
   on:
     exam(s): ~~~do
-      if not s:has 'on':
+      if not s:has on:
         p "Телефон выключен."
         return
-      if s:has 'light':
+      if s:has light:
         p "В телефоне включён фонарик."
         return
       if seen '#мама':
@@ -335,9 +336,9 @@ obj телефон:
       return false
     ~~~
     switchoff(s): ~~~do
-      if s:has 'light':
+      if s:has light:
         p "Ты выключила фонарик в телефоне."
-        s:attr '~light'
+        s:attr ~light
         pl:need_scene(true)
         return
       if s:multi_alias() == 2:
@@ -361,9 +362,9 @@ obj телефон:
         return
       return false
     ~~~
-  before_Burn,Light(s): ~~~do
+  before burn, light(s): ~~~do
     s.flash = true
-    if s:has 'light':
+    if s:has light:
       p "Фонарик в телефоне и так включён."
       return
     if not mp:thedark():
@@ -371,7 +372,7 @@ obj телефон:
       return
     p "Ты включила в мобильнике фонарик."
     pl:need_scene(true)
-    s:attr 'light'
+    s:attr light
   ~~~
   compass: false
   daemon(s): ~~~do
@@ -379,13 +380,13 @@ obj телефон:
       p "Ты слышишь сигнал входящего сообщения на своём смартфоне."
   ~~~
   each_turn(s): ~~~do
-    if here() ^ 'пещера2' and s:has'light' and not here().solved:
+    if here() ^ 'пещера2' and s:has light and not here().solved:
       p "В ту же секунду ты слышишь хлопанье крыльев и успеваешь заметить,\nкак множество чёрных теней бросаются к тебе с потолка. Инстинктивно ты успеваешь выключить фонарик. Удивительно, но это успокаивает тварей. Некоторое время ты слышишь шум их крыльев. Затем всё затихает."
-      s:attr'~light'
+      s:attr ~light
       return
-    if here():has 'light' and s:has 'light':
+    if here():has light and s:has light:
       p "В целях экономии заряда ты выключила фонарик."
-      s:attr '~light'
+      s:attr ~light
   ~~~
   flash: false
   seen: false
@@ -394,7 +395,7 @@ obj скрипка:
   words: "скрипка"
   on:
     exam: "Твоя скрипка. Тебе остался год, чтобы закончить музыкальную школу. Если честно, благодаря музыкальной школе ты стала ненавидеть музыку."
-  after_Play: "У тебя сейчас нет настроения играть."
+  after play: "У тебя сейчас нет настроения играть."
   init_dsc: "Рядом лежит скрипка."
 
 verb Attack2:
@@ -415,9 +416,9 @@ verb Play:
     - " : Play"
   on(s, w): ~~~do
     if not w:
-      mp:xaction("Play", _'скрипка')
+      mp:xaction("Play", скрипка)
       return
-    if w ~= _'скрипка':
+    if w ~= скрипка:
       p "Ты умеешь играть только на скрипке."
       return
     if not have 'скрипка':
@@ -559,7 +560,7 @@ obj машина:
   attrs: container, openable, open, static, enterable, light
   on:
     after close(s): ~~~do
-      if _'перо':inside(s) and not have 'перо':
+      if перо:inside(s) and not have 'перо':
         p "Когда ты захлопнула дверь машины, перо упало с крыши в снег."
         move('перо', 'поле')
         return
@@ -575,8 +576,8 @@ obj машина:
   ~~~
   dsc(s): ~~~do
     p "В снегу стоит машина.";
-    if _'перо':where() == s and _'перо':hasnt 'moved':
-      _'перо':init_dsc()
+    if перо:where() == s and перо:hasnt moved:
+      перо:init_dsc()
   ~~~
   inside_dsc: "Ты находишься в машине."
   with:
@@ -585,8 +586,8 @@ obj машина:
       attrs: static, switchable, on
       on:
         after switchon: "Ты включаешь радио. Шум помех нарушает тишину."
-      before_Turn,Tune(s): ~~~do
-        if s:hasnt 'on':
+      before turn, tune(s): ~~~do
+        if s:hasnt on:
           p "Радио выключено."
           return
         p "Ты пытаешься поймать какую-нибудь волну, но на всех частотах только шум помех.";
@@ -598,7 +599,7 @@ obj машина:
       attrs: static, openable, container
       on:
         exam(s): ~~~do
-          if s:hasnt'open':
+          if s:hasnt open:
             p "Бардачок закрыт."
             return
           return false
@@ -608,7 +609,7 @@ obj машина:
       with: браслет
 
 handler have_compass(): ~~~do
-  return have 'телефон' and _'телефон'.compass
+  return have 'телефон' and телефон.compass
 ~~~
 
 handler check_compass(w): ~~~do
@@ -666,7 +667,7 @@ Area поле:
   words: "поле"
   on:
     listen(s): ~~~do
-      if _'радио':hasnt'on':
+      if радио:hasnt on:
         p "Стоит звенящая тишина.";
       else:
         p "Ты слышишь шум радиопомех из машины."
@@ -833,9 +834,9 @@ handler forest_scenery(s): ~~~do
     enable '#поляна'
     enable 'олень'
     pic_set '22'
-    _'олень'.step = 0
-    _'олень'.sit = false
-    _'олень':daemonStart()
+    олень.step = 0
+    олень.sit = false
+    олень:daemonStart()
 ~~~
 
 Area "В лесу":
@@ -878,7 +879,7 @@ Area "В лесу":
   ~~~
   enter(s): ~~~do
     if seen 'сова':
-      _'сова':daemonStart()
+      сова:daemonStart()
   ~~~
   out_to(s): ~~~do
     if s.depth == 0:
@@ -933,7 +934,7 @@ Area "В лесу":
       on:
         enter, climb: "Первые ветки находятся высоко. У тебя не получится забраться."
         exam(s): ~~~do
-          if s:hint'plural':
+          if s:hint plural:
             p "Деревья покрыты снегом.";
           else:
             p "Ветви дерева покрыты снегом.";
@@ -1004,9 +1005,9 @@ Area "В лесу":
             default: "Тебе не нравятся эти глаза."
             exam(s): ~~~do
               p "На месте глаз у совы зияют чёрные дырки.";
-              if not _'сова'.seen:
+              if not сова.seen:
                 p "^Интересно, видит ли она тебя?"
-              _'сова'.seen = true
+              сова.seen = true
             ~~~
     Prop #поляна:
       words: "поляна"
@@ -1029,7 +1030,7 @@ obj перо:
         p "Его оставила сова с дырками вместо глаз."
     ~~~
   init_dsc(s): ~~~do
-    if s:hasnt 'moved' and where(pl) ^ 'машина':
+    if s:hasnt moved and where(pl) ^ 'машина':
       return
     p "На крыше машины лежит белое перо.";
   ~~~
@@ -1069,8 +1070,8 @@ talk "разговор с совой":
         do: ~~~do
           p "-- Расстояние -- всего лишь время. А время здесь замёрзло. Возьми перо. По нему тебя узнают другие слуги госпожи.";
           move ('перо', 'машина')
-          _'перо':attr '~moved'
-          _'сова'.talked = true
+          перо:attr ~moved
+          сова.talked = true
           walkout()
         ~~~
     option:
@@ -1151,7 +1152,7 @@ Area "Ледяные горы":
             s.light = 1
           s:daemonStart();
         ~~~
-      before_Knock(s): ~~~do
+      before knock(s): ~~~do
         if s.light == 0:
           return false
         p "Ты попыталась постучать по стене, но у тебя это не вышло! Рука прошла сквозь лёд!"
@@ -1181,7 +1182,7 @@ room пещера:
   Play(s, w): ~~~do
     if not w or not have 'скрипка':
       return false
-    if not w then w = _'скрипка' end
+    if not w then w = скрипка end
     if not w ^ 'скрипка':
       return false
     if _'#кристаллы'.try == 0 or _'#кристаллы'.broken:
@@ -1224,7 +1225,7 @@ room пещера:
         walk, climb, enter(s): ~~~do
           walk 'Ледяные горы';
         ~~~
-      before_Touch,Push,Knock: "Твоя рука проходит сквозь свечение."
+      before touch, push, knock: "Твоя рука проходит сквозь свечение."
     Prop #стены:
       words: "стены|стена|пол|потолок"
       attrs: luminous
@@ -1235,7 +1236,7 @@ room пещера:
           else:
             return false
         ~~~
-      before_Touch,Push,Knock: "Похоже, ты находишься в ледяной пещере."
+      before touch, push, knock: "Похоже, ты находишься в ледяной пещере."
     obj #кристаллы:
       words: "кристаллы|кристалл"
       attrs: luminous, static
@@ -1248,7 +1249,7 @@ room пещера:
           else:
             p "Ты чувствуешь как кристалл вибрирует."
         ~~~
-      before_Attack,Knock(s): ~~~do
+      before attack, knock(s): ~~~do
         if s.broken:
           p "Ты уже разрушила один кристалл."
           return
@@ -1280,7 +1281,7 @@ room пещера:
             return
           return false
         ~~~
-      before_Light: "Свет испускаемый осколками очень тусклый для этого."
+      before light: "Свет испускаемый осколками очень тусклый для этого."
 
 obj ообрыв:
   words: "обрыв,разлом|пропасть"
@@ -1458,7 +1459,7 @@ obj голем:
       return false
     ~~~
   description(s): ~~~do
-    if s:has'animate':
+    if s:has animate:
       p "Высота ледяного человека около двух метров. У него есть руки и ноги, но вместо головы лишь небольшой выступ."
       if visited 'королева-диалог' and disabled 'дверь':
         p "Сейчас голем стоит у северной части зала и ждет тебя."
@@ -1466,7 +1467,7 @@ obj голем:
       p "Статуя сделана из льда и изображает двухметрового человека с массивным телосложением."
   ~~~
   init_dsc(s): ~~~do
-    if s:has'animate':
+    if s:has animate:
       p "У стены стоит ледяной человек."
     else:
       p "Твоё внимание привлекает огромная ледяная статуя."
@@ -1479,7 +1480,7 @@ obj голем:
         p "-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты.^"
         p "После этих слов голем размахнулся и ударил своим кулаком в стену."
         p "Стена с треском раскололась и в ней образовался проход."
-        s:attr'animate'
+        s:attr animate
       else:
         if not visited 'Тронный зал':
           p "-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты."
@@ -1516,7 +1517,7 @@ room "У замка":
         enter, walk, climb(s): ~~~do
           if disabled 'ворота':
             return false
-          if _'голем':hasnt'moved':
+          if голем:hasnt moved:
             move('голем', 'Тронный зал')
           walk 'Тронный зал';
         ~~~
@@ -1537,7 +1538,7 @@ obj королева:
     walk(s): ~~~do
       return _'#трон':before_Walk()
     ~~~
-  before_Talk,Say,Ask,Tell(s): ~~~do
+  before talk, say, ask, tell(s): ~~~do
     if not s.queen:
       p "Сначала ты хочешь рассмотреть её внимательней."
     else:
@@ -1545,7 +1546,7 @@ obj королева:
       if visited'королева-диалог':
         p "-- Ты уже готова стать моей дочерью?^\n-- Нет!^\n-- Ну что же, я подожду."
       else:
-        if _'браслет':has 'worn':
+        if браслет:has worn:
           walk 'королева-диалог'
         else:
           walk 'badend2'
@@ -1572,7 +1573,7 @@ obj королева:
       words: "лицо"
       description(s): ~~~do
         if _'Тронный зал'.near:
-          _'королева':description()
+          королева:description()
         else:
           p "Отсюда плохо видно её лицо."
       ~~~
@@ -1635,7 +1636,7 @@ room "Тронный зал":
     if to ^ 'королева-диалог' or to ^ 'badend2' or to ^ 'badend4':
       return
     if not s.near:
-      if _'браслет':hasnt'worn':
+      if браслет:hasnt worn:
         if to ^ 'Зал с зеркалами':
           p "Сейчас не лучшее время для прогулок."
           return false
@@ -1670,7 +1671,7 @@ room "Тронный зал":
           if _'Тронный зал'.near:
             return false
           p "Ты бежишь к трону. Твоё сердце от радости выпрыгивает из груди. Но что-то странное ты замечаешь в облике матери.\nВ нерешительности ты останавливаешься в нескольких шагах от неё."
-          if _'браслет':hasnt 'worn':
+          if браслет:hasnt worn:
             DaemonStop'королева'
             walk 'badend2'
             return
@@ -1901,14 +1902,14 @@ obj сова2:
     s.num = s.num + 1
     if s.num < 3:
       return
-    if _'#окно':hasnt 'open':
+    if _'#окно':hasnt open:
       p "Ты слышишь стук в окно."
     else:
       p "Ты видишь, как в открытое окно влетает полярная сова и садится прямо на стол."
       s:daemonStop()
       s.finside = true
       move(s, '#стол')
-      s:attr'~scenery'
+      s:attr ~scenery
   ~~~
   description: "Похоже, это та самая сова, которая привела тебя в это место. Ты боишься смотреть в её чёрные глаза."
   finside: false
@@ -1953,13 +1954,13 @@ room комната:
     if s:once():
       p "За дверью оказалась лестница, которая вела наверх. Ты поднялась по ней и оказалась в ... своей комнате.";
       move('голем', 'У замка')
-    if visited 'gotmirror' and _'зеркало'.seen and not _'сова2'.finside:
-      _'сова2'.num = 0
+    if visited 'gotmirror' and зеркало.seen and not сова2.finside:
+      сова2.num = 0
       DaemonStart 'сова2'
   ~~~
   exit(s): ~~~do
     DaemonStop 'сова2'
-    if not _'сова2'.finside:
+    if not сова2.finside:
       remove 'сова2'
   ~~~
   onexit(s, t): ~~~do
@@ -2015,7 +2016,7 @@ room комната:
         push, pull, transfer: "Пусть стоит там, где ему место."
       description(s): ~~~do
         p "Платяной шкаф с твоей одеждой."
-        if s:has'open':
+        if s:has open:
           p "Шкаф открыт."
         return false
       ~~~
@@ -2038,7 +2039,7 @@ room комната:
         enter: "Это слишком опасно."
       description(s): ~~~do
         p "В окне ты видишь пустынный белый пейзаж.";
-        if _'сова2'.num >= 3 and not _'сова2'.finside:
+        if сова2.num >= 3 and not сова2.finside:
           p "Ты видишь за окном полярную сову."
           move('сова2', here())
         return false
@@ -2181,7 +2182,7 @@ room ледяное-пламя:
     ~~~
   cant_go: "Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла искать здесь что-нибудь кроме пустоты."
   daemon(s): ~~~do
-    if _'браслет':has'worn':
+    if браслет:has worn:
       s.warm = s.warm + 1
       if s.warm == 3:
         p "Ты чувствуешь, как браслет согревает твою руку."
@@ -2289,8 +2290,8 @@ obj зеркало:
       return false
     ~~~
     search(s): ~~~do
-      if here() ^ 'комната' and not _'сова2'.finside and not s.seen:
-        _'сова2'.num = 0
+      if here() ^ 'комната' and not сова2.finside and not s.seen:
+        сова2.num = 0
         DaemonStart 'сова2'
       s.seen = true
       p "Вместо своего отражения, ты видишь в зеркале свою маму! {$fmt em|Настоящую} маму.";
@@ -2359,7 +2360,7 @@ room Тьма:
     default: "Отчаяние захватило тебя. Всё, что ты можешь делать это думать и плакать."
     think: "Ты думаешь, что навсегда останешься здесь. Мама! Забери меня отсюда!"
     wait: "Проходит немного времени."
-  before_Cry(s): ~~~do
+  before cry(s): ~~~do
     s.num = s.num + 1
     if s.num < 5 or have 'скрипка':
       p "Тебя душат рыдания.";
@@ -2376,9 +2377,9 @@ room Тьма:
     else:
       walk 'cry'
   ~~~
-  before_Play(s, w): ~~~do
+  before play(s, w): ~~~do
     if not w:
-      w = _'скрипка'
+      w = скрипка
     if not w ^ 'скрипка':
       return false
     if not instead.tiny:
@@ -2393,8 +2394,8 @@ story cry2:
   exit(): ~~~do
     remove 'сова2'
     move('королева2', 'комната')
-    _'королева2'.violin = true
-    _'зеркало':attr'enterable'
+    королева2.violin = true
+    зеркало:attr enterable
   ~~~
   next_to: "комната"
   title: false
@@ -2405,7 +2406,7 @@ story cry:
   exit(): ~~~do
     remove 'сова2'
     move('королева2', 'комната')
-    _'зеркало':attr'enterable'
+    зеркало:attr enterable
   ~~~
   next_to: "комната"
   title: false
@@ -2759,7 +2760,7 @@ verb Ring:
     if seen '#мама':
       p "Тебе сейчас некому звонить."
       return
-    if _'телефон'.compass:
+    if телефон.compass:
       p "Нет приёма."
       return
     p "Странно, нет приёма."
