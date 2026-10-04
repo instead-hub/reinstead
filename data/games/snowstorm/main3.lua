@@ -3373,4 +3373,4 @@ Verb {
 	"~ {noun}/дт,scene {noun}/вн,held : Give reverse",
 }
 
-game.hint_verbs = { "#Exam", "#Drop", "#LookIn", "#ThrowAt", "#Walk", "#Take", "#Play", "#Give", "#Touch", "#Attack2", "#Talk", "#Cry", "#Open", "#Close", "#Jump", "#Wait", "#Wear", "#Sit", "#Exit", "#SwitchOn", "#SwtchOff", "#PutOn", "#Light" }
+game.hint_verbs = { "#Exam", "#Drop", "#LookIn", "#ThrowAt", "#Walk", "#Take", "#Play", "#Give", "#Touch", "#Attack2", "#Talk", "#Cry", "#Open", "#Close", "#Jump", "#Wait", "#Wear", "#Sit", "#Exit", "#SwitchOn", "#SwitchOff", "#PutOn", "#Light" }
