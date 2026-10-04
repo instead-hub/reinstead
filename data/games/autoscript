@@ -54,6 +54,26 @@
 !script
 !restart
 
+!game games/trial
+!script autoscript-bad
+!restart
+
+!game games/trial
+!script autoscript-one-good
+!restart
+
+!game games/trial
+!script autoscript-almost-good
+!restart
+
+!game games/trial
+!script autoscript-wire
+!restart
+
+!game games/trial
+!script autoscript-wire-reverse
+!restart
+
 !game games/urzi
 !script
 !restart
