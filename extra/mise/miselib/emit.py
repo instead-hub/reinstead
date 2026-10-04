@@ -5,15 +5,15 @@ from .common import *
 from .emitlogic import emit_logic
 from .expr import transpile_exprlist
 
-def lua_value(v, ctx="s"):
+def lua_value(v, ctx, mode="s"):
     if isinstance(v, list):
-        return "{ %s }" % ", ".join(lua_value(x, ctx) for x in v)
+        return "{ %s }" % ", ".join(lua_value(x, ctx, mode) for x in v)
     if isinstance(v, Text):
         return lua_str(v.s)
     if isinstance(v, Lua):
-        return "function(%s)\n%s\nend" % (FIELD_PARAMS.get(ctx, "s"), v.s)
+        return "function(%s)\n%s\nend" % (FIELD_PARAMS.get(mode, "s"), v.s)
     if isinstance(v, Bare):
-        return "'%s'" % v.s if v.s in S.IDS else lua_str(v.s)
+        return "'%s'" % v.s if v.s in ctx.ids else lua_str(v.s)
     if isinstance(v, (Num, Bool)):
         return v.s
     if isinstance(v, Raw):
@@ -22,23 +22,23 @@ def lua_value(v, ctx="s"):
         return v.s
     if isinstance(v, Nil):
         return "nil"
-    raise Error("unsupported value: %r (ctx=%s)" % (v, ctx))
+    raise Error("unsupported value: %r (ctx=%s)" % (v, mode))
 
-def check_use(name, prm):
-    if name not in S.FN_SIGS or not prm:
+def check_use(name, prm, ctx):
+    if name not in ctx.fn_sigs or not prm:
         return
-    plist, _ret, variadic = S.FN_SIGS[name]
-    n = len(param_env(prm))
+    plist, _ret, variadic = ctx.fn_sigs[name]
+    n = len(param_env(prm, ctx=ctx))
     if not variadic and len(plist) > n:
         raise Error("fn %s takes %d parameter(s), event provides %d"
                     % (name, len(plist), n))
 
-def use_name(v):
+def use_name(v, ctx):
     if isinstance(v, (Text, Bare)):
         m = S.USE_RE.match(v.s.strip())
         if m:
             name = m.group(1)
-            if name not in S.FNS:
+            if name not in ctx.fns:
                 raise Error("unknown fn in use: " + name)
             return name
     return None
@@ -75,9 +75,9 @@ def parse_fn_sig(key):
             plist.append((pn, pt))
     return name, plist, ret, variadic
 
-def param_env(params, name=None):
-    if name and name in S.FN_SIGS:
-        return {pn: pt for pn, pt in S.FN_SIGS[name][0]}
+def param_env(params, name=None, ctx=None):
+    if name and name in ctx.fn_sigs:
+        return {pn: pt for pn, pt in ctx.fn_sigs[name][0]}
     env = {}
     for p in (params or "").split(","):
         p = p.strip()
@@ -89,22 +89,22 @@ def param_env(params, name=None):
         env[pn] = S.PARAM_TYPES.get(pn, "any")
     return env
 
-def lua_body(v, key, indent=""):
+def lua_body(v, key, indent="", ctx=None):
     base, params = parse_key(key)
     prm = params or FIELD_PARAMS.get(base, "s")
-    uname = use_name(v)
+    uname = use_name(v, ctx=ctx)
     if uname:
-        check_use(uname, prm)
+        check_use(uname, prm, ctx=ctx)
         return "fn_" + uname
     if isinstance(v, Lua):
         body = reindent(v.s, indent + IND)
         return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
     if isinstance(v, Logic):
-        body = "\n".join(emit_logic(v.stmts, indent + IND, param_env(prm)))
+        body = "\n".join(emit_logic(v.stmts, indent + IND, param_env(prm, ctx=ctx), ctx=ctx))
         return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
-    return lua_value(v)
+    return lua_value(v, ctx=ctx)
 
-def emit_on(block, indent, target=""):
+def emit_on(block, indent, target="", ctx=None):
     out = []
     for key, val in block.items:
         base, params = parse_key(key)
@@ -124,7 +124,7 @@ def emit_on(block, indent, target=""):
             if part in ("Any", "Default"):
                 names.append((part, "before_"))
             else:
-                year = EVENTS.get(part) or S.EXTRA_EVENTS.get(part)
+                year = EVENTS.get(part) or ctx.extra_events.get(part)
                 if not year:
                     raise Error("unknown event: " + part)
                 names.append((year, pfx))
@@ -134,25 +134,25 @@ def emit_on(block, indent, target=""):
                 groups[-1][1].append(year)
             else:
                 groups.append((pfx, [year]))
-        uname = use_name(val)
+        uname = use_name(val, ctx=ctx)
         for pfx, years in groups:
             prm = params or ("s, ev, w" if years[0] in ("Any", "Default")
                              else "s, w, wh")
             if uname:
-                check_use(uname, prm)
+                check_use(uname, prm, ctx=ctx)
                 src = "fn_" + uname
             elif isinstance(val, Lua):
                 body = reindent(val.s, indent + IND)
                 src = "function(%s)\n%s\n%s" % (prm, body, indent + "end")
             elif isinstance(val, Logic):
                 body = "\n".join(emit_logic(val.stmts, indent + IND,
-                                            param_env(prm)))
+                                            param_env(prm, ctx=ctx), ctx=ctx))
                 src = "function(%s)\n%s\n%s" % (prm, body, indent + "end")
             elif (isinstance(val, (Text, Bare))
                   and val.s.strip() == "pass"):
                 src = "function() return false end"
             else:
-                src = lua_value(val)
+                src = lua_value(val, ctx=ctx)
             if len(years) > 1 and not target:
                 out.append('%s["%s%s"] = %s;'
                            % (indent, pfx, ",".join(years), src))
@@ -162,7 +162,7 @@ def emit_on(block, indent, target=""):
                                % (indent, target, pfx, year, src))
     return out
 
-def emit_obj(block, ident, base, ctor, preset, parent=None):
+def emit_obj(block, ident, base, ctor, preset, parent=None, ctx=None):
     fi = base + IND
     if parent:
         lines = ["%s%s({" % (base, ctor)]
@@ -209,17 +209,17 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
         if re.match(r"^(before|after|post)\s+\S", key):
             one = Block()
             one.items = [(key, val)]
-            lines.extend(emit_on(one, fi))
+            lines.extend(emit_on(one, fi, ctx=ctx))
             continue
         fbase, _ = parse_key(key)
         if fbase in ("Any", "Default"):
             one = Block()
             one.items = [(key, val)]
-            lines.extend(emit_on(one, fi))
+            lines.extend(emit_on(one, fi, ctx=ctx))
             continue
         if key.startswith("var "):
             name = parse_key(key[4:])[0]
-            lines.append("%s%s = %s;" % (fi, name, lua_body(val, name, fi)))
+            lines.append("%s%s = %s;" % (fi, name, lua_body(val, name, fi, ctx=ctx)))
             continue
         if not parse_key(key)[1]:
             for part in fbase.split(","):
@@ -227,7 +227,7 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
                     check_ref_value(ident or "?", key, val)
                     break
         try:
-            rendered = lua_body(val, key, fi)
+            rendered = lua_body(val, key, fi, ctx=ctx)
         except Error as e:
             raise Error("%s.%s: %s" % (ident, key, e))
         if "," in fbase:
@@ -236,23 +236,23 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
             lines.append("%s%s = %s;" % (fi, fbase, rendered))
     on = block.get("on")
     if on:
-        lines.extend(emit_on(on, fi))
+        lines.extend(emit_on(on, fi, ctx=ctx))
     for pfx in ("before", "after", "post"):
         blk = block.get(pfx)
         if isinstance(blk, Block):
             tmp = Block()
             tmp.items = [("%s %s" % (pfx, k), v) for k, v in blk.items]
-            lines.extend(emit_on(tmp, fi))
+            lines.extend(emit_on(tmp, fi, ctx=ctx))
     if len(texts) > 1:
         lines.append("%stext = {" % fi)
         for t in texts:
-            lines.append("%s%s%s;" % (fi, IND, lua_value(t)))
+            lines.append("%s%s%s;" % (fi, IND, lua_value(t, ctx=ctx)))
         lines.append("%s};" % fi)
     for key, val in block.items:
         if key in ("contains", "inside", "parts", "with"):
             if isinstance(val, Block):
                 for nk, nv in val.items:
-                    nested.append(emit_decl(nk, nv, fi + IND) + ";")
+                    nested.append(emit_decl(nk, nv, fi + IND, ctx=ctx) + ";")
             else:
                 refs = val if isinstance(val, list) else [val]
                 for r in refs:
@@ -286,13 +286,13 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
     lines.append(tail)
     return "\n".join(lines)
 
-def emit_verb(block, ident, base):
+def emit_verb(block, ident, base, ctx):
     fields = []
     tag = block.get("tag")
     if tag is None:
         fields.append("'#%s'" % ident)
     elif not (isinstance(tag, Bool) and tag.s == "false"):
-        fields.append(lua_value(tag))
+        fields.append(lua_value(tag, ctx=ctx))
     words = block.get("words")
     if not isinstance(words, Text):
         raise Error("verb words must be a quoted string")
@@ -302,12 +302,12 @@ def emit_verb(block, ident, base):
         if not isinstance(pats, list):
             pats = [pats]
         for p in pats:
-            fields.append(lua_value(p))
+            fields.append(lua_value(p, ctx=ctx))
     extra = []
     if block.get("prio") is not None:
-        extra.append("prio = %s" % lua_value(block.get("prio")))
+        extra.append("prio = %s" % lua_value(block.get("prio"), ctx=ctx))
     if block.get("hint") is not None:
-        extra.append("hint = %s" % lua_body(block.get("hint"), "hint"))
+        extra.append("hint = %s" % lua_body(block.get("hint"), "hint", ctx=ctx))
     lines = ["%sVerb { %s%s }" % (base, ", ".join(fields),
                                   (", " + ", ".join(extra)) if extra else "")]
     ev_field = block.get("event")
@@ -324,12 +324,12 @@ def emit_verb(block, ident, base):
             body = reindent(val.s, base + IND)
         else:
             body = "\n".join(emit_logic(val.stmts, base + IND,
-                                        param_env(params or "s, w, wh")))
+                                        param_env(params or "s, w, wh", ctx=ctx), ctx=ctx))
         lines.append("%s%s = function(%s)\n%s\n%s"
                      % (base, mpname, params or "s, w, wh", body, base + "end"))
     return "\n".join(lines)
 
-def emit_verb_extend(block, ident, base):
+def emit_verb_extend(block, ident, base, ctx):
     if not ident:
         raise Error("extend needs a verb tag")
     fields = [lua_str(ident)]
@@ -343,14 +343,14 @@ def emit_verb_extend(block, ident, base):
         if not isinstance(pats, list):
             pats = [pats]
         for p in pats:
-            fields.append(lua_value(p))
+            fields.append(lua_value(p, ctx=ctx))
     if len(fields) == 1:
         raise Error("extend needs words or patterns")
     extra = []
     if block.get("prio") is not None:
-        extra.append("prio = %s" % lua_value(block.get("prio")))
+        extra.append("prio = %s" % lua_value(block.get("prio"), ctx=ctx))
     if block.get("hint") is not None:
-        extra.append("hint = %s" % lua_body(block.get("hint"), "hint"))
+        extra.append("hint = %s" % lua_body(block.get("hint"), "hint", ctx=ctx))
     ctor = "VerbExtendWord" if words is not None else "VerbExtend"
     return "%s%s { %s%s }" % (base, ctor, ", ".join(fields),
                               (", " + ", ".join(extra)) if extra else "")
@@ -401,11 +401,11 @@ def sym_text(v):
 def is_true(v):
     return isinstance(v, Bool) and v.s == "true"
 
-def talk_act(reply, do, indent):
+def talk_act(reply, do, indent, ctx):
     if do is None:
         return reply
     if isinstance(do, Logic):
-        body = emit_logic(do.stmts, indent + IND, {"s": "obj"})
+        body = emit_logic(do.stmts, indent + IND, {"s": "obj"}, ctx=ctx)
     elif isinstance(do, Lua):
         body = [reindent(do.s, indent + IND)]
     else:
@@ -414,7 +414,7 @@ def talk_act(reply, do, indent):
         body = ["%sp(%s)" % (indent + IND, reply)] + body
     return ["%sfunction(s)" % indent] + body + ["%send" % indent]
 
-def talk_table(oblock, indent, labels, tag=None):
+def talk_table(oblock, indent, labels, tag=None, ctx=None):
     dsc = None
     reply = None
     do = None
@@ -423,32 +423,32 @@ def talk_table(oblock, indent, labels, tag=None):
     for key, val in oblock.items:
         base, _ = parse_key(key)
         if base in ("ask", "say"):
-            dsc = lua_value(val)
+            dsc = lua_value(val, ctx=ctx)
         elif base == "reply":
-            reply = lua_value(val)
+            reply = lua_value(val, ctx=ctx)
         elif base == "do":
             do = val
         elif base == "when":
             named.append("cond = function() return %s end"
                          % transpile_exprlist(sym_text(val), {},
-                                              "talk when")[0])
+                                              "talk when", ctx=ctx)[0])
         elif base == "goto":
             named.append("next = '#%s'" % sym_text(val).lstrip('#'))
         elif base in ("always", "hidden", "only"):
             if is_true(val):
                 named.append("%s = true" % base)
         elif base == "option":
-            children.append(talk_table(val, indent + IND, labels))
+            children.append(talk_table(val, indent + IND, labels, ctx=ctx))
         elif key.startswith("label ") and isinstance(val, Block):
             labels.append((key[6:].strip(), val))
         else:
-            named.append("%s = %s" % (base, lua_body(val, key, indent + IND)))
+            named.append("%s = %s" % (base, lua_body(val, key, indent + IND, ctx=ctx)))
     lines = ["%s{" % indent]
     if tag:
         lines.append("%s'%s';" % (indent + IND, tag))
     if dsc is not None:
         lines.append("%s%s;" % (indent + IND, dsc))
-    act = talk_act(reply, do, indent + IND)
+    act = talk_act(reply, do, indent + IND, ctx=ctx)
     if isinstance(act, list):
         lines.extend(act)
         lines[-1] += ";"
@@ -462,7 +462,7 @@ def talk_table(oblock, indent, labels, tag=None):
     lines.append("%s}" % indent)
     return lines
 
-def emit_talk(block, name, base):
+def emit_talk(block, name, base, ctx):
     fi = base + IND
     labels = []
     root = []
@@ -470,16 +470,16 @@ def emit_talk(block, name, base):
     for key, val in block.items:
         b, _ = parse_key(key)
         if key == "intro":
-            root.append(lua_value(val))
+            root.append(lua_value(val, ctx=ctx))
         elif b == "option":
-            root.append(talk_table(val, fi + IND, labels))
+            root.append(talk_table(val, fi + IND, labels, ctx=ctx))
         elif key.startswith("label ") and isinstance(val, Block):
             labels.append((key[6:].strip(), val))
         else:
             fields.append((key, val))
     lines = ["%sdlg {" % base, "%snam = '%s';" % (fi, name)]
     for key, val in fields:
-        lines.append("%s%s = %s;" % (fi, key, lua_body(val, key, fi)))
+        lines.append("%s%s = %s;" % (fi, key, lua_body(val, key, fi, ctx=ctx)))
     lines.append("%sphr = {" % fi)
     for r in root:
         if isinstance(r, list):
@@ -492,17 +492,17 @@ def emit_talk(block, name, base):
         lines.append("%sobj = {" % fi)
         for lname, lblock in labels:
             lines.extend(talk_table(lblock, fi + IND, labels,
-                                    tag="#" + lname))
+                                    tag="#" + lname, ctx=ctx))
             lines[-1] += ";"
         lines.append("%s};" % fi)
     lines.append("%s}" % base)
     return "\n".join(lines)
 
-def emit_class(block, name, parent):
-    body = emit_obj(block, None, "", "Class", [], parent)
+def emit_class(block, name, parent, ctx):
+    body = emit_obj(block, None, "", "Class", [], parent, ctx=ctx)
     return "%s = %s" % (name, body)
 
-def emit_decl(key, block, base):
+def emit_decl(key, block, base, ctx):
     kind, ident = decl_key(key)
     if not kind:
         raise Error("bad declaration: " + key)
@@ -513,21 +513,21 @@ def emit_decl(key, block, base):
     if kind == "verb":
         if not ident:
             raise Error("verb needs a name")
-        return emit_verb(block, ident, base)
+        return emit_verb(block, ident, base, ctx=ctx)
     if kind == "extend":
-        return emit_verb_extend(block, ident, base)
+        return emit_verb_extend(block, ident, base, ctx=ctx)
     if kind == "talk":
         if not ident:
             raise Error("talk needs a name")
-        return emit_talk(block, ident, base)
+        return emit_talk(block, ident, base, ctx=ctx)
     if kind not in PRESETS:
         if re.fullmatch(r"[A-Z][\w]*", kind):
-            return emit_obj(block, ident, base, kind, [])
+            return emit_obj(block, ident, base, kind, [], ctx=ctx)
         raise Error("unknown kind: " + kind)
     ctor, preset = PRESETS[kind]
-    return emit_obj(block, ident, base, ctor, preset)
+    return emit_obj(block, ident, base, ctor, preset, ctx=ctx)
 
-def emit_setup(block):
+def emit_setup(block, ctx):
     lines = []
     fmt = block.get("fmt")
     if fmt:
@@ -549,24 +549,24 @@ def emit_setup(block):
             target = "pl." if key == "hero" else "game."
             for hk, hv in val.items:
                 if hk == "on":
-                    lines.extend(emit_on(hv, "", target))
+                    lines.extend(emit_on(hv, "", target, ctx=ctx))
                 elif key == "hero" and hk == "words":
                     lines.append('pl.word = -"%s"' % hv.s)
                 else:
                     lines.append("%s%s = %s" % (target, hk,
-                                                lua_body(hv, hk)))
+                                                lua_body(hv, hk, ctx=ctx)))
             continue
         if key == "on":
-            lines.extend(emit_on(val, "", "game."))
+            lines.extend(emit_on(val, "", "game.", ctx=ctx))
             continue
         if key == "dsc":
-            lines.append("game.dsc = %s" % lua_body(val, "dsc"))
+            lines.append("game.dsc = %s" % lua_body(val, "dsc", ctx=ctx))
             continue
         if key == "start":
             if isinstance(val, Lua):
                 sb = reindent(val.s, IND)
             elif isinstance(val, Logic):
-                sb = "\n".join(emit_logic(val.stmts, IND, {"load": "bool"}))
+                sb = "\n".join(emit_logic(val.stmts, IND, {"load": "bool"}, ctx=ctx))
             else:
                 raise Error("start must be a | block")
             lines.append("function start(load)")
@@ -581,11 +581,11 @@ def emit_setup(block):
     if isinstance(init, Lua):
         lines.append(reindent(init.s, IND))
     elif isinstance(init, Logic):
-        lines.extend(emit_logic(init.stmts, IND))
+        lines.extend(emit_logic(init.stmts, IND, ctx=ctx))
     lines.append("end")
     return lines
 
-def emit_patch(target, block):
+def emit_patch(target, block, ctx):
     t = target.strip()
     if (t.startswith("'") and t.endswith("'")) or (
             t.startswith('"') and t.endswith('"')):
@@ -595,27 +595,27 @@ def emit_patch(target, block):
     for key, val in block.items:
         base, _ = parse_key(key)
         if base in ("on", "before", "after", "post") and isinstance(val, Block):
-            lines.extend(emit_on(val, "", ref + "."))
+            lines.extend(emit_on(val, "", ref + ".", ctx=ctx))
         elif base in ("Any", "Default") or base in EVENTS or (
-                base in S.EXTRA_EVENTS):
+                base in ctx.extra_events):
             one = Block()
             one.items = [(key, val)]
-            lines.extend(emit_on(one, "", ref + "."))
+            lines.extend(emit_on(one, "", ref + ".", ctx=ctx))
         elif key.startswith("var "):
             name = parse_key(key[4:])[0]
-            lines.append("%s.%s = %s" % (ref, name, lua_body(val, name)))
+            lines.append("%s.%s = %s" % (ref, name, lua_body(val, name, ctx=ctx)))
         else:
-            lines.append("%s.%s = %s" % (ref, base, lua_body(val, key)))
+            lines.append("%s.%s = %s" % (ref, base, lua_body(val, key, ctx=ctx)))
     return "\n".join(lines)
 
-def emit_const(block):
+def emit_const(block, ctx):
     out = []
     for key, val in block.items:
-        out.append("const '%s' (%s)" % (key, lua_value(val)))
+        out.append("const '%s' (%s)" % (key, lua_value(val, ctx=ctx)))
     return out
 
-def emit_global(block):
+def emit_global(block, ctx):
     out = []
     for key, val in block.items:
-        out.append("global '%s' (%s)" % (key, lua_value(val)))
+        out.append("global '%s' (%s)" % (key, lua_value(val, ctx=ctx)))
     return out

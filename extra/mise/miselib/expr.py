@@ -74,11 +74,12 @@ def check_arity(name, plist, variadic, n):
                         % (name, len(plist), n))
 
 class ExprEmit:
-    def __init__(self, toks, env, where):
+    def __init__(self, toks, env, where, ctx):
         self.toks = toks
         self.i = 0
         self.env = env
         self.where = where
+        self.ctx = ctx
         self.expected = None
 
     def peek(self, k=0):
@@ -134,11 +135,11 @@ class ExprEmit:
     def str_arg(self, tok, exp):
         val = self.strval(tok)
         if exp == "obj":
-            if val in S.IDS:
+            if val in self.ctx.ids:
                 return "_'%s'" % val
             self.err("unknown object %r (expected obj)" % val)
         if exp == "event":
-            if val not in S.EVENT_NAMES:
+            if val not in self.ctx.event_names:
                 self.err("unknown event %r" % val)
             return tok
         if exp == "num":
@@ -171,8 +172,8 @@ class ExprEmit:
         return ", ".join(codes), n
 
     def call(self, name):
-        if name in S.FN_SIGS:
-            plist, ret, variadic = S.FN_SIGS[name]
+        if name in self.ctx.fn_sigs:
+            plist, ret, variadic = self.ctx.fn_sigs[name]
             args, n = self.arglist([pt for _pn, pt in plist])
             try:
                 check_arity(name, plist, variadic, n)
@@ -185,7 +186,7 @@ class ExprEmit:
                          "or quoted name")
             args, _ = self.arglist(None)
             return args, "obj"
-        if name in S.FUNCS or name in self.env:
+        if name in self.ctx.funcs or name in self.env:
             args, _ = self.arglist(None)
             return args, "any"
         self.err("unknown function %r (declare fn %s)" % (name, name))
@@ -199,7 +200,7 @@ class ExprEmit:
                 self.err("strings are not objects; use a bare name (%r)"
                          % self.strval(val))
             if self.expected == "event":
-                if self.strval(val) not in S.EVENT_NAMES:
+                if self.strval(val) not in self.ctx.event_names:
                     self.err("unknown event %r" % self.strval(val))
                 return val, "event", "lit", self.strval(val)
             return val, "str", "lit", self.strval(val)
@@ -214,15 +215,15 @@ class ExprEmit:
                 self.err("unexpected keyword %r" % val)
             if val in self.env:
                 return val, self.env[val], "name", val
-            if val in S.IDS:
+            if val in self.ctx.ids:
                 return "_'%s'" % val, "obj", "objref", None
-            if val in S.FN_SIGS:
+            if val in self.ctx.fn_sigs:
                 return "fn_" + val, "fn", "name", val
-            if val in S.FUNCS:
+            if val in self.ctx.funcs:
                 return val, "fn", "name", val
-            if val in S.VARS:
-                return val, S.GLOBAL_TYPES.get(val, "any"), "name", val
-            if self.expected == "event" and val in S.EVENT_NAMES:
+            if val in self.ctx.vars:
+                return val, self.ctx.global_types.get(val, "any"), "name", val
+            if self.expected == "event" and val in self.ctx.event_names:
                 return "'%s'" % val, "event", "lit", val
             if self.expected == "event":
                 self.err("unknown event %r" % val)
@@ -249,7 +250,7 @@ class ExprEmit:
             return "-%s" % c, "num", "expr", None
         if v == "#":
             nk, nv = self.peek(1)
-            if nk == "name" and ("#" + nv) in S.IDS:
+            if nk == "name" and ("#" + nv) in self.ctx.ids:
                 self.next()
                 self.next()
                 return self.postfix("_'#%s'" % nv, "obj", "objref", None)
@@ -325,10 +326,10 @@ class ExprEmit:
         return self.or_expr()
 
     def autocall(self, code, t, kind, val):
-        if (kind == "name" and val in S.FN_SIGS
-                and not S.FN_SIGS[val][0]):
+        if (kind == "name" and val in self.ctx.fn_sigs
+                and not self.ctx.fn_sigs[val][0]):
             code = "%s()" % code
-            t = S.FN_SIGS[val][1]
+            t = self.ctx.fn_sigs[val][1]
             kind = "call"
             val = None
         return code, t, kind, val
@@ -364,10 +365,10 @@ class ExprEmit:
                 nk, nv = self.next()
                 if nk != "name":
                     self.err("expected method name")
-                if nv not in S.FN_SIGS:
+                if nv not in self.ctx.fn_sigs:
                     self.err("method %r is not a fn (engine methods are "
                              "not allowed in logic)" % nv)
-                plist, ret, variadic = S.FN_SIGS[nv]
+                plist, ret, variadic = self.ctx.fn_sigs[nv]
                 if not plist:
                     self.err("fn %s takes no receiver" % nv)
                 if t == "str":
@@ -391,16 +392,16 @@ class ExprEmit:
                     pt = plist[1][1]
                     if pt == "str":
                         arg, at = lua_str(nm), "str"
-                    elif pt == "event" and nm in S.EVENT_NAMES:
+                    elif pt == "event" and nm in self.ctx.event_names:
                         arg, at = "'%s'" % nm, "event"
                     elif nm in self.env:
                         arg, at = nm, self.env[nm]
-                    elif nm in S.IDS:
+                    elif nm in self.ctx.ids:
                         arg, at = "_'%s'" % nm, "obj"
-                    elif nm in S.FN_SIGS and not S.FN_SIGS[nm][0]:
-                        arg, at = "fn_%s()" % nm, S.FN_SIGS[nm][1]
-                    elif nm in S.VARS:
-                        arg, at = nm, S.GLOBAL_TYPES.get(nm, "any")
+                    elif nm in self.ctx.fn_sigs and not self.ctx.fn_sigs[nm][0]:
+                        arg, at = "fn_%s()" % nm, self.ctx.fn_sigs[nm][1]
+                    elif nm in self.ctx.vars:
+                        arg, at = nm, self.ctx.global_types.get(nm, "any")
                     else:
                         self.err("unknown name %r" % nm)
                     self.check(at, pt, arg)
@@ -428,8 +429,8 @@ class ExprEmit:
                 exp = None
                 rt = "any"
                 variadic = False
-                if val in S.FN_SIGS:
-                    plist, rt, variadic = S.FN_SIGS[val]
+                if val in self.ctx.fn_sigs:
+                    plist, rt, variadic = self.ctx.fn_sigs[val]
                     if not plist:
                         self.err("fn %s takes no arguments" % val)
                     try:
@@ -479,28 +480,28 @@ def expr_cont(s):
     m = re.match(r"[^\W\d]\w*", s, re.UNICODE)
     return bool(m and m.group(0) in S.KEYWORDS)
 
-def no_paren_call(text, env, where):
+def no_paren_call(text, env, where, ctx):
     """Raw-text forms only; typed one-arg calls are parsed by ExprEmit."""
     m = re.match(r"^([^\W\d]\w*)\s+([^(\s].*)$", text.strip(), re.S)
-    if not m or m.group(1) not in S.FN_SIGS:
+    if not m or m.group(1) not in ctx.fn_sigs:
         return None
     name = m.group(1)
-    plist, ret, variadic = S.FN_SIGS[name]
+    plist, ret, variadic = ctx.fn_sigs[name]
     rest = m.group(2).strip()
     if not rest or not (len(plist) == 1 or variadic):
         return None
     if not plist:
         if expr_cont(rest):
             return None
-        if not say_expr_start(rest, env):
+        if not say_expr_start(rest, env, ctx):
             return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
     elif not variadic and plist[0][1] != "str":
         return None
-    elif not say_expr_start(rest, env):
+    elif not say_expr_start(rest, env, ctx):
         return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
     try:
         code, types = transpile_exprlist(
-            rest, env, where, plist[0][1] if plist else None)
+            rest, env, where, plist[0][1] if plist else None, ctx)
     except LintError:
         if plist and plist[0][1] == "str":
             return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
@@ -512,11 +513,11 @@ def no_paren_call(text, env, where):
                             % (name, pn, pt, t))
     return "fn_%s(%s)" % (name, code), [ret]
 
-def transpile_exprlist(text, env, where, expected=None):
-    raw = no_paren_call(text, env, where)
+def transpile_exprlist(text, env, where, expected=None, ctx=None):
+    raw = no_paren_call(text, env, where, ctx)
     if raw is not None:
         return raw
-    p = ExprEmit(lex_lua(text), env, where)
+    p = ExprEmit(lex_lua(text), env, where, ctx)
     code, types = p.exprlist(expected)
     if p.peek()[0] != "eof":
         p.err("unexpected %r" % p.peek()[1])
@@ -524,14 +525,14 @@ def transpile_exprlist(text, env, where, expected=None):
         p.check(types[0], expected, code)
     return code, types
 
-def transpile_stmt(text, env, where):
+def transpile_stmt(text, env, where, ctx):
     s = text.strip()
-    if s in S.FN_SIGS and not S.FN_SIGS[s][0]:
+    if s in ctx.fn_sigs and not ctx.fn_sigs[s][0]:
         return "fn_%s()" % s
-    raw = no_paren_call(text, env, where)
+    raw = no_paren_call(text, env, where, ctx)
     if raw is not None:
         return raw[0]
-    p = ExprEmit(lex_lua(text), env, where)
+    p = ExprEmit(lex_lua(text), env, where, ctx)
     kind, val = p.peek()
     if kind == "name" and val == "local":
         p.next()
@@ -590,32 +591,32 @@ def transpile_stmt(text, env, where):
         return "%s = %s" % (lhs, ", ".join(codes))
     if p.peek()[0] != "eof":
         p.err("unexpected %r" % p.peek()[1])
-    if lk == "name" and lv in S.FN_SIGS:
+    if lk == "name" and lv in ctx.fn_sigs:
         p.err("fn %s must be called with ()" % lv)
     if lk not in ("name", "field", "call"):
         p.err("unsupported statement")
     return lhs
 
-def transpile_for(header, env, where):
+def transpile_for(header, env, where, ctx):
     if re.search(r"\bin\b", header):
         names, iterable = re.split(r"\bin\b", header, 1)
         vars_ = [v.strip() for v in names.split(",") if v.strip()]
         for v in vars_:
             if not re.fullmatch(r"[^\W\d]\w*", v, re.UNICODE):
                 raise LintError("bad loop variable %r in %s" % (v, where))
-        code, _ = transpile_exprlist(iterable, env, where)
+        code, _ = transpile_exprlist(iterable, env, where, None, ctx)
         return ("for %s in %s" % (", ".join(vars_), code),
                 {v: "any" for v in vars_})
     parts = split_list(header)
     m = re.match(r"^([^\W\d]\w*)\s*=\s*(.*)$", parts[0], re.UNICODE)
     if not m:
         raise LintError("bad for header in %s: %s" % (where, header))
-    start, st = transpile_exprlist(m.group(2), env, where)
+    start, st = transpile_exprlist(m.group(2), env, where, None, ctx)
     if st and st[0] not in ("num", "any"):
         raise LintError("%s: for bound must be num, got %s" % (where, st[0]))
     codes = [start]
     for p in parts[1:]:
-        c, ct = transpile_exprlist(p, env, where)
+        c, ct = transpile_exprlist(p, env, where, None, ctx)
         if ct and ct[0] not in ("num", "any"):
             raise LintError("%s: for bound must be num, got %s"
                             % (where, ct[0]))
@@ -623,7 +624,7 @@ def transpile_for(header, env, where):
     return ("for %s = %s" % (m.group(1), ", ".join(codes)),
             {m.group(1): "num"})
 
-def say_expr_start(s, env):
+def say_expr_start(s, env, ctx):
     c = s[0]
     if c in "'\"([{`_#":
         return True
@@ -635,5 +636,5 @@ def say_expr_start(s, env):
     if not m:
         return False
     tok = m.group(0)
-    return (tok in env or tok in S.VARS or tok in S.IDS or tok in S.FN_SIGS
-            or tok in S.FUNCS)
+    return (tok in env or tok in ctx.vars or tok in ctx.ids or tok in ctx.fn_sigs
+            or tok in ctx.funcs)

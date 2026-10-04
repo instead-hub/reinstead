@@ -1,7 +1,6 @@
 import os
 import re
 
-from . import state as S
 from .common import *
 from .parse import parse_source
 from .emit import *
@@ -79,21 +78,21 @@ def collect_game_defs(root):
     walk(root)
     return funcs, vars_
 
-def scan_required(name):
-    path = os.path.join(S.SRC_DIR, name + ".lua")
+def scan_required(name, ctx):
+    path = os.path.join(ctx.src_dir, name + ".lua")
     if os.path.exists(path):
         with open(path, encoding="utf-8") as f:
             return f.read()
     return None
 
-def find_include(name):
-    for base in (S.SRC_DIR, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))):
+def find_include(name, ctx):
+    for base in (ctx.src_dir, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))):
         path = os.path.join(base, name + ".mise")
         if os.path.exists(path):
             return path
     raise Error("include not found: " + name)
 
-def apply_includes(root, seen=None):
+def apply_includes(root, ctx, seen=None):
     seen = seen or set()
     extra = []
     for key, val in root.items:
@@ -105,66 +104,66 @@ def apply_includes(root, seen=None):
             if name in seen:
                 continue
             seen.add(name)
-            sub = parse_source(open(find_include(name),
+            sub = parse_source(open(find_include(name, ctx),
                                     encoding="utf-8").read())
-            apply_includes(sub, seen)
+            apply_includes(sub, ctx, seen)
             extra += sub.items
     if extra:
         root.items = extra + root.items
     return root
 
-def prescan(root):
-    S.FNS = set()
+def prescan(root, ctx):
+    ctx.fns = set()
     ids = collect_ids(root)
-    S.IDS = set(ids)
-    S.EXTRA_EVENTS = {}
+    ctx.ids = set(ids)
+    ctx.extra_events = {}
     for key, val in root.items:
         kind, ident = decl_key(key)
         if kind == "verb" and ident and isinstance(val, Block):
             tag = val.get("tag")
             if not (isinstance(tag, Bool) and tag.s == "false"):
-                S.EXTRA_EVENTS[ident] = ident
+                ctx.extra_events[ident] = ident
             event = val.get("event")
             if isinstance(event, Bare):
-                S.EXTRA_EVENTS[event.s] = event.s
+                ctx.extra_events[event.s] = event.s
         elif key == "events":
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 name = v.s if hasattr(v, "s") else str(v)
-                S.EXTRA_EVENTS[name] = name
-    S.EVENT_NAMES = set(EVENTS) | set(S.EXTRA_EVENTS.values())
+                ctx.extra_events[name] = name
+    ctx.event_names = set(EVENTS) | set(ctx.extra_events.values())
     game_funcs, game_vars = collect_game_defs(root)
-    S.FN_SIGS = {}
+    ctx.fn_sigs = {}
     fn_names = set()
     for key, val in root.items:
         if re.match(r"^fn\s+", key):
             name, plist, ret, variadic = parse_fn_sig(key)
-            if name in S.FN_SIGS:
+            if name in ctx.fn_sigs:
                 raise Error("duplicate fn: " + name)
-            S.FN_SIGS[name] = (plist, ret, variadic)
+            ctx.fn_sigs[name] = (plist, ret, variadic)
             fn_names.add(name)
     for key, val in root.items:
         if key == "require":
             vals = val if isinstance(val, list) else [val]
             for v in vals:
-                text = scan_required(v.s if hasattr(v, "s") else str(v))
+                text = scan_required(v.s if hasattr(v, "s") else str(v), ctx)
                 if text:
                     scan_lua_defs(text, game_funcs, game_vars)
     const_names = set()
-    S.GLOBAL_TYPES = {}
+    ctx.global_types = {}
     for key, val in root.items:
         if key in ("const", "global") and isinstance(val, Block):
             for k, v in val.items:
                 const_names.add(k)
                 if isinstance(v, Num):
-                    S.GLOBAL_TYPES[k] = "num"
+                    ctx.global_types[k] = "num"
                 elif isinstance(v, Bool):
-                    S.GLOBAL_TYPES[k] = "bool"
+                    ctx.global_types[k] = "bool"
                 elif isinstance(v, Text):
-                    S.GLOBAL_TYPES[k] = "str"
+                    ctx.global_types[k] = "str"
                 else:
-                    S.GLOBAL_TYPES[k] = "any"
-    S.VARS = game_vars | const_names
-    S.FUNCS = fn_names | game_funcs | {"_"}
-    S.FNS = fn_names
+                    ctx.global_types[k] = "any"
+    ctx.vars = game_vars | const_names
+    ctx.funcs = fn_names | game_funcs | {"_"}
+    ctx.fns = fn_names
     check_refs(root, ids)

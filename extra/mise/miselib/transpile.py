@@ -7,10 +7,12 @@ from .parse import parse_source
 from .prescan import apply_includes, prescan
 from .emit import *
 
-def transpile(src):
+
+def transpile(src, src_dir=""):
+    ctx = S.Ctx(src_dir)
     root = parse_source(src)
-    apply_includes(root)
-    prescan(root)
+    apply_includes(root, ctx)
+    prescan(root, ctx)
     header = []
     body = []
     fn_body = []
@@ -28,7 +30,7 @@ def transpile(src):
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 name = v.s if hasattr(v, "s") else str(v)
-                S.EXTRA_EVENTS[name] = name
+                ctx.extra_events[name] = name
         elif key == "lua":
             body.append(val.s)
         elif re.match(r"^class\s+[A-Z]", key):
@@ -36,7 +38,7 @@ def transpile(src):
                          key)
             if not m:
                 raise Error("bad class: " + key)
-            body.append(emit_class(val, m.group(1), m.group(2)))
+            body.append(emit_class(val, m.group(1), m.group(2), ctx))
         elif re.match(r"^fn\s+[\w.+-]+", key):
             name, plist, ret, variadic = parse_fn_sig(key)
             prm = ", ".join(pn for pn, _pt in plist)
@@ -46,23 +48,23 @@ def transpile(src):
                 hb = reindent(val.s, IND)
             elif isinstance(val, Logic):
                 hb = "\n".join(emit_logic(val.stmts, IND,
-                                          param_env(prm, name), ret, name))
+                                          param_env(prm, name, ctx), ret, name, ctx))
             else:
                 raise Error("fn %s must be a | block"
                             % name)
-            S.FNS.add(name)
+            ctx.fns.add(name)
             fn_body.append("local function fn_%s(%s)\n%s\nend"
                            % (name, prm, hb))
         elif re.match(r"^patch\s+.+$", key):
-            body.append(emit_patch(key[6:].strip(), val))
+            body.append(emit_patch(key[6:].strip(), val, ctx))
         elif key == "setup":
-            body.append("\n".join(emit_setup(val)))
+            body.append("\n".join(emit_setup(val, ctx)))
         elif key == "const":
-            body.append("\n".join(emit_const(val)))
+            body.append("\n".join(emit_const(val, ctx)))
         elif key == "global":
-            body.append("\n".join(emit_global(val)))
+            body.append("\n".join(emit_global(val, ctx)))
         else:
-            body.append(emit_decl(key, val, ""))
+            body.append(emit_decl(key, val, "", ctx))
     body = fn_body + body
     lang = root.get("lang")
     lang = lang.s if isinstance(lang, Bare) else "ru"
@@ -78,14 +80,14 @@ def transpile(src):
     pre += ['require "%s"' % r for r in reqs]
     return "\n".join(pre) + "\n\n" + "\n\n".join(body) + "\n"
 
+
 def main(argv):
     if len(argv) < 2:
         print("usage: mise.py <game.mise> [-o out.lua]", file=sys.stderr)
         return 2
-    S.SRC_DIR = os.path.dirname(os.path.abspath(argv[1]))
     with open(argv[1], encoding="utf-8") as f:
         src = f.read()
-    out = transpile(src)
+    out = transpile(src, os.path.dirname(os.path.abspath(argv[1])))
     if "-o" in argv:
         with open(argv[argv.index("-o") + 1], "w", encoding="utf-8") as f:
             f.write(out)
