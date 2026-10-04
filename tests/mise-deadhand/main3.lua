@@ -728,7 +728,7 @@ obj {
     }:attr 'static,concealed';
 
     obj {
-      -"экран,консоль,текст";
+      -"экран|консоль|текст";
       nam = "screen";
       description = function(s)
         if good_to > DH_TO then

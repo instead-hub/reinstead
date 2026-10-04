@@ -1536,8 +1536,15 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
             lines.append('%s-"%%s";' % fi % words.s)
         elif isinstance(words, Raw):
             lines.append("%s%s;" % (fi, words.s))
+        elif isinstance(words, list):
+            items = []
+            for it in words:
+                if not isinstance(it, Text):
+                    raise Error("words list items must be strings")
+                items.append(it.s.strip())
+            lines.append('%s-"%%s";' % fi % "|".join(items))
         else:
-            raise Error("words must be a quoted string")
+            raise Error("words must be a quoted string or list")
     nam = block.get("nam")
     if nam is not None:
         raise Error("nam: is not supported; the declaration name is the "
