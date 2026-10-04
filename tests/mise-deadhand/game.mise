@@ -45,9 +45,6 @@ global:
 fn in_room(r: obj) -> bool: |lua
   return here() ^ r
 
-fn it(w: obj) -> str: |lua
-  return w:It()
-
 setup:
   take: suit
   hero:

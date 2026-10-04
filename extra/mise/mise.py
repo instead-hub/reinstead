@@ -483,7 +483,7 @@ TYPES = {"obj", "str", "num", "bool", "any", "event"}
 FN_SIGS = {}
 GLOBAL_TYPES = {}
 PARAM_TYPES = {
-    "s": "obj", "w": "obj", "wh": "obj", "ev": "event", "to": "str",
+    "s": "obj", "w": "obj", "wh": "obj", "ev": "event", "to": "any",
     "f": "any", "load": "bool",
 }
 def check_arity(name, plist, variadic, n):
@@ -605,7 +605,7 @@ class ExprEmit:
         if name == "_":
             args, _ = self.arglist(None)
             return args, "obj"
-        if name in self.env:
+        if name in FUNCS or name in self.env:
             args, _ = self.arglist(None)
             return args, "any"
         self.err("unknown function %r (declare fn %s)" % (name, name))
@@ -671,7 +671,7 @@ class ExprEmit:
             if nk == "name" and ("#" + nv) in IDS:
                 self.next()
                 self.next()
-                return "_'#%s'" % nv, "obj", "objref", None
+                return self.postfix("_'#%s'" % nv, "obj", "objref", None)
             self.next()
             c, _t, _k2, _v2 = self.unary()
             return "#%s" % c, "num", "expr", None
@@ -804,10 +804,21 @@ class ExprEmit:
                         and self.peek()[1] not in ("nil", "true", "false")):
                     nm = self.next()[1]
                     pt = plist[1][1]
-                    if pt != "str":
-                        self.err("fn %s: argument %s is %s; use parentheses"
-                                 % (nv, plist[1][0], pt))
-                    arg = lua_str(nm)
+                    if pt == "str":
+                        arg, at = lua_str(nm), "str"
+                    elif pt == "event" and nm in EVENT_NAMES:
+                        arg, at = "'%s'" % nm, "event"
+                    elif nm in self.env:
+                        arg, at = nm, self.env[nm]
+                    elif nm in IDS:
+                        arg, at = "_'%s'" % nm, "obj"
+                    elif nm in FN_SIGS and not FN_SIGS[nm][0]:
+                        arg, at = "fn_%s()" % nm, FN_SIGS[nm][1]
+                    elif nm in VARS:
+                        arg, at = nm, GLOBAL_TYPES.get(nm, "any")
+                    else:
+                        self.err("unknown name %r" % nm)
+                    self.check(at, pt, arg)
                     code = "fn_%s(%s, %s)" % (nv, code, arg)
                     t = ret
                     kind = "call"
@@ -875,6 +886,44 @@ def expr_cont(s):
     return bool(m and m.group(0) in KEYWORDS)
 
 
+TOP_OPS = (" and ", " or ", " == ", " ~= ", " <= ", " >= ", " < ",
+           " > ", " .. ", " + ", " - ", " * ", " / ", " % ", " ^ ")
+
+
+def split_top_op(text):
+    depth = 0
+    quote = None
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == "\\":
+                i += 2
+                continue
+            if c == quote:
+                quote = None
+            i += 1
+            continue
+        if c in "\"'":
+            quote = c
+            i += 1
+            continue
+        if c in "([{":
+            depth += 1
+            i += 1
+            continue
+        if c in ")]}":
+            depth -= 1
+            i += 1
+            continue
+        if depth == 0:
+            for op in TOP_OPS:
+                if text.startswith(op, i):
+                    return text[:i], op.strip(), text[i + len(op):]
+        i += 1
+    return None
+
+
 def no_paren_call(text, env, where):
     m = re.match(r"^([^\W\d]\w*)\s+([^(\s].*)$", text.strip(), re.S)
     if not m or m.group(1) not in FN_SIGS:
@@ -892,6 +941,20 @@ def no_paren_call(text, env, where):
     elif plist[0][1] == "str" and not say_expr_start(rest, env):
         return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
     exp = plist[0][1] if len(plist) == 1 else None
+    if len(plist) == 1 and exp != "str":
+        cut = split_top_op(rest)
+        if cut:
+            head, op, after = cut
+            code, types = transpile_exprlist(head, env, where, exp)
+            check_arity(name, plist, variadic, len(types))
+            for (pn, pt), t in zip(plist, types):
+                if pt != "any" and t not in ("any", pt):
+                    raise LintError("fn %s: argument %s expects %s, got %s"
+                                    % (name, pn, pt, t))
+            tcode, _ = transpile_exprlist(after, env, where)
+            rtype = ("bool" if op in ("==", "~=", "<", ">", "<=", ">=", "^")
+                     else "any")
+            return ("fn_%s(%s) %s %s" % (name, code, op, tcode), [rtype])
     try:
         code, types = transpile_exprlist(rest, env, where, exp)
     except LintError:
@@ -1581,7 +1644,7 @@ def emit_verb(block, ident, base):
     if block.get("prio") is not None:
         extra.append("prio = %s" % lua_value(block.get("prio")))
     if block.get("hint") is not None:
-        extra.append("hint = %s" % lua_value(block.get("hint")))
+        extra.append("hint = %s" % lua_body(block.get("hint"), "hint"))
     lines = ["%sVerb { %s%s }" % (base, ", ".join(fields),
                                   (", " + ", ".join(extra)) if extra else "")]
     ev_field = block.get("event")

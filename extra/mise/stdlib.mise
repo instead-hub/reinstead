@@ -37,16 +37,16 @@ fn line(...): |lua
 fn append(text: str, ...): |lua
   pr(text, ...)
 
-fn rnd(...) -> num: |lua
-  return rnd(...)
+fn rnd(n: num) -> num: |lua
+  return rnd(n)
 
-fn xaction(ev: event, s: obj): |lua
-  mp:xaction(ev, s)
+fn xaction(ev: event, ...): |lua
+  mp:xaction(ev, ...)
 
-fn daemonStart(w: obj): |lua
+fn daemonStart(w: any): |lua
   DaemonStart(w)
 
-fn daemonStop(w: obj): |lua
+fn daemonStop(w: any): |lua
   DaemonStop(w)
 
 fn enable(w: obj): |lua
@@ -64,7 +64,7 @@ fn isDaemon(w: obj) -> bool: |lua
 fn disabled(w: obj) -> bool: |lua
   return disabled(w)
 
-fn seen(w: obj) -> bool: |lua
+fn seen(w: any) -> bool: |lua
   return seen(w)
 
 fn walk(where: obj): |lua
@@ -73,7 +73,7 @@ fn walk(where: obj): |lua
 fn walkin(where: obj): |lua
   walkin(where)
 
-fn take(w: obj): |lua
+fn take(w: any): |lua
   take(w)
 
 fn drop(w: obj): |lua
@@ -90,3 +90,87 @@ fn visits(w: obj) -> num: |lua
 
 fn event() -> event: |lua
   return mp.event
+
+fn have(w: any) -> bool: |lua
+  return have(w)
+
+fn visited(w: any) -> bool: |lua
+  return visited(w)
+
+fn where(w: obj) -> obj: |lua
+  return where(w)
+
+fn thedark(what: obj) -> bool: |lua
+  return mp:thedark(what)
+
+fn noun(s: obj, c: str) -> str: |lua
+  return s:noun(c)
+
+fn Noun(s: obj) -> str: |lua
+  return s:Noun()
+
+fn it(s: obj) -> str: |lua
+  return s:It()
+
+fn hint(s: obj, h: str): |lua
+  s:hint(h)
+
+fn multi_alias(s: obj) -> num: |lua
+  return s:multi_alias()
+
+fn walkback(...): |lua
+  walkback(...)
+
+fn remove(w: obj): |lua
+  remove(w)
+
+fn push(w: any): |lua
+  push(w)
+
+fn from() -> obj: |lua
+  return from()
+
+fn check_held(w: obj) -> bool: |lua
+  return mp:check_held(w)
+
+fn check_live(w: obj) -> bool: |lua
+  return mp:check_live(w)
+
+fn clear(): |lua
+  mp:clear()
+
+fn need_scene(s: obj, v: bool): |lua
+  s:need_scene(v)
+
+fn player_moved(): |lua
+  player_moved()
+
+fn lifeon(w: obj): |lua
+  lifeon(w)
+
+fn lifeoff(w: obj): |lua
+  lifeoff(w)
+
+fn call_before(s: obj, ev: event): |lua
+  s['before_' .. ev](s)
+
+fn theme_name() -> str: |lua
+  return theme.name()
+
+fn pclr(): |lua
+  std.pclr()
+
+fn ref(name: str) -> obj: |lua
+  return std.ref(name)
+
+fn theme_naplayer() -> str: |lua
+  return theme.naplayer
+
+fn arg_word(i: num) -> str: |lua
+  return mp.args[i] and mp.args[i].word or ''
+
+fn tiny() -> bool: |lua
+  return instead.tiny
+
+fn music(name: str, ...): |lua
+  snd.music(name, ...)

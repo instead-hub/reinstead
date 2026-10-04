@@ -61,12 +61,12 @@ local function fn_append(text, ...)
   pr(text, ...)
 end
 
-local function fn_rnd(...)
-  return rnd(...)
+local function fn_rnd(n)
+  return rnd(n)
 end
 
-local function fn_xaction(ev, s)
-  mp:xaction(ev, s)
+local function fn_xaction(ev, ...)
+  mp:xaction(ev, ...)
 end
 
 local function fn_daemonStart(w)
@@ -133,12 +133,120 @@ local function fn_event()
   return mp.event
 end
 
-local function fn_in_room(r)
-  return here() ^ r
+local function fn_have(w)
+  return have(w)
 end
 
-local function fn_it(w)
-  return w:It()
+local function fn_visited(w)
+  return visited(w)
+end
+
+local function fn_where(w)
+  return where(w)
+end
+
+local function fn_thedark(what)
+  return mp:thedark(what)
+end
+
+local function fn_noun(s, c)
+  return s:noun(c)
+end
+
+local function fn_Noun(s)
+  return s:Noun()
+end
+
+local function fn_it(s)
+  return s:It()
+end
+
+local function fn_hint(s, h)
+  s:hint(h)
+end
+
+local function fn_multi_alias(s)
+  return s:multi_alias()
+end
+
+local function fn_walkback(...)
+  walkback(...)
+end
+
+local function fn_remove(w)
+  remove(w)
+end
+
+local function fn_push(w)
+  push(w)
+end
+
+local function fn_from()
+  return from()
+end
+
+local function fn_check_held(w)
+  return mp:check_held(w)
+end
+
+local function fn_check_live(w)
+  return mp:check_live(w)
+end
+
+local function fn_clear()
+  mp:clear()
+end
+
+local function fn_need_scene(s, v)
+  s:need_scene(v)
+end
+
+local function fn_player_moved()
+  player_moved()
+end
+
+local function fn_lifeon(w)
+  lifeon(w)
+end
+
+local function fn_lifeoff(w)
+  lifeoff(w)
+end
+
+local function fn_call_before(s, ev)
+  s['before_' .. ev](s)
+end
+
+local function fn_theme_name()
+  return theme.name()
+end
+
+local function fn_pclr()
+  std.pclr()
+end
+
+local function fn_ref(name)
+  return std.ref(name)
+end
+
+local function fn_theme_naplayer()
+  return theme.naplayer
+end
+
+local function fn_arg_word(i)
+  return mp.args[i] and mp.args[i].word or ''
+end
+
+local function fn_tiny()
+  return instead.tiny
+end
+
+local function fn_music(name, ...)
+  snd.music(name, ...)
+end
+
+local function fn_in_room(r)
+  return here() ^ r
 end
 
 const 'DH_TO' (2)

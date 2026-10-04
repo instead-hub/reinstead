@@ -7,9 +7,6 @@ lang: ru
 require: snd
 include: stdlib
 
-fn music(name: str): |lua
-  snd.music(name)
-
 fn set_autoplay(v: bool): |lua
   mp.autohelp = v
   mp.togglehelp = v

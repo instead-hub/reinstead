@@ -9,6 +9,319 @@ fmt.dash = true
 fmt.quotes = true
 require "parser/mp-ru"
 
+local function fn_here()
+  return here()
+end
+
+local function fn_player()
+  return me()
+end
+
+local function fn_has(s, a)
+  return s:has(a)
+end
+
+local function fn_hasnt(s, a)
+  return s:hasnt(a)
+end
+
+local function fn_move(s, where)
+  move(s, where)
+end
+
+local function fn_attr(s, a)
+  s:attr(a)
+end
+
+local function fn_inside(w, x)
+  return w:inside(x)
+end
+
+local function fn_compass_dir(w)
+  return mp:compass_dir(w)
+end
+
+local function fn_once_tag(s, t)
+  return s:once(t)
+end
+
+local function fn_once(s)
+  return s:once()
+end
+
+local function fn_say(text, ...)
+  p(text, ...)
+end
+
+local function fn_line(...)
+  pn(...)
+end
+
+local function fn_append(text, ...)
+  pr(text, ...)
+end
+
+local function fn_rnd(n)
+  return rnd(n)
+end
+
+local function fn_xaction(ev, ...)
+  mp:xaction(ev, ...)
+end
+
+local function fn_daemonStart(w)
+  DaemonStart(w)
+end
+
+local function fn_daemonStop(w)
+  DaemonStop(w)
+end
+
+local function fn_enable(w)
+  enable(w)
+end
+
+local function fn_disable(w)
+  disable(w)
+end
+
+local function fn_place(w)
+  place(w)
+end
+
+local function fn_isDaemon(w)
+  return isDaemon(w)
+end
+
+local function fn_disabled(w)
+  return disabled(w)
+end
+
+local function fn_seen(w)
+  return seen(w)
+end
+
+local function fn_walk(where)
+  walk(where)
+end
+
+local function fn_walkin(where)
+  walkin(where)
+end
+
+local function fn_take(w)
+  take(w)
+end
+
+local function fn_drop(w)
+  drop(w)
+end
+
+local function fn_content(w)
+  mp:content(w)
+end
+
+local function fn_walkout()
+  walkout()
+end
+
+local function fn_visits(w)
+  return visits(w)
+end
+
+local function fn_event()
+  return mp.event
+end
+
+local function fn_have(w)
+  return have(w)
+end
+
+local function fn_visited(w)
+  return visited(w)
+end
+
+local function fn_where(w)
+  return where(w)
+end
+
+local function fn_thedark(what)
+  return mp:thedark(what)
+end
+
+local function fn_noun(s, c)
+  return s:noun(c)
+end
+
+local function fn_Noun(s)
+  return s:Noun()
+end
+
+local function fn_it(s)
+  return s:It()
+end
+
+local function fn_hint(s, h)
+  s:hint(h)
+end
+
+local function fn_multi_alias(s)
+  return s:multi_alias()
+end
+
+local function fn_walkback(...)
+  walkback(...)
+end
+
+local function fn_remove(w)
+  remove(w)
+end
+
+local function fn_push(w)
+  push(w)
+end
+
+local function fn_from()
+  return from()
+end
+
+local function fn_check_held(w)
+  return mp:check_held(w)
+end
+
+local function fn_check_live(w)
+  return mp:check_live(w)
+end
+
+local function fn_clear()
+  mp:clear()
+end
+
+local function fn_need_scene(s, v)
+  s:need_scene(v)
+end
+
+local function fn_player_moved()
+  player_moved()
+end
+
+local function fn_lifeon(w)
+  lifeon(w)
+end
+
+local function fn_lifeoff(w)
+  lifeoff(w)
+end
+
+local function fn_call_before(s, ev)
+  s['before_' .. ev](s)
+end
+
+local function fn_theme_name()
+  return theme.name()
+end
+
+local function fn_pclr()
+  std.pclr()
+end
+
+local function fn_ref(name)
+  return std.ref(name)
+end
+
+local function fn_theme_naplayer()
+  return theme.naplayer
+end
+
+local function fn_arg_word(i)
+  return mp.args[i] and mp.args[i].word or ''
+end
+
+local function fn_tiny()
+  return instead.tiny
+end
+
+local function fn_music(name, ...)
+  snd.music(name, ...)
+end
+
+local function fn_description(s)
+  s:description()
+end
+
+local function fn_init_dsc(s)
+  s:init_dsc()
+end
+
+local function fn_set_help(mobile)
+  mp.togglehelp = mobile
+  mp.autohelp = mobile
+  mp.autohelp_limit = mobile and 1000 or 8
+  mp.compl_thresh = mobile and 0 or 1
+end
+
+local function fn_tbl1()
+  return { "Машину потряхивает на снежных ухабах."; "По другую сторону окна кружатся снежинки."; "Вы проезжаете мимо занесённых снегом коттеджей."; "Машину слегка заносит на снежной дороге."; }
+end
+
+local function fn_tbl2()
+  return { "-- Ты не собираешься со мной поговорить?"; "-- Почему ты молчишь?"; "-- Давай поговорим?"; "-- Ну, чего ты молчишь?"; }
+end
+
+local function fn_tbl3()
+  return { "Ты делаешь пару неудачных фоток и удаляешь их из телефона."; "Ты сделала удачную фотку."; "Ты сделала пару фоток и селфи."; }
+end
+
+local function fn_tbl4()
+  return { "-- Иди ко мне скорее, моё дитя!", "-- Что же ты медлишь? Обними и поцелуй свою мать!", "-- Я так долго тебя ждала!", "-- Теперь всё будет хорошо, я буду любить тебя всегда!", "-- Мы будем вместе!", }
+end
+
+local function fn_tbl5()
+  return { "Ты чувствуешь на своём лице дуновение холодного ветра."; "Рой маленьких колких снежинок ударяется в щёки."; "Снежинки снова и снова ударяются о твоё лицо."; "Небольшая метель метёт тебе прямо в глаза."; }
+end
+
+local function fn_tbl6()
+  return { "Небольшая комната. В ней ты видишь мужчину и женщину. У обоих раздражение на лице. В комнате ты видишь детскую кроватку."; "Ванная комната. Мужчина лет 40 бреется. Уголки губ опущены вниз."; "Помещение, напоминающее школьный класс. Сейчас он пуст. Только молодая учительница сидит за столом. Рядом с ней -- стопка тетрадей."; "Большой зал торгового центра. Ты видишь магазин с одеждой, заполненный посетителями."; "Аптека. Полки с лекарствами. Ты видишь провизора в белом халате. Это пожилая женщина."; "Спортивный зал. Натянута сетка. Дети играют в волейбол."; "Танцевальный зал. Много молодых людей и девушка - инструктор."; "Тёмная комната завалена хламом и пустыми бутылками. На диване лежит мужчина."; "За поверхностью зеркала -- темнота."; "Салон легковой машины. На заднем сидении сидит мальчик с грустными глазами."; "Мужской туалет. Все писсуары свободны."; }
+end
+
+local function fn_tbl7()
+  return { "-- Дрянь! -- шипит Снежная Королева."; "Снежная Королева стонет."; "-- Я до тебя доберусь! -- произносит Снежная Королева."; }
+end
+
+local function fn_have_compass()
+  return fn_have('телефон') and _'телефон'.compass
+end
+
+local function fn_check_compass(w)
+  if w == 'u_to' or w == 'd_to' or w == 'in_to' or w == 'out_to' then
+    return false
+  end
+  if not fn_have_compass() then
+    fn_say("Чтобы ориентироваться в пространстве, тебе нужен компас.")
+    return true
+  end
+  return false
+end
+
+local function fn_forest_scenery(s)
+  fn_disable(_'сова')
+  fn_disable(_'олень')
+  fn_disable(_'#ручей')
+  fn_disable(_'#поляна')
+  if s.depth == 0 then
+    fn_enable(_'сова')
+  elseif s.depth == 2 then
+    fn_enable(_'#ручей')
+  elseif s.depth == 3 then
+    fn_enable(_'#поляна')
+    fn_enable(_'олень')
+    pic_set('22')
+    _'олень'.step = 0
+    _'олень'.sit = false
+    fn_daemonStart(_'олень')
+  end
+end
+
 global 'blizzard' (0)
 
 function pic_push(name)
@@ -25,7 +338,7 @@ include "pic"
 --"сообщения|сообщение"
 
 cutscene {
-  nam = 'intro';
+  nam = "intro";
   text = [[Старенький синий седан едет по заснеженной трассе. Внутри машины -- двое.^^
 		Ведёт машину усталая женщина лет 35. На заднем сидении справа сидит её дочь -- девочка-подросток.^^
 		Девочка прислонилась лбом к холодному стеклу. Мать продолжает начатый разговор...^^
@@ -38,24 +351,24 @@ cutscene {
 
 obj {
   -"браслет";
-  nam = 'браслет';
-  after_Wear = [[Надев браслет на правое запястье, ты чувствуешь, что на душе у тебя потеплело.]];
+  nam = "браслет";
+  after_Wear = "Надев браслет на правое запястье, ты чувствуешь, что на душе у тебя потеплело.";
   before_Disrobe = function(s)
-    if visited 'gotmirror' then
-      p([[Тебе кажется, что в этом странном месте лучше никогда не снимать этот браслет!]])
+    if fn_visited('gotmirror') then
+      fn_say("Тебе кажется, что в этом странном месте лучше никогда не снимать этот браслет!")
     else
       return false
     end
   end;
   before_Exam = function(s)
-    p("Этот детский браслет мама подарила тебе на Рождество, когда тебе было ещё 9 лет.\nПросто игрушка. Леска, на которую нанизаны бусинки и пластмассовое сердечко.")
-    if s:once() then
-      p([[Странно, что он оказался в бардачке... Ты думала, что он давно потерялся.]])
+    fn_say("Этот детский браслет мама подарила тебе на Рождество, когда тебе было ещё 9 лет.\nПросто игрушка. Леска, на которую нанизаны бусинки и пластмассовое сердечко.")
+    if fn_once(s) then
+      fn_say("Странно, что он оказался в бардачке... Ты думала, что он давно потерялся.")
     end
   end;
   before_Give = function(s, w)
     if w ^ 'королева' then
-      walk 'badend4'
+      fn_walk(_'badend4')
       return
     end
     return false
@@ -64,107 +377,107 @@ obj {
 
 Title = Class({
   OnError = function(s)
-    mp:clear()
-    std.pclr()
+    fn_clear()
+    fn_pclr()
   end;
   title = false;
   before_Default = function(s, ev)
     if ev == 'Next' then
       return false
     end
-    mp:clear()
-    me():need_scene(true)
+    fn_clear()
+    fn_need_scene(fn_player(), true)
   end;
 }, cutscene):attr 'noprompt'
 
 Prop = Class {
   before_Default = function(s, ev)
-    p("Тебе нет дела до ", s:noun 'рд', ".")
+    fn_say("Тебе нет дела до ", fn_noun(s, 'рд'), ".")
   end;
 }:attr 'scenery'
 
 Useless = Class {
   before_Default = function(s, ev)
-    p("Тебе нет дела до ", s:noun 'рд', ".")
+    fn_say("Тебе нет дела до ", fn_noun(s, 'рд'), ".")
   end;
 }
 
 room {
   -"машина";
-  nam = 'В машине';
+  nam = "В машине";
   before_Cry = function(s)
-    if seen '#мама' then
-      p([[-- Прекрати истерику! -- произносит мать.]])
+    if fn_seen('#мама') then
+      fn_say("-- Прекрати истерику! -- произносит мать.")
     else
       return false
     end
   end;
   daemon = function(s)
-    local t = { "Машину потряхивает на снежных ухабах."; "По другую сторону окна кружатся снежинки."; "Вы проезжаете мимо занесённых снегом коттеджей."; "Машину слегка заносит на снежной дороге."; }
+    local t = fn_tbl1()
     if blizzard >= 2 then
       blizzard = blizzard + 1
       if blizzard < 7 and blizzard > 3 then
-        pic_set '2-pan-left'
+        pic_set('2-pan-left')
       end
       if blizzard > 5 then
-        enable '#заправка'
-        disable '#метель'
+        fn_enable(_'#заправка')
+        fn_disable(_'#метель')
         if blizzard == 7 then
-          p([[Мать заглушила двигатель.]])
+          fn_say("Мать заглушила двигатель.")
           return
         end
         if blizzard == 8 then
-          pic_set '7'
-          p([[-- Подожди меня, я скоро вернусь. -- говорит тебе мать и выходит из машины, захлопывая за собой дверь.]])
-          remove '#мама'
+          pic_set('7')
+          fn_say("-- Подожди меня, я скоро вернусь. -- говорит тебе мать и выходит из машины, захлопывая за собой дверь.")
+          fn_remove(_'#мама')
           return
         end
         if blizzard == 11 then
-          p([[Ты ждёшь мать, но её все нет. Может быть, выйти из машины?]])
+          fn_say("Ты ждёшь мать, но её все нет. Может быть, выйти из машины?")
           return
         end
         if blizzard > 8 then
           return
         end
-        p([[Вы подъезжаете к заправке.]])
+        fn_say("Вы подъезжаете к заправке.")
         return
       end
     end
-    if here() == s and rnd(100) <= 25 then
-      pn(t[rnd(#t)])
+    if fn_here() == s and fn_rnd(100) <= 25 then
+      fn_line(t[fn_rnd(#t)])
     end
   end;
-  dsc = [[Ты сидишь на заднем сидении машины и смотришь в окно.]];
+  dsc = "Ты сидишь на заднем сидении машины и смотришь в окно.";
   enter = function(s)
-    s:daemonStart()
-    _'#мама':daemonStart()
+    fn_daemonStart(s)
+    fn_daemonStart(_('#мама'))
   end;
   exit = function(s)
-    if seen '#мама' then
-      _'#мама':daemonStop()
+    if fn_seen('#мама') then
+      fn_daemonStop(_('#мама'))
     end
   end;
   out_to = function(s)
     if blizzard < 7 then
-      p([[Лучше не делать этого, пока машина движется.]])
-    elseif seen '#мама' then
-      p([[Там холодно.]])
+      fn_say("Лучше не делать этого, пока машина движется.")
+    elseif fn_seen('#мама') then
+      fn_say("Там холодно.")
     else
-      s:daemonStop()
-      if not have 'скрипка' then
-        move('скрипка', 'машина')
+      fn_daemonStop(s)
+      if not fn_have('скрипка') then
+        fn_move(_'скрипка', _'машина')
       end
-      if not have 'телефон' then
-        move('телефон', 'бардачок')
+      if not fn_have('телефон') then
+        fn_move(_'телефон', _'бардачок')
       end
-      walk 'метель1'
+      fn_walk(_'метель1')
     end
   end;
   before_Listen = function(s)
-    if seen '#мама' then
-      p([[Ты слышишь шум мотора и музыку, доносящуюся из радио.]])
+    if fn_seen('#мама') then
+      fn_say("Ты слышишь шум мотора и музыку, доносящуюся из радио.")
     else
-      p([[В машине играет радио.]])
+      fn_say("В машине играет радио.")
     end
   end;
   obj = {
@@ -172,70 +485,70 @@ room {
 
     obj {
       -"мать,мама,женщина";
-      nam = '#мама';
+      nam = "#мама";
       daemon = function(s)
-        local t = { "-- Ты не собираешься со мной поговорить?"; "-- Почему ты молчишь?"; "-- Давай поговорим?"; "-- Ну, чего ты молчишь?"; }
+        local t = fn_tbl2()
         s.time = s.time + 1
         if s.time > 3 then
-          if rnd(3) == 1 then
-            p(t[rnd(#t)])
-            p([[-- обращается к тебе мать.]])
+          if fn_rnd(3) == 1 then
+            fn_say(t[fn_rnd(#t)])
+            fn_say("-- обращается к тебе мать.")
           end
         end
       end;
-      init_dsc = [[Машину ведёт твоя мать.]];
+      init_dsc = "Машину ведёт твоя мать.";
       time = 0;
       ["before_Ask,Tell,Talk"] = function(s)
-        if visited 'разговор1' then
-          if _'телефон'.seen and have 'телефон' then
-            p([[-- Я не буду с тобой разговаривать, пока ты не отдашь мне телефон! Ну же!]])
+        if fn_visited('разговор1') then
+          if _'телефон'.seen and fn_have('телефон') then
+            fn_say("-- Я не буду с тобой разговаривать, пока ты не отдашь мне телефон! Ну же!")
             return
           end
           if blizzard > 0 then
             if blizzard >= 2 then
-              p([[-- Мама! Это важно!^]])
-              if not disabled '#заправка' then
-                p([[-- Сейчас заправимся и поговорим.]])
+              fn_say("-- Мама! Это важно!^")
+              if not fn_disabled(_'#заправка') then
+                fn_say("-- Сейчас заправимся и поговорим.")
               else
-                p([[-- Скоро заправка, подожди пять минут и поговорим!]])
+                fn_say("-- Скоро заправка, подожди пять минут и поговорим!")
               end
               return
             end
-            p([[-- Мама! Посмотри, там справа. Что то странное...^]])
-            p([[-- Не отвлекай меня от дороги!]])
-            pic_set '6'
+            fn_say("-- Мама! Посмотри, там справа. Что то странное...^")
+            fn_say("-- Не отвлекай меня от дороги!")
+            pic_set('6')
             blizzard = 2
             return
           end
-          p([[Ты не решаешься поговорить с ней.]])
+          fn_say("Ты не решаешься поговорить с ней.")
           return
         end
-        walk 'разговор1'
+        fn_walk(_'разговор1')
       end;
-      before_Exam = [[Твоя мать очень много работает и поэтому выглядит усталой.]];
-      before_Kiss = [[Ты зла на свою мать и сейчас ваши отношения нельзя назвать близкими.]];
+      before_Exam = "Твоя мать очень много работает и поэтому выглядит усталой.";
+      before_Kiss = "Ты зла на свою мать и сейчас ваши отношения нельзя назвать близкими.";
     }:attr 'animate';
 
     Prop {
       -"бардачок";
       before_Exam = function(s)
-        if _'телефон':inside 'бардачок' then
-          p([[Бардачок закрыт.]])
+        if fn_inside(_'телефон', _'бардачок') then
+          fn_say("Бардачок закрыт.")
           return
         end
-        p([[Тебе нет до него дела.]])
+        fn_say("Тебе нет до него дела.")
       end;
-      before_Open = [[Ты не можешь дотянуться до него с заднего сидения.]];
+      before_Open = "Ты не можешь дотянуться до него с заднего сидения.";
     };
 
     Prop {
       -"дверь";
-      before_Close = [[Дверь закрыта.]];
+      before_Close = "Дверь закрыта.";
       before_Enter = function(s)
-        mp:xaction("Exit")
+        fn_xaction('Exit')
       end;
       before_Open = function(s)
-        mp:xaction("Exit")
+        fn_xaction('Exit')
       end;
     };
 
@@ -245,42 +558,42 @@ room {
 
     obj {
       -"метель,буря|смерч|клубы";
-      nam = '#метель';
-      before_Default = [[Она пока ещё далеко.]];
-      before_Exam = [[Буря, метель или ... смерч? Что бы это ни было, оно пугает тебя.]];
+      nam = "#метель";
+      before_Default = "Она пока ещё далеко.";
+      before_Exam = "Буря, метель или ... смерч? Что бы это ни было, оно пугает тебя.";
     }:attr 'scenery':disable();
 
     obj {
       -"окно,стекло";
-      nam = [[#окно]];
-      before_Open = [[Слишком холодно, чтобы опускать стекло.]];
+      nam = "#окно";
+      before_Open = "Слишком холодно, чтобы опускать стекло.";
       ["before_Search,Exam"] = function(s)
-        if not disabled '#заправка' then
-          p([[За стеклом ты видишь смутный силуэт заправки.]])
+        if not fn_disabled(_'#заправка') then
+          fn_say("За стеклом ты видишь смутный силуэт заправки.")
           return
         end
-        if visited 'разговор1' and _'телефон'.seen then
+        if fn_visited('разговор1') and _'телефон'.seen then
           if blizzard == 0 then
-            pn([[Разглядывая белоснежный пейзаж, ты замечаешь вдали нечто странное.]])
-            enable '#метель'
+            fn_line("Разглядывая белоснежный пейзаж, ты замечаешь вдали нечто странное.")
+            fn_enable(_'#метель')
             blizzard = 1
-            pic_set '5'
+            pic_set('5')
           end
-          pn([[Ты видишь, как по земле ползут огромные клубы пара или снега.]])
-          p([[Огромная снежная буря, накрывая деревья, движется к трассе!]])
+          fn_line("Ты видишь, как по земле ползут огромные клубы пара или снега.")
+          fn_say("Огромная снежная буря, накрывая деревья, движется к трассе!")
           return
         end
-        p([[Ты видишь, как за стеклом кружится метель.]])
-        if s:once() then
-          pic_set '2-pan-left'
+        fn_say("Ты видишь, как за стеклом кружится метель.")
+        if fn_once(s) then
+          pic_set('2-pan-left')
         end
       end;
     }:attr 'scenery,openable';
 
     Prop {
       -"заправка";
-      nam = '#заправка';
-      before_Exam = [[Сквозь метель ты едва различаешь темные очертания заправки.]];
+      nam = "#заправка";
+      before_Exam = "Сквозь метель ты едва различаешь темные очертания заправки.";
     }:disable();
   };
 }
@@ -292,15 +605,15 @@ dlg {
     pic_set('3')
   end;
   phr = {
-    [[-- Я говорю, тебе там понравится. Там хорошая школа, я узнавала... И музыкальная школа совсем недалеко. -- ты слышишь в голосе матери настойчивость.]];
+    "-- Я говорю, тебе там понравится. Там хорошая школа, я узнавала... И музыкальная школа совсем недалеко. -- ты слышишь в голосе матери настойчивость.";
     {
-      [[Я устала терять друзей.]];
-      [[-- Ты же знаешь, что это необходимо! Я должна работать, чтобы ты смогла учиться в хорошем вузе! И это не конец света! На новом месте заведёшь новых друзей.]];
+      "Я устала терять друзей.";
+      "-- Ты же знаешь, что это необходимо! Я должна работать, чтобы ты смогла учиться в хорошем вузе! И это не конец света! На новом месте заведёшь новых друзей.";
       next = '#дальше';
     };
     {
-      [[Хорошо, мама...]];
-      [[-- Ну что ты вечно строишь из себя мученика? Ты всего-лишь меняешь школу. Я работаю на твоё будущее и никакой благодарности!]];
+      "Хорошо, мама...";
+      "-- Ну что ты вечно строишь из себя мученика? Ты всего-лишь меняешь школу. Я работаю на твоё будущее и никакой благодарности!";
       next = '#дальше';
     };
   };
@@ -308,41 +621,41 @@ dlg {
     {
       '#дальше';
       {
-        [[Я заранее знаю всё, что ты скажешь!]];
-        [[-- Ну зачем ты так? Ты стала такой грубой!]];
+        "Я заранее знаю всё, что ты скажешь!";
+        "-- Ну зачем ты так? Ты стала такой грубой!";
       };
       {
-        [[Ты меня не поймёшь.]];
-        [[-- А тебе не приходило в голову, что мне тоже было 13 лет?]];
+        "Ты меня не поймёшь.";
+        "-- А тебе не приходило в голову, что мне тоже было 13 лет?";
       };
       {
-        [[Просто мне очень плохо.]];
-        [[-- Ты ведёшь себя как эгоистичный ребёнок. Ты думаешь мне легко?]];
+        "Просто мне очень плохо.";
+        "-- Ты ведёшь себя как эгоистичный ребёнок. Ты думаешь мне легко?";
         {
-          [[Я ненавижу твою работу!]];
-          [[-- Ты неблагодарная! Вместо поддержки, ты снова треплешь мне нервы!]];
+          "Я ненавижу твою работу!";
+          "-- Ты неблагодарная! Вместо поддержки, ты снова треплешь мне нервы!";
           {
-            [[Я устала от твоих скандалов. Замолчи!]];
-            [[-- Ты это матери говоришь? Таким тоном? Как ты... можешь!]];
+            "Я устала от твоих скандалов. Замолчи!";
+            "-- Ты это матери говоришь? Таким тоном? Как ты... можешь!";
           };
           {
-            [[Давай просто закончим этот разговор.]];
-            [[-- Ты жестокая! Я отдала тебе все! И это моя самая большая ошибка!]];
+            "Давай просто закончим этот разговор.";
+            "-- Ты жестокая! Я отдала тебе все! И это моя самая большая ошибка!";
             {
-              [[Мама, прекрати!]];
+              "Мама, прекрати!";
               function(s)
-                p([[-- Да, не ожидала я... Что у меня такая дочь...]])
-                if have 'телефон' then
-                  DaemonStart 'телефон'
+                fn_say("-- Да, не ожидала я... Что у меня такая дочь...")
+                if fn_have('телефон') then
+                  fn_daemonStart('телефон')
                 end
-                walkback()
+                fn_walkback()
               end;
             };
           };
         };
         {
-          [[Ты могла бы сменить работу...]];
-          [[-- Да? И получать гроши. И кто оплатит твоё обучение?]];
+          "Ты могла бы сменить работу...";
+          "-- Да? И получать гроши. И кто оплатит твоё обучение?";
         };
       };
     };
@@ -350,119 +663,129 @@ dlg {
 }
 
 obj {
-  function(s) pr (-"мобильный телефон,телефон,мобильник,смартфон"); if s.flash then pr "|фонарик,фонарь" end if have(s) and here() ^ 'В машине' then pr "|сообщения|сообщение"; end  end;
-  nam = 'телефон';
+  nam = "телефон";
+  word = function(s)
+    fn_append("мобильный телефон,телефон,мобильник,смартфон")
+    if s.flash then
+      fn_append("|фонарик,фонарь")
+    end
+    if fn_have(s) and fn_here() ^ 'В машине' then
+      fn_append("|сообщения|сообщение")
+    end
+  end;
   ["before_Burn,Light"] = function(s)
     s.flash = true
-    if s:has 'light' then
-      p([[Фонарик в телефоне и так включён.]])
+    if fn_has(s, "light") then
+      fn_say("Фонарик в телефоне и так включён.")
       return
     end
-    if not mp:thedark() then
-      p([[Тут и так светло.]])
+    if not fn_thedark(fn_here()) then
+      fn_say("Тут и так светло.")
       return
     end
-    p([[Ты включила в мобильнике фонарик.]])
-    pl:need_scene(true)
-    s:attr 'light'
+    fn_say("Ты включила в мобильнике фонарик.")
+    fn_need_scene(fn_player(), true)
+    fn_attr(s, "light")
   end;
   compass = false;
   daemon = function(s)
-    if rnd(10) > 3 then
-      p([[Ты слышишь сигнал входящего сообщения на своём смартфоне.]])
+    if fn_rnd(10) > 3 then
+      fn_say("Ты слышишь сигнал входящего сообщения на своём смартфоне.")
     end
   end;
   each_turn = function(s)
-    if here() ^ 'пещера2' and s:has 'light' and not here().solved then
-      p("В ту же секунду ты слышишь хлопанье крыльев и успеваешь заметить,\nкак множество чёрных теней бросаются к тебе с потолка. Инстинктивно ты успеваешь выключить фонарик. Удивительно, но это успокаивает тварей. Некоторое время ты слышишь шум их крыльев. Затем всё затихает.")
-      s:attr '~light'
+    if fn_here() ^ 'пещера2' and fn_has(s, "light") and not fn_here().solved then
+      fn_say("В ту же секунду ты слышишь хлопанье крыльев и успеваешь заметить,\nкак множество чёрных теней бросаются к тебе с потолка. Инстинктивно ты успеваешь выключить фонарик. Удивительно, но это успокаивает тварей. Некоторое время ты слышишь шум их крыльев. Затем всё затихает.")
+      fn_attr(s, "~light")
       return
     end
-    if here():has 'light' and s:has 'light' then
-      p([[В целях экономии заряда ты выключила фонарик.]])
-      s:attr '~light'
+    if fn_has(fn_here(), "light") and fn_has(s, "light") then
+      fn_say("В целях экономии заряда ты выключила фонарик.")
+      fn_attr(s, "~light")
     end
   end;
   flash = false;
   seen = false;
   before_Exam = function(s)
-    if not s:has 'on' then
-      p([[Телефон выключен.]])
+    if not fn_has(s, "on") then
+      fn_say("Телефон выключен.")
       return
     end
-    if s:has 'light' then
-      p([[В телефоне включён фонарик.]])
+    if fn_has(s, "light") then
+      fn_say("В телефоне включён фонарик.")
       return
     end
-    if seen '#мама' then
-      p("Ты собираешься проверить новые сообщения, но\nтвоя мать замечает это в зеркале заднего вида.^\n-- Ты круглые сутки сидишь с телефоном! Отдай его мне, сейчас же!")
+    if fn_seen('#мама') then
+      fn_say("Ты собираешься проверить новые сообщения, но\nтвоя мать замечает это в зеркале заднего вида.^\n-- Ты круглые сутки сидишь с телефоном! Отдай его мне, сейчас же!")
       s.seen = true
-      s:daemonStop()
+      fn_daemonStop(s)
     else
-      if not s.flash and mp:thedark() then
-        p([[Тебе приходит в голову мысль, что можно посветить телефоном...]])
+      if not s.flash and fn_thedark(fn_here()) then
+        fn_say("Тебе приходит в голову мысль, что можно посветить телефоном...")
         s.flash = true
         return
       end
       if not s.compass then
-        p([[Странно, нет приёма...]])
+        fn_say("Странно, нет приёма...")
       end
-      if here()^'поле' or here()^'В лесу' then
+      if fn_here() ^ 'поле' or fn_here() ^ 'В лесу' then
         if not s.compass then
-          p([[Но в твоём смартфоне есть компас. И, похоже, он работает! Теперь ты можешь ориентироваться по сторонам света.]])
+          fn_say("Но в твоём смартфоне есть компас. И, похоже, он работает! Теперь ты можешь ориентироваться по сторонам света.")
           s.compass = true
         else
-          p("Здорово, что в твоём смарфоне есть компас! В целях экономии батареи ты включаешь режим \"в полёте\".")
+          fn_say("Здорово, что в твоём смарфоне есть компас! В целях экономии батареи ты включаешь режим \"в полёте\".")
         end
       else
-        p([[Это твой старенький китайский смартфон. В основном, ты используешь его для социальных сетей.]])
-        p([[А сейчас он служит тебе компасом.]])
-        if s.flash then p "И фонариком." end
+        fn_say("Это твой старенький китайский смартфон. В основном, ты используешь его для социальных сетей.")
+        fn_say("А сейчас он служит тебе компасом.")
+        if s.flash then
+          fn_say("И фонариком.")
+        end
       end
     end
   end;
   before_Give = function(s, w)
     if w ^ '#мама' then
-      p([[Ты протягиваешь телефон матери, она молча забирает его и кладёт в бардачок.]])
+      fn_say("Ты протягиваешь телефон матери, она молча забирает его и кладёт в бардачок.")
       if not s.seen then
         s.seen = true
-        s:daemonStop()
-        p([[^Мать выглядит немного удивлённой -- ведь ты обычно тяжело расстаёшься со своим смартфоном.]])
+        fn_daemonStop(s)
+        fn_say("^Мать выглядит немного удивлённой -- ведь ты обычно тяжело расстаёшься со своим смартфоном.")
       end
-      move(s, 'бардачок')
-      pic_set '4'
+      fn_move(s, _'бардачок')
+      pic_set('4')
       return
     end
     return false
   end;
   before_SwitchOff = function(s)
-    if s:has 'light' then
-      p([[Ты выключила фонарик в телефоне.]])
-      s:attr '~light'
-      pl:need_scene(true)
+    if fn_has(s, "light") then
+      fn_say("Ты выключила фонарик в телефоне.")
+      fn_attr(s, "~light")
+      fn_need_scene(fn_player(), true)
       return
     end
-    if s:multi_alias() == 2 then
-      p([[Фонарик и так выключен.]])
+    if fn_multi_alias(s) == 2 then
+      fn_say("Фонарик и так выключен.")
       return
     end
     if s.compass then
-      p([[Если ты выключишь телефон, ты лишишься компаса.]])
+      fn_say("Если ты выключишь телефон, ты лишишься компаса.")
       return
     end
     if not s.seen then
-      p([[Ты не любишь, когда твой смартфон выключен.]])
+      fn_say("Ты не любишь, когда твой смартфон выключен.")
       return
     end
     return false
   end;
   before_SwitchOn = function(s)
-    if s:multi_alias() == 2 then
-      s:before_Light()
+    if fn_multi_alias(s) == 2 then
+      fn_call_before(s, 'Light')
       return
     end
-    if not s.flash and mp:thedark() then
-      p([[Тебе приходит в голову мысль, что в телефоне есть фонарик и его можно включить...]])
+    if not s.flash and fn_thedark(fn_here()) then
+      fn_say("Тебе приходит в голову мысль, что в телефоне есть фонарик и его можно включить...")
       s.flash = true
       return
     end
@@ -472,126 +795,122 @@ obj {
 
 obj {
   -"скрипка";
-  nam = 'скрипка';
-  after_Play = [[У тебя сейчас нет настроения играть.]];
-  init_dsc = [[Рядом лежит скрипка.]];
-  before_Exam = [[Твоя скрипка. Тебе остался год, чтобы закончить музыкальную школу. Если честно, благодаря музыкальной школе ты стала ненавидеть музыку.]];
+  nam = "скрипка";
+  after_Play = "У тебя сейчас нет настроения играть.";
+  init_dsc = "Рядом лежит скрипка.";
+  before_Exam = "Твоя скрипка. Тебе остался год, чтобы закончить музыкальную школу. Если честно, благодаря музыкальной школе ты стала ненавидеть музыку.";
 }
 
-Verb { '#Attack2', [[[|раз]бить,[|раз]бей]], [[{noun}/вн,scene : Attack]] }
+Verb { '#Attack2', "[|раз]бить,[|раз]бей", "{noun}/вн,scene : Attack" }
 
-Verb { '#PutOn', [[повес/ить]], [[{noun}/вн,held на {noun}/вн,scene : PutOn]], [[~ на {noun}/вн,scene {noun}/вн,held : PutOn reverse]] }
+Verb { '#PutOn', "повес/ить", "{noun}/вн,held на {noun}/вн,scene : PutOn", "~ на {noun}/вн,scene {noun}/вн,held : PutOn reverse" }
 
-Verb { '#Play', [[играть,сыграть]], [[на {noun}/пр : Play]], [[ : Play]] }
+Verb { '#Play', "играть,сыграть", "на {noun}/пр : Play", " : Play" }
 mp.Play = function(s, w)
   if not w then
-    mp:xaction("Play", _'скрипка')
+    fn_xaction('Play', _'скрипка')
     return
   end
   if w ~= _'скрипка' then
-    p([[Ты умеешь играть только на скрипке.]])
+    fn_say("Ты умеешь играть только на скрипке.")
     return
   end
-  if not have 'скрипка' then
-    p([[Сначала тебе нужно взять скрипку в руки.]])
+  if not fn_have('скрипка') then
+    fn_say("Сначала тебе нужно взять скрипку в руки.")
     return
   end
   return false
 end
 
-Verb { '#Light', [[[|по|под]свети/ть,[|по|свеч/у,освети/ть]], [[{noun}/тв,held : Light]], hint = function(s) return mp:thedark() and have 'телефон'  end }
+Verb { '#Light', "[|по|под]свети/ть,[|по|свеч/у,освети/ть", "{noun}/тв,held : Light", hint = function(s)
+  return fn_thedark(fn_here()) and fn_have('телефон')
+end }
 mp.Light = function(s, w)
-  if mp:check_held(w) then
+  if fn_check_held(w) then
     return
   end
-  p("{#First} не {#if_hint/#first,plural,могут,может} светить.")
+  fn_say("{#First} не {#if_hint/#first,plural,могут,может} светить.")
 end
 
-Verb { '#Cry', [[[|по|за]крич/ать,[|по]звать,крикн/уть,[|за|по]плак/ать,[|за|по]плач/ь]], [[: Cry]] }
+Verb { '#Cry', "[|по|за]крич/ать,[|по]звать,крикн/уть,[|за|по]плак/ать,[|за|по]плач/ь", ": Cry" }
 
-Verb { '#Fun', [[[|по|рас|за]смеяться,[|по|за|рас]смей/ся,[|по|за|рас]смею/сь,[|по|за|рас]хохо/таться]], [[: Fun]] }
+Verb { '#Fun', "[|по|рас|за]смеяться,[|по|за|рас]смей/ся,[|по|за|рас]смею/сь,[|по|за|рас]хохо/таться", ": Fun" }
 
-Verb { '#Knock', [[[|по]стуч/ать]], [[в {noun}/вн : Knock]], [[по {noun}/дт : Knock]] }
+Verb { '#Knock', "[|по]стуч/ать", "в {noun}/вн : Knock", "по {noun}/дт : Knock" }
 mp.Knock = function(s, w)
-  if mp:check_live(w) then
+  if fn_check_live(w) then
     return
   end
-  if mp.args[1].word == 'в' then
-    p([[Ты постучала в]])
-    p(w:noun'вн', ".")
+  if fn_arg_word(1) == 'в' then
+    fn_say("Ты постучала в")
+    fn_say(fn_noun(w, 'вн'), ".")
   else
-    p([[Ты постучала по]])
-    p(w:noun'дт', ".")
+    fn_say("Ты постучала по")
+    fn_say(fn_noun(w, 'дт'), ".")
   end
-  p([[Ничего не произошло.]])
+  fn_say("Ничего не произошло.")
 end
 
-Verb { '#Tune', [[настро/ить,настра/ивать]], [[{noun}/вн : Tune]] }
+Verb { '#Tune', "настро/ить,настра/ивать", "{noun}/вн : Tune" }
 mp.Tune = function(s, w)
-  p("Тебе не нужно настраивать ", w:noun 'вн', ".")
+  fn_say("Тебе не нужно настраивать ", fn_noun(w, 'вн'), ".")
 end
 
-Verb { '#Photo', [[[|с|по]фото/графировать]], [[Photo]] }
+Verb { '#Photo', "[|с|по]фото/графировать", "Photo" }
 mp.Photo = function(s)
-  if not have 'телефон' then
-    p([[Дебе нечем делать снимки.]])
-  elseif mp:thedark() then
-    p([[Нет света. Может быть, посветить телефоном?]])
+  if not fn_have('телефон') then
+    fn_say("Дебе нечем делать снимки.")
+  elseif fn_thedark(fn_here()) then
+    fn_say("Нет света. Может быть, посветить телефоном?")
   else
-    local t = { "Ты делаешь пару неудачных фоток и удаляешь их из телефона."; "Ты сделала удачную фотку."; "Ты сделала пару фоток и селфи."; }
-    p(t[rnd(#t)])
+    local t = fn_tbl3()
+    fn_say(t[fn_rnd(#t)])
   end
 end
 
 game.dsc = false
 pl.word = -"ты/жр,2л"
-pl.description = [[Тебя зовут Вера. Тебе почти 13 лет.]]
+pl.description = "Тебя зовут Вера. Тебе почти 13 лет."
 pl.before_LetGo = function(s, w, ww)
   if w ^ 'телефон' then
     local s = w
-    if s.compass and ww ~= pl then
-      p([[В телефоне есть компас, который тебе нужен.]])
+    if s.compass and ww ~= fn_player() then
+      fn_say("В телефоне есть компас, который тебе нужен.")
       return
     end
     return false
-  elseif w ^ 'скрипка' and here() ^ 'пещера2' and mp:thedark() then
-    p([[Ты не хочешь расставаться со своей скрипкой.]])
+  elseif w ^ 'скрипка' and fn_here() ^ 'пещера2' and fn_thedark(fn_here()) then
+    fn_say("Ты не хочешь расставаться со своей скрипкой.")
     return
   elseif w ^ 'осколки' then
     local s = w
-    if not here() ^ 'пещера2' then
+    if not fn_here() ^ 'пещера2' then
       return false
     end
-    p([[Ты бросаешь осколки кристалла на пол пещеры. Маленькие светящиеся огоньки рассыпаются по ледяной поверхности. В тот же момент, пещеру заполняет шум хлопающих крыльев.]])
-    here().solved = true
-    drop(s)
+    fn_say("Ты бросаешь осколки кристалла на пол пещеры. Маленькие светящиеся огоньки рассыпаются по ледяной поверхности. В тот же момент, пещеру заполняет шум хлопающих крыльев.")
+    fn_here().solved = true
+    fn_drop(s)
     return
   end
   return false
 end;
 function start(load)
   if not load then
-    move(pl, 'intro')
+    fn_move(fn_player(), _'intro')
   end
 end
 game.hint_verbs = {"#Exam","#Drop","#LookIn","#ThrowAt","#Walk","#Take","#Play","#Give","#Touch","#Attack2","#Talk","#Cry","#Open","#Close","#Jump","#Wait","#Wear","#Sit","#Exit","#SwitchOn","#SwitchOff","#PutOn","#Light"}
 function init()
   take('телефон')
-  if theme.name() == '.mobile' or theme.name() == '.mobile2' then
-    mp.togglehelp = true
-    mp.autohelp = true
-    mp.autohelp_limit = 1000
-    mp.compl_thresh = 0
+  if fn_theme_naplayer() == '.mobile' or fn_theme_naplayer() == '.mobile2' then
+    fn_set_help(true)
   else
-    mp.togglehelp = false
-    mp.autohelp = false
-    mp.autohelp_limit = 8
-    mp.compl_thresh = 1
+    fn_set_help(false)
   end
 end
 
 cutscene {
-  nam = 'метель1';
+  nam = "метель1";
   text = [[Ты открываешь дверь и толкаешь её наружу.^^
 		Ты чувствуешь, как ветер давит на дверь с другой стороны, но ты сильней и вот -- дверь открыта.^^
 		Холод, вместе с вихрем злых снежинок, быстро забирается внутрь салона.^^
@@ -599,8 +918,8 @@ cutscene {
 		На тебя обрушивается...]];
   enter = function(s)
     pic_set('75')
-    if std.ref'mplayer' then
-      lifeon 'mplayer'
+    if fn_ref('mplayer') then
+      fn_lifeon(fn_ref('mplayer'))
     end
   end;
   exit = function(s)
@@ -611,7 +930,7 @@ cutscene {
 }
 
 Title {
-  nam = 'метель2';
+  nam = "метель2";
   text = [[{$fmt y,50%}{$fmt c|{$fmt b|МЕТЕЛЬ}}^^
 {$fmt c|Игра на ЗОК-2019}^^^
 {$fmt em|{$fmt c|Код: Пётр Косых^Графика: Pakowacz}}]];
@@ -623,55 +942,55 @@ Title {
 
 obj {
   -"машина|дверь";
-  nam = 'машина';
+  nam = "машина";
   description = function(s)
-    if s:multi_alias() == 2 then
-      p([[Тебе нет дела до двери.]])
+    if fn_multi_alias(s) == 2 then
+      fn_say("Тебе нет дела до двери.")
       return
     end
     return false
   end;
   dsc = function(s)
-    p([[В снегу стоит машина.]])
-    if _'перо':where() == s and _'перо':hasnt 'moved' then
-      _'перо':init_dsc()
+    fn_say("В снегу стоит машина.")
+    if fn_where(_'перо') == s and fn_hasnt(_'перо', "moved") then
+      fn_init_dsc(_'перо')
     end
   end;
-  inside_dsc = [[Ты находишься в машине.]];
+  inside_dsc = "Ты находишься в машине.";
   after_Close = function(s)
-    if _'перо':inside(s) and not have 'перо' then
-      p([[Когда ты захлопнула дверь машины, перо упало с крыши в снег.]])
-      move('перо', 'поле')
+    if fn_inside(_'перо', s) and not fn_have('перо') then
+      fn_say("Когда ты захлопнула дверь машины, перо упало с крыши в снег.")
+      fn_move(_'перо', _'поле')
       return
     end
     return false
   end;
-  before_SwitchOff = [[Двигатель не работает.]];
-  before_SwitchOn = [[Тебе не удаётся завести машину. Впрочем, ты все-равно не умеешь водить.]];
+  before_SwitchOff = "Двигатель не работает.";
+  before_SwitchOn = "Тебе не удаётся завести машину. Впрочем, ты все-равно не умеешь водить.";
   obj = {
     obj {
       -"радио";
-      nam = 'радио';
+      nam = "радио";
       ["before_Turn,Tune"] = function(s)
-        if s:hasnt 'on' then
-          p([[Радио выключено.]])
+        if fn_hasnt(s, "on") then
+          fn_say("Радио выключено.")
           return
         end
-        p([[Ты пытаешься поймать какую-нибудь волну, но на всех частотах только шум помех.]])
+        fn_say("Ты пытаешься поймать какую-нибудь волну, но на всех частотах только шум помех.")
       end;
       when_off = false;
-      when_on = [[Радио в машине издаёт помехи.]];
-      after_SwitchOn = [[Ты включаешь радио. Шум помех нарушает тишину.]];
+      when_on = "Радио в машине издаёт помехи.";
+      after_SwitchOn = "Ты включаешь радио. Шум помех нарушает тишину.";
     }:attr 'static,switchable,on';
 
     obj {
       -"бардачок|перчаточный ящик";
-      nam = 'бардачок';
-      when_closed = [[Твоё внимание привлекает бардачок.]];
-      when_open = [[Бардачок открыт.]];
+      nam = "бардачок";
+      when_closed = "Твоё внимание привлекает бардачок.";
+      when_open = "Бардачок открыт.";
       before_Exam = function(s)
-        if s:hasnt 'open' then
-          p([[Бардачок закрыт.]])
+        if fn_hasnt(s, "open") then
+          fn_say("Бардачок закрыт.")
           return
         end
         return false
@@ -683,38 +1002,23 @@ obj {
   };
 }:attr 'container,openable,open,static,enterable,light'
 
-local function have_compass()
-  return have 'телефон' and _'телефон'.compass
-end
-
-local function check_compass(w)
-  if w == 'u_to' or w == 'd_to' or w == 'in_to' or w == 'out_to' then
-    return
-  end
-  if not have_compass() then
-    p([[Чтобы ориентироваться в пространстве, тебе нужен компас.]])
-    return true
-  end
-  return
-end
-
 Area = Class({
   cant_go = function(s, w)
-    if check_compass(w) then
+    if fn_check_compass(w) then
       return
     end
     return false
   end;
   compass_look = function(s, w)
-    if check_compass(w) then
+    if fn_check_compass(w) then
       return
     end
     if w == 'u_to' then
-      mp:xaction("Exam", _'#небо')
+      fn_xaction('Exam', _('#небо'))
       return
     end
     if w == 'd_to' then
-      mp:xaction("Exam", _'#снег')
+      fn_xaction('Exam', _('#снег'))
       return
     end
     return false
@@ -724,73 +1028,73 @@ Area = Class({
 Snow = Class {
   -"снег";
   after_Receive = function(s, w)
-    move(w, here())
+    fn_move(w, fn_here())
     return false
   end;
-  ["before_Enter,Walk"] = [[Ты и так стоишь среди снега.]];
+  ["before_Enter,Walk"] = "Ты и так стоишь среди снега.";
   before_Receive = function(s, w)
-    if here() ^ 'В лесу' then
-      p("Потом ", w:noun'вн', " сложно будет найти.")
+    if fn_here() ^ 'В лесу' then
+      fn_say("Потом ", fn_noun(w, 'вн'), " сложно будет найти.")
     else
       return false
     end
   end;
-  before_Take = [[Тебе не хочется играть в снежки.]];
+  before_Take = "Тебе не хочется играть в снежки.";
 }:attr 'scenery,supporter'
 
 Sky = Class {
   -"небо|облака";
-  before_Default = [[Небо далеко...]];
-  before_Exam = [[Бледное небо нависло над головой. Солнца не видно.]];
+  before_Default = "Небо далеко...";
+  before_Exam = "Бледное небо нависло над головой. Солнца не видно.";
 }:attr 'scenery'
 
 Area {
   -"поле";
-  nam = 'поле';
-  before_Cry = [[-- Ма-маааааа! -- нет ответа.]];
+  nam = "поле";
+  before_Cry = "-- Ма-маааааа! -- нет ответа.";
   dsc = function(s)
-    p([[Ты стоишь в заснеженном поле.]])
-    if have_compass() then
-      p([[На западе начинается хвойный лес.]])
+    fn_say("Ты стоишь в заснеженном поле.")
+    if fn_have_compass() then
+      fn_say("На западе начинается хвойный лес.")
     else
-      p([[Неподалёку начинается хвойный лес.]])
+      fn_say("Неподалёку начинается хвойный лес.")
     end
   end;
   ["n_to,ne_to,e_to,se_to,s_to"] = function(s, t)
-    if mp.event == 'Exam' then
+    if fn_event() == 'Exam' then
       return false
     end
-    if check_compass('w_to') then
+    if fn_check_compass('w_to') then
       return
     end
-    p("Ты идешь некоторое время на ", (_('@'..t).word), ".")
-    p([[Ничего не меняется. Вокруг все-такой же пустынный пейзаж. Ты решаешь вернуться к машине.]])
+    fn_say("Ты идешь некоторое время на ", (_('@' .. t).word), ".")
+    fn_say("Ничего не меняется. Вокруг все-такой же пустынный пейзаж. Ты решаешь вернуться к машине.")
   end;
   onenter = function(s)
-    if visited(s) then
+    if fn_visited(s) then
       return
     end
-    p("Холод. Ты лежишь в снегу и медленно приходишь в себя.^\nНекоторое время ты смотришь в небо. Затем поднимаешься на ноги и оглядываешься.^\nСтранно, но ты не видишь никакой заправки. Впрочем, и трассы тоже.")
+    fn_say("Холод. Ты лежишь в снегу и медленно приходишь в себя.^\nНекоторое время ты смотришь в небо. Затем поднимаешься на ноги и оглядываешься.^\nСтранно, но ты не видишь никакой заправки. Впрочем, и трассы тоже.")
   end;
   out_to = function(s)
-    p([[Сначала нужно решить, куда тебе идти.]])
+    fn_say("Сначала нужно решить, куда тебе идти.")
   end;
   ["w_to,nw_to,sw_to"] = function(s)
-    if check_compass('w_to') then
+    if fn_check_compass('w_to') then
       return
     end
     return "#лес"
   end;
   before_Listen = function(s)
-    if _'радио':hasnt 'on' then
-      p([[Стоит звенящая тишина.]])
+    if fn_hasnt(_'радио', "on") then
+      fn_say("Стоит звенящая тишина.")
     else
-      p([[Ты слышишь шум радиопомех из машины.]])
+      fn_say("Ты слышишь шум радиопомех из машины.")
     end
   end;
   before_Walk = function(s)
-    if where(pl) ^ 'машина' then
-      p([[Машина не заводится. Придётся выйти и идти пешком.]])
+    if fn_where(fn_player()) ^ 'машина' then
+      fn_say("Машина не заводится. Придётся выйти и идти пешком.")
       return
     end
     return false
@@ -799,30 +1103,30 @@ Area {
     'машина';
 
     Sky {
-      nam = [[#небо]];
+      nam = "#небо";
     };
 
     Snow {
-      nam = [[#снег]];
+      nam = "#снег";
       before_Exam = function(s)
-        p([[Ты видишь запорошенные снегом следы, которые ведут в лес.]])
-        enable '#следы'
+        fn_say("Ты видишь запорошенные снегом следы, которые ведут в лес.")
+        fn_enable(_'#следы')
       end;
     };
 
     obj {
       -"хвойный лес,лес|чаща|деревья";
-      nam = [[#лес]];
-      before_Default = [[Лес далеко.]];
-      before_Exam = [[На деревьях лежит снег.]];
+      nam = "#лес";
+      before_Default = "Лес далеко.";
+      before_Exam = "На деревьях лежит снег.";
       ["before_Walk,Enter,Climb"] = function(s)
-        walk 'В лесу';
+        fn_walk(_'В лесу')
       end;
     }:attr 'scenery';
 
     obj {
-      nam = '#следы';
-      before_Exam = [[Следы уже почти скрылись под свежим снегом.]];
+      nam = "#следы";
+      before_Exam = "Следы уже почти скрылись под свежим снегом.";
     }:attr 'scenery';
 
     Prop {
@@ -851,73 +1155,73 @@ game:dict {
 
 obj {
   -"олень";
-  nam = 'олень';
+  nam = "олень";
   daemon = function(s)
     s.step = s.step + 1
     if s.step > 5 then
-      p([[Олень скрылся в лесу.]])
-      s:disable()
-      s:daemonStop()
-      s.step = 0;
+      fn_say("Олень скрылся в лесу.")
+      fn_disable(s)
+      fn_daemonStop(s)
+      s.step = 0
     end
     return
   end;
-  init_dsc = [[Ты видишь на поляне оленя.]];
+  init_dsc = "Ты видишь на поляне оленя.";
   ["life_Give,Show"] = function(s, w)
     if not w ^ 'перо' then
       return false
     end
     if s.sit then
-      p([[Олень никак не отреагировал.]])
+      fn_say("Олень никак не отреагировал.")
       return
     end
     s.sit = true
-    p([[Ты подносишь перо к носу оленя. Чувствуя прикосновение, он шумно втягивает в себя воздух. Затем он опускается перед тобой на колени.]])
-    s:daemonStop()
+    fn_say("Ты подносишь перо к носу оленя. Чувствуя прикосновение, он шумно втягивает в себя воздух. Затем он опускается перед тобой на колени.")
+    fn_daemonStop(s)
   end;
   sit = false;
   step = 0;
   ["before_Enter,Climb"] = function(s)
-    if where(pl) == s then
-      p([[Но ты уже и так на олене.]])
+    if fn_where(fn_player()) == s then
+      fn_say("Но ты уже и так на олене.")
       return
     end
     if not s.sit then
-      s:before_Touch()
+      fn_call_before(s, 'Touch')
       return
     end
-    if not have 'перо' then
-      p([[Ты подумала, что тебе стоит сначала взять с собой перо странной совы. Кто знает, куда умчит тебя олень?]])
+    if not fn_have('перо') then
+      fn_say("Ты подумала, что тебе стоит сначала взять с собой перо странной совы. Кто знает, куда умчит тебя олень?")
       return
     end
-    s:daemonStop()
+    fn_daemonStop(s)
     s.sit = false
-    if here() ^ 'В лесу' then
-      walk 'к хребту'
+    if fn_here() ^ 'В лесу' then
+      fn_walk(_'к хребту')
     else
-      walk 'к поляне'
+      fn_walk(_'к поляне')
     end
   end;
   before_Exam = function(s)
     if s.sit then
-      p([[Олень стоит перед тобой на коленях.]])
+      fn_say("Олень стоит перед тобой на коленях.")
     else
-      if s:once() then
-        p([[Ты замечаешь, что у оленя странные глаза.]])
+      if fn_once(s) then
+        fn_say("Ты замечаешь, что у оленя странные глаза.")
       else
-        p([[Чёрные дырки-глаза оленя пугают тебя.]])
+        fn_say("Чёрные дырки-глаза оленя пугают тебя.")
       end
     end
   end;
   ["before_Touch,Talk,Ask,Tell,Kiss"] = function(s)
     s.step = 4
-    p([[Олень попятился и шумно задышал, жадно втягивая морозный воздух.]])
+    fn_say("Олень попятился и шумно задышал, жадно втягивая морозный воздух.")
   end;
   obj = {
     obj {
       -"глаза оленя,глаза,дыр*";
-      before_Default = [[Тебе не нравятся глаза оленя.]];
-      before_Exam = [[Вместо глаз у оленя чёрные дырки.]];
+      before_Default = "Тебе не нравятся глаза оленя.";
+      before_Exam = "Вместо глаз у оленя чёрные дырки.";
     }:attr 'scenery';
 
     Prop {
@@ -926,115 +1230,98 @@ obj {
   };
 }:attr 'supporter':disable()
 
-local function forest_scenery(s)
-  disable 'сова'
-  disable 'олень'
-  disable '#ручей'
-  disable '#поляна'
-  if s.depth == 0 then
-    enable 'сова'
-  elseif s.depth == 2 then
-    enable '#ручей'
-  elseif s.depth == 3 then
-    enable '#поляна'
-    enable 'олень'
-    pic_set '22'
-    _'олень'.step = 0
-    _'олень'.sit = false
-    _'олень':daemonStart()
-  end
-end
-
 Area {
   -"лес|чаща";
-  nam = 'В лесу';
-  before_Cry = [[-- Ма-маааааа! -- нет ответа.]];
+  nam = "В лесу";
+  before_Cry = "-- Ма-маааааа! -- нет ответа.";
   depth = 0;
   dsc = function(s)
-    p([[Ты находишься в хвойном лесу.]])
+    fn_say("Ты находишься в хвойном лесу.")
     if s.depth == 0 then
-      if not have_compass() then
-        p([[Между деревьями ты видишь снежное поле.]])
+      if not fn_have_compass() then
+        fn_say("Между деревьями ты видишь снежное поле.")
       else
-        p([[Между деревьями на востоке ты видишь снежное поле.]])
+        fn_say("Между деревьями на востоке ты видишь снежное поле.")
       end
     elseif s.depth == 1 then
-      p([[Тебя окружают деревья.]])
+      fn_say("Тебя окружают деревья.")
     elseif s.depth == 2 then
-      p([[Ты видишь здесь замёрзший ручей.]])
+      fn_say("Ты видишь здесь замёрзший ручей.")
     elseif s.depth == 3 then
-      p([[Ты вышла на небольшую поляну.]])
+      fn_say("Ты вышла на небольшую поляну.")
     elseif (s.depth - 4) % 2 == 0 then
-      p([[Лес становится всё гуще.]])
+      fn_say("Лес становится всё гуще.")
     elseif (s.depth - 4) % 2 == 1 then
-      p([[Деревья окружают тебя со всех сторон.]])
+      fn_say("Деревья окружают тебя со всех сторон.")
     end
   end;
   ["e_to,se_to,ne_to"] = function(s, t)
-    if check_compass(t) then
+    if fn_check_compass(t) then
       return
     end
     if s.depth == 0 then
       return '#поле'
     end
-    pl:need_scene(true)
+    fn_need_scene(fn_player(), true)
     s.depth = s.depth - 1
-    p("Ты идешь некоторое время на ", (_('@'..t).word), ".")
+    fn_say("Ты идешь некоторое время на ", (_('@' .. t).word), ".")
     if s.depth == 0 then
-      p([[За деревьями на востоке ты видишь снежное поле.]])
+      fn_say("За деревьями на востоке ты видишь снежное поле.")
     end
-    forest_scenery(s)
+    fn_forest_scenery(s)
   end;
   enter = function(s)
-    if seen 'сова' then
-      _'сова':daemonStart()
+    if fn_seen('сова') then
+      fn_daemonStart(_'сова')
     end
   end;
   out_to = function(s)
     if s.depth == 0 then
-      return '#поле';
+      return '#поле'
     end
     return false
   end;
   ["s_to,n_to"] = function(s, t)
-    if check_compass(t) then
+    if fn_check_compass(t) then
       return
     end
     if s.depth <= 1 then
-      p([[Ты решила, что идти вдоль границы леса не очень хорошая идея.]])
+      fn_say("Ты решила, что идти вдоль границы леса не очень хорошая идея.")
     else
-      p([[Ты решила, что лучше держаться западного направления.]])
+      fn_say("Ты решила, что лучше держаться западного направления.")
     end
   end;
-  title = [[Лес]];
+  title = "Лес";
   ["w_to,nw_to,sw_to"] = function(s, t)
-    if check_compass(t) then
+    if fn_check_compass(t) then
       return
     end
     s.depth = s.depth + 1
-    if s.depth > 8 then s.depth = 6 + rnd(3) end
-    forest_scenery(s)
-    pl:need_scene(true)
-    p("Ты идешь некоторое время на ", (_('@'..t).word), ".")
-    if s.depth > 7 and rnd(100) < 30 then
-      p([[^Ты можешь идти так целую вечность...]])
+    if s.depth > 8 then
+      s.depth = 6 + fn_rnd(3)
+    end
+    fn_forest_scenery(s)
+    fn_need_scene(fn_player(), true)
+    fn_say("Ты идешь некоторое время на ", (_('@' .. t).word), ".")
+    if s.depth > 7 and fn_rnd(100) < 30 then
+      fn_say("^Ты можешь идти так целую вечность...")
     end
   end;
   before_Drop = function(s, w)
-    p("Зачем бросать ", w:noun'вн', " в лесу?")
+    fn_say("Зачем бросать ", fn_noun(w, 'вн'), " в лесу?")
   end;
   obj = {
     'олень';
 
     Sky {
-      nam = [[#небо]];
+      nam = "#небо";
     };
 
     Snow {
-      nam = [[#снег]];
+      nam = "#снег";
       before_Exam = function(s)
-        if here().depth == 0 then
-          p([[Здесь едва заметный след теряется.]])
+        if fn_here().depth == 0 then
+          fn_say("Здесь едва заметный след теряется.")
         else
           return false
         end
@@ -1042,108 +1329,108 @@ Area {
     };
 
     obj {
-      nam = '#поле';
-      before_Default = [[Поле далеко.]];
-      before_Exam = [[Снежное поле выглядит бескрайним.]];
+      nam = "#поле";
+      before_Default = "Поле далеко.";
+      before_Exam = "Снежное поле выглядит бескрайним.";
       ["before_Walk,Enter,Climb"] = function(s)
-        if here().depth == 0 then
-          walk 'поле'
+        if fn_here().depth == 0 then
+          fn_walk(_'поле')
         else
-          p([[Поле где-то на востоке.]])
+          fn_say("Поле где-то на востоке.")
         end
       end;
     }:attr 'scenery';
 
     Prop {
       -"деревья|дерево|сосна,ветк*";
-      nam = '#деревья';
-      ["before_Enter,Climb"] = [[Первые ветки находятся высоко. У тебя не получится забраться.]];
+      nam = "#деревья";
+      ["before_Enter,Climb"] = "Первые ветки находятся высоко. У тебя не получится забраться.";
       before_Exam = function(s)
-        if s:hint 'plural' then
-          p([[Деревья покрыты снегом.]])
+        if fn_hint(s, "plural") then
+          fn_say("Деревья покрыты снегом.")
         else
-          p([[Ветви дерева покрыты снегом.]])
+          fn_say("Ветви дерева покрыты снегом.")
         end
       end;
     };
 
     obj {
       -"полярная сова,сова,птица";
-      nam = 'сова';
+      nam = "сова";
       daemon = function(s)
         if s.talked then
           return
         end
-        if s:where() ^ 'В лесу' and where(s) ^ 'В лесу' and _'В лесу'.depth == 0 and rnd(3) == 1 then
-          p([[Хлопая крыльями сова улетела в сторону поля.]])
-          move(s, 'поле')
-        elseif here() ^ 'поле' and where(s) ^ 'поле' and s.talked and rnd(3) == 1 then
-          p([[Хлопая крыльями сова улетела в сторону леса.]])
-          move(s, 'В лесу')
+        if fn_where(s) ^ 'В лесу' and fn_where(s) ^ 'В лесу' and _('В лесу').depth == 0 and fn_rnd(3) == 1 then
+          fn_say("Хлопая крыльями сова улетела в сторону поля.")
+          fn_move(s, _'поле')
+        elseif fn_here() ^ 'поле' and fn_where(s) ^ 'поле' and s.talked and fn_rnd(3) == 1 then
+          fn_say("Хлопая крыльями сова улетела в сторону леса.")
+          fn_move(s, _'В лесу')
         end
         return
       end;
       dsc = function(s)
-        if where(s) ^ 'поле' then
-          p([[На машине сидит сова.]])
+        if fn_where(s) ^ 'поле' then
+          fn_say("На машине сидит сова.")
         else
-          p([[На ветке сосны сидит сова.]])
+          fn_say("На ветке сосны сидит сова.")
         end
       end;
-      init_dsc = [[Ты замечаешь большую сову, сидящую на ветке сосны.]];
+      init_dsc = "Ты замечаешь большую сову, сидящую на ветке сосны.";
       seen = false;
       talk_to = function(s)
-        if where(s) ^ 'В лесу' then
-          p([[Хлопая крыльями сова улетела в сторону поля.]])
-          move(s, 'поле')
+        if fn_where(s) ^ 'В лесу' then
+          fn_say("Хлопая крыльями сова улетела в сторону поля.")
+          fn_move(s, _'поле')
           return
         end
         if not s.seen then
-          p([[Сначала хорошо бы рассмотреть, с чем имеешь дело.]])
+          fn_say("Сначала хорошо бы рассмотреть, с чем имеешь дело.")
           return
         end
         if s.talked then
-          p("-- Что всё это значит?^\n-- Я сделала то, что мне повелела госпожа.")
-          p([[^Сова хлопнула крыльями и улетела.]])
-          remove(s)
-          s:daemonStop()
+          fn_say("-- Что всё это значит?^\n-- Я сделала то, что мне повелела госпожа.")
+          fn_say("^Сова хлопнула крыльями и улетела.")
+          fn_remove(s)
+          fn_daemonStop(s)
           return
         end
         return 'разговор с совой'
       end;
       talked = false;
       before_Exam = function(s)
-        p([[Тебе кажется, что это полярная сова. Только у неё странные глаза.]])
-        if here() ^ 'поле' then
-          pn()
-          _'#глаза совы':before_Exam()
+        fn_say("Тебе кажется, что это полярная сова. Только у неё странные глаза.")
+        if fn_here() ^ 'поле' then
+          fn_line()
+          fn_call_before(_('#глаза совы'), 'Exam')
         end
       end;
       before_Touch = function(s)
-        if where(s) ^ 'В лесу' then
-          p([[Она слишком высоко.]])
+        if fn_where(s) ^ 'В лесу' then
+          fn_say("Она слишком высоко.")
           return
         end
         if not s.seen then
-          p([[Сначала хорошо бы рассмотреть, с чем имеешь дело.]])
+          fn_say("Сначала хорошо бы рассмотреть, с чем имеешь дело.")
           return
         end
         if s.talked then
-          p([[Тебе не очень хочется иметь с ней дело.]])
+          fn_say("Тебе не очень хочется иметь с ней дело.")
         else
-          p([[Ты осторожно дотронулась до птицы.^]])
-          p([[Сова вздрогнула и её глаза-дырки уставились на тебя.]])
+          fn_say("Ты осторожно дотронулась до птицы.^")
+          fn_say("Сова вздрогнула и её глаза-дырки уставились на тебя.")
         end
       end;
       obj = {
         obj {
           -"глаза совы,глаза,дыр*";
-          nam = [[#глаза совы]];
-          before_Default = [[Тебе не нравятся эти глаза.]];
+          nam = "#глаза совы";
+          before_Default = "Тебе не нравятся эти глаза.";
           before_Exam = function(s)
-            p([[На месте глаз у совы зияют чёрные дырки.]])
+            fn_say("На месте глаз у совы зияют чёрные дырки.")
             if not _'сова'.seen then
-              p([[^Интересно, видит ли она тебя?]])
+              fn_say("^Интересно, видит ли она тебя?")
             end
             _'сова'.seen = true
           end;
@@ -1153,31 +1440,31 @@ Area {
 
     Prop {
       -"поляна";
-      nam = '#поляна';
+      nam = "#поляна";
     }:attr 'scenery':disable();
 
     Prop {
       -"ручей";
-      nam = '#ручей';
+      nam = "#ручей";
     }:attr 'scenery':disable();
   };
 }
 
 obj {
   -"перо";
-  nam = 'перо';
+  nam = "перо";
   init_dsc = function(s)
-    if s:hasnt 'moved' and where(pl) ^ 'машина' then
+    if fn_hasnt(s, "moved") and fn_where(fn_player()) ^ 'машина' then
       return
     end
-    p([[На крыше машины лежит белое перо.]])
+    fn_say("На крыше машины лежит белое перо.")
   end;
   before_Exam = function(s)
-    p([[Белое перо.]])
-    if have(s) then
-      p([[Зачем оно тебе?]])
+    fn_say("Белое перо.")
+    if fn_have(s) then
+      fn_say("Зачем оно тебе?")
     else
-      p([[Его оставила сова с дырками вместо глаз.]])
+      fn_say("Его оставила сова с дырками вместо глаз.")
     end
   end;
 }
@@ -1186,32 +1473,32 @@ dlg {
   nam = 'разговор с совой';
   title = false;
   enter = function(s)
-    pic_set '21'
+    pic_set('21')
   end;
   phr = {
-    [[-- О, я слышу тебя, дитя! -- ответ птицы напугал тебя.]];
+    "-- О, я слышу тебя, дитя! -- ответ птицы напугал тебя.";
     {
-      [[Ты меня не видишь?]];
-      [[-- Я тебя чувствую...]];
+      "Ты меня не видишь?";
+      "-- Я тебя чувствую...";
     };
     {
-      [[Ты умеешь говорить?]];
-      [[-- Я разговариваю с тобой.]];
+      "Ты умеешь говорить?";
+      "-- Я разговариваю с тобой.";
     };
     {
-      [[Что с твоими глазами?]];
-      [[-- Такой меня сделала моя госпожа.]];
+      "Что с твоими глазами?";
+      "-- Такой меня сделала моя госпожа.";
       {
-        [[Кто твоя госпожа?]];
-        [[-- Она вызвала меня. Она сказала, чтобы я передала тебе...]];
+        "Кто твоя госпожа?";
+        "-- Она вызвала меня. Она сказала, чтобы я передала тебе...";
         {
-          [[Что?]];
-          [[-- Твоя мама ждёт тебя во дворце. Поспеши.]];
+          "Что?";
+          "-- Твоя мама ждёт тебя во дворце. Поспеши.";
           next = '#deep';
         };
         {
-          [[Ты видела мою маму?]];
-          [[-- Твоя мама ждёт тебя во дворце. Поспеши.]];
+          "Ты видела мою маму?";
+          "-- Твоя мама ждёт тебя во дворце. Поспеши.";
           next = '#deep';
         };
       };
@@ -1221,25 +1508,25 @@ dlg {
     {
       '#deep';
       {
-        [[Где этот дворец?]];
-        [[-- Он за ледяным хребтом на западе.]];
+        "Где этот дворец?";
+        "-- Он за ледяным хребтом на западе.";
         {
-          [[Это далеко?]];
+          "Это далеко?";
           function(s)
-            p([[-- Расстояние -- всего лишь время. А время здесь замёрзло. Возьми перо. По нему тебя узнают другие слуги госпожи.]])
-            move ('перо', 'машина')
-            _'перо':attr '~moved'
+            fn_say("-- Расстояние -- всего лишь время. А время здесь замёрзло. Возьми перо. По нему тебя узнают другие слуги госпожи.")
+            fn_move(_'перо', _'машина')
+            fn_attr(_'перо', "~moved")
             _'сова'.talked = true
-            walkout()
+            fn_walkout()
           end;
         };
       };
       {
-        [[Что за бред ты несёшь.]];
-        [[-- Моя госпожа сказала мне передать тебе...]];
+        "Что за бред ты несёшь.";
+        "-- Моя госпожа сказала мне передать тебе...";
         {
-          [[Ладно, ладно...]];
-          [[-- Поспеши же, дитя!]];
+          "Ладно, ладно...";
+          "-- Поспеши же, дитя!";
         };
       };
     };
@@ -1247,120 +1534,125 @@ dlg {
 }
 
 cutscene {
-  nam = 'к хребту';
+  nam = "к хребту";
   text = [[Ты садишься на оленя и он поднимается с колен.^^
 		Вы мчитесь через лес на запад. Снова и снова олень ловко огибает встречные деревья и вы оставляете их позади.^^
 		Постепенно лес начинает редеть и сквозь деревья ты видишь ледяные горы.^^
 		Олень остановился перед ледяной стеной и опустился, чтобы ты могла слезть.]];
   next_to = 'Ледяные горы';
   onexit = function(s, to)
-    p([[Ты слезаешь с оленя.]])
-    move('олень', to)
+    fn_say("Ты слезаешь с оленя.")
+    fn_move(_'олень', to)
   end;
   title = false;
 }
 
 cutscene {
-  nam = 'к поляне';
+  nam = "к поляне";
   text = [[Ты садишься на оленя и он поднимается с колен.^^
 		Вы мчитесь через лес на восток. Снова и снова олень ловко огибает встречные деревья и вы оставляете их позади.^^
 		Постепенно лес начинает редеть.^^
 		Олень остановился и опустился на колени, чтобы ты могла слезть.]];
   next_to = 'В лесу';
   onexit = function(s, to)
-    p([[Ты слезаешь с оленя.]])
-    move('олень', to)
+    fn_say("Ты слезаешь с оленя.")
+    fn_move(_'олень', to)
   end;
   title = false;
 }
 
 Area {
-  nam = 'Ледяные горы';
-  dsc = [[Ты стоишь перед ледяной стеной, которая продолжается на север и юг. На востоке начинается лес.]];
-  ["e_to,ne_to,se_to"] = [[#лес]];
-  in_to = [[#стена]];
+  nam = "Ледяные горы";
+  dsc = "Ты стоишь перед ледяной стеной, которая продолжается на север и юг. На востоке начинается лес.";
+  ["e_to,ne_to,se_to"] = '#лес';
+  in_to = '#стена';
   ["nw_to,sw_to,n_to,s_to"] = function(s)
-    p([[По этому направлению нет ничего интересного. Такая же ледяная стена.]])
+    fn_say("По этому направлению нет ничего интересного. Такая же ледяная стена.")
   end;
   onexit = function(s, t)
-    if t ^ 'пещера' and not visited 'пещера' then
-      pic_set '23-pan'
+    if t ^ 'пещера' and not fn_visited('пещера') then
+      pic_set('23-pan')
     end
   end;
-  title = [[У ледяных гор]];
-  w_to = [[#стена]];
+  title = "У ледяных гор";
+  w_to = '#стена';
   obj = {
     obj {
       -"хвойный лес,лес|чаща|деревья";
-      nam = [[#лес]];
-      before_Default = [[Лес далеко.]];
-      before_Exam = [[На деревьях лежит снег.]];
-      ["before_Walk,Enter,Climb"] = [[В этом лесу можно ходить вечность.]];
+      nam = "#лес";
+      before_Default = "Лес далеко.";
+      before_Exam = "На деревьях лежит снег.";
+      ["before_Walk,Enter,Climb"] = "В этом лесу можно ходить вечность.";
     }:attr 'scenery';
 
     Snow {
-      nam = [[#снег]];
+      nam = "#снег";
     };
 
     Sky {
-      nam = [[#небо]];
+      nam = "#небо";
     };
 
     obj {
-      function(s) pr (-"ледяная стена,стена|лёд|лед|поверхность|скала|гора|горы/жр"); if s.light > 0 then pr (-"|свечение/ср|свет") end  end;
-      nam = [[#стена]];
+      nam = "#стена";
+      word = function(s)
+        fn_append("ледяная стена,стена|лёд|лед|поверхность|скала|гора|горы/жр")
+        if s.light > 0 then
+          fn_append("|свечение/ср|свет")
+        end
+      end;
       before_Knock = function(s)
         if s.light == 0 then
           return false
         end
-        p([[Ты попыталась постучать по стене, но у тебя это не вышло! Рука прошла сквозь лёд!]])
+        fn_say("Ты попыталась постучать по стене, но у тебя это не вышло! Рука прошла сквозь лёд!")
       end;
       daemon = function(s)
-        if player_moved() then
+        if fn_player_moved() then
           s.light = 0
-          s:daemonStop()
+          fn_daemonStop(s)
           return
         end
         if s.light == 1 then
-          p([[Ты замечаешь, что под поверхностью льда разливается фиолетовое свечение.]])
+          fn_say("Ты замечаешь, что под поверхностью льда разливается фиолетовое свечение.")
         elseif s.light == 2 then
-          p([[Фиолетовое свечение под поверхностью льда усиливается!]])
+          fn_say("Фиолетовое свечение под поверхностью льда усиливается!")
         elseif s.light == 3 then
-          p([[Фиолетовое свечение ослабевает.]])
+          fn_say("Фиолетовое свечение ослабевает.")
         else
-          s:daemonStop()
+          fn_daemonStop(s)
           s.light = 0
           return
         end
         s.light = s.light + 1
       end;
       light = 0;
-      before_Attack = [[Скала {$fmt em|выглядит} твёрдой. Ты решила не рисковать.]];
-      before_Climb = [[У тебя вряд ли это получится. Стена отвесная.]];
+      before_Attack = "Скала {$fmt em|выглядит} твёрдой. Ты решила не рисковать.";
+      before_Climb = "У тебя вряд ли это получится. Стена отвесная.";
       ["before_Enter,Walk"] = function(s)
         if s.light == 0 then
-          p([[Как ты это сделаешь? Стена твёрдая, гладкая и скользкая.]])
+          fn_say("Как ты это сделаешь? Стена твёрдая, гладкая и скользкая.")
           return
         end
-        walk 'пещера'
+        fn_walk(_'пещера')
       end;
       before_Exam = function(s)
         if s.light > 0 then
-          p([[Сквозь лёд ты видишь фиолетовое свечение.]])
+          fn_say("Сквозь лёд ты видишь фиолетовое свечение.")
         else
-          p([[Ледяная стена отвесно уходит вверх. Её поверхность выглядит скользкой.]])
+          fn_say("Ледяная стена отвесно уходит вверх. Её поверхность выглядит скользкой.")
         end
       end;
-      before_Taste = [[А язык не приклеится?]];
+      before_Taste = "А язык не приклеится?";
       ["before_Touch,Push"] = function(s)
-        p([[Ты касаешься ладонью гладкой ледяной поверхности.]])
+        fn_say("Ты касаешься ладонью гладкой ледяной поверхности.")
         if s.light > 0 then
-          p([[Как странно, твоя рука проходит сквозь лёд!]])
+          fn_say("Как странно, твоя рука проходит сквозь лёд!")
           s.light = 2
         else
           s.light = 1
         end
-        s:daemonStart();
+        fn_daemonStart(s)
       end;
     }:attr 'scenery';
   };
@@ -1368,69 +1660,71 @@ Area {
 
 room {
   -"пещера";
-  nam = 'пещера';
+  nam = "пещера";
   Play = function(s, w)
-    if not w or not have 'скрипка' then
+    if not w or not fn_have('скрипка') then
       return false
     end
-    if not w then w = _'скрипка' end
+    if not w then
+      w = _'скрипка'
+    end
     if not w ^ 'скрипка' then
       return false
     end
-    if _'#кристаллы'.try == 0 or _'#кристаллы'.broken then
+    if _('#кристаллы').try == 0 or _('#кристаллы').broken then
       return false
     end
-    _'#кристаллы'.broken = true
-    pic_set '24'
-    p("Интересно... А что если? Не успев додумать мысль, ты уже берёшь скрипку в руки.^^\nТы извлекаешь \"ми\" второй октавы. Сначала ничего не происходит, но затем ты слышишь, как странный кристалл отзывается\nна звук твоей скрипки.^^\nЗвуки скрипки и кристалла усиливают друг друга в резонансе. Ты почти физически ощущаешь, как\nнапряжение кристалла достигает своего пика. И, наконец, он шумно взрывается на мелкие осколки.")
-    enable 'осколки'
+    _('#кристаллы').broken = true
+    pic_set('24')
+    fn_say("Интересно... А что если? Не успев додумать мысль, ты уже берёшь скрипку в руки.^^\nТы извлекаешь \"ми\" второй октавы. Сначала ничего не происходит, но затем ты слышишь, как странный кристалл отзывается\nна звук твоей скрипки.^^\nЗвуки скрипки и кристалла усиливают друг друга в резонансе. Ты почти физически ощущаешь, как\nнапряжение кристалла достигает своего пика. И, наконец, он шумно взрывается на мелкие осколки.")
+    fn_enable(_'осколки')
   end;
-  dark_dsc = [[Ты видишь слабое свечение в темноте.]];
+  dark_dsc = "Ты видишь слабое свечение в темноте.";
   dsc = [[Ты находишься внутри небольшой ледяной пещеры. У восточной стены ты видишь странное свечение.^
 Пещера продолжается на северо-запад.]];
   e_to = '#свечение';
   nw_to = function(s)
-    if mp:thedark() and not visited'пещера2' then
-      p([[Ты же не видишь куда идти.]])
+    if fn_thedark(fn_here()) and not fn_visited('пещера2') then
+      fn_say("Ты же не видишь куда идти.")
       return
     end
     return 'пещера2'
   end;
   onenter = function(s)
-    if not visited(s) then
-      p([[Доверившись интуиции, ты входишь в фиолетовое свечение, которое вдруг заполняет всё вокруг. Шаг. Еще один. И вдруг ты оказываешься в полной темноте. Если не считать слабого свечения позади.]])
+    if not fn_visited(s) then
+      fn_say("Доверившись интуиции, ты входишь в фиолетовое свечение, которое вдруг заполняет всё вокруг. Шаг. Еще один. И вдруг ты оказываешься в полной темноте. Если не считать слабого свечения позади.")
     end
   end;
   out_to = 'Ледяные горы';
   title = function(s)
-    if mp:thedark() then
-      p([[В темноте]])
+    if fn_thedark(fn_here()) then
+      fn_say("В темноте")
     else
-      p([[Ледяная пещера]])
+      fn_say("Ледяная пещера")
     end
   end;
   obj = {
     obj {
       -"свечение";
-      nam = '#свечение';
-      ["before_Touch,Push,Knock"] = [[Твоя рука проходит сквозь свечение.]];
+      nam = "#свечение";
+      ["before_Touch,Push,Knock"] = "Твоя рука проходит сквозь свечение.";
       before_Exam = function(s)
-        p([[Этим путём ты попала сюда. Вероятно, с помощью него можно выйти наружу.]])
-        p([[^Ты обращаешь внимание, что источником странного свечения служат фиолетовые кристаллы, растущие из стены.]])
-        enable '#кристаллы'
+        fn_say("Этим путём ты попала сюда. Вероятно, с помощью него можно выйти наружу.")
+        fn_say("^Ты обращаешь внимание, что источником странного свечения служат фиолетовые кристаллы, растущие из стены.")
+        fn_enable(_'#кристаллы')
       end;
       ["before_Walk,Climb,Enter"] = function(s)
-        walk 'Ледяные горы';
+        fn_walk(_'Ледяные горы')
       end;
     }:attr 'scenery,luminous';
 
     Prop {
       -"стены|стена|пол|потолок";
-      nam = '#стены';
-      ["before_Touch,Push,Knock"] = { [[Похоже]], [[ты находишься в ледяной пещере.]] };
+      nam = "#стены";
+      ["before_Touch,Push,Knock"] = { "Похоже", "ты находишься в ледяной пещере." };
       before_Exam = function(s)
-        if mp:thedark() then
-          p([[В полной темноте это будет сложно.]])
+        if fn_thedark(fn_here()) then
+          fn_say("В полной темноте это будет сложно.")
         else
           return false
         end
@@ -1439,48 +1733,48 @@ room {
 
     obj {
       -"кристаллы|кристалл";
-      nam = '#кристаллы';
+      nam = "#кристаллы";
       ["before_Attack,Knock"] = function(s)
         if s.broken then
-          p([[Ты уже разрушила один кристалл.]])
+          fn_say("Ты уже разрушила один кристалл.")
           return
         end
         if s.try == 2 then
-          p([[Ты постучала по звонкому кристаллу.]])
+          fn_say("Ты постучала по звонкому кристаллу.")
         else
-          p([[Ты постучала по одному из кристаллов.]])
+          fn_say("Ты постучала по одному из кристаллов.")
         end
         if s.try == 0 then
           s.try = 1
-          p("Ответом был мелодичный звенящий звук. Твой музыкальный слух определил его как \"фа\" малой октавы, что\n\t\t\t\tнаходится вне диапазона твоей скрипки. Интересно, они все звучат одинаково?")
+          fn_say("Ответом был мелодичный звенящий звук. Твой музыкальный слух определил его как \"фа\" малой октавы, что\n\t\t\t\tнаходится вне диапазона твоей скрипки. Интересно, они все звучат одинаково?")
         elseif s.try == 1 then
-          p("На этот раз звук оказался более высоким. Ты определила его как {$fmt em|\"ми\"} второй октавы.")
-          p([[^Ты решила запомнить этот кристалл.]])
+          fn_say("На этот раз звук оказался более высоким. Ты определила его как {$fmt em|\"ми\"} второй октавы.")
+          fn_say("^Ты решила запомнить этот кристалл.")
           s.try = 2
         else
-          p([[Звенящий звук кристалла долго отражается от ледяных стен. Ты чувствуешь вибрацию.]])
+          fn_say("Звенящий звук кристалла долго отражается от ледяных стен. Ты чувствуешь вибрацию.")
         end
       end;
       broken = false;
       try = 0;
-      before_Exam = [[Полупрозрачные кристаллы растут прямо из льда.]];
+      before_Exam = "Полупрозрачные кристаллы растут прямо из льда.";
       before_Touch = function(s)
         if s.try == 0 or s.broken then
           return false
         else
-          p([[Ты чувствуешь как кристалл вибрирует.]])
+          fn_say("Ты чувствуешь как кристалл вибрирует.")
         end
       end;
     }:attr 'luminous,static':disable();
 
     obj {
       -"осколки кристалла,осколок*|осколки|кусочки|куски";
-      nam = 'осколки';
-      before_Light = [[Свет испускаемый осколками очень тусклый для этого.]];
-      before_Exam = [[Осколки кристалла пульсируют слабым фиолетовым свечением.]];
+      nam = "осколки";
+      before_Light = "Свет испускаемый осколками очень тусклый для этого.";
+      before_Exam = "Осколки кристалла пульсируют слабым фиолетовым свечением.";
       before_Take = function(s)
-        if here() ^ 'пещера2' and here().solved then
-          p([[Ты боишься беспокоить летучих мышей.]])
+        if fn_here() ^ 'пещера2' and fn_here().solved then
+          fn_say("Ты боишься беспокоить летучих мышей.")
           return
         end
         return false
@@ -1491,40 +1785,40 @@ room {
 
 obj {
   -"обрыв,разлом|пропасть";
-  nam = 'ообрыв';
-  before_Enter = [[Прыгнуть в пропасть? Тебе нужно найти маму, а не сбегать от проблем...]];
-  before_Exam = [[Глубокий разлом во льду. Света фонарика недостаточно, чтобы оценить его глубину. К счастью, ширина разлома не превышает двух метров.]];
+  nam = "ообрыв";
+  before_Enter = "Прыгнуть в пропасть? Тебе нужно найти маму, а не сбегать от проблем...";
+  before_Exam = "Глубокий разлом во льду. Света фонарика недостаточно, чтобы оценить его глубину. К счастью, ширина разлома не превышает двух метров.";
   before_JumpOver = function(s)
-    p([[Ты разбегаешься и прыгаешь через пропасть...]])
-    if here() ^ 'обрыв' then
-      walk 'Другая сторона'
+    fn_say("Ты разбегаешься и прыгаешь через пропасть...")
+    if fn_here() ^ 'обрыв' then
+      fn_walk(_'Другая сторона')
     else
-      walk 'обрыв'
+      fn_walk(_'обрыв')
     end
   end;
   before_Receive = function(s, w)
-    p("Ты потом не сможешь достать ", w:noun 'вн', " из пропасти.")
+    fn_say("Ты потом не сможешь достать ", fn_noun(w, 'вн'), " из пропасти.")
   end;
 }:attr 'scenery,container,open'
 
 room {
   -"пещера";
-  nam = 'пещера2';
+  nam = "пещера2";
   dsc = function(s)
-    pn([[Стены этой части пещеры испещрены небольшими отверстиями.]])
-    if from() ^ 'пещера' then
-      p([[Ты попала сюда с юго-востока. Пещера продолжается на юго-запад.]])
+    fn_line("Стены этой части пещеры испещрены небольшими отверстиями.")
+    if fn_from() ^ 'пещера' then
+      fn_say("Ты попала сюда с юго-востока. Пещера продолжается на юго-запад.")
     else
-      p([[Ты попала сюда с юго-запада. Пещера продолжается на юго-восток.]])
+      fn_say("Ты попала сюда с юго-запада. Пещера продолжается на юго-восток.")
     end
     if not s.solved then
-      p([[^^Твой взгляд прикован к потолку, который усеян чёрными лоскутками. Ты вздрагиваешь, когда ответ приходит тебе в голову. Пещера заполнена летучими мышами!]])
+      fn_say("^^Твой взгляд прикован к потолку, который усеян чёрными лоскутками. Ты вздрагиваешь, когда ответ приходит тебе в голову. Пещера заполнена летучими мышами!")
     else
-      p("^^Ты видишь, как странные чёрные твари дерутся за фиолетовые осколки кристалла,\nкотрые ты рассыпала по полу пещеры.")
+      fn_say("^^Ты видишь, как странные чёрные твари дерутся за фиолетовые осколки кристалла,\nкотрые ты рассыпала по полу пещеры.")
     end
   end;
   out_to = function(s)
-    if from() ^ 'пещера' then
+    if fn_from() ^ 'пещера' then
       return 'пещера'
     else
       return 'обрыв'
@@ -1533,18 +1827,18 @@ room {
   ["se_to,e_to"] = 'пещера';
   solved = false;
   ["sw_to,w_to"] = function(s)
-    if mp:thedark() and not visited'обрыв' then
-      p([[Сложно сделать это в полной темноте.]])
+    if fn_thedark(fn_here()) and not fn_visited('обрыв') then
+      fn_say("Сложно сделать это в полной темноте.")
       return
     end
-    return 'обрыв';
+    return 'обрыв'
   end;
-  title = [[Пещера с летучими мышами]];
+  title = "Пещера с летучими мышами";
   before_Listen = function(s)
     if s.solved then
-      p([[Ты слышишь отвратительный писк и хлопанье крыльев.]])
+      fn_say("Ты слышишь отвратительный писк и хлопанье крыльев.")
     else
-      p([[Стоит мёртвая тишина.]])
+      fn_say("Стоит мёртвая тишина.")
     end
   end;
   obj = {
@@ -1554,28 +1848,28 @@ room {
 
     obj {
       -"летучие мыши,мыши,твари,мышь*";
-      nam = '#мыши';
+      nam = "#мыши";
       description = function(s)
-        p([[Тебе они не нравятся. Называя вещи своими словами -- ты их панически боишься.]])
-        if here().solved then
-          p([[^Но кажется, они поглощены борьбой за светящимися осколками кристалла.]])
+        fn_say("Тебе они не нравятся. Называя вещи своими словами -- ты их панически боишься.")
+        if fn_here().solved then
+          fn_say("^Но кажется, они поглощены борьбой за светящимися осколками кристалла.")
         end
       end;
-      ["life_Show,Give"] = [[Пока они заняты, лучше их не беспокоить.]];
-      before_Attack = [[Тебе не удастся убить их всех.]];
+      ["life_Show,Give"] = "Пока они заняты, лучше их не беспокоить.";
+      before_Attack = "Тебе не удастся убить их всех.";
     }:attr 'concealed,animate';
 
     obj {
       -"отверстия|дырки|дыры";
-      description = [[Тебе приходит в голову, что эти отверстия могут быть норами. Лучше держаться от них подальше.]];
-      before_Receive = [[Не стоит туда соваться.]];
+      description = "Тебе приходит в голову, что эти отверстия могут быть норами. Лучше держаться от них подальше.";
+      before_Receive = "Не стоит туда соваться.";
     }:attr 'scenery,container';
   };
 }:attr '~light'
 
 room {
-  nam = 'обрыв';
-  dsc = [[На западе гладкий пол пещеры заканчивается обрывом. Выход находится на юго-востоке.]];
+  nam = "обрыв";
+  dsc = "На западе гладкий пол пещеры заканчивается обрывом. Выход находится на юго-востоке.";
   out_to = 'пещера2';
   ["se_to,e_to"] = 'пещера2';
   w_to = 'ообрыв';
@@ -1589,26 +1883,31 @@ room {
 }:attr '~light'
 
 obj {
-  function() pr (-"отверстие|выход|дырка|дыра"); if here() ^ 'За ледяной стеной' then pr (-"|пещера") end  end;
-  nam = 'отверстие';
-  ["before_Enter,Walk,Climb"] = function(s)
-    if here() ^ 'Другая сторона' then
-      walk 'За ледяной стеной';
-    else
-      walk 'Другая сторона'
+  nam = "отверстие";
+  word = function(s)
+    fn_append("отверстие|выход|дырка|дыра")
+    if fn_here() ^ 'За ледяной стеной' then
+      fn_append("|пещера")
     end
   end;
-  before_Exam = [[Отверстие достаточно широкое для того, чтобы пролезть в него.]];
+  ["before_Enter,Walk,Climb"] = function(s)
+    if fn_here() ^ 'Другая сторона' then
+      fn_walk(_'За ледяной стеной')
+    else
+      fn_walk(_'Другая сторона')
+    end
+  end;
+  before_Exam = "Отверстие достаточно широкое для того, чтобы пролезть в него.";
 }:attr 'scenery'
 
 room {
   -"пещера";
-  nam = 'Другая сторона';
+  nam = "Другая сторона";
   dsc = [[Здесь светло. Свет поступает в пещеру через широкое отверстие на западе.
 Пропасть находится на востоке.]];
   e_to = 'ообрыв';
   out_to = 'отверстие';
-  title = [[Пещера]];
+  title = "Пещера";
   w_to = 'отверстие';
   obj = {
     'ообрыв';
@@ -1622,16 +1921,16 @@ room {
 
 room {
   -"плато/ср";
-  nam = 'За ледяной стеной';
-  cant_go = { [[На плато не видно ничего интересного]], [[кроме скалы.]] };
+  nam = "За ледяной стеной";
+  cant_go = { "На плато не видно ничего интересного", "кроме скалы." };
   dsc = function(s)
-    p([[Ты находишься на снежном плато, рядом со входом в пещеру. Ледяные горы окружают плато со всех сторон. Может быть поэтому, стоит мёртвая тишина.]])
-    p([[На западе, в центре плато возвышается ледяная скала.]])
+    fn_say("Ты находишься на снежном плато, рядом со входом в пещеру. Ледяные горы окружают плато со всех сторон. Может быть поэтому, стоит мёртвая тишина.")
+    fn_say("На западе, в центре плато возвышается ледяная скала.")
   end;
   e_to = 'отверстие';
   in_to = 'отверстие';
-  title = [[Плато]];
-  w_to = [[#замок]];
+  title = "Плато";
+  w_to = '#замок';
   obj = {
     'отверстие';
 
@@ -1640,72 +1939,78 @@ room {
     };
 
     Snow {
-      nam = [[#снег]];
+      nam = "#снег";
     };
 
     Sky {
-      nam = [[#небо]];
+      nam = "#небо";
     };
 
     obj {
       -"скала|замок|дворец|вершины";
-      nam = [[#замок]];
-      before_Default = [[Сначала к скале нужно подойти.]];
+      nam = "#замок";
+      before_Default = "Сначала к скале нужно подойти.";
       ["before_Enter,Walk,Climb"] = function(s)
-        walk 'У замка'
+        fn_walk(_'У замка')
       end;
-      before_Exam = [[Остроконечные вершины ледяной громады высоко возвышаются над плато.]];
+      before_Exam = "Остроконечные вершины ледяной громады высоко возвышаются над плато.";
     }:attr 'scenery';
   };
 }
 
 obj {
   -"разлом|проход|отверстие|щель|вход";
-  nam = 'ворота';
-  description = [[Высота разлома с неровными краями достигает трёх метров, а ширина -- двух. Верх отверстия имеет форму арки.]];
+  nam = "ворота";
+  description = "Высота разлома с неровными краями достигает трёх метров, а ширина -- двух. Верх отверстия имеет форму арки.";
   ["before_Walk,Enter,Climb"] = function(s)
-    if here() ^ 'У замка' then
-      mp:xaction("Enter", _'#замок')
+    if fn_here() ^ 'У замка' then
+      fn_xaction('Enter', _('#замок'))
     else
-      walk 'У замка'
+      fn_walk(_'У замка')
     end
   end;
 }:attr 'scenery':disable()
 
 obj {
-  function(s) if s:has'animate' then p (-"ледяной человек/ед,мр,од|человек|статуя|голем/ед,мр,од"); else p (-"статуя|ледяной человек|человек"); end  end;
-  nam = 'голем';
+  nam = "голем";
+  word = function(s)
+    if fn_has(s, "animate") then
+      fn_say("ледяной человек/ед,мр,од|человек|статуя|голем/ед,мр,од")
+    else
+      fn_say("статуя|ледяной человек|человек")
+    end
+  end;
   description = function(s)
-    if s:has 'animate' then
-      p([[Высота ледяного человека около двух метров. У него есть руки и ноги, но вместо головы лишь небольшой выступ.]])
-      if visited 'королева-диалог' and disabled 'дверь' then
-        p([[Сейчас голем стоит у северной части зала и ждет тебя.]])
+    if fn_has(s, "animate") then
+      fn_say("Высота ледяного человека около двух метров. У него есть руки и ноги, но вместо головы лишь небольшой выступ.")
+      if fn_visited('королева-диалог') and fn_disabled(_'дверь') then
+        fn_say("Сейчас голем стоит у северной части зала и ждет тебя.")
       end
     else
-      p([[Статуя сделана из льда и изображает двухметрового человека с массивным телосложением.]])
+      fn_say("Статуя сделана из льда и изображает двухметрового человека с массивным телосложением.")
     end
   end;
   init_dsc = function(s)
-    if s:has 'animate' then
-      p([[У стены стоит ледяной человек.]])
+    if fn_has(s, "animate") then
+      fn_say("У стены стоит ледяной человек.")
     else
-      p([[Твоё внимание привлекает огромная ледяная статуя.]])
+      fn_say("Твоё внимание привлекает огромная ледяная статуя.")
     end
   end;
   ["life_Give,Show,ThrowAt"] = function(s, w)
     if w ^ 'перо' then
-      if disabled 'ворота' then
-        p("Едва ты достала перо, как статуя сдвинулась с места. Сделав два шага по направлению к тебе,\nстрашный ледяной человек остановился.^")
-        enable 'ворота'
-        p([[-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты.^]])
-        p([[После этих слов голем размахнулся и ударил своим кулаком в стену.]])
-        p([[Стена с треском раскололась и в ней образовался проход.]])
-        s:attr 'animate'
+      if fn_disabled(_'ворота') then
+        fn_say("Едва ты достала перо, как статуя сдвинулась с места. Сделав два шага по направлению к тебе,\nстрашный ледяной человек остановился.^")
+        fn_enable(_'ворота')
+        fn_say("-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты.^")
+        fn_say("После этих слов голем размахнулся и ударил своим кулаком в стену.")
+        fn_say("Стена с треском раскололась и в ней образовался проход.")
+        fn_attr(s, "animate")
       else
-        if not visited 'Тронный зал' then
-          p([[-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты.]])
+        if not fn_visited('Тронный зал') then
+          fn_say("-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты.")
         else
-          p([[-- Я узнал тебя.]])
+          fn_say("-- Я узнал тебя.")
         end
       end
       return
@@ -1716,20 +2021,20 @@ obj {
     if e == 'Exam' or e == 'Walk' or e == 'Climb' or e == 'Enter' then
       return false
     end
-    if not disabled 'дверь' or not visited 'королева-диалог' then
+    if not fn_disabled(_'дверь') or not fn_visited('королева-диалог') then
       return false
     end
-    p([[Сначала к голему нужно подойти.]])
+    fn_say("Сначала к голему нужно подойти.")
   end;
-  before_Climb = [[Это не так просто сделать.]];
+  before_Climb = "Это не так просто сделать.";
   ["before_Take,Push,Pull"] = function(s)
-    p(s:Noun(), " весит не меньше сотни килограмм. Как ты это сделаешь?")
+    fn_say(fn_Noun(s), " весит не меньше сотни килограмм. Как ты это сделаешь?")
   end;
-  before_Taste = [[А язык не приклеится?]];
+  before_Taste = "А язык не приклеится?";
   ["before_Walk,Enter,Climb"] = function(s)
-    if visited 'королева-диалог' and disabled 'дверь' then
-      p([[Ты последовала за големом. Обогнув колонну и подойдя к северной стене, ты заметила небольшую деревянную дверь.]])
-      enable 'дверь'
+    if fn_visited('королева-диалог') and fn_disabled(_'дверь') then
+      fn_say("Ты последовала за големом. Обогнув колонну и подойдя к северной стене, ты заметила небольшую деревянную дверь.")
+      fn_enable(_'дверь')
       return
     end
     return false
@@ -1742,105 +2047,105 @@ obj {
 }:attr '~animate'
 
 room {
-  nam = 'У замка';
+  nam = "У замка";
   dsc = function(s)
-    p([[Ты стоишь у подножия ледяной скалы. Отвесная стена уходит высоко вверх.]])
-    if not disabled 'ворота' then
-      p([[В стене зияет разлом.]])
+    fn_say("Ты стоишь у подножия ледяной скалы. Отвесная стена уходит высоко вверх.")
+    if not fn_disabled(_'ворота') then
+      fn_say("В стене зияет разлом.")
     end
-    p([[Пещера, с помощью которой ты прошла сквозь горы, находится на востоке.]])
+    fn_say("Пещера, с помощью которой ты прошла сквозь горы, находится на востоке.")
   end;
   e_to = 'За ледяной стеной';
-  in_to = [[#замок]];
+  in_to = '#замок';
   onenter = function(s)
-    if not visited(s) then
-      pic_set '25'
+    if not fn_visited(s) then
+      pic_set('25')
     end
   end;
-  title = [[У подножия скалы]];
-  w_to = [[#замок]];
+  title = "У подножия скалы";
+  w_to = '#замок';
   obj = {
     'голем';
 
     obj {
       -"скала|гора|замок|дворец|стена";
-      nam = [[#замок]];
-      description = [[Острые вершины скалы устремлены в небо.]];
+      nam = "#замок";
+      description = "Острые вершины скалы устремлены в небо.";
       ["before_Enter,Walk,Climb"] = function(s)
-        if disabled 'ворота' then
+        if fn_disabled(_'ворота') then
           return false
         end
-        if _'голем':hasnt 'moved' then
-          move('голем', 'Тронный зал')
+        if fn_hasnt(_'голем', "moved") then
+          fn_move(_'голем', _'Тронный зал')
         end
-        walk 'Тронный зал';
+        fn_walk(_'Тронный зал')
       end;
-      before_Taste = [[А язык не приклеится?]];
+      before_Taste = "А язык не приклеится?";
       obj = {
         'ворота';
       };
     }:attr 'scenery';
 
     Snow {
-      nam = [[#снег]];
+      nam = "#снег";
     };
 
     Sky {
-      nam = [[#небо]];
+      nam = "#небо";
     };
   };
 }
 
 obj {
   -"мама,мать,королева,женщина";
-  nam = 'королева';
+  nam = "королева";
   ["before_Talk,Say,Ask,Tell"] = function(s)
     if not s.queen then
-      p([[Сначала ты хочешь рассмотреть её внимательней.]])
+      fn_say("Сначала ты хочешь рассмотреть её внимательней.")
     else
-      s:daemonStop()
-      if visited'королева-диалог' then
-        p("-- Ты уже готова стать моей дочерью?^\n-- Нет!^\n-- Ну что же, я подожду.")
+      fn_daemonStop(s)
+      if fn_visited('королева-диалог') then
+        fn_say("-- Ты уже готова стать моей дочерью?^\n-- Нет!^\n-- Ну что же, я подожду.")
       else
-        if _'браслет':has 'worn' then
-          walk 'королева-диалог'
+        if fn_has(_'браслет', "worn") then
+          fn_walk(_'королева-диалог')
         else
-          walk 'badend2'
+          fn_walk(_'badend2')
         end
       end
     end
   end;
   daemon = function(s)
-    local tt = { "-- Иди ко мне скорее, моё дитя!", "-- Что же ты медлишь? Обними и поцелуй свою мать!", "-- Я так долго тебя ждала!", "-- Теперь всё будет хорошо, я буду любить тебя всегда!", "-- Мы будем вместе!", }
-    p(tt[rnd(#tt)], " -- произносит твоя мать с трона.")
+    local tt = fn_tbl4()
+    fn_say('tt[rnd(#tt), " -- произносит твоя мать с трона."')
   end;
   description = function(s)
     s.queen = true
-    if _'Тронный зал'.near then
-      p("Женщина похожа на твою маму, но в чертах её лица ты видишь что-то незнакомое, чужое и, поэтому, неприятное.\nНо больше всего тебя пугают её глаза. Они закрыты. Ты растерянно вглядываешься в её лицо, снова и снова пытаясь отыскать родные черты.")
+    if _('Тронный зал').near then
+      fn_say("Женщина похожа на твою маму, но в чертах её лица ты видишь что-то незнакомое, чужое и, поэтому, неприятное.\nНо больше всего тебя пугают её глаза. Они закрыты. Ты растерянно вглядываешься в её лицо, снова и снова пытаясь отыскать родные черты.")
     else
-      p([[Это твоя мама! Не может быть! Что это за место? Что она тут делает? Столько вопросов!]])
+      fn_say("Это твоя мама! Не может быть! Что это за место? Что она тут делает? Столько вопросов!")
     end
   end;
   init_dsc = function(s)
-    p([[На троне сидит твоя мама.]])
+    fn_say("На троне сидит твоя мама.")
     if s.queen then
-      p([[Или это не мама?]])
+      fn_say("Или это не мама?")
     end
   end;
   queen = false;
-  ["before_Kiss,Touch"] = [[Тебе кажется, что это не твоя мама. Тебе становится страшно.]];
+  ["before_Kiss,Touch"] = "Тебе кажется, что это не твоя мама. Тебе становится страшно.";
   before_Walk = function(s)
-    return _'#трон':before_Walk()
+    return fn_call_before(_('#трон'), 'Walk')
   end;
   obj = {
     obj {
       -"лицо";
       description = function(s)
-        if _'Тронный зал'.near then
-          _'королева':description()
+        if _('Тронный зал').near then
+          fn_description(_'королева')
         else
-          p([[Отсюда плохо видно её лицо.]])
+          fn_say("Отсюда плохо видно её лицо.")
         end
       end;
     };
@@ -1848,14 +2153,14 @@ obj {
     obj {
       -"глаза";
       description = function(s)
-        if _'Тронный зал'.near then
-          if not visited 'королева-диалог' then
-            p([[Её глаза закрыты. Как будто она спит. Тебе становится страшно.]])
+        if _('Тронный зал').near then
+          if not fn_visited('королева-диалог') then
+            fn_say("Её глаза закрыты. Как будто она спит. Тебе становится страшно.")
           else
-            p("Ты стараешься не думать о глазах твоей {$fmt em|новой} мамы.")
+            fn_say("Ты стараешься не думать о глазах твоей {$fmt em|новой} мамы.")
           end
         else
-          p([[Отсюда плохо видны её глаза.]])
+          fn_say("Отсюда плохо видны её глаза.")
         end
       end;
     };
@@ -1864,36 +2169,36 @@ obj {
 
 room {
   -"зал";
-  nam = 'Тронный зал';
+  nam = "Тронный зал";
   dsc = function(s)
-    p("Ты находишься в огромном зале. В центре зала установлен трон. Все пространство зала залито светом, который отражается\nот ледяных стен, пола, потолка и массивных колонн. У южной стены расположена широкая лестница, ведущая вниз. Выход из зала находится на востоке.")
-    if not disabled'дверь' then
-      p([[Дверь в твою комнату находится в северной стене.]])
+    fn_say("Ты находишься в огромном зале. В центре зала установлен трон. Все пространство зала залито светом, который отражается\nот ледяных стен, пола, потолка и массивных колонн. У южной стены расположена широкая лестница, ведущая вниз. Выход из зала находится на востоке.")
+    if not fn_disabled(_'дверь') then
+      fn_say("Дверь в твою комнату находится в северной стене.")
     end
   end;
   enter = function(s)
-    if s:once() then
-      pn([[Набравшись мужества ты вошла внутрь и оказалась в длинном коридоре.]])
-      p([[Голем последовал за тобой. Его шаги гулко отражались от изломанных стен и сводчатого потолка.]])
-      pn([[Через некоторое время коридор кончился и вы вошли в большой зал.]])
-      pn([[Зал был огромен! В его центре ты увидела трон, на котором сидела женщина... Твоя... мама?]])
-      pn([[-- Я ждала тебя! Подойди же и поцелуй меня! -- голос матери, отраженный от ледяных стен зала показался тебе чужим.]])
-      DaemonStart 'королева'
-      remove 'сова'
-      pic_set '30'
+    if fn_once(s) then
+      fn_line("Набравшись мужества ты вошла внутрь и оказалась в длинном коридоре.")
+      fn_say("Голем последовал за тобой. Его шаги гулко отражались от изломанных стен и сводчатого потолка.")
+      fn_line("Через некоторое время коридор кончился и вы вошли в большой зал.")
+      fn_line("Зал был огромен! В его центре ты увидела трон, на котором сидела женщина... Твоя... мама?")
+      fn_line()
+      fn_daemonStart('королева')
+      fn_remove(_'сова')
+      pic_set('30')
     end
   end;
   in_to = function(s)
-    if not disabled 'дверь' then
+    if not fn_disabled(_'дверь') then
       return 'дверь'
     end
     return false
   end;
   n_to = function(s)
-    if disabled 'дверь' and visited 'королева-диалог' then
+    if fn_disabled(_'дверь') and fn_visited('королева-диалог') then
       return 'голем'
     end
-    if not disabled 'дверь' then
+    if not fn_disabled(_'дверь') then
       return 'дверь'
     end
     return false
@@ -1904,29 +2209,31 @@ room {
       return
     end
     if not s.near then
-      if _'браслет':hasnt 'worn' then
+      if fn_hasnt(_'браслет', "worn") then
         if to ^ 'Зал с зеркалами' then
-          p([[Сейчас не лучшее время для прогулок.]])
+          fn_say("Сейчас не лучшее время для прогулок.")
           return false
         end
-        p([[Поддавшись смутному интуитивному чувству, ты покидаешь тронный зал.]])
-        DaemonStop 'королева'
+        fn_say("Поддавшись смутному интуитивному чувству, ты покидаешь тронный зал.")
+        fn_daemonStop('королева')
         return
       end
-      p([[Ты нашла свою маму! Не время уходить!]])
+      fn_say("Ты нашла свою маму! Не время уходить!")
       return false
     end
-    if seen 'голем' then
-      if not visited 'королева-диалог' then
-        p([[Ты пытаешься уйти из зала, но ледяной голем преграждает тебе путь.]])
+    if fn_seen('голем') then
+      if not fn_visited('королева-диалог') then
+        fn_say("Ты пытаешься уйти из зала, но ледяной голем преграждает тебе путь.")
         return false
       end
     end
   end;
   ["out_to,e_to"] = 'ворота';
-  ["s_to,d_to"] = [[#лестница]];
+  ["s_to,d_to"] = '#лестница';
   u_to = function(s)
-    if visited 'комната' then return 'дверь' end
+    if fn_visited('комната') then
+      return 'дверь'
+    end
     return false
   end;
   before_Default = function(s, e, w)
@@ -1942,7 +2249,7 @@ room {
     if e == 'Walk' then
       return false
     end
-    p([[Сначала нужно подойти к трону.]])
+    fn_say("Сначала нужно подойти к трону.")
   end;
   obj = {
     'королева';
@@ -1950,26 +2257,26 @@ room {
 
     obj {
       -"трон|кресло";
-      nam = '#трон';
-      description = [[Великолепный трон сделан, как и всё вокруг, из льда. Высокая прямая спинка украшена причудливыми узорами.]];
+      nam = "#трон";
+      description = "Великолепный трон сделан, как и всё вокруг, из льда. Высокая прямая спинка украшена причудливыми узорами.";
       ["before_Enter,Climb"] = function(s)
-        if seen 'королева' then
-          p([[Трон занят.]])
+        if fn_seen('королева') then
+          fn_say("Трон занят.")
         else
-          p([[Тебе не нужна власть. Тебе нужна мама.]])
+          fn_say("Тебе не нужна власть. Тебе нужна мама.")
         end
       end;
       before_Walk = function(s)
-        if _'Тронный зал'.near then
+        if _('Тронный зал').near then
           return false
         end
-        p("Ты бежишь к трону. Твоё сердце от радости выпрыгивает из груди. Но что-то странное ты замечаешь в облике матери.\nВ нерешительности ты останавливаешься в нескольких шагах от неё.")
-        if _'браслет':hasnt 'worn' then
-          DaemonStop'королева'
-          walk 'badend2'
+        fn_say("Ты бежишь к трону. Твоё сердце от радости выпрыгивает из груди. Но что-то странное ты замечаешь в облике матери.\nВ нерешительности ты останавливаешься в нескольких шагах от неё.")
+        if fn_hasnt(_'браслет', "worn") then
+          fn_daemonStop('королева')
+          fn_walk(_'badend2')
           return
         end
-        _'Тронный зал'.near = true
+        _('Тронный зал').near = true
       end;
     }:attr 'scenery,supporter';
 
@@ -1979,31 +2286,31 @@ room {
 
     door {
       -"деревянная дверь|дверь";
-      nam = 'дверь';
+      nam = "дверь";
       description = function(s)
-        p("Небольшая деревянная дверь. Странно, что она сделана не из льда.")
+        fn_say("Небольшая деревянная дверь. Странно, что она сделана не из льда.")
         return false
       end;
       door_to = function(s)
-        if here() ^ 'комната' then
+        if fn_here() ^ 'комната' then
           return 'Тронный зал'
         else
-          return 'комната';
+          return 'комната'
         end
       end;
     }:attr 'scenery':disable();
 
     obj {
       -"свет";
-      before_Default = [[Как ты сделаешь это с светом?]];
-      before_Exam = [[Свет кажется тебе каким то бледным. Он не приносит радости.]];
+      before_Default = "Как ты сделаешь это с светом?";
+      before_Exam = "Свет кажется тебе каким то бледным. Он не приносит радости.";
     }:attr 'scenery';
 
     obj {
-      nam = [[#лестница]];
-      description = [[Широкая лестница начинается от южной стены и ведёт вниз.]];
+      nam = "#лестница";
+      description = "Широкая лестница начинается от южной стены и ведёт вниз.";
       ["before_Enter,Walk,Climb"] = function(s)
-        walk 'Зал с зеркалами';
+        fn_walk(_'Зал с зеркалами')
       end;
     }:attr 'scenery';
   };
@@ -2012,17 +2319,17 @@ room {
 dlg {
   nam = 'королева-диалог';
   title = false;
-  exit = [[^Твоя мама махнула рукой голему и тот, с грохотом, направился к северной стене зала. Дойдя до неё он остановился.]];
+  exit = "^Твоя мама махнула рукой голему и тот, с грохотом, направился к северной стене зала. Дойдя до неё он остановился.";
   phr = {
-    [[-- Иди же и обними меня! -- глаза матери по прежнему закрыты и это пугает тебя.]];
+    "-- Иди же и обними меня! -- глаза матери по прежнему закрыты и это пугает тебя.";
     {
-      [[Почему твои глаза закрыты?]];
-      [[-- Поцелуй меня и я открою их.]];
+      "Почему твои глаза закрыты?";
+      "-- Поцелуй меня и я открою их.";
       next = '#дальше';
     };
     {
-      [[Ты точно моя мама?]];
-      [[-- Да, а ты моя дочь. Я так ждала тебя, иди и обними меня.]];
+      "Ты точно моя мама?";
+      "-- Да, а ты моя дочь. Я так ждала тебя, иди и обними меня.";
       next = '#дальше';
     };
   };
@@ -2030,54 +2337,54 @@ dlg {
     {
       '#дальше';
       {
-        [[Я не верю тебе! Ты не моя мама!]];
-        [[-- Ну зачем ты так? Ты стала такой грубой!]];
+        "Я не верю тебе! Ты не моя мама!";
+        "-- Ну зачем ты так? Ты стала такой грубой!";
         {
-          [[Хватит притворяться!]];
-          [[-- Я твоя {$fmt em|другая} мама. Я буду любить тебя вечно. Поцелуй меня, дитя.]];
+          "Хватит притворяться!";
+          "-- Я твоя {$fmt em|другая} мама. Я буду любить тебя вечно. Поцелуй меня, дитя.";
         };
         {
-          [[Куда ты дела мою настоящую маму?]];
-          [[-- Здесь нет другой мамы, кроме меня. Зачем ты упрямишься? У нас есть целая вечность, чтобы полюбить друг-друга.]];
+          "Куда ты дела мою настоящую маму?";
+          "-- Здесь нет другой мамы, кроме меня. Зачем ты упрямишься? У нас есть целая вечность, чтобы полюбить друг-друга.";
         };
         {
-          [[Открой свои... чёртовы глаза!]];
-          [[-- Хорошо, как скажешь... -- женщина открыла глаза. На месте глаз ты видишь чёрные отверстия. Тебе кажется, что ты сходишь с ума.]];
+          "Открой свои... чёртовы глаза!";
+          "-- Хорошо, как скажешь... -- женщина открыла глаза. На месте глаз ты видишь чёрные отверстия. Тебе кажется, что ты сходишь с ума.";
         };
         onempty = function(s)
-          push '#дальше2'
+          fn_push('#дальше2')
         end;
       };
       {
-        [[Хорошо, сейчас.]];
+        "Хорошо, сейчас.";
         function(s)
-          walk 'badend'
+          fn_walk(_'badend')
         end;
       };
     };
     {
       '#дальше2';
       {
-        [[Я знаю, ты забрала мою маму! Сейчас же верни её!]];
-        [[-- Хорошо, дитя. Жаль, что тебе нужно время, чтобы привыкнуть ко мне. Но я подожду. Мой слуга проводит тебя в твою комнату.]];
+        "Я знаю, ты забрала мою маму! Сейчас же верни её!";
+        "-- Хорошо, дитя. Жаль, что тебе нужно время, чтобы привыкнуть ко мне. Но я подожду. Мой слуга проводит тебя в твою комнату.";
         {
-          [[Я всё равно сбегу и найду свою настоящую маму! Я знаю -- она где-то здесь!]];
-          [[-- Глупышка, ты думаешь я тебя обманываю? Знай, ты свободна ходить туда, куда хочешь. И делать то, что хочешь. Можешь искать свою... {$fmt em|другую} маму. Но не отказывай мне, посмотри свою комнату. Отдохни. И приходи ко мне, когда забудешь о своих фантазиях.]];
+          "Я всё равно сбегу и найду свою настоящую маму! Я знаю -- она где-то здесь!";
+          "-- Глупышка, ты думаешь я тебя обманываю? Знай, ты свободна ходить туда, куда хочешь. И делать то, что хочешь. Можешь искать свою... {$fmt em|другую} маму. Но не отказывай мне, посмотри свою комнату. Отдохни. И приходи ко мне, когда забудешь о своих фантазиях.";
           {
-            [[А если я найду маму, ты нас отпустишь?]];
-            [[-- Ты никогда не найдёшь её. Но хорошо, я обещаю. Только и ты пообещай мне, что если отчаешься найти её, то станешь моей дочерью.]];
+            "А если я найду маму, ты нас отпустишь?";
+            "-- Ты никогда не найдёшь её. Но хорошо, я обещаю. Только и ты пообещай мне, что если отчаешься найти её, то станешь моей дочерью.";
             {
-              [[Хорошо, обещаю.]];
+              "Хорошо, обещаю.";
               function(s)
-                p([[-- Ну что же, чувствуй себя как дома. Дворец в твоём распоряжении.]])
-                walkback'Тронный зал'
+                fn_say("-- Ну что же, чувствуй себя как дома. Дворец в твоём распоряжении.")
+                fn_walkback('Тронный зал')
               end;
             };
             {
-              [[Похоже, у меня нет выбора. Я в твоей власти? Мне не выбраться отсюда?]];
+              "Похоже, у меня нет выбора. Я в твоей власти? Мне не выбраться отсюда?";
               function(s)
-                p([[-- Хорошо, что мы поняли друг-друга. Дворец в твоём распоряжении.]])
-                walkback 'Тронный зал'
+                fn_say("-- Хорошо, что мы поняли друг-друга. Дворец в твоём распоряжении.")
+                fn_walkback('Тронный зал')
               end;
             };
           };
@@ -2088,32 +2395,32 @@ dlg {
 }
 
 cutscene {
-  nam = 'badend';
+  nam = "badend";
   exit = function(s)
     pic_pop()
   end;
   next_to = 'королева-диалог';
   onenter = function(s, f)
-    pic_push '99'
+    pic_push('99')
   end;
-  title = [[Конец]];
+  title = "Конец";
   text = {
     [[Ты поднимаешься по ступенькам пьедестала и обнимаешь свою мать.^^
 		От неё веет холодом, который сковывает тебя, но ты уже ничего не можешь изменить.^^
 		Глаза Снежной Королевы открываются и ты смотришь в чёрную бездну...^^
 		{$fmt b|{$fmt c|КОНЕЦ}}]];
-    [[{$fmt r|{$fmt em|Но всё могло закончиться по другому...}}]];
+    "{$fmt r|{$fmt em|Но всё могло закончиться по другому...}}";
   };
 }
 
 cutscene {
-  nam = 'badend2';
+  nam = "badend2";
   exit = function(s)
     pic_pop()
   end;
   next_to = 'Тронный зал';
   onenter = function(s, f)
-    pic_push '99'
+    pic_push('99')
   end;
   title = false;
   text = {
@@ -2122,20 +2429,20 @@ cutscene {
 		От неё веет холодом, который сковывает тебя, и ты уже ничего не можешь изменить.^^
 		Ты смотришь внутрь черных дыр-глаз Снежной Королевы...^^
 		{$fmt b|{$fmt c|КОНЕЦ}}]];
-    [[{$fmt r|{$fmt em|Но всё могло закончиться по другому...}}]];
+    "{$fmt r|{$fmt em|Но всё могло закончиться по другому...}}";
   };
 }
 
 cutscene {
-  nam = 'badend4';
+  nam = "badend4";
   exit = function(s)
     pic_pop()
-    enable 'королева'
+    fn_enable(_'королева')
   end;
   next_to = 'Тронный зал';
   onenter = function(s, f)
-    pic_push '99'
-    disable 'королева'
+    pic_push('99')
+    fn_disable(_'королева')
   end;
   title = false;
   text = {
@@ -2144,7 +2451,7 @@ cutscene {
 		От неё веет холодом, который сковывает тебя, и ты уже ничего не можешь изменить.^^
 		Ты смотришь внутрь черных дыр-глаз Снежной Королевы...^^
 		{$fmt b|{$fmt c|КОНЕЦ}}]];
-    [[{$fmt r|{$fmt em|Но всё могло закончиться по другому...}}]];
+    "{$fmt r|{$fmt em|Но всё могло закончиться по другому...}}";
   };
 }
 
@@ -2152,16 +2459,16 @@ dlg {
   nam = 'сова2-диалог1';
   title = false;
   enter = function(s)
-    pic_set '21'
+    pic_set('21')
   end;
   phr = {
-    [[-- Я хочу помочь тебе, дитя. -- сказала странная птица.]];
+    "-- Я хочу помочь тебе, дитя. -- сказала странная птица.";
     {
-      [[Как именно?]];
-      [[-- Я покажу тебе путь отсюда.]];
+      "Как именно?";
+      "-- Я покажу тебе путь отсюда.";
       {
-        [[Но я нашла свою маму. Правда, она застряла в зеркале... Ты можешь помочь?]];
-        [[-- Глупое дитя. Ты так ничего и не поняла? Повесь зеркало на стену.]];
+        "Но я нашла свою маму. Правда, она застряла в зеркале... Ты можешь помочь?";
+        "-- Глупое дитя. Ты так ничего и не поняла? Повесь зеркало на стену.";
       };
     };
   };
@@ -2171,18 +2478,18 @@ dlg {
   nam = 'сова2-диалог2';
   title = false;
   enter = function(s)
-    pic_set '21'
+    pic_set('21')
   end;
   phr = {
-    [[-- Итак, дитя, ты уже поняла, что твоя мама находится в нормальном мире? А ты -- за зеркалом?]];
+    "-- Итак, дитя, ты уже поняла, что твоя мама находится в нормальном мире? А ты -- за зеркалом?";
     {
-      [[Да.]];
-      [[-- Хорошо, это сэкономит нам время. Итак, чтобы вернуться в нормальный мир, ты должна войти в зеркало...]];
+      "Да.";
+      "-- Хорошо, это сэкономит нам время. Итак, чтобы вернуться в нормальный мир, ты должна войти в зеркало...";
       next = '#дальше';
     };
     {
-      [[Нет.]];
-      [[-- Всё просто, ты находишься за зеркалом. Твоя мама -- в обычном мире. Чтобы вернуться домой ты должна войти в зеркало...]];
+      "Нет.";
+      "-- Всё просто, ты находишься за зеркалом. Твоя мама -- в обычном мире. Чтобы вернуться домой ты должна войти в зеркало...";
       next = '#дальше';
     };
   };
@@ -2190,60 +2497,60 @@ dlg {
     {
       '#дальше';
       {
-        [[Просто войти в зеркало?]];
-        [[-- Да. Но сначала, его нужно разморозить. И это могу сделать я. Для тебя.]];
+        "Просто войти в зеркало?";
+        "-- Да. Но сначала, его нужно разморозить. И это могу сделать я. Для тебя.";
         {
-          [[Так сделай это!]];
-          [[-- Я могу это сделать. Но для этого, мне нужны глаза.]];
+          "Так сделай это!";
+          "-- Я могу это сделать. Но для этого, мне нужны глаза.";
           next = '#дальше2';
         };
         {
-          [[Что ты хочешь взамен?]];
-          [[-- Мне нужны глаза.]];
+          "Что ты хочешь взамен?";
+          "-- Мне нужны глаза.";
           next = '#дальше2';
         };
       };
       {
-        [[Но я нашла свою маму. Значит, мы свободны!]];
-        [[-- Снежная Королева всё равно не отпустит тебя, дитя. Но я могу тебе помочь.]];
+        "Но я нашла свою маму. Значит, мы свободны!";
+        "-- Снежная Королева всё равно не отпустит тебя, дитя. Но я могу тебе помочь.";
       };
       {
-        [[Зачем ты помогаешь мне?]];
-        [[-- Я хочу стать свободной, мне надоело служить госпоже.]];
+        "Зачем ты помогаешь мне?";
+        "-- Я хочу стать свободной, мне надоело служить госпоже.";
       };
     };
     {
       '#дальше2';
       {
-        [[Глаза?]];
-        [[-- Да. Существа, подобные мне, не могут даже коснуться зеркала. Но с настоящими глазами...]];
+        "Глаза?";
+        "-- Да. Существа, подобные мне, не могут даже коснуться зеркала. Но с настоящими глазами...";
         {
-          [[И где же я найду глаза?]];
-          [[-- У тебя есть глаза. В этом месте ты единственная, у кого они есть. Отдай их мне!]];
+          "И где же я найду глаза?";
+          "-- У тебя есть глаза. В этом месте ты единственная, у кого они есть. Отдай их мне!";
           {
-            [[Нет!]];
+            "Нет!";
             function(s)
-              p('-- Я возьму их не надолго. Больно не будет. Тебе просто нужно согласиться. И помни. Я одна могу помочь тебе вернуться домой и увидеть маму. Так "да", или "нет"?')
-              push '#данет'
+              fn_say('-- Я возьму их не надолго. Больно не будет. Тебе просто нужно согласиться. И помни. Я одна могу помочь тебе вернуться домой и увидеть маму. Так "да", или "нет"?')
+              fn_push('#данет')
             end;
           };
           {
-            [[Хорошо.]];
-            [[-- Мне нужен ответ. Да или нет?]];
+            "Хорошо.";
+            "-- Мне нужен ответ. Да или нет?";
             {
-              [[Да.]];
+              "Да.";
               function(s)
-                walk 'yes'
+                fn_walk(_'yes')
               end;
             };
             {
-              [[Нет!]];
+              "Нет!";
               function(s)
-                p([[-- Ну что же. Я подожду, если ты передумаешь...]])
-                walkout()
+                fn_say("-- Ну что же. Я подожду, если ты передумаешь...")
+                fn_walkout()
               end;
             };
-            tag = [[#данет]];
+            tag = "#данет";
           };
         };
       };
@@ -2255,21 +2562,21 @@ dlg {
   nam = 'сова2-диалог3';
   title = false;
   enter = function(s)
-    pic_set '21'
+    pic_set('21')
   end;
   phr = {
-    [[-- Итак, дитя, что ты решила? Ты отдашь мне свои глаза?]];
+    "-- Итак, дитя, что ты решила? Ты отдашь мне свои глаза?";
     {
-      [[Да.]];
+      "Да.";
       function(s)
-        walk 'yes'
+        fn_walk(_'yes')
       end;
     };
     {
-      [[Нет!]];
+      "Нет!";
       function(s)
-        p([[-- Ну что же. Я подожду, если ты передумаешь...]])
-        walkout()
+        fn_say("-- Ну что же. Я подожду, если ты передумаешь...")
+        fn_walkout()
       end;
     };
   };
@@ -2277,38 +2584,38 @@ dlg {
 
 obj {
   -"полярная сова,сова,птица";
-  nam = 'сова2';
+  nam = "сова2";
   daemon = function(s)
     s.num = s.num + 1
     if s.num < 3 then
       return
     end
-    if _'#окно':hasnt 'open' then
-      p([[Ты слышишь стук в окно.]])
+    if fn_hasnt(_('#окно'), "open") then
+      fn_say("Ты слышишь стук в окно.")
     else
-      p([[Ты видишь, как в открытое окно влетает полярная сова и садится прямо на стол.]])
-      s:daemonStop()
+      fn_say("Ты видишь, как в открытое окно влетает полярная сова и садится прямо на стол.")
+      fn_daemonStop(s)
       s.finside = true
-      move(s, '#стол')
-      s:attr '~scenery'
+      fn_move(s, _'#стол')
+      fn_attr(s, "~scenery")
     end
   end;
-  description = [[Похоже, это та самая сова, которая привела тебя в это место. Ты боишься смотреть в её чёрные глаза.]];
+  description = "Похоже, это та самая сова, которая привела тебя в это место. Ты боишься смотреть в её чёрные глаза.";
   finside = false;
   num = 0;
   talk_to = function(s)
     if not s.finside then
-      p([[Она за стеклом.]])
+      fn_say("Она за стеклом.")
       return
     end
-    if visited 'сова2-диалог1' and not where'зеркало' ^ '#стена' then
-      p([[-- Повесь зеркало на стену, дитя. Скорее!]])
+    if fn_visited('сова2-диалог1') and not fn_where(_'зеркало') ^ '#стена' then
+      fn_say("-- Повесь зеркало на стену, дитя. Скорее!")
       return
     end
-    if not visited 'сова2-диалог1' and not where'зеркало' ^'#стена' then
+    if not fn_visited('сова2-диалог1') and not fn_where(_'зеркало') ^ '#стена' then
       return 'сова2-диалог1'
     end
-    if not visited 'сова2-диалог2' then
+    if not fn_visited('сова2-диалог2') then
       return 'сова2-диалог2'
     end
     return 'сова2-диалог3'
@@ -2316,52 +2623,52 @@ obj {
   obj = {
     obj {
       -"глаза совы,глаза,дыр*";
-      nam = [[#глаза совы]];
-      before_Default = [[Тебе не нравятся эти глаза.]];
-      before_Exam = [[На месте глаз у совы зияют чёрные дырки.]];
+      nam = "#глаза совы";
+      before_Default = "Тебе не нравятся эти глаза.";
+      before_Exam = "На месте глаз у совы зияют чёрные дырки.";
     };
   };
 }:attr 'scenery,animate'
 
 room {
   -"комната";
-  nam = 'комната';
+  nam = "комната";
   dsc = function(s)
-    p("Это действительно твоя комната. Комната, которую ты покинула ещё совсем недавно. Перед тем... как вы уехали с мамой...^^\nТы видишь те же: стол, шкаф, кровать и книжные полки... И даже окно!")
-    if not visited 'gotmirror' then
-      p([[Правда, мебель стоит неправильно и на стене нет зеркала. Интересно, куда оно подевалось?]])
+    fn_say("Это действительно твоя комната. Комната, которую ты покинула ещё совсем недавно. Перед тем... как вы уехали с мамой...^^\nТы видишь те же: стол, шкаф, кровать и книжные полки... И даже окно!")
+    if not fn_visited('gotmirror') then
+      fn_say("Правда, мебель стоит неправильно и на стене нет зеркала. Интересно, куда оно подевалось?")
     else
-      p([[Правда, мебель стоит неправильно.]])
-      if where 'зеркало' ^ '#стена' then
-        p([[На стене висит зеркало.]])
+      fn_say("Правда, мебель стоит неправильно.")
+      if fn_where(_'зеркало') ^ '#стена' then
+        fn_say("На стене висит зеркало.")
       end
     end
-    if seen 'королева2' then
-      p([[^^В комнате, прислонившись к стене, стоит Снежная Королева. Ты видишь как поверхность зеркала мерцает фиолетовым светом.]])
+    if fn_seen('королева2') then
+      fn_say("^^В комнате, прислонившись к стене, стоит Снежная Королева. Ты видишь как поверхность зеркала мерцает фиолетовым светом.")
     end
-    if where 'сова2' and where 'сова2' ^ '#стол' then
-      p([[^^Полярная сова по прежнему сидит на твоём столе.]])
+    if fn_where(_'сова2') and fn_where(_'сова2') ^ '#стол' then
+      fn_say("^^Полярная сова по прежнему сидит на твоём столе.")
     end
   end;
   enter = function(s)
-    if s:once() then
-      p([[За дверью оказалась лестница, которая вела наверх. Ты поднялась по ней и оказалась в ... своей комнате.]])
-      move('голем', 'У замка')
+    if fn_once(s) then
+      fn_say("За дверью оказалась лестница, которая вела наверх. Ты поднялась по ней и оказалась в ... своей комнате.")
+      fn_move(_'голем', _'У замка')
     end
-    if visited 'gotmirror' and _'зеркало'.seen and not _'сова2'.finside then
+    if fn_visited('gotmirror') and _'зеркало'.seen and not _'сова2'.finside then
       _'сова2'.num = 0
-      DaemonStart 'сова2'
+      fn_daemonStart('сова2')
     end
   end;
   exit = function(s)
-    DaemonStop 'сова2'
+    fn_daemonStop('сова2')
     if not _'сова2'.finside then
-      remove 'сова2'
+      fn_remove(_'сова2')
     end
   end;
   onexit = function(s, t)
-    if seen 'королева2' and not t ^ 'комната2' then
-      p([[Если переход в зеркале закроется, ты никогда не вернёшься домой. Надо спешить!]])
+    if fn_seen('королева2') and not t ^ 'комната2' then
+      fn_say("Если переход в зеркале закроется, ты никогда не вернёшься домой. Надо спешить!")
       return false
     end
   end;
@@ -2372,11 +2679,11 @@ room {
     obj {
       -"книжные полки/жр,мн|полки/мн,жр|полка/жр";
       description = function(s)
-        p([[Полки висят на стене прямо над столом.]])
-        if where'сказки' == s and disabled 'сказки' then
-          p([[Они завалены школьными учебниками и тетрадками.]])
-          p([[^Ты видишь на одной из полок сказки Андерсена. Ты узнала книгу по голубому цвету обложки и золотым буквам на корешке.]])
-          enable 'сказки'
+        fn_say("Полки висят на стене прямо над столом.")
+        if fn_where(fn_ref('сказки')) == s and fn_disabled(fn_ref('сказки')) then
+          fn_say("Они завалены школьными учебниками и тетрадками.")
+          fn_say("^Ты видишь на одной из полок сказки Андерсена. Ты узнала книгу по голубому цвету обложки и золотым буквам на корешке.")
+          fn_enable(fn_ref('сказки'))
           return
         end
         return false
@@ -2392,17 +2699,17 @@ room {
 
         obj {
           -"сказки/мн|книга";
-          nam = 'сказки';
+          nam = "сказки";
           ["before_Consult,Search,Open,Exam"] = function(s)
-            if not have(s) then
-              p([[Сначала книгу нужно взять.]])
+            if not fn_have(s) then
+              fn_say("Сначала книгу нужно взять.")
               return
             end
-            if s:once() then
-              pn("Ты открыла книгу на случайной странице. Буквы были знакомыми, но текст не читался.\nНе сразу, но все-таки ты сообразила, что слова написаны наоборот. С трудом ты прочитала следующее:^")
+            if fn_once(s) then
+              fn_line("Ты открыла книгу на случайной странице. Буквы были знакомыми, но текст не читался.\nНе сразу, но все-таки ты сообразила, что слова написаны наоборот. С трудом ты прочитала следующее:^")
             end
-            p("{$fmt em|Стенами чертогам были вьюги, окнами и дверями буйные ветры. Сто с лишним зал тянулись здесь одна за другой так, как наметала их вьюга. Все они освещались северным сиянием, и самая большая простиралась на много-много миль. Как холодно, как пустынно было в этих белых, ярко сверкающих чертогах!}")
-            p([[^^Как странно...]])
+            fn_say("{$fmt em|Стенами чертогам были вьюги, окнами и дверями буйные ветры. Сто с лишним зал тянулись здесь одна за другой так, как наметала их вьюга. Все они освещались северным сиянием, и самая большая простиралась на много-много миль. Как холодно, как пустынно было в этих белых, ярко сверкающих чертогах!}")
+            fn_say("^^Как странно...")
           end;
         }:attr 'openable':disable();
       };
@@ -2410,26 +2717,26 @@ room {
 
     obj {
       -"стол";
-      nam = '#стол';
+      nam = "#стол";
       description = function(s)
-        p("За этим столом ты обычно делаешь... делала уроки.")
+        fn_say("За этим столом ты обычно делаешь... делала уроки.")
         return false
       end;
-      ["before_Push,Pull,Transfer"] = [[Пусть стоит там, где ему место.]];
+      ["before_Push,Pull,Transfer"] = "Пусть стоит там, где ему место.";
     }:attr 'scenery,supporter';
 
     obj {
       -"шкаф";
       description = function(s)
-        p([[Платяной шкаф с твоей одеждой.]])
-        if s:has 'open' then
-          p([[Шкаф открыт.]])
+        fn_say("Платяной шкаф с твоей одеждой.")
+        if fn_has(s, "open") then
+          fn_say("Шкаф открыт.")
         end
         return false
       end;
-      inside_dsc = [[Ты находишься внутри шкафа.]];
-      title = [[В шкафу]];
-      ["before_Push,Pull,Transfer"] = [[Пусть стоит там, где ему место.]];
+      inside_dsc = "Ты находишься внутри шкафа.";
+      title = "В шкафу";
+      ["before_Push,Pull,Transfer"] = "Пусть стоит там, где ему место.";
       obj = {
         Useless {
           -"одежда";
@@ -2439,33 +2746,33 @@ room {
 
     obj {
       -"кровать";
-      before_Enter = [[Хотя ты валишься с ног, ещё не время спать.]];
-      ["before_Push,Pull,Transfer"] = [[Пусть стоит там, где ей место.]];
+      before_Enter = "Хотя ты валишься с ног, ещё не время спать.";
+      ["before_Push,Pull,Transfer"] = "Пусть стоит там, где ей место.";
     }:attr 'enterable,supporter,scenery';
 
     obj {
       -"окно";
-      nam = [[#окно]];
+      nam = "#окно";
       description = function(s)
-        p([[В окне ты видишь пустынный белый пейзаж.]])
+        fn_say("В окне ты видишь пустынный белый пейзаж.")
         if _'сова2'.num >= 3 and not _'сова2'.finside then
-          p([[Ты видишь за окном полярную сову.]])
-          move('сова2', here())
+          fn_say("Ты видишь за окном полярную сову.")
+          fn_move(_'сова2', fn_here())
         end
         return false
       end;
-      when_open = [[Окно открыто. В твою комнату залетают колючие снежинки.]];
-      before_Enter = [[Это слишком опасно.]];
+      when_open = "Окно открыто. В твою комнату залетают колючие снежинки.";
+      before_Enter = "Это слишком опасно.";
     }:attr 'scenery,openable';
 
     Prop {
       -"стена|шуруп";
-      nam = [[#стена]];
+      nam = "#стена";
       before_Exam = function(s)
-        if where 'зеркало' ~= s then
-          p([[На стене у шкафа висело зеркало. Сейчас его нет.]])
+        if fn_where(_'зеркало') ~= s then
+          fn_say("На стене у шкафа висело зеркало. Сейчас его нет.")
         else
-          p([[На стене висит зеркало.]])
+          fn_say("На стене висит зеркало.")
         end
       end;
     };
@@ -2476,7 +2783,7 @@ room {
 
     Prop {
       -"мебель";
-      before_Exam = [[Здесь есть: стол, кровать, шкаф и полки.]];
+      before_Exam = "Здесь есть: стол, кровать, шкаф и полки.";
     };
   };
 }
@@ -2487,13 +2794,13 @@ Useless {
 
 room {
   -"зал";
-  nam = 'Зал с зеркалами';
-  cant_go = { [[Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла блуждать между зеркалами в поисках чего-либо]], [[кроме пустоты.]] };
-  d_to = [[Интересно, есть ли другие лестницы ведущие ещё глубже?]];
+  nam = "Зал с зеркалами";
+  cant_go = { "Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла блуждать между зеркалами в поисках чего-либо", "кроме пустоты." };
+  d_to = "Интересно, есть ли другие лестницы ведущие ещё глубже?";
   daemon = function(s)
-    if rnd(100) < 25 then
-      local t = { "Ты чувствуешь на своём лице дуновение холодного ветра."; "Рой маленьких колких снежинок ударяется в щёки."; "Снежинки снова и снова ударяются о твоё лицо."; "Небольшая метель метёт тебе прямо в глаза."; }
-      p(t[rnd(#t)])
+    if fn_rnd(100) < 25 then
+      local t = fn_tbl5()
+      fn_say(t[fn_rnd(#t)])
     end
   end;
   dsc = [[Ты находишься в громадном зале. Ты даже боишься представить его размеры. Километры ледяных стен подсвеченные всполохами полярных сияний.
@@ -2503,22 +2810,22 @@ room {
     if not s.know then
       return false
     end
-    p("Ты решила осмотреть восточное направление. Ведь именно туда дула метель. Ты долго шла на восток, сверяясь с компасом и вглядываясь в бесконечную\nчереду зеркал, но так ничего и не обнаружила. Разочарованная, ты вернулась к лестнице.")
+    fn_say("Ты решила осмотреть восточное направление. Ведь именно туда дула метель. Ты долго шла на восток, сверяясь с компасом и вглядываясь в бесконечную\nчереду зеркал, но так ничего и не обнаружила. Разочарованная, ты вернулась к лестнице.")
   end;
   enter = function(s, f)
     if f ^ 'Тронный зал' then
-      p("Это была очень длинная лестница без перил. Закручиваясь спиралью вокруг массивной колонны, она вела глубоко вниз.^\nОпасный и долгий спуск по скользким ступенькам занял продолжительное время и открыл твоему взору грандиозный вид.")
+      fn_say("Это была очень длинная лестница без перил. Закручиваясь спиралью вокруг массивной колонны, она вела глубоко вниз.^\nОпасный и долгий спуск по скользким ступенькам занял продолжительное время и открыл твоему взору грандиозный вид.")
     end
-    s:daemonStart();
+    fn_daemonStart(s)
   end;
   exit = function(s, t)
     if t ^ 'Тронный зал' then
-      p([[Не без труда преодолевая скользкие ступени, ты покидаешь громадный зал.]])
+      fn_say("Не без труда преодолевая скользкие ступени, ты покидаешь громадный зал.")
     end
-    s:daemonStop()
+    fn_daemonStop(s)
   end;
   know = false;
-  o_to = [[#лестница]];
+  o_to = '#лестница';
   u_to = 'Тронный зал';
   w_to = function(s)
     if not s.know then
@@ -2530,83 +2837,83 @@ room {
     if not w ^ 'перо' then
       return false
     end
-    if mp:check_held(w) then
+    if fn_check_held(w) then
       return
     end
     if s.know then
-      p([[Ты снова выпускаешь перо из рук и убеждаешься ещё раз, что метель дует с запада.]])
+      fn_say("Ты снова выпускаешь перо из рук и убеждаешься ещё раз, что метель дует с запада.")
     else
-      p([[Ты выпускаешь перо из рук и видишь, как оно улетает строго на восток. Это значит, что метель дует с запада.]])
+      fn_say("Ты выпускаешь перо из рук и видишь, как оно улетает строго на восток. Это значит, что метель дует с запада.")
     end
-    move(w, s)
+    fn_move(w, s)
     s.know = true
   end;
   obj = {
     obj {
       -"лестница";
-      nam = [[#лестница]];
-      description = [[Широкая лестница без перил, закрученная спиралью вокруг массивной колонны, ведёт наверх -- к тронному залу.]];
+      nam = "#лестница";
+      description = "Широкая лестница без перил, закрученная спиралью вокруг массивной колонны, ведёт наверх -- к тронному залу.";
       ["before_Enter,Walk,Climb"] = function(s)
-        walk 'Тронный зал';
+        fn_walk(_'Тронный зал')
       end;
     }:attr 'scenery';
 
     obj {
       -"колонны";
-      description = [[Ты думаешь, что высота колонн может достигать пятидесяти метров.]];
+      description = "Ты думаешь, что высота колонн может достигать пятидесяти метров.";
     }:attr 'scenery';
 
     obj {
       -"колонна";
-      description = [[Ледяная колонна уходит вертикально вверх. Ты думаешь, что высота колонны может достигать пятидесяти метров.]];
+      description = "Ледяная колонна уходит вертикально вверх. Ты думаешь, что высота колонны может достигать пятидесяти метров.";
     }:attr 'scenery';
 
     obj {
       -"потолок|потолки";
-      description = [[Потолок подсвечивается всполохами, похожими на полярное сияние.]];
+      description = "Потолок подсвечивается всполохами, похожими на полярное сияние.";
     }:attr 'scenery';
 
     obj {
       -"пол|поверхность";
-      description = [[Поверхность пола -- абсолютно гладкая ледяная поверхность.]];
+      description = "Поверхность пола -- абсолютно гладкая ледяная поверхность.";
     }:attr 'scenery';
 
     obj {
       -"стены|стена";
-      description = [[Километры стен подсвечиваются всполохами, похожими на полярное сияние.]];
+      description = "Километры стен подсвечиваются всполохами, похожими на полярное сияние.";
     }:attr 'scenery';
 
     obj {
       -"зеркала|зеркало";
       description = [[Зеркала повсюду. Они разной формы, разного размера. Они висят на колоннах, вморожены в глыбы льда, закреплены на фрагментах стен.
 Ты даже боишься представить сколько их может быть здесь, в этом громадном зале.]];
-      before_Attack = [[Ты не разобьешь их всех.]];
-      ["before_Push,Pull,Transfer"] = [[Стоит ли это делать?]];
+      before_Attack = "Ты не разобьешь их всех.";
+      ["before_Push,Pull,Transfer"] = "Стоит ли это делать?";
       before_Search = function(s)
-        p([[Ты подошла к одному из зеркал и заглянула в него. Странно, но вместо своего отражения ты видишь нечто другое....^^]])
-        local t = { "Небольшая комната. В ней ты видишь мужчину и женщину. У обоих раздражение на лице. В комнате ты видишь детскую кроватку."; "Ванная комната. Мужчина лет 40 бреется. Уголки губ опущены вниз."; "Помещение, напоминающее школьный класс. Сейчас он пуст. Только молодая учительница сидит за столом. Рядом с ней -- стопка тетрадей."; "Большой зал торгового центра. Ты видишь магазин с одеждой, заполненный посетителями."; "Аптека. Полки с лекарствами. Ты видишь провизора в белом халате. Это пожилая женщина."; "Спортивный зал. Натянута сетка. Дети играют в волейбол."; "Танцевальный зал. Много молодых людей и девушка - инструктор."; "Тёмная комната завалена хламом и пустыми бутылками. На диване лежит мужчина."; "За поверхностью зеркала -- темнота."; "Салон легковой машины. На заднем сидении сидит мальчик с грустными глазами."; "Мужской туалет. Все писсуары свободны."; }
-        pn(t[rnd(#t)])
-        p([[Изображение в зеркале статично. Словно кто-то сделал стоп-кадр. Ты отходишь от зеркала.]])
+        fn_say("Ты подошла к одному из зеркал и заглянула в него. Странно, но вместо своего отражения ты видишь нечто другое....^^")
+        local t = fn_tbl6()
+        fn_line(t[fn_rnd(#t)])
+        fn_say("Изображение в зеркале статично. Словно кто-то сделал стоп-кадр. Ты отходишь от зеркала.")
       end;
-      before_Take = [[Зачем тебе это?]];
-      before_Touch = [[Ты коснулась одного из зеркал. Холодное.]];
+      before_Take = "Зачем тебе это?";
+      before_Touch = "Ты коснулась одного из зеркал. Холодное.";
     }:attr 'scenery';
 
     obj {
       -"снежинки|метель|ветер";
-      description = [[Интересно, откуда здесь снег? Странно, но тебе кажется, что метель дует с определённого направления...]];
-      before_Listen = [[Тихо...]];
+      description = "Интересно, откуда здесь снег? Странно, но тебе кажется, что метель дует с определённого направления...";
+      before_Listen = "Тихо...";
     }:attr 'scenery';
 
     obj {
       -"всполохи|сияние";
-      description = [[Это похоже на полярное сияние. Правда, ты никогда не видела полярное сияние по-настоящему...]];
+      description = "Это похоже на полярное сияние. Правда, ты никогда не видела полярное сияние по-настоящему...";
     }:attr 'scenery';
   };
 }
 
 cutscene {
-  nam = 'портал1';
+  nam = "портал1";
   text = [[Ты решаешь осмотреть западное направление. Ведь именно оттуда дует метель и эта загадка требует ответа.^^
 		Ты идёшь на запад, сверяясь с компасом и вглядываясь в бесконечные зеркала. Сила ветра всё возрастает.^^
 		Идти становится всё труднее и ты почти отчаялась, когда вдруг, ты замечаешь впереди нечто странное...]];
@@ -2615,40 +2922,40 @@ cutscene {
 }
 
 room {
-  nam = 'ледяное-пламя';
-  cant_go = [[Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла искать здесь что-нибудь кроме пустоты.]];
+  nam = "ледяное-пламя";
+  cant_go = "Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла искать здесь что-нибудь кроме пустоты.";
   daemon = function(s)
-    if _'браслет':has 'worn' then
+    if fn_has(_'браслет', "worn") then
       s.warm = s.warm + 1
       if s.warm == 3 then
-        p([[Ты чувствуешь, как браслет согревает твою руку.]])
+        fn_say("Ты чувствуешь, как браслет согревает твою руку.")
       elseif s.warm == 4 then
-        p([[Ты чувствуешь, как от браслета на твоей руке по телу начинает разливаться тепло.]])
+        fn_say("Ты чувствуешь, как от браслета на твоей руке по телу начинает разливаться тепло.")
       elseif s.warm == 5 then
-        p([[Ты чувствуешь, как от браслета на твоей руке по телу разливается тепло.]])
+        fn_say("Ты чувствуешь, как от браслета на твоей руке по телу разливается тепло.")
       elseif s.warm > 5 then
-        p([[Ты чувствуешь, как браслет согревает тебя.]])
+        fn_say("Ты чувствуешь, как браслет согревает тебя.")
       end
     end
   end;
   dsc = function(s)
-    p("Ты видишь перед собой мерцающее свечение. Словно пламя огромного фиолетового огня, пучки сияния вырываются из постамента\nи уходят высоко вверх. Переплетаясь между собой, языки странного пламени не греют.")
+    fn_say("Ты видишь перед собой мерцающее свечение. Словно пламя огромного фиолетового огня, пучки сияния вырываются из постамента\nи уходят высоко вверх. Переплетаясь между собой, языки странного пламени не греют.")
     if s.warm <= 5 then
-      p([[Наоборот, ты чувствуешь сильный всепроникающий холод.^^]])
+      fn_say("Наоборот, ты чувствуешь сильный всепроникающий холод.^^")
     else
-      p([[Наоборот, они излучают пронзительный холод. К счастью, ты чувствуешь как браслет защищает тебя от него.^^]])
+      fn_say("Наоборот, они излучают пронзительный холод. К счастью, ты чувствуешь как браслет защищает тебя от него.^^")
     end
-    p([[Ты пришла сюда с востока.]])
+    fn_say("Ты пришла сюда с востока.")
   end;
   enter = function(s)
     s.warm = 0
-    s:daemonStart()
+    fn_daemonStart(s)
   end;
   exit = function(s)
-    s:daemonStop()
+    fn_daemonStop(s)
   end;
   ["out_to,e_to"] = 'Зал с зеркалами';
-  title = [[У ледяного огня]];
+  title = "У ледяного огня";
   warm = 0;
   after_Disrobe = function(s, w)
     if w ^ 'браслет' then
@@ -2659,45 +2966,45 @@ room {
   obj = {
     obj {
       -"постамент";
-      nam = '#постамент';
+      nam = "#постамент";
       description = function(s)
-        p([[Массивный постамент представляет из себя ледяную глыбу квадратной формы.]])
+        fn_say("Массивный постамент представляет из себя ледяную глыбу квадратной формы.")
         return false
       end;
       ["before_Enter,Climb"] = function(s)
-        mp:xaction("Enter", _'#пламя')
+        fn_xaction('Enter', _('#пламя'))
       end;
       obj = {
         obj {
           -"сияние|пламя|огонь|свечение";
-          nam = '#пламя';
-          dsc = [[На постаменте пылает ледяное пламя.]];
+          nam = "#пламя";
+          dsc = "На постаменте пылает ледяное пламя.";
           before_Default = function(s, ev, w)
             if ev == 'ThrownAt' or ev == 'Receive' then
-              p("Тебе жаль расставаться с ", w:noun'тв', '. Ведь ты не сможешь забрать ', w:it'вн', ' назад.')
+              fn_say([["Тебе жаль расставаться с ", w:noun'тв', '. Ведь ты не сможешь забрать ', w:it'вн', ' назад.']])
             else
-              p([[Как ты сделаешь это?]])
+              fn_say("Как ты сделаешь это?")
             end
           end;
           before_Enter = function(s)
-            if visited 'gotmirror' then
-              p([[Ты уже взяла то, что тебе было нужно.]])
+            if fn_visited('gotmirror') then
+              fn_say("Ты уже взяла то, что тебе было нужно.")
               return
             end
-            if here().warm <= 5 then
-              walk 'badend3'
+            if fn_here().warm <= 5 then
+              fn_walk(_'badend3')
             else
-              walk 'gotmirror'
+              fn_walk(_'gotmirror')
             end
           end;
-          before_Exam = [[Языки странного огня излучают холод.]];
-          before_Listen = [[Ты слышишь потрескивание.]];
-          before_Take = [[Это невозможно взять.]];
+          before_Exam = "Языки странного огня излучают холод.";
+          before_Listen = "Ты слышишь потрескивание.";
+          before_Take = "Это невозможно взять.";
           before_Touch = function(s)
-            if here().warm <= 5 then
-              p([[Твоя рука моментально начинает замерзать. Лучше не пытаться это делать.]])
+            if fn_here().warm <= 5 then
+              fn_say("Твоя рука моментально начинает замерзать. Лучше не пытаться это делать.")
             else
-              p([[Ты чувствуешь прохладу.]])
+              fn_say("Ты чувствуешь прохладу.")
             end
           end;
         };
@@ -2707,158 +3014,158 @@ room {
 }
 
 cutscene {
-  nam = 'badend3';
+  nam = "badend3";
   exit = function(s)
     pic_pop()
   end;
   next_to = 'ледяное-пламя';
   onenter = function(s, f)
-    pic_push '99'
+    pic_push('99')
   end;
-  title = [[Конец]];
+  title = "Конец";
   text = {
     [[Превозмогая холод, ты поднимаешься на пьедестал и входишь в ледяное пламя.^^
 		Непонятно, на какое чудо ты надеялась? Ледяное пламя охватывает тебя.^^
 		Ты успеваешь заметит, как твое тело превращается в лёд...^^
 		{$fmt b|{$fmt c|КОНЕЦ}}]];
-    [[{$fmt r|{$fmt em|Но всё могло закончиться по другому...}}]];
+    "{$fmt r|{$fmt em|Но всё могло закончиться по другому...}}";
   };
 }
 
 obj {
   -"зеркало";
-  nam = 'зеркало';
+  nam = "зеркало";
   description = function(s)
-    p([[Небольшое овальное зеркало.]])
-    if seen 'королева2' then
-      p([[Поверхность зеркала сияет фиолетовым светом.]])
+    fn_say("Небольшое овальное зеркало.")
+    if fn_seen('королева2') then
+      fn_say("Поверхность зеркала сияет фиолетовым светом.")
     end
   end;
   seen = false;
   before_Attack = function(s)
     if s.seen then
-      p([[Там твоя мама!]])
+      fn_say("Там твоя мама!")
     else
-      p([[Зачем разбивать зеркало, которое ты так долго искала?]])
+      fn_say("Зачем разбивать зеркало, которое ты так долго искала?")
     end
   end;
   before_Enter = function(s)
-    if seen 'королева2' then
-      walk 'комната2'
+    if fn_seen('королева2') then
+      fn_walk(_'комната2')
     else
       return false
     end
   end;
   before_PutOn = function(s, w)
-    if mp:check_held(s) then
+    if fn_check_held(s) then
       return
     end
-    if w ^ '#стена' and here() ^ 'комната' then
-      move(s, w)
-      p([[Ты нашла в стене одинокий шуруп и повесила на него зеркало.]])
+    if w ^ '#стена' and fn_here() ^ 'комната' then
+      fn_move(s, w)
+      fn_say("Ты нашла в стене одинокий шуруп и повесила на него зеркало.")
       return
     end
     return false
   end;
   before_Search = function(s)
-    if here() ^ 'комната' and not _'сова2'.finside and not s.seen then
+    if fn_here() ^ 'комната' and not _'сова2'.finside and not s.seen then
       _'сова2'.num = 0
-      DaemonStart 'сова2'
+      fn_daemonStart('сова2')
     end
     s.seen = true
-    p("Вместо своего отражения, ты видишь в зеркале свою маму! {$fmt em|Настоящую} маму.")
-    if s:where() ^ '#стена' then
-      p([[Ты видишь в зеркале комнату. Все вещи в ней находятся на своих местах.]])
+    fn_say("Вместо своего отражения, ты видишь в зеркале свою маму! {$fmt em|Настоящую} маму.")
+    if fn_where(s) ^ '#стена' then
+      fn_say("Ты видишь в зеркале комнату. Все вещи в ней находятся на своих местах.")
     end
-    if seen 'королева2' then
-      p([[Поверхность зеркала сияет фиолетовым светом.]])
+    if fn_seen('королева2') then
+      fn_say("Поверхность зеркала сияет фиолетовым светом.")
     end
   end;
   before_Take = function(s)
-    if seen 'королева2' then
-      p([[Лучше как можно быстрее бежать отсюда!]])
+    if fn_seen('королева2') then
+      fn_say("Лучше как можно быстрее бежать отсюда!")
       return
     end
-    p([[Ты забираешь зеркало.]])
-    move(s, pl)
+    fn_say("Ты забираешь зеркало.")
+    fn_move(s, fn_player())
   end;
   before_Touch = function(s)
-    if seen 'королева2' then
-      p([[Твоя рука свободно проходит сквозь поверхность зеркала.]])
+    if fn_seen('королева2') then
+      fn_say("Твоя рука свободно проходит сквозь поверхность зеркала.")
     else
-      p([[Какое оно холодное...]])
+      fn_say("Какое оно холодное...")
     end
   end;
 }
 
 cutscene {
-  nam = 'gotmirror';
+  nam = "gotmirror";
   text = [[Ты входишь в ледяное пламя и странное свечение окутывает тебя со всех сторон.^^
 		Ничто живое не смогло бы пережить этот холод, но ты чувствуешь, как тебя согревает браслет матери.^^
 		Ты вглядываешься в фиолетовые языки ледяного пламени и вдруг замечаешь, что можешь охватить взором весь этот громадный зал.^^
 		Сотни тысяч зеркал, среди которых есть то, что ты ищешь...^^
 		Ты протягиваешь руки и вот -- ты уже держишь его! Зеркало из твоей комнаты. Ты выходишь из ледяного пламени.]];
   exit = function(s)
-    take 'зеркало'
-    remove 'королева'
+    fn_take('зеркало')
+    fn_remove(_'королева')
   end;
   next_to = 'ледяное-пламя';
   title = false;
 }
 
 cutscene {
-  nam = 'happyend';
+  nam = "happyend";
   exit = function(s)
-    pic_set '81'
+    pic_set('81')
   end;
-  next_to = [[titles]];
+  next_to = "titles";
   onenter = function(s)
-    pic_set '31'
+    pic_set('31')
   end;
-  title = [[Конец]];
+  title = "Конец";
   text = {
-    [[-- Ты что -- совсем рехнулась?]];
-    [[... Что ты устраиваешь?]];
-    [[... Я понимаю, ты не хочешь этого переезда, но надо держать себя в руках!]];
-    [[... Определённо, тебя надо показать психологу!]];
-    [[... Ты бы видела себя! Ты же способна сделать что угодно!]];
-    [[-- Всё хорошо, мама. Я собрала вещи мы можем ехать.]];
-    [[-- Что?]];
-    [[-- Всё хорошо. У нас теперь всё будет хо-ро-шо!...]];
+    "-- Ты что -- совсем рехнулась?";
+    "... Что ты устраиваешь?";
+    "... Я понимаю, ты не хочешь этого переезда, но надо держать себя в руках!";
+    "... Определённо, тебя надо показать психологу!";
+    "... Ты бы видела себя! Ты же способна сделать что угодно!";
+    "-- Всё хорошо, мама. Я собрала вещи мы можем ехать.";
+    "-- Что?";
+    "-- Всё хорошо. У нас теперь всё будет хо-ро-шо!...";
   };
 }
 
 cutscene {
-  nam = 'yes';
+  nam = "yes";
   next_to = 'Тьма';
   title = false;
   text = {
-    [[Звук твоих слов еще отражался от стен комнаты, когда ты услышала смех {$fmt em|другой} мамы.]];
-    [[-- Как просто! Тебе так и не помог {$fmt em|её} талисман! Теперь я свободна!]];
-    [[Ты снова услышала её дьявольский смех. А потом наступила тьма...]];
+    "Звук твоих слов еще отражался от стен комнаты, когда ты услышала смех {$fmt em|другой} мамы.";
+    "-- Как просто! Тебе так и не помог {$fmt em|её} талисман! Теперь я свободна!";
+    "Ты снова услышала её дьявольский смех. А потом наступила тьма...";
   };
 }
 
 room {
-  nam = 'Тьма';
+  nam = "Тьма";
   before_Cry = function(s)
     s.num = s.num + 1
-    if s.num < 5 or have 'скрипка' then
-      p([[Тебя душат рыдания.]])
+    if s.num < 5 or fn_have('скрипка') then
+      fn_say("Тебя душат рыдания.")
       if s.num == 1 then
-        p([[Но у тебя нет глаз, чтобы плакать.]])
+        fn_say("Но у тебя нет глаз, чтобы плакать.")
       elseif s.num == 2 then
-        p([[Отчаяние захватило тебя.]])
+        fn_say("Отчаяние захватило тебя.")
       elseif s.num == 3 then
-        p([[Но можно ли плакать без глаз?]])
+        fn_say("Но можно ли плакать без глаз?")
       else
-        p([[Ты едва сдерживаешься.]])
-        if have 'скрипка' then
-          p([[Ты чувствуешь в своих руках скрипку.]])
+        fn_say("Ты едва сдерживаешься.")
+        if fn_have('скрипка') then
+          fn_say("Ты чувствуешь в своих руках скрипку.")
         end
       end
     else
-      walk 'cry'
+      fn_walk(_'cry')
     end
   end;
   before_Play = function(s, w)
@@ -2868,24 +3175,24 @@ room {
     if not w ^ 'скрипка' then
       return false
     end
-    if not instead.tiny then
-      snd.music ('mus/violin.ogg', 1)
+    if not fn_tiny() then
+      fn_music('mus/violin.ogg', 1)
     end
-    walk 'cry2'
+    fn_walk(_'cry2')
   end;
   num = 0;
-  before_Default = [[Отчаяние захватило тебя. Всё, что ты можешь делать это думать и плакать.]];
-  before_Think = [[Ты думаешь, что навсегда останешься здесь. Мама! Забери меня отсюда!]];
-  before_Wait = [[Проходит немного времени.]];
+  before_Default = "Отчаяние захватило тебя. Всё, что ты можешь делать это думать и плакать.";
+  before_Think = "Ты думаешь, что навсегда останешься здесь. Мама! Забери меня отсюда!";
+  before_Wait = "Проходит немного времени.";
 }:attr '~light'
 
 cutscene {
-  nam = 'cry2';
+  nam = "cry2";
   exit = function(s)
-    remove 'сова2'
-    move('королева2', 'комната')
+    fn_remove(_'сова2')
+    fn_move(_'королева2', _'комната')
     _'королева2'.violin = true
-    _'зеркало':attr 'enterable'
+    fn_attr(_'зеркало', "enterable")
   end;
   next_to = 'комната';
   title = false;
@@ -2896,16 +3203,16 @@ cutscene {
 		Ты чувствуешь как музыка проникает сквозь стены, уносится вверх, спускается глубоко вниз. В самые глубины ледяного замка, в каждый его уголок...^^
 		"Дрянь! Дрянь! Дрянь!" -- раздаётся искорёженный ненавистью голос.^^
 		"Дрянная девчонка!" -- это {$fmt em|её} голос.]];
-    [[{$fmt b|{$fmt c|ВСПЫШКА}}]];
+    "{$fmt b|{$fmt c|ВСПЫШКА}}";
   };
 }
 
 cutscene {
-  nam = 'cry';
+  nam = "cry";
   exit = function(s)
-    remove 'сова2'
-    move('королева2', 'комната')
-    _'зеркало':attr 'enterable'
+    fn_remove(_'сова2')
+    fn_move(_'королева2', _'комната')
+    fn_attr(_'зеркало', "enterable")
   end;
   next_to = 'комната';
   title = false;
@@ -2913,38 +3220,38 @@ cutscene {
     [[Наконец, рыдания прорываются наружу и ты плачешь. Несмотря на то, что у тебя нет глаз, ты чувствуешь как по лицу текут тёплые слёзы.^^
 		"Дрянь! Дрянь! Дрянь!" -- раздаётся искорёженный ненавистью голос.^^
 		"Дрянная девчонка!" -- это {$fmt em|её} голос.]];
-    [[{$fmt b|{$fmt c|ВСПЫШКА}}]];
+    "{$fmt b|{$fmt c|ВСПЫШКА}}";
   };
 }
 
 obj {
   -"Снежная Королева|королева|женщина|другая мама";
-  nam = 'королева2';
+  nam = "королева2";
   each_turn = function(s)
-    local t = { "-- Дрянь! -- шипит Снежная Королева."; "Снежная Королева стонет."; "-- Я до тебя доберусь! -- произносит Снежная Королева."; }
-    p(t[rnd(#t)])
+    local t = fn_tbl7()
+    fn_say(t[fn_rnd(#t)])
   end;
   violin = false;
-  before_Default = [[Лучше держаться от неё подальше.]];
+  before_Default = "Лучше держаться от неё подальше.";
   before_Exam = function(s)
     if s.violin then
-      p([[Она закрывает уши руками. Ты видишь под её ладонями кровь.]])
+      fn_say("Она закрывает уши руками. Ты видишь под её ладонями кровь.")
     else
-      p([[Она закрывает лицо руками. Ты видишь под её ладонями кровь.]])
+      fn_say("Она закрывает лицо руками. Ты видишь под её ладонями кровь.")
     end
   end;
 }:attr 'scenery'
 
 obj {
   -"мама|мать";
-  nam = 'мама2';
-  description = [[Это твоя мама. Милая, родная мама!]];
-  init_dsc = [[В комнате находится твоя мама. Немой вопрос застыл на её губах.]];
+  nam = "мама2";
+  description = "Это твоя мама. Милая, родная мама!";
+  init_dsc = "В комнате находится твоя мама. Немой вопрос застыл на её губах.";
   talk_to = function(s)
-    if seen 'зеркало2' then
-      p([[Сначала нужно завершить кое-какое дело.]])
+    if fn_seen('зеркало2') then
+      fn_say("Сначала нужно завершить кое-какое дело.")
     else
-      walk 'happyend'
+      fn_walk(_'happyend')
     end
   end;
   ["before_Touch,Kiss"] = [[Ты бросаешься маме на шею и обнимаешь её.^
@@ -2953,25 +3260,25 @@ obj {
 
 obj {
   -"зеркало";
-  nam = 'зеркало2';
-  description = [[Ты видишь, что поверхность зеркала имеет фиолетовый оттенок.]];
-  init_dsc = [[На стене висит зеркало.]];
+  nam = "зеркало2";
+  description = "Ты видишь, что поверхность зеркала имеет фиолетовый оттенок.";
+  init_dsc = "На стене висит зеркало.";
   ["before_Attack,Take,Remove"] = function(s)
-    p("Ты берёшь зеркало в руки и с размаху бросаешь на пол. Сотни мелких осколков разлетаются по всей комнате.^^\n-- Что, черт возьми, ты себе позволяешь? -- слышишь ты, наконец, голос мамы.")
-    remove(s)
+    fn_say("Ты берёшь зеркало в руки и с размаху бросаешь на пол. Сотни мелких осколков разлетаются по всей комнате.^^\n-- Что, черт возьми, ты себе позволяешь? -- слышишь ты, наконец, голос мамы.")
+    fn_remove(s)
   end;
-  before_Search = [[Тебе кажется, что ты видишь за зеркалом Снежную Королеву!]];
+  before_Search = "Тебе кажется, что ты видишь за зеркалом Снежную Королеву!";
 }
 
 room {
-  nam = 'комната2';
-  dsc = [[Ты находишься в своей настоящей комнате. Все вещи находятся там, где и должны быть.]];
+  nam = "комната2";
+  dsc = "Ты находишься в своей настоящей комнате. Все вещи находятся там, где и должны быть.";
   enter = function(s)
-    pn([[Ты бросаешься к зеркалу понимая, что это твой последний шанс на спасение.]])
-    p([[Фиолетовое свечение заполняет всё и ты оказываешься... В своей комнате.]])
+    fn_line("Ты бросаешься к зеркалу понимая, что это твой последний шанс на спасение.")
+    fn_say("Фиолетовое свечение заполняет всё и ты оказываешься... В своей комнате.")
   end;
-  out_to = [[Сначала нужно завершить кое-какое дело.]];
-  title = [[Комната]];
+  out_to = "Сначала нужно завершить кое-какое дело.";
+  title = "Комната";
   obj = {
     'зеркало2';
     'мама2';
@@ -2982,15 +3289,15 @@ room {
   };
 }
 
-Verb { '#LookIn', [[смотреть]], [[в|во {noun}/вн : Search]] }
+Verb { '#LookIn', "смотреть", "в|во {noun}/вн : Search" }
 
-Verb { '#Sit', [[сесть]], [[на {noun}/вн : Enter]] }
+Verb { '#Sit', "сесть", "на {noun}/вн : Enter" }
 
 if false then
 global 'hint_num' (5)
 function use_hint()
 end
-function mp:before_Think()
+function call_before(mp, Think)
   if here() ^ 'Тьма' then
     return false
   end
@@ -3086,7 +3393,7 @@ function mp:before_Think()
       return
     end
     p [[Тебе приходит в голову ]]
-    if mp:thedark() then
+    if thedark(here) then
       p [[посветить телефоном.]]
     elseif disabled '#кристаллы' then
       p [[осмотреть свечение.]]
@@ -3112,7 +3419,7 @@ function mp:before_Think()
       else
         p [[бросить осколки.]]
       end
-    elseif mp:thedark() then
+    elseif thedark(here) then
       p [[включить фонарик.]]
     else
       p [[идти на юго-запад.]]
@@ -3253,25 +3560,25 @@ function mp:Sing()
   p [[То, что ты учишься в музыкальной школе не означает, что ты хорошо поёшь.]]
 end
 
-Verb { '#Ring', [[[|по]звон/ить]], [[Ring]] }
+Verb { '#Ring', "[|по]звон/ить", "Ring" }
 mp.Ring = function(s)
-  if not have 'телефон' then
-    p([[У тебя нет телефона.]])
+  if not fn_have('телефон') then
+    fn_say("У тебя нет телефона.")
     return
   end
-  if seen '#мама' then
-    p([[Тебе сейчас некому звонить.]])
+  if fn_seen('#мама') then
+    fn_say("Тебе сейчас некому звонить.")
     return
   end
   if _'телефон'.compass then
-    p([[Нет приёма.]])
+    fn_say("Нет приёма.")
     return
   end
-  p([[Странно, нет приёма.]])
+  fn_say("Странно, нет приёма.")
 end
 
-Verb { '#SwitchOn2', [[завести/,завед/и]], [[~ {noun}/вн :SwitchOn]] }
+Verb { '#SwitchOn2', "завести/,завед/и", "~ {noun}/вн :SwitchOn" }
 
-Verb { '#WalkThrough', [[идти,иди]], [[~ сквозь {noun}/вн,scene :Enter]] }
+Verb { '#WalkThrough', "идти,иди", "~ сквозь {noun}/вн,scene :Enter" }
 
-Verb { '#Give', [[дать,отда/ть,предло/жить,предла/гать,дам,даю,дадим]], [[{noun}/вн,held {noun}/дт,scene : Give]], [[~ {noun}/дт,scene {noun}/вн,held : Give reverse]] }
+Verb { '#Give', "дать,отда/ть,предло/жить,предла/гать,дам,даю,дадим", "{noun}/вн,held {noun}/дт,scene : Give", "~ {noun}/дт,scene {noun}/вн,held : Give reverse" }
