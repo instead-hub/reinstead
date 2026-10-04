@@ -1,0 +1,187 @@
+(* gram.bnf — грамматика DSL mise (только не-Lua часть;
+   содержимое ~~~lua / |lua / lua: — произвольный Lua, здесь не описано).
+
+   Нотация: EBNF. Отступы значимы (таб = 3 пробела); блок начинается
+   после ":" и заканчивается дедентентом. INDENT/DEDENT/NEWLINE — как
+   в грамматике Python. Комментарий — "#" в начале строки или отдельным
+   словом, окружённый пробелами. *)
+
+(* ---------- лексика ---------- *)
+NEWLINE   ::= <конец строки>
+INDENT    ::= <увеличение отступа>
+DEDENT    ::= <уменьшение отступа>
+IDENT     ::= [A-Za-z_] { [A-Za-z0-9_] }
+CLASSNAME ::= [A-Z] { [A-Za-z0-9_] }                    (* имя класса *)
+NAME      ::= IDENT | "#" IDENT | "#" IDENT { " " IDENT }   (* тег: #окно, #глаза совы *)
+QNAME     ::= '"' { <символ кроме "> } '"'
+            | "'" { <символ кроме '> } "'"
+STRING    ::= '"' { <символ с escape \n \t \" \' \\> } '"'
+            | "'" { <символ с escape \n \t \" \' \\> } "'"
+LONG      ::= "[[" ... "]]" | "[=[" ... "]=]" | "[==[" ... "]==]"
+RAW       ::= "`" { <произвольный Lua-текст> } "`"
+NUMBER    ::= [ "-" ] <цифры> [ "." <цифры> ]
+BOOL      ::= "true" | "false"
+NIL       ::= "nil"
+TEXT      ::= <любой текст до конца значения>           (* только в text-ключах *)
+
+(* text-ключи: значение без кавычек остаётся строкой *)
+TEXT_KEY  ::= "name" | "version" | "author" | "info" | "description" | "dsc"
+            | "title" | "inv" | "inside_dsc" | "init_dsc" | "dark_dsc"
+            | "cant_go" | "when_open" | "when_closed" | "when_on" | "when_off"
+            | "text" | "words" | "ask" | "reply" | "say" | "intro"
+
+(* ---------- файл ---------- *)
+file      ::= { top_item }
+top_item  ::= meta | lang | fmt | include | require | events
+            | const_block | global_block | setup | patch | fn
+            | class | verb | talk | lua_section | decl | NEWLINE
+
+meta      ::= ("name" | "version" | "author" | "info") ":" TEXT
+lang      ::= "lang" ":" ("ru" | "en")
+fmt       ::= "fmt" ":" name_list
+include   ::= "include" ":" name_list
+require   ::= "require" ":" name_list
+events    ::= "events" ":" name_list
+name_list ::= NAME { "," NAME }
+
+(* ---------- константы и глобальные ---------- *)
+const_block  ::= "const" ":" NEWLINE INDENT { const_item } DEDENT
+global_block ::= "global" ":" NEWLINE INDENT { global_item } DEDENT
+const_item   ::= key ":" value
+global_item  ::= key ":" value
+
+(* ---------- декларации объектов ---------- *)
+decl      ::= kind NAME ":" body
+            | kind ":" body                    (* анонимный объект *)
+kind      ::= "obj" | "scenery" | "fixed" | "furniture" | "box" | "npc"
+            | "room" | "door" | "story" | "ending" | "dlg"
+            | CLASSNAME                        (* экземпляр класса *)
+body      ::= NEWLINE INDENT { field } DEDENT
+
+field     ::= simple | var_field | handler | nested | any_default
+simple    ::= key ":" value
+var_field ::= "var" IDENT ":" value
+nested    ::= ("with" | "contains" | "inside" | "parts") ":"
+              ( body | ref_list )
+ref_list  ::= NAME { "," NAME }
+
+(* обработчики событий: ключ — имя события как в движке *)
+handler      ::= event_key [ "(" [ param { "," param } ] ")" ] ":" handler_value
+event_key    ::= EventName { "," EventName }
+               | ("before" | "after" | "post") EventName
+               | ("before" | "after" | "post") EventName { "," EventName }
+any_default  ::= ("Any" | "Default") ":" handler_value
+handler_value::= TEXT | STRING | LONG | "pass"
+               | "~~~do" NEWLINE { logic_line } "~~~"
+               | "|" NEWLINE INDENT { logic_line } DEDENT
+               | "~~~lua" NEWLINE { lua_line } "~~~"
+               | "|lua" NEWLINE INDENT { lua_line } DEDENT
+               | "use" IDENT
+
+EventName ::= <имя события движка/игры: Walk, Enter, Exam, SwitchOn, ...>
+
+(* ---------- fn: именованные кусочки ---------- *)
+fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
+              [ "->" type ] ":" handler_value
+param     ::= IDENT [ ":" type ] | "..."
+type      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
+
+(* ---------- class ---------- *)
+class     ::= "class" CLASSNAME [ "(" IDENT ")" ] ":" body
+
+(* ---------- verb ---------- *)
+verb      ::= "verb" CLASSNAME ":" body
+(* поля verb: tag, event, words, patterns, prio, hint, on/before/after *)
+patterns  ::= "patterns" ":" NEWLINE INDENT { "-" pattern } DEDENT
+pattern   ::= <строка шаблона: {noun}/падеж,атрибут | частоту|канал | ...>
+
+(* ---------- talk ---------- *)
+talk        ::= "talk" NAME ":" NEWLINE INDENT { talk_item } DEDENT
+talk_item   ::= "intro" ":" value
+              | "option" ":" talk_option
+              | "label" IDENT ":" talk_option
+talk_option ::= NEWLINE INDENT { talk_field } DEDENT
+talk_field  ::= ("ask" | "say") ":" value
+              | "reply" ":" value
+              | "do" ":" handler_value
+              | "when" ":" expr
+              | "goto" ":" IDENT
+              | ("always" | "hidden" | "only") ":" BOOL
+              | "option" ":" talk_option
+
+(* ---------- setup ---------- *)
+setup        ::= "setup" ":" NEWLINE INDENT { setup_field } DEDENT
+setup_field  ::= "dsc" ":" value
+               | "fmt" ":" name_list
+               | "take" ":" name_list
+               | "hero" ":" body
+               | "on" ":" body
+               | "game" ":" body
+               | "init" ":" handler_value
+               | "start" ":" handler_value
+
+(* ---------- patch ---------- *)
+patch     ::= "patch" (NAME | QNAME) ":" body
+
+(* ---------- lua: ---------- *)
+lua_section ::= "lua" ":" ( NEWLINE INDENT "~~~lua" NEWLINE { lua_line } "~~~" DEDENT
+                          | "|lua" NEWLINE INDENT { lua_line } DEDENT )
+
+(* ---------- значения ---------- *)
+value     ::= TEXT_KEY TEXT                (* текст без кавычек *)
+            | scalar | list | data | block
+scalar    ::= STRING | LONG | RAW | NUMBER | BOOL | NIL | IDENT
+list      ::= NEWLINE INDENT { "-" [ value ] NEWLINE } DEDENT
+data      ::= "{" <сбалансированный Lua-литерал> "}"
+            | "[" <сбалансированный Lua-литерал> "]"
+block     ::= NEWLINE INDENT { key ":" value } DEDENT
+
+(* ---------- логика (~~~do / |) ---------- *)
+logic_line  ::= stop | pass | ret | set | if | for | local | break | stmt
+stop        ::= "stop"
+pass        ::= "pass"
+ret         ::= "return" [ expr_list ]
+set         ::= "set" lvalue ( "=" | "+=" | "-=" ) expr_list
+if          ::= "if" expr ":" INDENT { logic_line } DEDENT
+                { "elseif" expr ":" INDENT { logic_line } DEDENT }
+                [ "else" ":" INDENT { logic_line } DEDENT ]
+for         ::= "for" for_header ":" INDENT { logic_line } DEDENT
+for_header  ::= IDENT "=" expr "," expr [ "," expr ]     (* числовой *)
+              | IDENT { "," IDENT } "in" expr            (* generic *)
+local       ::= "local" IDENT { "," IDENT } [ "=" expr_list ]
+break       ::= "break"
+stmt        ::= lvalue "=" expr_list                      (* присваивание *)
+              | call                                      (* вызов *)
+lvalue      ::= IDENT { "." IDENT | "[" expr "]" }
+
+(* ---------- выражения (подмножество Lua) ---------- *)
+expr_list ::= expr { "," expr }
+expr      ::= or_expr
+or_expr   ::= and_expr { "or" and_expr }
+and_expr  ::= cmp_expr { "and" cmp_expr }
+cmp_expr  ::= concat_expr { ("==" | "~=" | "<" | ">" | "<=" | ">=" | "^") concat_expr }
+concat_expr ::= add_expr { ".." add_expr }
+add_expr  ::= mul_expr { ("+" | "-") mul_expr }
+mul_expr  ::= unary { ("*" | "/" | "%" | "//") unary }
+unary     ::= ("not" | "-" | "#") unary | postfix
+postfix   ::= primary { "." IDENT | "[" expr "]" | ":" IDENT call_args }
+primary   ::= NUMBER | STRING | LONG | NAME | "#" IDENT
+            | IDENT | "(" expr ")" | "true" | "false" | "nil"
+call_args ::= "(" [ expr_list ] ")"
+            | STRING | LONG          (* один хвостовой аргумент, в т.ч. для str-параметра *)
+            | IDENT                  (* голое имя: str -> текст; obj -> объект/переменная;
+                                        event -> имя события; иначе выражение *)
+call      ::= IDENT call_args
+            | IDENT ":" IDENT call_args        (* obj:fn arg -> fn(obj, arg) *)
+
+(* Примечания:
+   - say/line/append — обычные fn из include: stdlib
+     (say(text: str, ...), line(...), append(text: str, ...)), не конструкции;
+   - скобки необязательны: для одного параметра (fn x arg) и без параметров
+     (line, box:once); нуль-параметровые fn в выражениях вызываются сами
+     (here.rotate, player);
+   - статическая форма _'имя' в логике запрещена: имена — bare/«#тег»/в кавычках;
+   - str-параметр забирает сырой текст без кавычек (say привет, radio:hasnt on);
+   - event-параметр/сравнение принимает голое имя события (xaction(Wear, s), ev == Exam);
+   - obj-параметр переводит строковый литерал-имя в _'имя' (go_to 'На крыше');
+   - lua_line — произвольная строка Lua (не описана). *)

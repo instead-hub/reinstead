@@ -228,10 +228,6 @@ local function fn_ref(name)
   return std.ref(name)
 end
 
-local function fn_theme_naplayer()
-  return theme.naplayer
-end
-
 local function fn_arg_word(i)
   return mp.args[i] and mp.args[i].word or ''
 end
@@ -406,7 +402,7 @@ obj {
     end
     fn_say("Станция где-то на востоке, минут десять ходьбы.")
   end;
-  before_Walk = function(s)
+  before_Walk = function(s, w, wh)
     if q1 == 0 then
       fn_say("Сначала мне нужно взять небольшой образец лишайника. Зря я что ли сюда шёл?")
     else
@@ -587,7 +583,7 @@ obj {
     end
   end;
   door_to = "Внутри большого купола";
-  before_Enter = function(s)
+  before_Enter = function(s, w, wh)
     fn_teleport(_'Внутри большого купола')
   end;
 }:attr 'open,scenery'
@@ -597,7 +593,7 @@ obj {
   nam = "Шлюз";
   description = "Шлюз разблокирован. Можно идти внутрь. У входа есть розетка.";
   door_to = "Внутри большого купола";
-  before_Enter = function(s)
+  before_Enter = function(s, w, wh)
     fn_teleport(_'Внутри большого купола')
   end;
 }:attr 'open,scenery'
@@ -627,7 +623,7 @@ obj {
     fn_say('Массивная шестиколёсная машина. Сейчас он на подзарядке, солнечные батареи на крыше понемногу наполняют аккумулятор вездехода. ' .. rover)
   end;
   door_to = "Внутри вездехода";
-  before_Enter = function(s)
+  before_Enter = function(s, w, wh)
     fn_teleport(_'Внутри вездехода')
   end;
 }:attr 'open,scenery'
@@ -674,7 +670,7 @@ room {
   };
 }
 
-_'@compass'.before_Default = function(s, ev)
+_'@compass'.before_Default = function(s, ev, w)
   if fn_event() ~= 'Drive' and fn_event() ~= 'Walk' then
     return false
   end
@@ -758,7 +754,7 @@ door {
 
 room {
   nam = "На крыше";
-  onenter = function(s)
+  onenter = function(s, f)
     if rover == 'Вездеход стоит возле малого купола.' then
       fn_say("Так как вездеход стоит рядом с куполом, то я могу добраться до антенны дальней связи. В основании антенны есть настроечный порт. Можно попробовать подключить антенну к вездеходу.")
     end

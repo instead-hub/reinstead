@@ -603,6 +603,9 @@ class ExprEmit:
                 self.err(str(e))
             return args, ret
         if name == "_":
+            if self.peek()[0] == "str":
+                self.err("_'...' is not allowed; use a bare name, #tag "
+                         "or quoted name")
             args, _ = self.arglist(None)
             return args, "obj"
         if name in FUNCS or name in self.env:
@@ -788,6 +791,10 @@ class ExprEmit:
                 plist, ret, variadic = FN_SIGS[nv]
                 if not plist:
                     self.err("fn %s takes no receiver" % nv)
+                if t == "str" and val in IDS:
+                    code = "_'%s'" % val
+                    t = "obj"
+                    val = None
                 self.check(t, plist[0][1], code)
                 nk, nv2 = self.peek()
                 if (not variadic and len(plist) == 1
@@ -977,6 +984,8 @@ def transpile_exprlist(text, env, where, expected=None):
     code, types = p.exprlist(expected)
     if p.peek()[0] != "eof":
         p.err("unexpected %r" % p.peek()[1])
+    if expected and types:
+        p.check(types[0], expected, code)
     return code, types
 
 

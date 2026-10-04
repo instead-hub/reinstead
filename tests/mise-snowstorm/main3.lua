@@ -229,10 +229,6 @@ local function fn_ref(name)
   return std.ref(name)
 end
 
-local function fn_theme_naplayer()
-  return theme.naplayer
-end
-
 local function fn_arg_word(i)
   return mp.args[i] and mp.args[i].word or ''
 end
@@ -289,7 +285,7 @@ local function fn_tbl7()
 end
 
 local function fn_have_compass()
-  return fn_have('телефон') and _'телефон'.compass
+  return fn_have(_'телефон') and _'телефон'.compass
 end
 
 local function fn_check_compass(w)
@@ -353,8 +349,8 @@ obj {
   -"браслет";
   nam = "браслет";
   after_Wear = "Надев браслет на правое запястье, ты чувствуешь, что на душе у тебя потеплело.";
-  before_Disrobe = function(s)
-    if fn_visited('gotmirror') then
+  before_Disrobe = function(s, w, wh)
+    if fn_visited(_'gotmirror') then
       fn_say("Тебе кажется, что в этом странном месте лучше никогда не снимать этот браслет!")
     else
       return false
@@ -405,7 +401,7 @@ Useless = Class {
 room {
   -"машина";
   nam = "В машине";
-  before_Cry = function(s)
+  before_Cry = function(s, w, wh)
     if fn_seen('#мама') then
       fn_say("-- Прекрати истерику! -- произносит мать.")
     else
@@ -450,11 +446,11 @@ room {
   dsc = "Ты сидишь на заднем сидении машины и смотришь в окно.";
   enter = function(s)
     fn_daemonStart(s)
-    fn_daemonStart(_('#мама'))
+    fn_daemonStart(_'#мама')
   end;
   exit = function(s)
     if fn_seen('#мама') then
-      fn_daemonStop(_('#мама'))
+      fn_daemonStop(_'#мама')
     end
   end;
   out_to = function(s)
@@ -464,16 +460,16 @@ room {
       fn_say("Там холодно.")
     else
       fn_daemonStop(s)
-      if not fn_have('скрипка') then
+      if not fn_have(_'скрипка') then
         fn_move(_'скрипка', _'машина')
       end
-      if not fn_have('телефон') then
+      if not fn_have(_'телефон') then
         fn_move(_'телефон', _'бардачок')
       end
       fn_walk(_'метель1')
     end
   end;
-  before_Listen = function(s)
+  before_Listen = function(s, w, wh)
     if fn_seen('#мама') then
       fn_say("Ты слышишь шум мотора и музыку, доносящуюся из радио.")
     else
@@ -498,9 +494,9 @@ room {
       end;
       init_dsc = "Машину ведёт твоя мать.";
       time = 0;
-      ["before_Ask,Tell,Talk"] = function(s)
-        if fn_visited('разговор1') then
-          if _'телефон'.seen and fn_have('телефон') then
+      ["before_Ask,Tell,Talk"] = function(s, w, wh)
+        if fn_visited(_'разговор1') then
+          if _'телефон'.seen and fn_have(_'телефон') then
             fn_say("-- Я не буду с тобой разговаривать, пока ты не отдашь мне телефон! Ну же!")
             return
           end
@@ -531,7 +527,7 @@ room {
 
     Prop {
       -"бардачок";
-      before_Exam = function(s)
+      before_Exam = function(s, w, wh)
         if fn_inside(_'телефон', _'бардачок') then
           fn_say("Бардачок закрыт.")
           return
@@ -544,10 +540,10 @@ room {
     Prop {
       -"дверь";
       before_Close = "Дверь закрыта.";
-      before_Enter = function(s)
+      before_Enter = function(s, w, wh)
         fn_xaction('Exit')
       end;
-      before_Open = function(s)
+      before_Open = function(s, w, wh)
         fn_xaction('Exit')
       end;
     };
@@ -572,7 +568,7 @@ room {
           fn_say("За стеклом ты видишь смутный силуэт заправки.")
           return
         end
-        if fn_visited('разговор1') and _'телефон'.seen then
+        if fn_visited(_'разговор1') and _'телефон'.seen then
           if blizzard == 0 then
             fn_line("Разглядывая белоснежный пейзаж, ты замечаешь вдали нечто странное.")
             fn_enable(_'#метель')
@@ -645,8 +641,8 @@ dlg {
               "Мама, прекрати!";
               function(s)
                 fn_say("-- Да, не ожидала я... Что у меня такая дочь...")
-                if fn_have('телефон') then
-                  fn_daemonStart('телефон')
+                if fn_have(_'телефон') then
+                  fn_daemonStart(_'телефон')
                 end
                 fn_walkback()
               end;
@@ -815,7 +811,7 @@ mp.Play = function(s, w)
     fn_say("Ты умеешь играть только на скрипке.")
     return
   end
-  if not fn_have('скрипка') then
+  if not fn_have(_'скрипка') then
     fn_say("Сначала тебе нужно взять скрипку в руки.")
     return
   end
@@ -823,7 +819,7 @@ mp.Play = function(s, w)
 end
 
 Verb { '#Light', "[|по|под]свети/ть,[|по|свеч/у,освети/ть", "{noun}/тв,held : Light", hint = function(s)
-  return fn_thedark(fn_here()) and fn_have('телефон')
+  return fn_thedark(fn_here()) and fn_have(_'телефон')
 end }
 mp.Light = function(s, w)
   if fn_check_held(w) then
@@ -857,8 +853,8 @@ mp.Tune = function(s, w)
 end
 
 Verb { '#Photo', "[|с|по]фото/графировать", "Photo" }
-mp.Photo = function(s)
-  if not fn_have('телефон') then
+mp.Photo = function(s, w, wh)
+  if not fn_have(_'телефон') then
     fn_say("Дебе нечем делать снимки.")
   elseif fn_thedark(fn_here()) then
     fn_say("Нет света. Может быть, посветить телефоном?")
@@ -902,7 +898,7 @@ end
 game.hint_verbs = {"#Exam","#Drop","#LookIn","#ThrowAt","#Walk","#Take","#Play","#Give","#Touch","#Attack2","#Talk","#Cry","#Open","#Close","#Jump","#Wait","#Wear","#Sit","#Exit","#SwitchOn","#SwitchOff","#PutOn","#Light"}
 function init()
   take('телефон')
-  if fn_theme_naplayer() == '.mobile' or fn_theme_naplayer() == '.mobile2' then
+  if fn_theme_name() == '.mobile' or fn_theme_name() == '.mobile2' then
     fn_set_help(true)
   else
     fn_set_help(false)
@@ -958,7 +954,7 @@ obj {
   end;
   inside_dsc = "Ты находишься в машине.";
   after_Close = function(s)
-    if fn_inside(_'перо', s) and not fn_have('перо') then
+    if fn_inside(_'перо', s) and not fn_have(_'перо') then
       fn_say("Когда ты захлопнула дверь машины, перо упало с крыши в снег.")
       fn_move(_'перо', _'поле')
       return
@@ -1014,11 +1010,11 @@ Area = Class({
       return
     end
     if w == 'u_to' then
-      fn_xaction('Exam', _('#небо'))
+      fn_xaction('Exam', _'#небо')
       return
     end
     if w == 'd_to' then
-      fn_xaction('Exam', _('#снег'))
+      fn_xaction('Exam', _'#снег')
       return
     end
     return false
@@ -1060,14 +1056,14 @@ Area {
       fn_say("Неподалёку начинается хвойный лес.")
     end
   end;
-  ["n_to,ne_to,e_to,se_to,s_to"] = function(s, t)
+  ["n_to,ne_to,e_to,se_to,s_to"] = function(s)
     if fn_event() == 'Exam' then
       return false
     end
     if fn_check_compass('w_to') then
       return
     end
-    fn_say("Ты идешь некоторое время на ", (_('@' .. t).word), ".")
+    fn_say([["Ты идешь некоторое время на ", (_('@'..t).word), "."]])
     fn_say("Ничего не меняется. Вокруг все-такой же пустынный пейзаж. Ты решаешь вернуться к машине.")
   end;
   onenter = function(s)
@@ -1085,14 +1081,14 @@ Area {
     end
     return "#лес"
   end;
-  before_Listen = function(s)
+  before_Listen = function(s, w, wh)
     if fn_hasnt(_'радио', "on") then
       fn_say("Стоит звенящая тишина.")
     else
       fn_say("Ты слышишь шум радиопомех из машины.")
     end
   end;
-  before_Walk = function(s)
+  before_Walk = function(s, w, wh)
     if fn_where(fn_player()) ^ 'машина' then
       fn_say("Машина не заводится. Придётся выйти и идти пешком.")
       return
@@ -1108,7 +1104,7 @@ Area {
 
     Snow {
       nam = "#снег";
-      before_Exam = function(s)
+      before_Exam = function(s, w, wh)
         fn_say("Ты видишь запорошенные снегом следы, которые ведут в лес.")
         fn_enable(_'#следы')
       end;
@@ -1119,7 +1115,7 @@ Area {
       nam = "#лес";
       before_Default = "Лес далеко.";
       before_Exam = "На деревьях лежит снег.";
-      ["before_Walk,Enter,Climb"] = function(s)
+      ["before_Walk,Enter,Climb"] = function(s, w, wh)
         fn_walk(_'В лесу')
       end;
     }:attr 'scenery';
@@ -1190,7 +1186,7 @@ obj {
       fn_call_before(s, 'Touch')
       return
     end
-    if not fn_have('перо') then
+    if not fn_have(_'перо') then
       fn_say("Ты подумала, что тебе стоит сначала взять с собой перо странной совы. Кто знает, куда умчит тебя олень?")
       return
     end
@@ -1319,7 +1315,7 @@ Area {
 
     Snow {
       nam = "#снег";
-      before_Exam = function(s)
+      before_Exam = function(s, w, wh)
         if fn_here().depth == 0 then
           fn_say("Здесь едва заметный след теряется.")
         else
@@ -1332,7 +1328,7 @@ Area {
       nam = "#поле";
       before_Default = "Поле далеко.";
       before_Exam = "Снежное поле выглядит бескрайним.";
-      ["before_Walk,Enter,Climb"] = function(s)
+      ["before_Walk,Enter,Climb"] = function(s, w, wh)
         if fn_here().depth == 0 then
           fn_walk(_'поле')
         else
@@ -1361,7 +1357,7 @@ Area {
         if s.talked then
           return
         end
-        if fn_where(s) ^ 'В лесу' and fn_where(s) ^ 'В лесу' and _('В лесу').depth == 0 and fn_rnd(3) == 1 then
+        if fn_where(s) ^ 'В лесу' and fn_where(s) ^ 'В лесу' and _'В лесу'.depth == 0 and fn_rnd(3) == 1 then
           fn_say("Хлопая крыльями сова улетела в сторону поля.")
           fn_move(s, _'поле')
         elseif fn_here() ^ 'поле' and fn_where(s) ^ 'поле' and s.talked and fn_rnd(3) == 1 then
@@ -1399,11 +1395,11 @@ Area {
         return 'разговор с совой'
       end;
       talked = false;
-      before_Exam = function(s)
+      before_Exam = function(s, w, wh)
         fn_say("Тебе кажется, что это полярная сова. Только у неё странные глаза.")
         if fn_here() ^ 'поле' then
           fn_line()
-          fn_call_before(_('#глаза совы'), 'Exam')
+          fn_call_before(_'#глаза совы', 'Exam')
         end
       end;
       before_Touch = function(s)
@@ -1427,7 +1423,7 @@ Area {
           -"глаза совы,глаза,дыр*";
           nam = "#глаза совы";
           before_Default = "Тебе не нравятся эти глаза.";
-          before_Exam = function(s)
+          before_Exam = function(s, w, wh)
             fn_say("На месте глаз у совы зияют чёрные дырки.")
             if not _'сова'.seen then
               fn_say("^Интересно, видит ли она тебя?")
@@ -1570,7 +1566,7 @@ Area {
     fn_say("По этому направлению нет ничего интересного. Такая же ледяная стена.")
   end;
   onexit = function(s, t)
-    if t ^ 'пещера' and not fn_visited('пещера') then
+    if t ^ 'пещера' and not fn_visited(_'пещера') then
       pic_set('23-pan')
     end
   end;
@@ -1662,7 +1658,7 @@ room {
   -"пещера";
   nam = "пещера";
   Play = function(s, w)
-    if not w or not fn_have('скрипка') then
+    if not w or not fn_have(_'скрипка') then
       return false
     end
     if not w then
@@ -1671,10 +1667,10 @@ room {
     if not w ^ 'скрипка' then
       return false
     end
-    if _('#кристаллы').try == 0 or _('#кристаллы').broken then
+    if _'#кристаллы'.try == 0 or _'#кристаллы'.broken then
       return false
     end
-    _('#кристаллы').broken = true
+    _'#кристаллы'.broken = true
     pic_set('24')
     fn_say("Интересно... А что если? Не успев додумать мысль, ты уже берёшь скрипку в руки.^^\nТы извлекаешь \"ми\" второй октавы. Сначала ничего не происходит, но затем ты слышишь, как странный кристалл отзывается\nна звук твоей скрипки.^^\nЗвуки скрипки и кристалла усиливают друг друга в резонансе. Ты почти физически ощущаешь, как\nнапряжение кристалла достигает своего пика. И, наконец, он шумно взрывается на мелкие осколки.")
     fn_enable(_'осколки')
@@ -1684,7 +1680,7 @@ room {
 Пещера продолжается на северо-запад.]];
   e_to = '#свечение';
   nw_to = function(s)
-    if fn_thedark(fn_here()) and not fn_visited('пещера2') then
+    if fn_thedark(fn_here()) and not fn_visited(_'пещера2') then
       fn_say("Ты же не видишь куда идти.")
       return
     end
@@ -1708,12 +1704,12 @@ room {
       -"свечение";
       nam = "#свечение";
       ["before_Touch,Push,Knock"] = "Твоя рука проходит сквозь свечение.";
-      before_Exam = function(s)
+      before_Exam = function(s, w, wh)
         fn_say("Этим путём ты попала сюда. Вероятно, с помощью него можно выйти наружу.")
         fn_say("^Ты обращаешь внимание, что источником странного свечения служат фиолетовые кристаллы, растущие из стены.")
         fn_enable(_'#кристаллы')
       end;
-      ["before_Walk,Climb,Enter"] = function(s)
+      ["before_Walk,Climb,Enter"] = function(s, w, wh)
         fn_walk(_'Ледяные горы')
       end;
     }:attr 'scenery,luminous';
@@ -1722,7 +1718,7 @@ room {
       -"стены|стена|пол|потолок";
       nam = "#стены";
       ["before_Touch,Push,Knock"] = { "Похоже", "ты находишься в ледяной пещере." };
-      before_Exam = function(s)
+      before_Exam = function(s, w, wh)
         if fn_thedark(fn_here()) then
           fn_say("В полной темноте это будет сложно.")
         else
@@ -1772,7 +1768,7 @@ room {
       nam = "осколки";
       before_Light = "Свет испускаемый осколками очень тусклый для этого.";
       before_Exam = "Осколки кристалла пульсируют слабым фиолетовым свечением.";
-      before_Take = function(s)
+      before_Take = function(s, w, wh)
         if fn_here() ^ 'пещера2' and fn_here().solved then
           fn_say("Ты боишься беспокоить летучих мышей.")
           return
@@ -1788,7 +1784,7 @@ obj {
   nam = "ообрыв";
   before_Enter = "Прыгнуть в пропасть? Тебе нужно найти маму, а не сбегать от проблем...";
   before_Exam = "Глубокий разлом во льду. Света фонарика недостаточно, чтобы оценить его глубину. К счастью, ширина разлома не превышает двух метров.";
-  before_JumpOver = function(s)
+  before_JumpOver = function(s, w, wh)
     fn_say("Ты разбегаешься и прыгаешь через пропасть...")
     if fn_here() ^ 'обрыв' then
       fn_walk(_'Другая сторона')
@@ -1827,7 +1823,7 @@ room {
   ["se_to,e_to"] = 'пещера';
   solved = false;
   ["sw_to,w_to"] = function(s)
-    if fn_thedark(fn_here()) and not fn_visited('обрыв') then
+    if fn_thedark(fn_here()) and not fn_visited(_'обрыв') then
       fn_say("Сложно сделать это в полной темноте.")
       return
     end
@@ -1890,7 +1886,7 @@ obj {
       fn_append("|пещера")
     end
   end;
-  ["before_Enter,Walk,Climb"] = function(s)
+  ["before_Enter,Walk,Climb"] = function(s, w, wh)
     if fn_here() ^ 'Другая сторона' then
       fn_walk(_'За ледяной стеной')
     else
@@ -1922,7 +1918,7 @@ room {
 room {
   -"плато/ср";
   nam = "За ледяной стеной";
-  cant_go = { "На плато не видно ничего интересного", "кроме скалы." };
+  cant_go = "На плато не видно ничего интересного, кроме скалы.";
   dsc = function(s)
     fn_say("Ты находишься на снежном плато, рядом со входом в пещеру. Ледяные горы окружают плато со всех сторон. Может быть поэтому, стоит мёртвая тишина.")
     fn_say("На западе, в центре плато возвышается ледяная скала.")
@@ -1950,7 +1946,7 @@ room {
       -"скала|замок|дворец|вершины";
       nam = "#замок";
       before_Default = "Сначала к скале нужно подойти.";
-      ["before_Enter,Walk,Climb"] = function(s)
+      ["before_Enter,Walk,Climb"] = function(s, w, wh)
         fn_walk(_'У замка')
       end;
       before_Exam = "Остроконечные вершины ледяной громады высоко возвышаются над плато.";
@@ -1962,9 +1958,9 @@ obj {
   -"разлом|проход|отверстие|щель|вход";
   nam = "ворота";
   description = "Высота разлома с неровными краями достигает трёх метров, а ширина -- двух. Верх отверстия имеет форму арки.";
-  ["before_Walk,Enter,Climb"] = function(s)
+  ["before_Walk,Enter,Climb"] = function(s, w, wh)
     if fn_here() ^ 'У замка' then
-      fn_xaction('Enter', _('#замок'))
+      fn_xaction('Enter', _'#замок')
     else
       fn_walk(_'У замка')
     end
@@ -1983,7 +1979,7 @@ obj {
   description = function(s)
     if fn_has(s, "animate") then
       fn_say("Высота ледяного человека около двух метров. У него есть руки и ноги, но вместо головы лишь небольшой выступ.")
-      if fn_visited('королева-диалог') and fn_disabled(_'дверь') then
+      if fn_visited(_'королева-диалог') and fn_disabled(_'дверь') then
         fn_say("Сейчас голем стоит у северной части зала и ждет тебя.")
       end
     else
@@ -2007,7 +2003,7 @@ obj {
         fn_say("Стена с треском раскололась и в ней образовался проход.")
         fn_attr(s, "animate")
       else
-        if not fn_visited('Тронный зал') then
+        if not fn_visited(_'Тронный зал') then
           fn_say("-- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты.")
         else
           fn_say("-- Я узнал тебя.")
@@ -2021,7 +2017,7 @@ obj {
     if e == 'Exam' or e == 'Walk' or e == 'Climb' or e == 'Enter' then
       return false
     end
-    if not fn_disabled(_'дверь') or not fn_visited('королева-диалог') then
+    if not fn_disabled(_'дверь') or not fn_visited(_'королева-диалог') then
       return false
     end
     fn_say("Сначала к голему нужно подойти.")
@@ -2031,8 +2027,8 @@ obj {
     fn_say(fn_Noun(s), " весит не меньше сотни килограмм. Как ты это сделаешь?")
   end;
   before_Taste = "А язык не приклеится?";
-  ["before_Walk,Enter,Climb"] = function(s)
-    if fn_visited('королева-диалог') and fn_disabled(_'дверь') then
+  ["before_Walk,Enter,Climb"] = function(s, w, wh)
+    if fn_visited(_'королева-диалог') and fn_disabled(_'дверь') then
       fn_say("Ты последовала за големом. Обогнув колонну и подойдя к северной стене, ты заметила небольшую деревянную дверь.")
       fn_enable(_'дверь')
       return
@@ -2071,7 +2067,7 @@ room {
       -"скала|гора|замок|дворец|стена";
       nam = "#замок";
       description = "Острые вершины скалы устремлены в небо.";
-      ["before_Enter,Walk,Climb"] = function(s)
+      ["before_Enter,Walk,Climb"] = function(s, w, wh)
         if fn_disabled(_'ворота') then
           return false
         end
@@ -2104,7 +2100,7 @@ obj {
       fn_say("Сначала ты хочешь рассмотреть её внимательней.")
     else
       fn_daemonStop(s)
-      if fn_visited('королева-диалог') then
+      if fn_visited(_'королева-диалог') then
         fn_say("-- Ты уже готова стать моей дочерью?^\n-- Нет!^\n-- Ну что же, я подожду.")
       else
         if fn_has(_'браслет', "worn") then
@@ -2121,7 +2117,7 @@ obj {
   end;
   description = function(s)
     s.queen = true
-    if _('Тронный зал').near then
+    if _'Тронный зал'.near then
       fn_say("Женщина похожа на твою маму, но в чертах её лица ты видишь что-то незнакомое, чужое и, поэтому, неприятное.\nНо больше всего тебя пугают её глаза. Они закрыты. Ты растерянно вглядываешься в её лицо, снова и снова пытаясь отыскать родные черты.")
     else
       fn_say("Это твоя мама! Не может быть! Что это за место? Что она тут делает? Столько вопросов!")
@@ -2135,14 +2131,14 @@ obj {
   end;
   queen = false;
   ["before_Kiss,Touch"] = "Тебе кажется, что это не твоя мама. Тебе становится страшно.";
-  before_Walk = function(s)
-    return fn_call_before(_('#трон'), 'Walk')
+  before_Walk = function(s, w, wh)
+    return fn_call_before(_'#трон', 'Walk')
   end;
   obj = {
     obj {
       -"лицо";
       description = function(s)
-        if _('Тронный зал').near then
+        if _'Тронный зал'.near then
           fn_description(_'королева')
         else
           fn_say("Отсюда плохо видно её лицо.")
@@ -2153,8 +2149,8 @@ obj {
     obj {
       -"глаза";
       description = function(s)
-        if _('Тронный зал').near then
-          if not fn_visited('королева-диалог') then
+        if _'Тронный зал'.near then
+          if not fn_visited(_'королева-диалог') then
             fn_say("Её глаза закрыты. Как будто она спит. Тебе становится страшно.")
           else
             fn_say("Ты стараешься не думать о глазах твоей {$fmt em|новой} мамы.")
@@ -2183,7 +2179,7 @@ room {
       fn_line("Через некоторое время коридор кончился и вы вошли в большой зал.")
       fn_line("Зал был огромен! В его центре ты увидела трон, на котором сидела женщина... Твоя... мама?")
       fn_line()
-      fn_daemonStart('королева')
+      fn_daemonStart(_'королева')
       fn_remove(_'сова')
       pic_set('30')
     end
@@ -2195,7 +2191,7 @@ room {
     return false
   end;
   n_to = function(s)
-    if fn_disabled(_'дверь') and fn_visited('королева-диалог') then
+    if fn_disabled(_'дверь') and fn_visited(_'королева-диалог') then
       return 'голем'
     end
     if not fn_disabled(_'дверь') then
@@ -2215,14 +2211,14 @@ room {
           return false
         end
         fn_say("Поддавшись смутному интуитивному чувству, ты покидаешь тронный зал.")
-        fn_daemonStop('королева')
+        fn_daemonStop(_'королева')
         return
       end
       fn_say("Ты нашла свою маму! Не время уходить!")
       return false
     end
     if fn_seen('голем') then
-      if not fn_visited('королева-диалог') then
+      if not fn_visited(_'королева-диалог') then
         fn_say("Ты пытаешься уйти из зала, но ледяной голем преграждает тебе путь.")
         return false
       end
@@ -2231,7 +2227,7 @@ room {
   ["out_to,e_to"] = 'ворота';
   ["s_to,d_to"] = '#лестница';
   u_to = function(s)
-    if fn_visited('комната') then
+    if fn_visited(_'комната') then
       return 'дверь'
     end
     return false
@@ -2259,24 +2255,24 @@ room {
       -"трон|кресло";
       nam = "#трон";
       description = "Великолепный трон сделан, как и всё вокруг, из льда. Высокая прямая спинка украшена причудливыми узорами.";
-      ["before_Enter,Climb"] = function(s)
+      ["before_Enter,Climb"] = function(s, w, wh)
         if fn_seen('королева') then
           fn_say("Трон занят.")
         else
           fn_say("Тебе не нужна власть. Тебе нужна мама.")
         end
       end;
-      before_Walk = function(s)
-        if _('Тронный зал').near then
+      before_Walk = function(s, w, wh)
+        if _'Тронный зал'.near then
           return false
         end
         fn_say("Ты бежишь к трону. Твоё сердце от радости выпрыгивает из груди. Но что-то странное ты замечаешь в облике матери.\nВ нерешительности ты останавливаешься в нескольких шагах от неё.")
         if fn_hasnt(_'браслет', "worn") then
-          fn_daemonStop('королева')
+          fn_daemonStop(_'королева')
           fn_walk(_'badend2')
           return
         end
-        _('Тронный зал').near = true
+        _'Тронный зал'.near = true
       end;
     }:attr 'scenery,supporter';
 
@@ -2309,7 +2305,7 @@ room {
     obj {
       nam = "#лестница";
       description = "Широкая лестница начинается от южной стены и ведёт вниз.";
-      ["before_Enter,Walk,Climb"] = function(s)
+      ["before_Enter,Walk,Climb"] = function(s, w, wh)
         fn_walk(_'Зал с зеркалами')
       end;
     }:attr 'scenery';
@@ -2590,7 +2586,7 @@ obj {
     if s.num < 3 then
       return
     end
-    if fn_hasnt(_('#окно'), "open") then
+    if fn_hasnt(_'#окно', "open") then
       fn_say("Ты слышишь стук в окно.")
     else
       fn_say("Ты видишь, как в открытое окно влетает полярная сова и садится прямо на стол.")
@@ -2608,14 +2604,14 @@ obj {
       fn_say("Она за стеклом.")
       return
     end
-    if fn_visited('сова2-диалог1') and not fn_where(_'зеркало') ^ '#стена' then
+    if fn_visited(_'сова2-диалог1') and not fn_where(_'зеркало') ^ '#стена' then
       fn_say("-- Повесь зеркало на стену, дитя. Скорее!")
       return
     end
-    if not fn_visited('сова2-диалог1') and not fn_where(_'зеркало') ^ '#стена' then
+    if not fn_visited(_'сова2-диалог1') and not fn_where(_'зеркало') ^ '#стена' then
       return 'сова2-диалог1'
     end
-    if not fn_visited('сова2-диалог2') then
+    if not fn_visited(_'сова2-диалог2') then
       return 'сова2-диалог2'
     end
     return 'сова2-диалог3'
@@ -2635,7 +2631,7 @@ room {
   nam = "комната";
   dsc = function(s)
     fn_say("Это действительно твоя комната. Комната, которую ты покинула ещё совсем недавно. Перед тем... как вы уехали с мамой...^^\nТы видишь те же: стол, шкаф, кровать и книжные полки... И даже окно!")
-    if not fn_visited('gotmirror') then
+    if not fn_visited(_'gotmirror') then
       fn_say("Правда, мебель стоит неправильно и на стене нет зеркала. Интересно, куда оно подевалось?")
     else
       fn_say("Правда, мебель стоит неправильно.")
@@ -2655,13 +2651,13 @@ room {
       fn_say("За дверью оказалась лестница, которая вела наверх. Ты поднялась по ней и оказалась в ... своей комнате.")
       fn_move(_'голем', _'У замка')
     end
-    if fn_visited('gotmirror') and _'зеркало'.seen and not _'сова2'.finside then
+    if fn_visited(_'gotmirror') and _'зеркало'.seen and not _'сова2'.finside then
       _'сова2'.num = 0
-      fn_daemonStart('сова2')
+      fn_daemonStart(_'сова2')
     end
   end;
   exit = function(s)
-    fn_daemonStop('сова2')
+    fn_daemonStop(_'сова2')
     if not _'сова2'.finside then
       fn_remove(_'сова2')
     end
@@ -2795,7 +2791,7 @@ Useless {
 room {
   -"зал";
   nam = "Зал с зеркалами";
-  cant_go = { "Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла блуждать между зеркалами в поисках чего-либо", "кроме пустоты." };
+  cant_go = "Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла блуждать между зеркалами в поисках чего-либо, кроме пустоты.";
   d_to = "Интересно, есть ли другие лестницы ведущие ещё глубже?";
   daemon = function(s)
     if fn_rnd(100) < 25 then
@@ -2853,7 +2849,7 @@ room {
       -"лестница";
       nam = "#лестница";
       description = "Широкая лестница без перил, закрученная спиралью вокруг массивной колонны, ведёт наверх -- к тронному залу.";
-      ["before_Enter,Walk,Climb"] = function(s)
+      ["before_Enter,Walk,Climb"] = function(s, w, wh)
         fn_walk(_'Тронный зал')
       end;
     }:attr 'scenery';
@@ -2889,7 +2885,7 @@ room {
 Ты даже боишься представить сколько их может быть здесь, в этом громадном зале.]];
       before_Attack = "Ты не разобьешь их всех.";
       ["before_Push,Pull,Transfer"] = "Стоит ли это делать?";
-      before_Search = function(s)
+      before_Search = function(s, w, wh)
         fn_say("Ты подошла к одному из зеркал и заглянула в него. Странно, но вместо своего отражения ты видишь нечто другое....^^")
         local t = fn_tbl6()
         fn_line(t[fn_rnd(#t)])
@@ -2971,8 +2967,8 @@ room {
         fn_say("Массивный постамент представляет из себя ледяную глыбу квадратной формы.")
         return false
       end;
-      ["before_Enter,Climb"] = function(s)
-        fn_xaction('Enter', _('#пламя'))
+      ["before_Enter,Climb"] = function(s, w, wh)
+        fn_xaction('Enter', _'#пламя')
       end;
       obj = {
         obj {
@@ -2986,8 +2982,8 @@ room {
               fn_say("Как ты сделаешь это?")
             end
           end;
-          before_Enter = function(s)
-            if fn_visited('gotmirror') then
+          before_Enter = function(s, w, wh)
+            if fn_visited(_'gotmirror') then
               fn_say("Ты уже взяла то, что тебе было нужно.")
               return
             end
@@ -3000,7 +2996,7 @@ room {
           before_Exam = "Языки странного огня излучают холод.";
           before_Listen = "Ты слышишь потрескивание.";
           before_Take = "Это невозможно взять.";
-          before_Touch = function(s)
+          before_Touch = function(s, w, wh)
             if fn_here().warm <= 5 then
               fn_say("Твоя рука моментально начинает замерзать. Лучше не пытаться это делать.")
             else
@@ -3049,7 +3045,7 @@ obj {
       fn_say("Зачем разбивать зеркало, которое ты так долго искала?")
     end
   end;
-  before_Enter = function(s)
+  before_Enter = function(s, w, wh)
     if fn_seen('королева2') then
       fn_walk(_'комната2')
     else
@@ -3070,7 +3066,7 @@ obj {
   before_Search = function(s)
     if fn_here() ^ 'комната' and not _'сова2'.finside and not s.seen then
       _'сова2'.num = 0
-      fn_daemonStart('сова2')
+      fn_daemonStart(_'сова2')
     end
     s.seen = true
     fn_say("Вместо своего отражения, ты видишь в зеркале свою маму! {$fmt em|Настоящую} маму.")
@@ -3089,7 +3085,7 @@ obj {
     fn_say("Ты забираешь зеркало.")
     fn_move(s, fn_player())
   end;
-  before_Touch = function(s)
+  before_Touch = function(s, w, wh)
     if fn_seen('королева2') then
       fn_say("Твоя рука свободно проходит сквозь поверхность зеркала.")
     else
@@ -3106,7 +3102,7 @@ cutscene {
 		Сотни тысяч зеркал, среди которых есть то, что ты ищешь...^^
 		Ты протягиваешь руки и вот -- ты уже держишь его! Зеркало из твоей комнаты. Ты выходишь из ледяного пламени.]];
   exit = function(s)
-    fn_take('зеркало')
+    fn_take(_'зеркало')
     fn_remove(_'королева')
   end;
   next_to = 'ледяное-пламя';
@@ -3119,7 +3115,7 @@ cutscene {
     pic_set('81')
   end;
   next_to = "titles";
-  onenter = function(s)
+  onenter = function(s, f)
     pic_set('31')
   end;
   title = "Конец";
@@ -3150,7 +3146,7 @@ room {
   nam = "Тьма";
   before_Cry = function(s)
     s.num = s.num + 1
-    if s.num < 5 or fn_have('скрипка') then
+    if s.num < 5 or fn_have(_'скрипка') then
       fn_say("Тебя душат рыдания.")
       if s.num == 1 then
         fn_say("Но у тебя нет глаз, чтобы плакать.")
@@ -3160,7 +3156,7 @@ room {
         fn_say("Но можно ли плакать без глаз?")
       else
         fn_say("Ты едва сдерживаешься.")
-        if fn_have('скрипка') then
+        if fn_have(_'скрипка') then
           fn_say("Ты чувствуешь в своих руках скрипку.")
         end
       end
@@ -3297,7 +3293,7 @@ if false then
 global 'hint_num' (5)
 function use_hint()
 end
-function call_before(mp, Think)
+function mp:before_Think()
   if here() ^ 'Тьма' then
     return false
   end
@@ -3561,8 +3557,8 @@ function mp:Sing()
 end
 
 Verb { '#Ring', "[|по]звон/ить", "Ring" }
-mp.Ring = function(s)
-  if not fn_have('телефон') then
+mp.Ring = function(s, w, wh)
+  if not fn_have(_'телефон') then
     fn_say("У тебя нет телефона.")
     return
   end

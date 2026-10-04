@@ -43,10 +43,10 @@ fn rnd(n: num) -> num: |lua
 fn xaction(ev: event, ...): |lua
   mp:xaction(ev, ...)
 
-fn daemonStart(w: any): |lua
+fn daemonStart(w: obj): |lua
   DaemonStart(w)
 
-fn daemonStop(w: any): |lua
+fn daemonStop(w: obj): |lua
   DaemonStop(w)
 
 fn enable(w: obj): |lua
@@ -73,7 +73,7 @@ fn walk(where: obj): |lua
 fn walkin(where: obj): |lua
   walkin(where)
 
-fn take(w: any): |lua
+fn take(w: obj): |lua
   take(w)
 
 fn drop(w: obj): |lua
@@ -91,10 +91,10 @@ fn visits(w: obj) -> num: |lua
 fn event() -> event: |lua
   return mp.event
 
-fn have(w: any) -> bool: |lua
+fn have(w: obj) -> bool: |lua
   return have(w)
 
-fn visited(w: any) -> bool: |lua
+fn visited(w: obj) -> bool: |lua
   return visited(w)
 
 fn where(w: obj) -> obj: |lua
@@ -162,9 +162,6 @@ fn pclr(): |lua
 
 fn ref(name: str) -> obj: |lua
   return std.ref(name)
-
-fn theme_naplayer() -> str: |lua
-  return theme.naplayer
 
 fn arg_word(i: num) -> str: |lua
   return mp.args[i] and mp.args[i].word or ''

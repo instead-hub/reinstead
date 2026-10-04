@@ -229,10 +229,6 @@ local function fn_ref(name)
   return std.ref(name)
 end
 
-local function fn_theme_naplayer()
-  return theme.naplayer
-end
-
 local function fn_arg_word(i)
   return mp.args[i] and mp.args[i].word or ''
 end
