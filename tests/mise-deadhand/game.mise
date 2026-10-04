@@ -1,0 +1,542 @@
+name: Судный день
+version: 0.1
+author: Пётр Косых
+info: Короткая зарисовка об одиноком космонавте.
+lang: ru
+fmt: dash, quotes
+
+const:
+  DH_TO: 2
+  pres: [[-- пссст. .. ..ворить? ... (пауза) ... Если кто-то сейчас болтается там... и слышит меня. Мне остаётся только сказать, простите.
+Вы навсегда останетесь в наших сердцах. Верные сыны Земли, Отечества... Ещё раз, простите нас и примите мои соболезнования.^^
+тщщщк...]]
+  freqs: {
+    "145,800 МГц",
+    "143,625 МГц",
+    "4625 кГц",
+    "147.211 МГц",
+    "192.112 МГц",
+  }
+  channels: {
+    { "Ты слышишь по радио классическую музыку." };
+    { "-- Конечно, вероятность того, что мы одиноки во вселенной -- есть, но...",
+      "-- Но вы в это не верите?", "-- Категорически отказываюсь в это верить!",
+      "-- Но почему тогда мы не слышим их сигналов?", "-- Да, парадокс Ферми вызывает вопросы, но вот, что я вам скажу..."};
+    { "Ты слышишь по радио французскую речь." };
+    { "Ты слышишь по радио джаз." };
+    { "Ты слышишь по радио передачу новостей." };
+    { "Ты слушаешь по радио политические дебаты." };
+    { "Ты слышишь радиопомехи." };
+  }
+
+global:
+  known: false
+  freq: true
+  freq_hz: 1
+  channel_pos: 1
+  ask: false
+  perimetr: false
+  perimetr_ask: 0
+  timeout: 600
+  good_to: 0
+  know2: false
+
+setup:
+  take: suit
+  hero:
+    description: Ты -- астронавт в скафандре.
+    on:
+      letgo: Не стоит разбрасываться в космосе вещами.
+  on:
+    walk: ~~~do
+      local dir = mp:compass_dir(w)
+      if not dir:
+        pass
+      if dir == 'in_to' or dir == 'out_to':
+        pass
+      say Стороны света есть на Земле, а не в космосе.
+      ~~~
+    taste: ~~~do
+      if suit:has worn:
+        say В скафандре?
+        stop
+      pass
+      ~~~
+    smell: ~~~do
+      if suit:hasnt worn:
+        pass
+      if not w or w:inside(pl):
+        say В скафандре ничем не пахнет.
+        stop
+      say В скафандре это невозможно.
+      ~~~
+    jump, jumpover: В невесомости это невозможно.
+    listen: ~~~do
+      if radio:hasnt on:
+        say Для этого нужно включить радио.
+      else:
+        if freq:
+          say Радио молчит.
+        else:
+          say Скафандр заполнен звуком радио.
+      ~~~
+
+
+story main:
+  title: false
+  text: [[{$fmt c|***}^^Корпус корабля лопнул и его содержимое, в виде сотен блестящих на Солнце осколков, хлынуло в открытый космос.
+Всё произошло за один миг. Всего лишь пол секунды -- и сложный, отлаженный механизм превратился в облако космического мусора...^^
+Одним из сверкающих осколков был ты. Белый скафандр отлично отражал лучи, делая тебя яркой светящейся точкой в чёрной пустоте.^^
+Вращаясь, ты медленно плыл в темноте...]]
+  next_to: space
+
+obj suit:
+  words: скафандр
+  attrs: worn, clothing
+  description: ~~~do
+    say Твой скафандр оборудован различными приборами.
+    if here().rotate:
+      say Но сейчас ты думаешь только о маневровых двигателях.
+      stop
+    if not known:
+      say Например, радио.
+    ~~~
+  on:
+    enter, climb: ~~~do
+      mp:xaction("Wear", s)
+      ~~~
+    exit, getoff: ~~~do
+      mp:xaction("Disrobe", s)
+      ~~~
+    disrobe: ~~~do
+      if here() ^ ship2:
+        pass
+      else:
+        say Это самоубийство!
+      ~~~
+  with:
+    obj engines:
+      words: маневровые двигатели,двигатели|двигатель
+      attrs: switchable, scenery
+      description: Маневровые двигатели позволяют ориентироваться в пространстве и перемещаться на небольшие расстояния. Ты можешь включить их.
+      on:
+        after switchon: ~~~do
+          if here().rotate:
+            say [[Ты включаешь маневровые двигатели и пытаешься остановить вращение.
+В конце-концов тебе это удаётся! Только топлива ты потратил немало. Ты снова выключаешь двигатели.]]
+            set here().rotate = false
+            s:attr ~on
+          else:
+            if seen tetr:
+              say Ты включаешь маневровые двигатели.
+              stop
+            say Ты даёшь пару импульсов. Лучше экономить горючее. Хотя... зачем?
+            s:attr ~on
+          ~~~
+    obj radio:
+      words: радио|рация|приёмник
+      attrs: switchable, scenery
+      description: ~~~do
+        say В скафандр встроен УКВ приёмник.
+        if s:has on:
+          if freq:
+            say Задана рабочая частота 143,625 МГц.
+          else:
+            say Рабочая частота не настроена.
+        pass
+        ~~~
+      daemon: ~~~do
+        if timeout <= 0:
+          stop
+        if freq:
+          if good_to > DH_TO and s:once ack:
+            say "Внезапно, пустота радиоэфира нарушилась.^", pres
+            say ^^Сигналы прекратились. Ты заметил, что текст на экране изменился.
+          else:
+            say Ты слышишь шипящий звук из рации.
+        else:
+          say channels[freq_hz][channel_pos]
+          if #channels[freq_hz] == 1:
+            stop
+          set channel_pos += 1
+          if channel_pos > #channels[freq_hz]:
+            set freq_hz = rnd(#channels)
+            set channel_pos = rnd(#channels[freq_hz])
+        ~~~
+      on:
+        after switchon: ~~~do
+          set freq = true
+          if s:once():
+            say [[Ты включил радио на рабочей частоте.^^
+... яю.. . аз... Ребята, если кто-то из вас уцелел. Запасов кислорода в ваших скафандрах недостаточно,
+чтобы мы успели найти и снять кого-нибудь из вас... Нам очень жаль... А сейчас, прослушайте
+обращение президента:^
+...^
+]]..pres..[[ Мы повторяем эту передачу каждые 15 минут в течении двух часов.]]
+            set known = true
+          else:
+            say Ты включил радио на рабочей частоте 143,625 МГц.
+          DaemonStart radio
+          if here() ^ space:
+            DaemonStart space
+          ~~~
+        after switchoff: ~~~do
+          DaemonStop radio
+          pass
+          ~~~
+
+verb Fly:
+  tag: false
+  words: [|по|под|в|за]лететь,[|по|под|в|за]лети
+  patterns:
+    - к {noun}/дт,scene : Walk
+    - в {noun}/вн,scene : Enter
+    - на {compass1} : Walk
+
+verb Tune:
+  words: [на|под|пере|перена]строить,[на|под|пере|перена]строй,смен/ить,замен/ить,переключ/иить
+  patterns:
+    - {noun}/вн : Tune
+    - частоту|канал : Tune
+  on(s, w): ~~~do
+    if not w or w ^ radio:
+      set w = radio
+      if w:hasnt on:
+        say Радио выключено.
+        stop
+      else:
+        pass
+    if w:
+      say w:It(), "не {#if_hint/#first,plural,настраиваются,настраивается}."
+      stop
+    ~~~
+  after(s, w): ~~~do
+    set freq = not freq
+    if not freq:
+      say Ты сменил частоту.
+      set freq_hz = rnd(#channels)
+      set channel_pos = rnd(#channels[freq_hz])
+      DaemonStart radio
+    else:
+      say "Ты вернул рабочую частоту: 143,625 МГц."
+    ~~~
+
+scenery earth:
+  words: Земля,планета|облака
+  description: Рано или поздно ты упадёшь на Землю и сгоришь в атмосфере. А пока твой дух захватывает от величия и красоты наблюдаемого космического пейзажа.
+  found_in: space
+  on:
+    exam: pass
+    walk, enter, climb: Рано или поздно ты и так на неё упадёшь.
+  default: Земля слишком далеко.
+
+scenery stars:
+  words: звёзды/но|звезда/но
+  description: Ты смотришь на россыпь звёзд. А они, кажется, смотрят внутрь тебя. Может быть, ты скоро станешь одной из них?
+  found_in: space
+  on:
+    exam: pass
+  default: Звёзды слишком далеко.
+
+scenery debris:
+  words: обломки|осколки
+  description: Это всё, что осталось от корабля.
+  found_in: space
+  on:
+    walk, enter, climb: [[Обломки корабля уже разлетелись друг от друга на большое расстояние.
+Нет смысла там что-то искать.]]
+
+obj tetr:
+  words: объект|НЛО
+  dsc: На фоне звёзд ты видишь какой-то яркий объект.
+  description: Отсюда только понятно, что он достаточно большой. Космический мусор? Он движется почти параллельным к тебе курсом.
+  default: Он слишком далеко.
+  on:
+    exam: pass
+    walk, climb, enter: ~~~do
+      if engines:hasnt on:
+        say Сначала нужно включить двигатели.
+        stop
+      walk space2
+      ~~~
+
+room space:
+  title: открытый космос
+  words: космос|пустота|пейзаж
+  var rotate: true
+  var step: 1
+  daemon: ~~~do
+    set s.step += 1
+    if s.step > 3 and not here().rotate:
+      s:daemonStop()
+      place tetr
+      if isDaemon radio:
+        line
+      say Тебе показалось, что ты видишь какой-то яркий объект.
+      s:daemonStop()
+    ~~~
+  dsc: ~~~do
+    if s.rotate:
+      say Быстро вращаясь, ты плывёшь в открытом космосе.
+    else:
+      say Ты плывёшь в открытом космосе. Под ногами простирается голубая гладь планеты Земля.
+    ~~~
+  default: ~~~do
+    if not s.rotate or ev == 'Look' or ev == 'Wait' or ev == 'Inv':
+      pass
+    if w and w:inside(pl) or w == pl:
+      pass
+    say Из-за бешеного вращения, ты не можешь сориентироваться.
+    if s:once self:
+      say Может быть, попробовать осмотреть себя?
+    ~~~
+
+door gate:
+  words: шлюзовой люк,люк,шлюзовой|шлюз
+  attrs: static, openable, enterable, locked
+  disabled: true
+  door_to: ~~~do
+    if here() ^ space2:
+      return ship
+    else:
+      return space2
+    ~~~
+  on:
+    close: Он закрывается автоматически.
+  description: ~~~do
+    say Рядом с люком находится красный рычаг.
+    enable lever
+    pass
+    ~~~
+
+obj lever:
+  words: красный рычаг|рычаг
+  attrs: fixed, luminous
+  disabled: true
+  after:
+    pull, transfer: ~~~do
+      if here() ^ ship2:
+        if gate2:has open:
+          say Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.
+          gate2:attr ~open
+        else:
+          say Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.
+          gate2:attr open
+        stop
+      local open = gate:has open
+      if here() ^ ship:
+        if not open:
+          say Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.
+          gate2:attr ~open
+      if open:
+        say Ты дёрнул за рычаг и шлюзовой люк закрылся.
+        gate:attr ~open
+      else:
+        if here() ^ space2:
+          say Ты дёрнул за рычаг и шлюзовой люк открылся.
+        gate:attr open
+      if here() ^ ship:
+        if open:
+          say Через некоторое время открылся входной люк, ведущий внутрь корабля.
+          gate2:attr open
+      ~~~
+
+obj satellite:
+  words: спутник,тетраэдр,корабль/но|объект|НЛО
+  attrs: scenery
+  description: Спутник словно ёж утыкан антеннами и передатчиками. Серый корпус в виде тетраэдра медленно вращается вокруг своей оси.
+  on:
+    enter, climb: Чтобы попасть внутрь, нужен шлюз.
+  with:
+    obj corpus:
+      words: корпус,антенн*,передат*
+      attrs: scenery
+      description: ~~~do
+        if s:once():
+          say Внимательно осмотрев корпус, ты заметил шлюзовой люк.
+          enable gate
+        else:
+          if perimetr:
+            say Теперь ты знешь, что это за спутник.
+          else:
+            say Спутник связи, может быть?
+        ~~~
+
+room space2:
+  title: открытый космос
+  words: космос|пустота|пейзаж
+  in_to: ~~~do
+    if disabled gate:
+      say Как ты попадёшь внутрь?
+    else:
+      return gate
+    ~~~
+  onenter: ~~~do
+    say [[Управляя маневровыми двигателями и почти израсходовав топливо, ты смог согласовать свою орбиту с орбитой объекта.
+Им оказался спутник в форме тетраэдра.]]
+    engines:attr ~on
+    ~~~
+  dsc: Ты паришь в черной бездне рядом с неизвестным спутником. Под ногами проплывают земные облака над бирюзовой гладью.
+  with: satellite, gate, lever
+
+door gate2:
+  words: входной люк,люк,входной
+  attrs: static, openable, enterable, locked
+  on:
+    close: Он закрывается автоматически.
+  door_to: ~~~do
+    if here() ^ ship:
+      return ship2
+    else:
+      return ship
+    ~~~
+
+room ship:
+  title: шлюз
+  words: шлюзовой отсек
+  onenter: ~~~do
+    if f ^ space2:
+      say Ты влетел в шлюзовой отсек.
+    ~~~
+  out_to: gate
+  in_to: gate2
+  with: gate, lever, gate2
+
+obj panel:
+  words: панель управления,панель|приборы
+  attrs: static, supporter
+  description: [[Ты видишь множество приборов, назначение которых тебе непонятно, и экран консоли.
+Твоё внимание привлекает красная кнопка.]]
+  with:
+    obj button:
+      words: красная кнопка,красная,кнопка
+      attrs: static, concealed
+      description: На кнопке ты не видишь никаких надписей или обозначений.
+      on:
+        push: ~~~do
+          if perimetr:
+            set perimetr_ask += 1
+            if perimetr_ask > 5:
+              set perimetr_ask = 0
+            say Ты ещё раз нажал на кнопку.
+            say Ты заметил, что на экране изменилась одна из строк.^
+            append "Режим голосовой отмены: "
+            if perimetr_ask == 0:
+              say выкл.
+            else:
+              say freqs[perimetr_ask]
+            stop
+          say Неизвестный корабль. Красная кнопка. Ты точно готов это сделать?^Подтверди. Да или нет?
+          set ask = true
+          ~~~
+    obj screen:
+      words: экран,консоль,текст
+      attrs: static
+      description: ~~~do
+        if good_to > DH_TO:
+          DaemonStop ship2
+          DaemonStop radio
+          walkin goodend
+          stop
+        if perimetr:
+          say [[Программа "ПЕРИМЕТР" активирована.^^
+Переход в автономный режим: да^]]
+          if perimetr_ask > 0:
+            say "Режим голосовой отмены: ", freqs[perimetr_ask], "."
+          else:
+            say "Режим голосовой отмены: выкл."
+          say [[^Отключение управления по каналам связи: да^
+Отсчёт времени до начала активной фазы: ]], timeout, [[^Ядерный удар первой волны: ожидание^
+Ядерный удар второй волны: ожидание^
+Последняя волна: ожидание]]
+          set know2 = true
+        else:
+          say Экран неактивен.
+        ~~~
+
+room ship2:
+  words: корабль
+  title: внутри корабля
+  out_to: gate2
+  daemon: ~~~do
+    if good_to > DH_TO and s:once ack:
+      if here() == s:
+        if not isDaemon radio:
+          say Сигналы прекратились. Ты заметил, что текст на экране изменился.
+      s:daemonStop()
+    else:
+      if here() == s:
+        say Ты слышишь пульсирующий звуковой сигнал, который разносится по кораблю каждую секунду.
+        if know2:
+          say "До первой волны ", timeout, " с."
+    ~~~
+  onenter: ~~~do
+    if s:once():
+      say С тревогой и надеждой, ты влетел внутрь странного корабля.
+    ~~~
+  dsc: ~~~do
+    say Внутри корабля не так много места. Впрочем, к этому тебе не привыкать.
+    if gate2:has open:
+      say Здесь довольно темно. Детали обстановки плохо различимы в полумраке.
+    ~~~
+  onexit: ~~~do
+    if suit:hasnt worn:
+      say Без скафандра? Самоубийство!
+      pass
+    ~~~
+  any: ~~~do
+    if perimetr:
+      if perimetr_ask == 2:
+        set good_to += 1
+      else:
+        set good_to = 0
+      set timeout -= rnd(25)
+      if timeout < 0:
+        if timeout < 0:
+          walkin badend
+          stop
+    if ask and (ev == 'Yes' or ev == 'No'):
+      if ev == 'No':
+        say Ну и правильно.
+      else:
+        say Ты нажал на кнопку и на экране консоли побежали строки текста.
+        DaemonStart ship2
+        set perimetr = true
+      stop
+    set ask = false
+    pass
+    ~~~
+  with: gate2, lever, panel
+
+story badend:
+  title: Конец
+  text: [[Ты так и не смог отключить машину судного дня.^
+Почти обезумевший, ты смотрел с орбиты как Земля сгорает в ядерном аду.^
+Лучше бы ты погиб в открытом космосе...^
+^{$fmt em|Но всё могло закончиться по-другому...}]]
+  onexit: ~~~do
+    set timeout = 600
+    ~~~
+
+story goodend:
+  title: false
+  text: [[Процедура прервана.^
+Причина: президент жив^
+Выполняется выход из автономного режима: да^
+Сигнал с охраняемых объектов: восстановлен]]
+  text: [[{$fmt c|***}^^Ты медленно приходил в себя. Ужас неотвратимого только сейчас навалился на тебя
+со всей силой. Поэтому долгое время ты отстранённо парил в невесомости.^^
+Похоже, что передача с Земли, принятая спутником, остановила процедуру последнего удара.^^
+Да, понадобится время, чтобы освоиться с этой машиной судного дня и послать сигнал в центр полётов.^^
+Но главное, что ты не стал виновником гибели своего мира. Это сейчас было всё, что имело для тебя смысл.]]
+  next_to: titles
+
+ending titles:
+  title: `fmt.c(fmt.b([[СУДНЫЙ ДЕНЬ]]))`
+  dsc: [[{$fmt c|Автор сюжета и кода: Косых Пётр^^
+Специально на ИНСТЕДОЗ-6^^
+Март -- 2019^^
+Если вам понравилась игра,
+^заходите на http://instead-games.ru
+}
+]]
