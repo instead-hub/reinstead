@@ -286,7 +286,7 @@ room space:
   Default: |
     if not s.rotate or ev == Look or ev == Wait or ev == Inv:
       pass
-    if w and w:inside(player) or w == player:
+    if w and w:inside player or w == player:
       pass
     say Из-за бешеного вращения, ты не можешь сориентироваться.
     if s:once_tag self:

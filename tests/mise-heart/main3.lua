@@ -242,7 +242,7 @@ local function fn_music(name, ...)
 end
 
 local function fn_type_name(s, w)
-  if (w ^ 'имя' or w ^ 'машинка') and fn_have(_'карточка') and not type_done then
+  if (w ^ _'имя' or w ^ _'машинка') and fn_have(_'карточка') and not type_done then
     fn_say("Вы отстучали: М-А-Р-И-Я. Литеры ударили по бумаге, и в тумбе стола отскочила крышка тайника.")
     type_done = true
   else
@@ -313,7 +313,7 @@ room {
     fn_say("Ветер воет в растяжках труб. Под мостовой глухо ухает поршень. А поверх — далёкий рокот, которого здесь не должно быть. Море.")
   end;
   before_Exam = function(s, w)
-    if w ^ 'труп' then
+    if w ^ _'труп' then
       fn_say("Лицо — синяя маска. На искусанных губах — застывшая розовая пена. На шее — тёмный укус с медным отливом по краям.")
     else
       return false
@@ -361,16 +361,16 @@ room {
     fn_say("Высокий гранитный портик. Массивные дубовые двери с бронзовыми львами приоткрыты. В пастях львов — латунные переговорные раструбы. Из щели тянет тёплым. В сорокаградусный мороз это странно. За спиной остаётся калитка на набережную.")
   end;
   before_Exam = function(s, w)
-    if w ^ 'двери' then
+    if w ^ _'двери' then
       fn_say("Створка подпёрта изнутри картонной пластиной с просечками. Кто-то вошёл и не вернулся.")
-    elseif w ^ 'раструб' then
+    elseif w ^ _'раструб' then
       fn_say("Из медных глоток — треск реле и сухое покашливание дежурного.")
     else
       return false
     end
   end;
   before_Talk = function(s, w)
-    if w ^ 'раструб' then
+    if w ^ _'раструб' then
       fn_say('"Вход по нарядам канцелярии утилизации. Ожидайте вызова." И — тише, будто из-под воды: "...помогите..."')
     else
       return false
@@ -423,17 +423,17 @@ room {
     fn_say("Ваш сапог скрипнул по крошке — и в вышине галереи щёлкнул соленоид. Распределитель пневмопочты перевёл стрелку, отмечая вас.")
   end;
   before_Exam = function(s, w)
-    if w ^ 'часы' then
+    if w ^ _'часы' then
       fn_say("Стрелки замерли на 4:12. Внутри — лихорадочный бег храповика: пружина взведена до предела. Маятник-гильотина блестит, как лезвие.")
       code_known = true
-    elseif w ^ 'пневмопочта' then
+    elseif w ^ _'пневмопочта' then
       fn_say("Латунные трубы втягивают воздух и со стуком выплёвывают гильзы с сургучной печатью. Каждая — чей-то приговор.")
     else
       return false
     end
   end;
   before_Talk = function(s, w)
-    if w ^ 'клерк' then
+    if w ^ _'клерк' then
       if not clerk_saved then
         fn_say('Глаза чиновника отливают ртутной мутью. Он перфорирует ленту ручным компостером: "Приём прекращён. Души отписаны в амортизационный фонд Его Величества Механизма."')
       else
@@ -444,7 +444,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w ^ 'карточка' and fn_have(_'карточка') then
+    if w ^ _'карточка' and fn_have(_'карточка') then
       if not clerk_saved then
         fn_say('Компостер падает. Глаза расширяются. "Маша Бранд... Ордер на разборку за моим личным номером! Я подписал его за осьмушку чая и облатку сахарина. Возьмите ключ. Он отпирает парадный зал на втором этаже. Спасите тех, кого ещё не пустили на шестерни!"')
         clerk_saved = true
@@ -541,9 +541,9 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'вешалки' then
+    if w ^ _'вешалки' then
       fn_say("Механические плечики перебирают пустоту. Лишь на одной стойке в глубине сиротливо качается забытая офицерская шинель.")
-    elseif w ^ 'пальто' then
+    elseif w ^ _'пальто' then
       fn_say("Шинель изъедена снизу мелкими зубами. В кармане — горсть сухих зёрен овса и обрывок морской карты: бухта, мыс, название города — Зурбаган.")
     else
       return false
@@ -593,18 +593,18 @@ room {
     fn_say("Разграбленные буфеты орехового дерева. На цинковой стойке — пустые коробки монпансье «Жорж Борман». У дальней стены гудит стальной калорифер с манометром. Под перевёрнутой чашкой прижат обрывок перфокарты. Позади — дверь в вестибюль.")
   end;
   before_Exam = function(s, w)
-    if w ^ 'записка' then
+    if w ^ _'записка' then
       fn_say("Торопливый почерк Сюзанны: «Они заперли меня на третьем подземном горизонте. Их предводитель носит золотую заводную корону. Я спрятала мамин медальон в прачечной. Если найдёшь — помни обо мне. Не верь их соловьям...»")
-    elseif w ^ 'калорифер' then
+    elseif w ^ _'калорифер' then
       fn_say("Манометр подрагивает. Стальные рёбра вибрируют от пара из нижних котлов.")
-    elseif w ^ 'стойка' then
+    elseif w ^ _'стойка' then
       fn_say("Среди черепков — жестянка с сушёными морковными очистками. Суррогат чая голодного года.")
     else
       return false
     end
   end;
   before_PutOn = function(s, w, wh)
-    if w ^ 'спички' and wh ^ 'калорифер' and not matches_warm then
+    if w ^ _'спички' and wh ^ _'калорифер' and not matches_warm then
       fn_say("Вы разложили коробок на горячих трубах калорифера. Лёд сошёл, серные головки оттаяли.")
       fn_remove(_'спички')
       matches_warm = true
@@ -661,21 +661,21 @@ room {
     end
   end;
   before_Talk = function(s, w)
-    if w ^ 'сторож' and not guard_out then
+    if w ^ _'сторож' and not guard_out then
       fn_say('Из-под шлема — глухой хрип: "Наряд аннулирован. Вы приписаны к механическому переплаву. Ждите сигнала."')
     else
       return false
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'сторож' and not guard_out then
+    if w ^ _'сторож' and not guard_out then
       fn_say("Из-под суконного рукава виднеются серые суставчатые пальцы с плоскими когтями.")
     else
       return false
     end
   end;
   before_Show = function(s, w, wh)
-    if w ^ 'осколок' and fn_have(_'осколок') and not guard_out then
+    if w ^ _'осколок' and fn_have(_'осколок') and not guard_out then
       fn_say("В зеркале отразилась крысиная морда, впаянная в шестерни шлема. Тварь зашлась визгом, бросила винтовку и скользнула в люк пневмосброса.")
       guard_out = true
     else
@@ -767,7 +767,7 @@ room {
     fn_say("Только шорох ковра да далёкий гул в шахтах.")
   end;
   before_Exam = function(s, w)
-    if w ^ 'статуи' then
+    if w ^ _'статуи' then
       if not corridor_shock then
         fn_say("Вы шагнули к нише, но телефон взорвался трезвоном над головой!")
         corridor_shock = true
@@ -779,7 +779,7 @@ room {
     end
   end;
   before_Open = function(s, w)
-    if w ^ 'путь_коридор_зал' then
+    if w ^ _'путь_коридор_зал' then
       if not corridor_shock then
         fn_say("Вы потянулись к замку, но медный звон оборвал сердце!")
         corridor_shock = true
@@ -796,7 +796,7 @@ room {
     end
   end;
   before_Play = function(s, w)
-    if w ^ 'флейта' then
+    if w ^ _'флейта' then
       if not corridor_shock then
         fn_say("Вы подняли инструмент, но треск звонков сорвал дыхание!")
         corridor_shock = true
@@ -945,10 +945,10 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'дневник' and not dnevnik then
+    if w ^ _'дневник' and not dnevnik then
       fn_say("«Они именуют себя Избавителями от страданий. Их логика проста: живой человек голодает, мёрзнет и мыслит. Заводной автомат, оживлённый человеческим сердцем, сыт и покорен. Сюзанну увели на нижний горизонт...»")
       dnevnik = true
-    elseif w ^ 'полки' then
+    elseif w ^ _'полки' then
       fn_say("Атласы по часовым механизмам, анатомия гидравлических кукол, финансовые гроссбухи. Среди них — старые морские карты: Зурбаган, Лисс, Гель-Гью. Схемы подключения живых вен к золотниковым коробкам помечены «Одобрено к производству».")
     else
       return false
@@ -989,9 +989,9 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'картина' then
+    if w ^ _'картина' then
       fn_say("Залитый солнцем Зурбаган. Белые террасы, лазурная бухта, клипера на волне, акации. От полотна веет солью и теплом нагретого камня.")
-    elseif w ^ 'рама' then
+    elseif w ^ _'рама' then
       if not fn_have(_'осколок') and not arch_open then
         fn_say("Рама сплошная, вмурованная в кладку.")
       elseif fn_have(_'осколок') and not arch_open then
@@ -1004,7 +1004,7 @@ room {
     end
   end;
   before_Turn = function(s, w)
-    if w ^ 'код_архив' and not arch_open then
+    if w ^ _'код_архив' and not arch_open then
       if code_known then
         fn_say("Вы провернули лимб: 4-12-709. Свист воздуха, и картина отъехала в сторону.")
         arch_open = true
@@ -1016,7 +1016,7 @@ room {
     end
   end;
   before_Talk = function(s, w)
-    if w ^ 'женщина' and not poet_saved and not poet_lost then
+    if w ^ _'женщина' and not poet_saved and not poet_lost then
       fn_say('Она пишет карандашом на обороте ведомости. "Я записываю живой мир, пока город не переплавили в чугун. Пока звучит строка — автоматоны не победили."')
     else
       return false
@@ -1041,7 +1041,7 @@ room {
     end
   end;
   before_Enter = function(s, w)
-    if w ^ 'сейф_архив' then
+    if w ^ _'сейф_архив' then
       if arch_open and fn_have(_'поэма') then
         fn_move(fn_player(), _'зурбаган')
       elseif arch_open and not fn_have(_'поэма') then
@@ -1122,13 +1122,13 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'клетка' then
+    if w ^ _'клетка' then
       if not bird_freed then
         fn_say("В клетке — искусная латунная птица. При шаге её пружина сухо щёлкает, имитируя щебет.")
       else
         fn_say("Дверца распахнута настежь. Клетка пуста.")
       end
-    elseif w ^ 'парусник' then
+    elseif w ^ _'парусник' then
       if not boss_banished then
         fn_say("Тонкая работа. Паруса — из пергамента, рангоут — из меди. На борту — имя: «Зурбаган». Хозяин держит его под стеклом, как держат сердце.")
       else
@@ -1139,7 +1139,7 @@ room {
     end
   end;
   before_Open = function(s, w)
-    if w ^ 'клетка' then
+    if w ^ _'клетка' then
       if boss_banished and not bird_freed then
         fn_say("Вы откинули крючок. Соловей встрепенулся, издал чистую трель — словно свобода вдохнула душу в металл — и спорхнул на карниз открытой форточки, растворившись серебряным отблеском в метели.")
         bird_freed = true
@@ -1153,7 +1153,7 @@ room {
     end
   end;
   before_Talk = function(s, w)
-    if w ^ 'господин' then
+    if w ^ _'господин' then
       if not boss_banished then
         fn_say('Он улыбается тонкой, нарисованной улыбкой. "Добро пожаловать. На улице — голод, тиф, тьма. А здесь — идеальный покой. Отдайте мне ваше зеркало, выпейте чаю с сахаром. Сюзанна вернётся к вам в фарфоре и шелках, совершенная и вечно молодая."')
       else
@@ -1164,7 +1164,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w ^ 'осколок' and fn_have(_'осколок') and not boss_banished then
+    if w ^ _'осколок' and fn_have(_'осколок') and not boss_banished then
       fn_say("Вы вскинули осколок перед его глазами. В амальгаме — плешивая крыса в золотой короне из шестерён. Тварь завизжала, дёрнула рычаг люка и провалилась в жерло мусоросброса.")
       boss_banished = true
     else
@@ -1172,7 +1172,7 @@ room {
     end
   end;
   before_Give = function(s, w, wh)
-    if w ^ 'осколок' and fn_have(_'осколок') and not boss_banished then
+    if w ^ _'осколок' and fn_have(_'осколок') and not boss_banished then
       fn_walk(_'dollend')
     else
       return false
@@ -1237,11 +1237,11 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'девушка' or w ^ 'кукла' then
+    if w ^ _'девушка' or w ^ 'кукла' then
       if not doll_true then
         fn_say("Она кажется спящей, но грудь неподвижна, а на запястьях — шарнирные головки с винтами.")
       end
-    elseif w ^ 'альков' then
+    elseif w ^ _'альков' then
       if corinna_awake then
         fn_say("За портьерой — потайная панель, отъехавшая в сторону: за ней узкий ход в изолятор кукол.")
       elseif doll_true then
@@ -1254,7 +1254,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w ^ 'осколок' and fn_have(_'осколок') then
+    if w ^ _'осколок' and fn_have(_'осколок') then
       if not doll_true then
         fn_say("В зеркале вместо шёлка — латунный скелет, пружинные тяги и микропоршни.")
         doll_true = true
@@ -1266,7 +1266,7 @@ room {
     end
   end;
   before_Rewrite = function(s, w)
-    if w ^ 'строка' then
+    if w ^ _'строка' then
       if doll_true and fn_have(_'поэма') and not corinna_awake then
         fn_say('Карандашом поэтессы вы нанесли строфу о Зурбагане на барабан шкатулки. Музыка ожила хрустальным перезвоном. Кукла повернула голову: "Вы подарили мне душу. Я открыла потайной люк в изолятор кукол. Спешите! А в машинном зале вложите стихи в считывающий валик органа — остальное я сделаю сама."')
         corinna_awake = true
@@ -1278,7 +1278,7 @@ room {
     end
   end;
   before_Talk = function(s, w)
-    if w ^ 'девушка' and corinna_awake then
+    if w ^ _'девушка' and corinna_awake then
       fn_say("Торопитесь в изолятор! Я проберусь по вентиляционным каналам к машинному отделению и перехвачу тяги клапана.")
     else
       return false
@@ -1339,7 +1339,7 @@ room {
   before_Type = fn_type_name;
   before_Push = fn_type_name;
   before_Exam = function(s, w)
-    if w ^ 'тайник' and type_done and not fn_have(_'ключ_подвала') then
+    if w ^ _'тайник' and type_done and not fn_have(_'ключ_подвала') then
       fn_say("В тайнике — тяжёлый трёхгранный ключ от жалюзи машинного зала.")
       fn_enable(_'ключ_подвала')
       fn_take(_'ключ_подвала')
@@ -1433,7 +1433,7 @@ room {
     fn_say("Огромные котлы дрожат от давления. В поддувалах гудит пламя. Манометры бьются, выпуская струи пара. У топки — сгорбленный седой старик в кожаном фартуке со стальной лопатой. Позади — дверь в коллектор.")
   end;
   before_Talk = function(s, w)
-    if w ^ 'кочегар' then
+    if w ^ _'кочегар' then
       if not brand_spoken then
         fn_say('Старик хрипит сквозь вой пламени: "Я Бранд, старший механик пара. Сорок лет топлю котлы этого банка-ловушки. Теперь здесь жгут книги и жизни. Где моя Маша? Она ушла наверх за талонами и не вернулась."')
       else
@@ -1444,7 +1444,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w ^ 'карточка' and fn_have(_'карточка') then
+    if w ^ _'карточка' and fn_have(_'карточка') then
       if not brand_spoken then
         fn_say('Старик роняет лопату. "Значит, разобрали мою девочку на шестерни... Слушай и запоминай ритм восстания: семь долей вверх, четыре вниз — так усыпляют стаю и сбивают ход гигантских поршней. Флейта мастера — в сейфе депозитария." Он тихо напевает древнюю мелодию Крысолова.')
         brand_spoken = true
@@ -1482,7 +1482,7 @@ room {
     fn_say("Лаборатория часовщика. Под потолком на цепях — разобранные анатомические автоматоны. На верстаках — шестерни, реторты с глицерином, хирургические пилы. Позади — дверь в коллектор.")
   end;
   before_Exam = function(s, w)
-    if w ^ 'чертежи' then
+    if w ^ _'чертежи' then
       fn_say("Чертежи шагающего парового автоматона. Примечание инженера: клапан имеет обратный конус золотника; если заклинить им распределитель — скопившийся конденсат вызовет сокрушительный гидроудар и разорвёт паровую машину изнутри.")
     else
       return false
@@ -1528,7 +1528,7 @@ room {
     end
   end;
   before_Turn = function(s, w)
-    if w ^ 'код_депо' and not dep_open then
+    if w ^ _'код_депо' and not dep_open then
       if code_known then
         fn_say("Диски провернулись: 4-12-709. Стальная плита отошла в сторону.")
         dep_open = true
@@ -1579,10 +1579,10 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'вода' then
+    if w ^ _'вода' then
       fn_say("Струя бьёт в таз мерно, как заводной механизм: 4 резких удара, 12 глухих капель, после паузы — частый плеск на 709 ударов. Ритм гидроаккумулятора.")
       code_known = true
-    elseif w ^ 'чаны' then
+    elseif w ^ _'чаны' then
       fn_say("В баках замочена гражданская одежда. Людей раздевали здесь перед отправкой на конвейер.")
     else
       return false
@@ -1630,7 +1630,7 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'столы' then
+    if w ^ _'столы' then
       if not rats_cleared then
         fn_say("Блюда источают дурманящий аромат мяса и хлеба.")
       else
@@ -1641,7 +1641,7 @@ room {
     end
   end;
   before_Eat = function(s, w)
-    if w ^ 'столы' then
+    if w ^ _'столы' then
       if not rats_cleared then
         fn_walk(_'death_eat1')
       else
@@ -1707,7 +1707,7 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w ^ 'фигура' then
+    if w ^ _'фигура' then
       if fn_have(_'осколок') and not fake_tested then
         fn_say("Под восковой кожей — латунный каркас и взведённая пружина. Приманка! Настоящая Сюзанна жива и заперта у главного привода машины.")
         fake_tested = true
@@ -1719,7 +1719,7 @@ room {
     end
   end;
   before_Touch = function(s, w)
-    if w ^ 'фигура' then
+    if w ^ _'фигура' then
       if not fake_tested then
         fn_walk(_'death_embrace')
       else
@@ -1769,14 +1769,14 @@ room {
     fn_say("Подземная пещера, похожая на нутро железного исполина. В центре высится Серое Сердце — пульсирующий медно-чугунный агрегат высотой в три этажа, соединённый с трубами парового органа. В кварцевой колбе с прозрачным соляным раствором парит живая Сюзанна. Её дыхание соединено трубками с центральным регулятором машины. Позади — ход в зал, через поднятую решётку.")
   end;
   before_Exam = function(s, w)
-    if w ^ 'колба' then
+    if w ^ _'колба' then
       fn_say("Сюзанна жива. Сквозь толщу кварца видно, как слабо вздрагивают её веки. Она беззвучно шевелит губами — и в этом движении вы вдруг узнаёте голос, который уже слышали: там, в раструбе и в трубке, сквозь треск реле, — «...помогите...» Это была она.")
     else
       return false
     end
   end;
   before_Show = function(s, w, wh)
-    if w ^ 'медальон' and fn_have(_'медальон') and wh ^ 'сюзанна' then
+    if w ^ _'медальон' and fn_have(_'медальон') and wh ^ _'сюзанна' then
       if not medallion_shown then
         fn_say("Сюзанна видит тусклый блеск меди и прижимает ладонь к стеклу изнутри. По её щеке бежит слеза. Дыхание выравнивается.")
         medallion_shown = true
@@ -1788,7 +1788,7 @@ room {
     end
   end;
   before_Attack = function(s, w)
-    if w ^ 'колба' then
+    if w ^ _'колба' then
       if not tube_hit then
         fn_say("Вы ударили по кварцу кулаком. Кварц отозвался глухим гулом и острой болью в суставах пальцев.")
         tube_hit = true
@@ -1800,7 +1800,7 @@ room {
     end
   end;
   before_Play = function(s, w)
-    if w ^ 'флейта' and fn_have(_'флейта') then
+    if w ^ _'флейта' and fn_have(_'флейта') then
       if brand_spoken then
         fn_walk(_'win1')
       else
@@ -1811,13 +1811,13 @@ room {
     end
   end;
   before_Insert = function(s, w, wh)
-    if wh ^ 'валик' and fn_have(_'поэма') then
+    if wh ^ _'валик' and fn_have(_'поэма') then
       if corinna_awake then
         fn_walk(_'win3')
       else
         fn_say("Вы не знаете, как перенастроить сложную гидравлику органа на ритм строфы. Нужна помощь Коринны — той, что знает устройство машины.")
       end
-    elseif wh ^ 'распределитель' and fn_have(_'клапан') then
+    elseif wh ^ _'распределитель' and fn_have(_'клапан') then
       if fn_have(_'ключ_подвала') then
         fn_walk(_'win2')
       else
@@ -1869,9 +1869,9 @@ room {
     fn_say("Знойный полдень над гаванью. Пахнет просмолёнными канатами, апельсинами и морем. Белые паруса бригантин колышутся на лазурной воде. Здесь нет пайков, тифозной сыпи, доносчиков и шестерёнок мёртвого короля. Но в этом солнечном покое вы одни: Сюзанны здесь нет, и полдень кажется призрачным и неполным. Позади — сияющая арка, ведущая обратно в архив.")
   end;
   before_Exam = function(s, w)
-    if w ^ 'море' then
+    if w ^ _'море' then
       fn_say("Бирюзовая гладь уходит к самому горизонту, где тает дымок далёкого парохода.")
-    elseif w ^ 'гавань' then
+    elseif w ^ _'гавань' then
       fn_say("Моряки в холщовых рубахах катят бочки с мускатом, с террасы кофейни доносится перебор мандолины.")
     else
       return false

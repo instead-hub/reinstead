@@ -406,6 +406,8 @@ KEYWORDS = {
     "then", "else", "do", "local", "function", "end", "break", "repeat",
 }
 
+BARE_REF_RE = re.compile(r"^(?:[^\W\d]|#)\w*$", re.UNICODE)
+
 VARS = set()
 FUNCS = set()
 EVENT_NAMES = set()
@@ -613,13 +615,19 @@ class ExprEmit:
             return args, "any"
         self.err("unknown function %r (declare fn %s)" % (name, name))
 
+    def obj_str_ref(self, name):
+        if BARE_REF_RE.match(name):
+            self.err("string %r where obj expected; use the bare name"
+                     % name)
+        return "_'%s'" % name
+
     def primary(self):
         kind, val = self.next()
         if kind == "num":
             return val, "num", "lit", None
         if kind == "str":
             if self.expected == "obj" and self.strval(val) in IDS:
-                return "_'%s'" % self.strval(val), "obj", "objref", None
+                return self.obj_str_ref(self.strval(val)), "obj", "objref", None
             if self.expected == "event":
                 if self.strval(val) not in EVENT_NAMES:
                     self.err("unknown event %r" % self.strval(val))
@@ -706,6 +714,9 @@ class ExprEmit:
                              if t == "event" and op in ("==", "~=") else None)
             c2, _t2, _k2, _v2 = self.concat_expr()
             self.expected = None
+            if op == "^" and _k2 == "lit" and isinstance(_v2, str) \
+                    and _v2 in IDS:
+                self.obj_str_ref(_v2)
             code = "%s %s %s" % (code, op, c2)
             t, k, v = "bool", "expr", None
         return code, t, k, v
@@ -764,7 +775,7 @@ class ExprEmit:
                 if nk != "name":
                     self.err("expected field name")
                 if t == "str" and val in IDS:
-                    code = "_'%s'" % val
+                    code = self.obj_str_ref(val)
                     t = "obj"
                     val = None
                 code = "%s.%s" % (code, nv)
@@ -792,7 +803,7 @@ class ExprEmit:
                 if not plist:
                     self.err("fn %s takes no receiver" % nv)
                 if t == "str" and val in IDS:
-                    code = "_'%s'" % val
+                    code = self.obj_str_ref(val)
                     t = "obj"
                     val = None
                 self.check(t, plist[0][1], code)
@@ -843,11 +854,13 @@ class ExprEmit:
                 t = ret
                 kind = "call"
                 val = None
-            elif (k == "name" and kind == "name"
-                  and v not in KEYWORDS
-                  and v not in ("nil", "true", "false")):
+            elif (kind == "name"
+                  and ((k == "name" and v not in KEYWORDS
+                        and v not in ("nil", "true", "false"))
+                       or (k == "op" and v == "#"))):
                 exp = None
                 rt = "any"
+                variadic = False
                 if val in FN_SIGS:
                     plist, rt, variadic = FN_SIGS[val]
                     if not plist:
@@ -857,8 +870,16 @@ class ExprEmit:
                     except LintError as e:
                         self.err(str(e))
                     exp = plist[0][1]
+                save = self.i
                 self.expected = exp
-                c, t, _k2, _v2 = self.expr()
+                if exp == "str" or variadic:
+                    c, t, _k2, _v2 = self.expr()
+                else:
+                    c, t, _k2, _v2 = self.unary()
+                    if exp not in (None, "any") and t not in ("any", exp):
+                        self.i = save
+                        self.expected = exp
+                        c, t, _k2, _v2 = self.expr()
                 self.expected = None
                 self.check(t, exp, c)
                 code = "%s(%s)" % (code, c)

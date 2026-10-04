@@ -65,7 +65,7 @@ obj браслет:
   on:
     after Wear: Надев браслет на правое запястье, ты чувствуешь, что на душе у тебя потеплело.
     Disrobe: |
-      if visited 'gotmirror':
+      if visited gotmirror:
         say Тебе кажется, что в этом странном месте лучше никогда не снимать этот браслет!
       else:
         pass
@@ -74,8 +74,8 @@ obj браслет:
       if s:once:
         say Странно, что он оказался в бардачке... Ты думала, что он давно потерялся.
     Give(s, w): |
-      if w ^ 'королева':
-        walk 'badend4'
+      if w ^ королева:
+        walk badend4
         stop
       pass
 
@@ -123,8 +123,8 @@ room "В машине":
       if blizzard < 7 and blizzard > 3:
         pic_set '2-pan-left'
       if blizzard > 5:
-        enable '#заправка'
-        disable '#метель'
+        enable #заправка
+        disable #метель
         if blizzard == 7:
           say Мать заглушила двигатель.
           stop
@@ -140,7 +140,7 @@ room "В машине":
           stop
         say Вы подъезжаете к заправке.
         stop
-    if here() == s and rnd(100) <= 25:
+    if here == s and rnd(100) <= 25:
       line t[rnd(#t)]
   dsc: Ты сидишь на заднем сидении машины и смотришь в окно.
   enter(s): |
@@ -156,25 +156,25 @@ room "В машине":
       say Там холодно.
     else:
       s:daemonStop
-      if not have 'скрипка':
+      if not have скрипка:
         скрипка:move 'машина'
-      if not have 'телефон':
+      if not have телефон:
         телефон:move 'бардачок'
-      walk 'метель1'
+      walk метель1
   with:
     obj #мама:
       words: мать,мама,женщина
       attrs: animate
       on:
         Ask, Tell, Talk: |
-          if visited 'разговор1':
-            if телефон.seen and have 'телефон':
+          if visited разговор1:
+            if телефон.seen and have телефон:
               say -- Я не буду с тобой разговаривать, пока ты не отдашь мне телефон! Ну же!
               stop
             if blizzard > 0:
               if blizzard >= 2:
                 say -- Мама! Это важно!^
-                if not disabled '#заправка':
+                if not disabled #заправка:
                   say -- Сейчас заправимся и поговорим.
                 else:
                   say -- Скоро заправка, подожди пять минут и поговорим!
@@ -186,7 +186,7 @@ room "В машине":
               stop
             say Ты не решаешься поговорить с ней.
             stop
-          walk 'разговор1'
+          walk разговор1
         Exam: Твоя мать очень много работает и поэтому выглядит усталой.
         Kiss: Ты зла на свою мать и сейчас ваши отношения нельзя назвать близкими.
       daemon(s): |
@@ -202,7 +202,7 @@ room "В машине":
       words: бардачок
       on:
         Exam: |
-          if телефон:inside 'бардачок':
+          if телефон:inside бардачок:
             say Бардачок закрыт.
             stop
           say Тебе нет до него дела.
@@ -235,13 +235,13 @@ room "В машине":
       on:
         Open: Слишком холодно, чтобы опускать стекло.
         Search, Exam(s): |
-          if not disabled '#заправка':
+          if not disabled #заправка:
             say За стеклом ты видишь смутный силуэт заправки.
             stop
-          if visited 'разговор1' and телефон.seen:
+          if visited разговор1 and телефон.seen:
             if blizzard == 0:
               line Разглядывая белоснежный пейзаж, ты замечаешь вдали нечто странное.
-              enable '#метель'
+              enable #метель
               blizzard = 1
               pic_set '5'
             line Ты видишь, как по земле ползут огромные клубы пара или снега.
@@ -293,8 +293,8 @@ talk разговор1:
             ask: Мама, прекрати!
             do: |
               say -- Да, не ожидала я... Что у меня такая дочь...
-              if have 'телефон':
-                daemonStart 'телефон'
+              if have телефон:
+                daemonStart телефон
               walkback
       option:
         ask: Ты могла бы сменить работу...
@@ -305,7 +305,7 @@ obj телефон:
     append мобильный телефон,телефон,мобильник,смартфон
     if s.flash:
       append |фонарик,фонарь
-    if have(s) and here() ^ 'В машине':
+    if have s and here ^ 'В машине':
       append |сообщения|сообщение
   attrs: switchable, on, multi
   on:
@@ -327,7 +327,7 @@ obj телефон:
           stop
         if not s.compass:
           say Странно, нет приёма...
-        if here()^'поле' or here()^'В лесу':
+        if here^ поле or here^'В лесу':
           if not s.compass:
             say Но в твоём смартфоне есть компас. И, похоже, он работает! Теперь ты можешь ориентироваться по сторонам света.
             s.compass = true
@@ -339,7 +339,7 @@ obj телефон:
           if s.flash:
             say И фонариком.
     Give(s, w): |
-      if w ^ '#мама':
+      if w ^ #мама:
         say Ты протягиваешь телефон матери, она молча забирает его и кладёт в бардачок.
         if not s.seen:
           s.seen = true
@@ -390,11 +390,11 @@ obj телефон:
     if rnd(10) > 3:
       say Ты слышишь сигнал входящего сообщения на своём смартфоне.
   each_turn(s): |
-    if here() ^ 'пещера2' and s:has light and not here().solved:
+    if here ^ пещера2 and s:has light and not here.solved:
       say "В ту же секунду ты слышишь хлопанье крыльев и успеваешь заметить,\nкак множество чёрных теней бросаются к тебе с потолка. Инстинктивно ты успеваешь выключить фонарик. Удивительно, но это успокаивает тварей. Некоторое время ты слышишь шум их крыльев. Затем всё затихает."
       s:attr ~light
       stop
-    if here():has light and s:has light:
+    if here:has light and s:has light:
       say В целях экономии заряда ты выключила фонарик.
       s:attr ~light
   flash: false
@@ -430,7 +430,7 @@ verb Play:
     if w ~= скрипка:
       say Ты умеешь играть только на скрипке.
       stop
-    if not have 'скрипка':
+    if not have скрипка:
       say Сначала тебе нужно взять скрипку в руки.
       stop
     pass
@@ -444,7 +444,7 @@ verb Light:
       stop
     say "{#First} не {#if_hint/#first,plural,могут,может} светить."
   hint: |
-    return thedark(here) and have 'телефон' 
+    return thedark(here) and have телефон 
 
 verb Cry:
   words: [|по|за]крич/ать,[|по]звать,крикн/уть,[|за|по]плак/ать,[|за|по]плач/ь
@@ -486,7 +486,7 @@ verb Photo:
   patterns:
     - Photo
   on: |
-    if not have 'телефон':
+    if not have телефон:
       say Дебе нечем делать снимки.
     elseif thedark(here):
       say Нет света. Может быть, посветить телефоном?
@@ -502,21 +502,21 @@ setup:
     description: Тебя зовут Вера. Тебе почти 13 лет.
     on:
       LetGo(s, w, ww): |
-        if w ^ 'телефон':
+        if w ^ телефон:
           local s = w
           if s.compass and ww ~= player:
             say В телефоне есть компас, который тебе нужен.
             stop
           pass
-        elseif w ^ 'скрипка' and here() ^ 'пещера2' and thedark(here):
+        elseif w ^ скрипка and here ^ пещера2 and thedark(here):
           say Ты не хочешь расставаться со своей скрипкой.
           stop
-        elseif w ^ 'осколки':
+        elseif w ^ осколки:
           local s = w
-          if not here() ^ 'пещера2':
+          if not here ^ пещера2:
             pass
           say Ты бросаешь осколки кристалла на пол пещеры. Маленькие светящиеся огоньки рассыпаются по ледяной поверхности. В тот же момент, пещеру заполняет шум хлопающих крыльев.
-          here().solved = true
+          here.solved = true
           s:drop
           stop
         pass
@@ -555,7 +555,7 @@ obj машина:
   attrs: container, openable, open, static, enterable, light
   on:
     after Close(s): |
-      if перо:inside(s) and not have 'перо':
+      if перо:inside s and not have перо:
         say Когда ты захлопнула дверь машины, перо упало с крыши в снег.
         перо:move 'поле'
         stop
@@ -601,7 +601,7 @@ obj машина:
       with: браслет
 
 fn have_compass() -> bool: |
-  return have 'телефон' and телефон.compass
+  return have телефон and телефон.compass
 
 fn check_compass(w: any) -> bool: |
   if w == 'u_to' or w == 'd_to' or w == 'in_to' or w == 'out_to':
@@ -632,11 +632,11 @@ class Snow:
   attrs: scenery, supporter
   on:
     after Receive(s, w): |
-      move(w, here())
+      w:move here
       pass
     Enter, Walk: Ты и так стоишь среди снега.
     Receive(s, w): |
-      if here() ^ 'В лесу':
+      if here ^ 'В лесу':
         say "Потом ", w:noun'вн', " сложно будет найти."
       else:
         pass
@@ -660,7 +660,7 @@ Area поле:
       else:
         say Ты слышишь шум радиопомех из машины.
     Walk: |
-      if player:where ^ 'машина':
+      if player:where ^ машина:
         say Машина не заводится. Придётся выйти и идти пешком.
         stop
       pass
@@ -694,7 +694,7 @@ Area поле:
       on:
         Exam: |
           say Ты видишь запорошенные снегом следы, которые ведут в лес.
-          enable '#следы'
+          enable #следы
     obj #лес:
       words:
         - хвойный лес,лес
@@ -750,12 +750,12 @@ obj олень:
       if not s.sit:
         s:call_before Touch
         stop
-      if not have 'перо':
+      if not have перо:
         say Ты подумала, что тебе стоит сначала взять с собой перо странной совы. Кто знает, куда умчит тебя олень?
         stop
       s:daemonStop
       s.sit = false
-      if here() ^ 'В лесу':
+      if here ^ 'В лесу':
         walk 'к хребту'
       else:
         walk 'к поляне'
@@ -780,7 +780,7 @@ obj олень:
     stop
   init_dsc: Ты видишь на поляне оленя.
   life_Give,Show(s, w): |
-    if not w ^ 'перо':
+    if not w ^ перо:
       pass
     if s.sit:
       say Олень никак не отреагировал.
@@ -801,17 +801,17 @@ obj олень:
       words: рога оленя,рога
 
 fn forest_scenery(s: obj): |
-  disable 'сова'
-  disable 'олень'
-  disable '#ручей'
-  disable '#поляна'
+  disable сова
+  disable олень
+  disable #ручей
+  disable #поляна
   if s.depth == 0:
-    enable 'сова'
+    enable сова
   elseif s.depth == 2:
-    enable '#ручей'
+    enable #ручей
   elseif s.depth == 3:
-    enable '#поляна'
-    enable 'олень'
+    enable #поляна
+    enable олень
     pic_set '22'
     олень.step = 0
     олень.sit = false
@@ -885,7 +885,7 @@ Area "В лесу":
     Snow #снег:
       on:
         Exam: |
-          if here().depth == 0:
+          if here.depth == 0:
             say Здесь едва заметный след теряется.
           else:
             pass
@@ -895,8 +895,8 @@ Area "В лесу":
         Default: Поле далеко.
         Exam: Снежное поле выглядит бескрайним.
         Walk, Enter, Climb: |
-          if here().depth == 0:
-            walk 'поле'
+          if here.depth == 0:
+            walk поле
           else:
             say Поле где-то на востоке.
     Prop #деревья:
@@ -918,7 +918,7 @@ Area "В лесу":
       on:
         Exam: |
           say Тебе кажется, что это полярная сова. Только у неё странные глаза.
-          if here() ^ 'поле':
+          if here ^ поле:
             line
             '#глаза совы':call_before Exam
         Touch(s): |
@@ -939,12 +939,12 @@ Area "В лесу":
         if s:where() ^ 'В лесу' and s:where ^ 'В лесу' and 'В лесу'.depth == 0 and rnd(3) == 1:
           say Хлопая крыльями сова улетела в сторону поля.
           s:move 'поле'
-        elseif here() ^ 'поле' and s:where ^ 'поле' and s.talked and rnd(3) == 1:
+        elseif here ^ поле and s:where ^ поле and s.talked and rnd(3) == 1:
           say Хлопая крыльями сова улетела в сторону леса.
           s:move 'В лесу'
         stop
       dsc(s): |
-        if s:where ^ 'поле':
+        if s:where ^ поле:
           say На машине сидит сова.
         else:
           say На ветке сосны сидит сова.
@@ -996,7 +996,7 @@ obj перо:
       else:
         say Его оставила сова с дырками вместо глаз.
   init_dsc(s): |
-    if s:hasnt moved and player:where ^ 'машина':
+    if s:hasnt moved and player:where ^ машина:
       stop
     say На крыше машины лежит белое перо.
 
@@ -1033,7 +1033,7 @@ talk "разговор с совой":
         ask: Это далеко?
         do: |
           say -- Расстояние -- всего лишь время. А время здесь замёрзло. Возьми перо. По нему тебя узнают другие слуги госпожи.
-          move ('перо', 'машина')
+          перо:move машина
           перо:attr ~moved
           сова.talked = true
           walkout
@@ -1067,7 +1067,7 @@ Area "Ледяные горы":
   nw_to,sw_to,n_to,s_to: |
     say По этому направлению нет ничего интересного. Такая же ледяная стена.
   onexit(s, t): |
-    if t ^ 'пещера' and not visited 'пещера':
+    if t ^ пещера and not visited пещера:
       pic_set '23-pan'
   title: У ледяных гор
   w_to: #стена
@@ -1097,7 +1097,7 @@ Area "Ледяные горы":
           if s.light == 0:
             say Как ты это сделаешь? Стена твёрдая, гладкая и скользкая.
             stop
-          walk 'пещера'
+          walk пещера
         Exam(s): |
           if s.light > 0:
             say Сквозь лёд ты видишь фиолетовое свечение.
@@ -1138,18 +1138,18 @@ room пещера:
   words: пещера
   attrs: ~light
   Play(s, w): |
-    if not w or not have 'скрипка':
+    if not w or not have скрипка:
       pass
     if not w:
       set w = скрипка
-    if not w ^ 'скрипка':
+    if not w ^ скрипка:
       pass
     if #кристаллы.try == 0 or #кристаллы.broken:
       pass
     #кристаллы.broken = true
     pic_set '24'
     say "Интересно... А что если? Не успев додумать мысль, ты уже берёшь скрипку в руки.^^\nТы извлекаешь \"ми\" второй октавы. Сначала ничего не происходит, но затем ты слышишь, как странный кристалл отзывается\nна звук твоей скрипки.^^\nЗвуки скрипки и кристалла усиливают друг друга в резонансе. Ты почти физически ощущаешь, как\nнапряжение кристалла достигает своего пика. И, наконец, он шумно взрывается на мелкие осколки."
-    enable 'осколки'
+    enable осколки
   dark_dsc: Ты видишь слабое свечение в темноте.
   dsc: "Ты находишься внутри небольшой ледяной пещеры. У восточной стены ты видишь странное свечение.^\nПещера продолжается на северо-запад."
   e_to: #свечение
@@ -1175,7 +1175,7 @@ room пещера:
         Exam: |
           say Этим путём ты попала сюда. Вероятно, с помощью него можно выйти наружу.
           say ^Ты обращаешь внимание, что источником странного свечения служат фиолетовые кристаллы, растущие из стены.
-          enable '#кристаллы'
+          enable #кристаллы
         Walk, Climb, Enter: |
           walk 'Ледяные горы'
       before Touch, Push, Knock: Твоя рука проходит сквозь свечение.
@@ -1236,7 +1236,7 @@ room пещера:
       on:
         Exam: Осколки кристалла пульсируют слабым фиолетовым свечением.
         Take: |
-          if here() ^ 'пещера2' and here().solved:
+          if here ^ пещера2 and here.solved:
             say Ты боишься беспокоить летучих мышей.
             stop
           pass
@@ -1252,10 +1252,10 @@ obj ообрыв:
     Exam: Глубокий разлом во льду. Света фонарика недостаточно, чтобы оценить его глубину. К счастью, ширина разлома не превышает двух метров.
     JumpOver: |
       say Ты разбегаешься и прыгаешь через пропасть...
-      if here() ^ 'обрыв':
+      if here ^ обрыв:
         walk 'Другая сторона'
       else:
-        walk 'обрыв'
+        walk обрыв
     Receive(s, w): |
       say "Ты потом не сможешь достать ", w:noun 'вн', " из пропасти."
 
@@ -1270,7 +1270,7 @@ room пещера2:
         say Стоит мёртвая тишина.
   dsc(s): |
     line Стены этой части пещеры испещрены небольшими отверстиями.
-    if from ^ 'пещера':
+    if from ^ пещера:
       say Ты попала сюда с юго-востока. Пещера продолжается на юго-запад.
     else:
       say Ты попала сюда с юго-запада. Пещера продолжается на юго-восток.
@@ -1279,7 +1279,7 @@ room пещера2:
     else:
       say "^^Ты видишь, как странные чёрные твари дерутся за фиолетовые осколки кристалла,\nкотрые ты рассыпала по полу пещеры."
   out_to: |
-    if from ^ 'пещера':
+    if from ^ пещера:
       return 'пещера'
     else:
       return 'обрыв'
@@ -1307,7 +1307,7 @@ room пещера2:
         Attack: Тебе не удастся убить их всех.
       description: |
         say Тебе они не нравятся. Называя вещи своими словами -- ты их панически боишься.
-        if here().solved:
+        if here.solved:
           say ^Но кажется, они поглощены борьбой за светящимися осколками кристалла.
       life_Show,Give: "Пока они заняты, лучше их не беспокоить."
     obj:
@@ -1338,12 +1338,12 @@ room обрыв:
 obj отверстие:
   word: |
     append отверстие|выход|дырка|дыра
-    if here() ^ 'За ледяной стеной':
+    if here ^ 'За ледяной стеной':
       append |пещера
   attrs: scenery
   on:
     Enter, Walk, Climb: |
-      if here() ^ 'Другая сторона':
+      if here ^ 'Другая сторона':
         walk 'За ледяной стеной'
       else:
         walk 'Другая сторона'
@@ -1408,7 +1408,7 @@ obj ворота:
   disabled: true
   on:
     Walk, Enter, Climb: |
-      if here() ^ 'У замка':
+      if here ^ 'У замка':
         xaction(Enter, #замок)
       else:
         walk 'У замка'
@@ -1425,7 +1425,7 @@ obj голем:
     Any(s, e): |
       if e == 'Exam' or e == 'Walk' or e == 'Climb' or e == 'Enter':
         pass
-      if not disabled 'дверь' or not visited 'королева-диалог':
+      if not disabled дверь or not visited 'королева-диалог':
         pass
       say Сначала к голему нужно подойти.
     Climb: Это не так просто сделать.
@@ -1433,15 +1433,15 @@ obj голем:
       say s:Noun(), " весит не меньше сотни килограмм. Как ты это сделаешь?"
     Taste: А язык не приклеится?
     Walk, Enter, Climb: |
-      if visited 'королева-диалог' and disabled 'дверь':
+      if visited 'королева-диалог' and disabled дверь:
         say Ты последовала за големом. Обогнув колонну и подойдя к северной стене, ты заметила небольшую деревянную дверь.
-        enable 'дверь'
+        enable дверь
         stop
       pass
   description(s): |
     if s:has animate:
       say Высота ледяного человека около двух метров. У него есть руки и ноги, но вместо головы лишь небольшой выступ.
-      if visited 'королева-диалог' and disabled 'дверь':
+      if visited 'королева-диалог' and disabled дверь:
         say Сейчас голем стоит у северной части зала и ждет тебя.
     else:
       say Статуя сделана из льда и изображает двухметрового человека с массивным телосложением.
@@ -1451,10 +1451,10 @@ obj голем:
     else:
       say Твоё внимание привлекает огромная ледяная статуя.
   life_Give,Show,ThrowAt(s, w): |
-    if w ^ 'перо':
-      if disabled 'ворота':
+    if w ^ перо:
+      if disabled ворота:
         say "Едва ты достала перо, как статуя сдвинулась с места. Сделав два шага по направлению к тебе,\nстрашный ледяной человек остановился.^"
-        enable 'ворота'
+        enable ворота
         say -- Госпожа ждёт тебя! -- прогремел голос с двух метровой высоты.^
         say После этих слов голем размахнулся и ударил своим кулаком в стену.
         say Стена с треском раскололась и в ней образовался проход.
@@ -1477,7 +1477,7 @@ obj голем:
 room "У замка":
   dsc: |
     say Ты стоишь у подножия ледяной скалы. Отвесная стена уходит высоко вверх.
-    if not disabled 'ворота':
+    if not disabled ворота:
       say В стене зияет разлом.
     say Пещера, с помощью которой ты прошла сквозь горы, находится на востоке.
   e_to: За ледяной стеной
@@ -1498,7 +1498,7 @@ room "У замка":
       attrs: scenery
       on:
         Enter, Walk, Climb: |
-          if disabled 'ворота':
+          if disabled ворота:
             pass
           if голем:hasnt moved:
             голем:move 'Тронный зал'
@@ -1528,7 +1528,7 @@ obj королева:
         if браслет:has worn:
           walk 'королева-диалог'
         else:
-          walk 'badend2'
+          walk badend2
   daemon: |
     local tt = tbl4
     say tt[rnd(#tt), " -- произносит твоя мать с трона."
@@ -1568,7 +1568,7 @@ room "Тронный зал":
     Default(s, e, w): |
       if not w:
         pass
-      if not w ^ 'королева' and not w ^ '#трон':
+      if not w ^ королева and not w ^ #трон:
         pass
       if e == 'Exam' or s.near:
         pass
@@ -1586,22 +1586,22 @@ room "Тронный зал":
       line Через некоторое время коридор кончился и вы вошли в большой зал.
       line Зал был огромен! В его центре ты увидела трон, на котором сидела женщина... Твоя... мама?
       line -- Я ждала тебя! Подойди же и поцелуй меня! -- голос матери, отраженный от ледяных стен зала показался тебе чужим.
-      daemonStart 'королева'
+      daemonStart королева
       сова:remove
       pic_set '30'
   in_to: |
-    if not disabled 'дверь':
+    if not disabled дверь:
       return 'дверь'
     pass
   n_to: |
-    if disabled 'дверь' and visited 'королева-диалог':
+    if disabled дверь and visited 'королева-диалог':
       return 'голем'
-    if not disabled 'дверь':
+    if not disabled дверь:
       return 'дверь'
     pass
   near: false
   onexit(s, to): |
-    if to ^ 'королева-диалог' or to ^ 'badend2' or to ^ 'badend4':
+    if to ^ 'королева-диалог' or to ^ badend2 or to ^ badend4:
       stop
     if not s.near:
       if браслет:hasnt worn:
@@ -1609,7 +1609,7 @@ room "Тронный зал":
           say Сейчас не лучшее время для прогулок.
           pass
         say Поддавшись смутному интуитивному чувству, ты покидаешь тронный зал.
-        daemonStop 'королева'
+        daemonStop королева
         stop
       say Ты нашла свою маму! Не время уходить!
       pass
@@ -1620,7 +1620,7 @@ room "Тронный зал":
   out_to,e_to: ворота
   s_to,d_to: #лестница
   u_to: |
-    if visited 'комната':
+    if visited комната:
       return 'дверь'
     pass
   with:
@@ -1641,7 +1641,7 @@ room "Тронный зал":
           say "Ты бежишь к трону. Твоё сердце от радости выпрыгивает из груди. Но что-то странное ты замечаешь в облике матери.\nВ нерешительности ты останавливаешься в нескольких шагах от неё."
           if браслет:hasnt worn:
             daemonStop'королева'
-            walk 'badend2'
+            walk badend2
             stop
           'Тронный зал'.near = true
       description: Великолепный трон сделан, как и всё вокруг, из льда. Высокая прямая спинка украшена причудливыми узорами.
@@ -1661,7 +1661,7 @@ room "Тронный зал":
         say "Небольшая деревянная дверь. Странно, что она сделана не из льда."
         pass
       door_to: |
-        if here() ^ 'комната':
+        if here ^ комната:
           return 'Тронный зал'
         else:
           return 'комната'
@@ -1709,7 +1709,7 @@ talk "королева-диалог":
     option:
       ask: Хорошо, сейчас.
       do: |
-        walk 'badend'
+        walk badend
   label дальше2:
     option:
       ask: Я знаю, ты забрала мою маму! Сейчас же верни её!
@@ -1756,11 +1756,11 @@ story badend4:
   text: {$fmt r|{$fmt em|Но всё могло закончиться по другому...}}
   exit(): |
     pic_pop()
-    enable 'королева'
+    enable королева
   next_to: Тронный зал
   onenter(): |
     pic_push '99'
-    disable 'королева'
+    disable королева
   title: false
 
 talk "сова2-диалог1":
@@ -1825,7 +1825,7 @@ talk "сова2-диалог2":
           option:
             ask: Да.
             do: |
-              walk 'yes'
+              walk yes
           option:
             ask: Нет!
             do: |
@@ -1840,7 +1840,7 @@ talk "сова2-диалог3":
   option:
     ask: Да.
     do: |
-      walk 'yes'
+      walk yes
   option:
     ask: Нет!
     do: |
@@ -1871,10 +1871,10 @@ obj сова2:
     if not s.finside:
       say Она за стеклом.
       stop
-    if visited 'сова2-диалог1' and not where'зеркало' ^ '#стена':
+    if visited 'сова2-диалог1' and not where'зеркало' ^ #стена:
       say -- Повесь зеркало на стену, дитя. Скорее!
       stop
-    if not visited 'сова2-диалог1' and not where'зеркало' ^'#стена':
+    if not visited 'сова2-диалог1' and not where'зеркало' ^ #стена:
       return 'сова2-диалог1'
     if not visited 'сова2-диалог2':
       return 'сова2-диалог2'
@@ -1890,29 +1890,29 @@ room комната:
   words: комната
   dsc: |
     say "Это действительно твоя комната. Комната, которую ты покинула ещё совсем недавно. Перед тем... как вы уехали с мамой...^^\nТы видишь те же: стол, шкаф, кровать и книжные полки... И даже окно!"
-    if not visited 'gotmirror':
+    if not visited gotmirror:
       say Правда, мебель стоит неправильно и на стене нет зеркала. Интересно, куда оно подевалось?
     else:
       say Правда, мебель стоит неправильно.
-      if where 'зеркало' ^ '#стена':
+      if where зеркало ^ #стена:
         say На стене висит зеркало.
     if seen 'королева2':
       say ^^В комнате, прислонившись к стене, стоит Снежная Королева. Ты видишь как поверхность зеркала мерцает фиолетовым светом.
-    if where 'сова2' and where 'сова2' ^ '#стол':
+    if where сова2 and where сова2 ^ #стол:
       say ^^Полярная сова по прежнему сидит на твоём столе.
   enter(s): |
     if s:once:
       say За дверью оказалась лестница, которая вела наверх. Ты поднялась по ней и оказалась в ... своей комнате.
       голем:move 'У замка'
-    if visited 'gotmirror' and зеркало.seen and not сова2.finside:
+    if visited gotmirror and зеркало.seen and not сова2.finside:
       сова2.num = 0
-      daemonStart 'сова2'
+      daemonStart сова2
   exit: |
-    daemonStop 'сова2'
+    daemonStop сова2
     if not сова2.finside:
       сова2:remove
   onexit(s, t): |
-    if seen 'королева2' and not t ^ 'комната2':
+    if seen 'королева2' and not t ^ комната2:
       say Если переход в зеркале закроется, ты никогда не вернёшься домой. Надо спешить!
       pass
   s_to,out_to: дверь
@@ -1989,7 +1989,7 @@ room комната:
         say В окне ты видишь пустынный белый пейзаж.
         if сова2.num >= 3 and not сова2.finside:
           say Ты видишь за окном полярную сову.
-          move('сова2', here())
+          сова2:move here
         pass
       when_open: Окно открыто. В твою комнату залетают колючие снежинки.
     Prop #стена:
@@ -1998,7 +1998,7 @@ room комната:
         - шуруп
       on:
         Exam(s): |
-          if where 'зеркало' ~= s:
+          if where зеркало ~= s:
             say На стене у шкафа висело зеркало. Сейчас его нет.
           else:
             say На стене висит зеркало.
@@ -2021,7 +2021,7 @@ room "Зал с зеркалами":
   words: зал
   on:
     Drop, ThrowAt(s, w): |
-      if not w ^ 'перо':
+      if not w ^ перо:
         pass
       if w:check_held:
         stop
@@ -2131,7 +2131,7 @@ story портал1:
 room ледяное-пламя:
   on:
     after Disrobe(s, w): |
-      if w ^ 'браслет':
+      if w ^ браслет:
         s.warm = 0
       pass
   cant_go: Ты можешь плутать по залу вечность. Ты раздавлена его масштабами и не видишь смысла искать здесь что-нибудь кроме пустоты.
@@ -2185,18 +2185,18 @@ room ледяное-пламя:
               else:
                 say Как ты сделаешь это?
             Enter: |
-              if visited 'gotmirror':
+              if visited gotmirror:
                 say Ты уже взяла то, что тебе было нужно.
                 stop
-              if here().warm <= 5:
-                walk 'badend3'
+              if here.warm <= 5:
+                walk badend3
               else:
-                walk 'gotmirror'
+                walk gotmirror
             Exam: Языки странного огня излучают холод.
             Listen: Ты слышишь потрескивание.
             Take: Это невозможно взять.
             Touch: |
-              if here().warm <= 5:
+              if here.warm <= 5:
                 say Твоя рука моментально начинает замерзать. Лучше не пытаться это делать.
               else:
                 say Ты чувствуешь прохладу.
@@ -2222,24 +2222,24 @@ obj зеркало:
         say Зачем разбивать зеркало, которое ты так долго искала?
     Enter: |
       if seen 'королева2':
-        walk 'комната2'
+        walk комната2
       else:
         pass
     PutOn(s, w): |
       if s:check_held:
         stop
-      if w ^ '#стена' and here() ^ 'комната':
+      if w ^ #стена and here ^ комната:
         s:move w
         say Ты нашла в стене одинокий шуруп и повесила на него зеркало.
         stop
       pass
     Search(s): |
-      if here() ^ 'комната' and not сова2.finside and not s.seen:
+      if here ^ комната and not сова2.finside and not s.seen:
         сова2.num = 0
-        daemonStart 'сова2'
+        daemonStart сова2
       s.seen = true
       say "Вместо своего отражения, ты видишь в зеркале свою маму! {$fmt em|Настоящую} маму."
-      if s:where() ^ '#стена':
+      if s:where() ^ #стена:
         say Ты видишь в зеркале комнату. Все вещи в ней находятся на своих местах.
       if seen 'королева2':
         say Поверхность зеркала сияет фиолетовым светом.
@@ -2263,7 +2263,7 @@ obj зеркало:
 story gotmirror:
   text: "Ты входишь в ледяное пламя и странное свечение окутывает тебя со всех сторон.^^\n\t\tНичто живое не смогло бы пережить этот холод, но ты чувствуешь, как тебя согревает браслет матери.^^\n\t\tТы вглядываешься в фиолетовые языки ледяного пламени и вдруг замечаешь, что можешь охватить взором весь этот громадный зал.^^\n\t\tСотни тысяч зеркал, среди которых есть то, что ты ищешь...^^\n\t\tТы протягиваешь руки и вот -- ты уже держишь его! Зеркало из твоей комнаты. Ты выходишь из ледяного пламени."
   exit: |
-    take 'зеркало'
+    take зеркало
     королева:remove
   next_to: ледяное-пламя
   title: false
@@ -2299,7 +2299,7 @@ room Тьма:
     Wait: Проходит немного времени.
   before Cry(s): |
     s.num = s.num + 1
-    if s.num < 5 or have 'скрипка':
+    if s.num < 5 or have скрипка:
       say Тебя душат рыдания.
       if s.num == 1:
         say Но у тебя нет глаз, чтобы плакать.
@@ -2309,18 +2309,18 @@ room Тьма:
         say Но можно ли плакать без глаз?
       else:
         say Ты едва сдерживаешься.
-        if have 'скрипка':
+        if have скрипка:
           say Ты чувствуешь в своих руках скрипку.
     else:
-      walk 'cry'
+      walk cry
   before Play(s, w): |
     if not w:
       w = скрипка
-    if not w ^ 'скрипка':
+    if not w ^ скрипка:
       pass
     if not tiny():
       music('mus/violin.ogg', 1)
-    walk 'cry2'
+    walk cry2
   num: 0
 
 story cry2:
@@ -2376,7 +2376,7 @@ obj мама2:
     if seen 'зеркало2':
       say Сначала нужно завершить кое-какое дело.
     else:
-      walk 'happyend'
+      walk happyend
 
 obj зеркало2:
   words: зеркало
@@ -2695,7 +2695,7 @@ verb Ring:
   patterns:
     - Ring
   on: |
-    if not have 'телефон':
+    if not have телефон:
       say У тебя нет телефона.
       stop
     if seen '#мама':
