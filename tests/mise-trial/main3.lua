@@ -256,7 +256,7 @@ function init()
   take('Комбинезон')
   take('Инструменты')
   take('Молоток')
-  fn_music('theme/nebula.ogg')
+  fn_music("theme/nebula.ogg")
   fn_set_autoplay(true)
 end
 
@@ -847,12 +847,12 @@ obj {
 }
 
 Verb { '#Deactivate', "отключ/ить, отсоеди/нить", "{noun}/им,scene : Deactivate", "{noun}/им,scene от {noun}/рд,scene : Deactivate" }
-mp.Deactivate = function(s, w)
+mp.Deactivate = function(s, w, wh)
   fn_say("Не отсоединяется.")
 end
 
 Verb { '#Activate', "подключ/ить, подсоеди/нить", "{noun}/им,held к {noun}/дт,scene : Activate" }
-mp.Activate = function(s, w)
+mp.Activate = function(s, w, wh)
   fn_say("Не подсоединяется.")
 end
 
