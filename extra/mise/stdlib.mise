@@ -171,3 +171,13 @@ fn tiny() -> bool: |lua
 
 fn music(name: str, ...): |lua
   snd.music(name, ...)
+
+class Path:
+  attrs: scenery, enterable
+  before Walk, Enter: |lua
+    if mp:check_inside(std.ref(s.walk_to)) then return end
+    walk(s.walk_to)
+  Default: |lua
+    if s.desc then p(s.desc) return end
+    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
+  default_Event: Walk

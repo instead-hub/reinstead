@@ -47,20 +47,17 @@ verb Rewrite:
     - {noun}/вн : Rewrite
 
 verb Play:
-  words: играть,сыграть,исполнить
+  words: [|по]играть,сыгра/ть,исполни/ть
   patterns:
     - на {noun}/пр,held : Play
     - {noun}/вн,held : Play
 
-class Path:
-  attrs: scenery, enterable
-  before Walk, Enter: |lua
-    if mp:check_inside(std.ref(s.walk_to)) then return end
-    walk(s.walk_to)
-  Default: |lua
-    if s.desc then p(s.desc) return end
-    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
-  default_Event: Walk
+fn type_name(s: obj, w: obj): |
+  if (w ^ 'имя' or w ^ 'машинка') and have 'карточка' and not type_done:
+    say Вы отстучали: М-А-Р-И-Я. Литеры ударили по бумаге, и в тумбе стола отскочила крышка тайника.
+    set type_done = true
+  else:
+    pass
 
 room набережная:
   words: набережная,мойка,улица
@@ -922,12 +919,8 @@ room бухгалтерия:
     if not have 'карточка':
       say Из лотка торчит учётная карточка.
   on:
-    Type(s, w): |
-      if w ^ 'имя' and have 'карточка' and not type_done:
-        say Вы отстучали: М-А-Р-И-Я. Литеры ударили по бумаге, и в тумбе стола отскочила крышка тайника.
-        set type_done = true
-      else:
-        pass
+    Type: use type_name
+    Push: use type_name
     Exam(s, w): |
       if w ^ 'тайник' and type_done and not have 'ключ_подвала':
         say В тайнике — тяжёлый трёхгранный ключ от жалюзи машинного зала.
@@ -949,6 +942,7 @@ room бухгалтерия:
         - машинка
         - ундервуд
         - литеры
+        - клавиши
       attrs: scenery
     scenery имя:
       words:

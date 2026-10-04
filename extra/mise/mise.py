@@ -1683,6 +1683,33 @@ def emit_verb(block, ident, base):
     return "\n".join(lines)
 
 
+def emit_verb_extend(block, ident, base):
+    if not ident:
+        raise Error("extend needs a verb tag")
+    fields = [lua_str(ident)]
+    words = block.get("words")
+    if words is not None:
+        if not isinstance(words, Text):
+            raise Error("extend words must be a quoted string")
+        fields.append(lua_str(words.s))
+    pats = block.get("patterns")
+    if pats is not None:
+        if not isinstance(pats, list):
+            pats = [pats]
+        for p in pats:
+            fields.append(lua_value(p))
+    if len(fields) == 1:
+        raise Error("extend needs words or patterns")
+    extra = []
+    if block.get("prio") is not None:
+        extra.append("prio = %s" % lua_value(block.get("prio")))
+    if block.get("hint") is not None:
+        extra.append("hint = %s" % lua_body(block.get("hint"), "hint"))
+    ctor = "VerbExtendWord" if words is not None else "VerbExtend"
+    return "%s%s { %s%s }" % (base, ctor, ", ".join(fields),
+                              (", " + ", ".join(extra)) if extra else "")
+
+
 PRESETS = {
     "obj": ("obj", []),
     "scenery": ("obj", ["scenery"]),
@@ -1827,6 +1854,8 @@ def emit_decl(key, block, base):
         if not ident:
             raise Error("verb needs a name")
         return emit_verb(block, ident, base)
+    if kind == "extend":
+        return emit_verb_extend(block, ident, base)
     if kind == "talk":
         if not ident:
             raise Error("talk needs a name")

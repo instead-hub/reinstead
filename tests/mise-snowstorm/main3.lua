@@ -318,6 +318,18 @@ local function fn_forest_scenery(s)
   end
 end
 
+Path = Class {
+  ["before_Walk,Enter"] = function(s, w, wh)
+    if mp:check_inside(std.ref(s.walk_to)) then return end
+    walk(s.walk_to)
+  end;
+  before_Default = function(s, ev, w)
+    if s.desc then p(s.desc) return end
+    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
+  end;
+  default_Event = "Walk";
+}:attr 'scenery,enterable'
+
 global 'blizzard' (0)
 
 function pic_push(name)

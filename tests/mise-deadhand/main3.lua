@@ -245,6 +245,18 @@ local function fn_in_room(r)
   return here() ^ r
 end
 
+Path = Class {
+  ["before_Walk,Enter"] = function(s, w, wh)
+    if mp:check_inside(std.ref(s.walk_to)) then return end
+    walk(s.walk_to)
+  end;
+  before_Default = function(s, ev, w)
+    if s.desc then p(s.desc) return end
+    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
+  end;
+  default_Event = "Walk";
+}:attr 'scenery,enterable'
+
 const 'DH_TO' (2)
 const 'pres' ([[-- пссст. .. ..ворить? ... (пауза) ... Если кто-то сейчас болтается там... и слышит меня. Мне остаётся только сказать, простите.
 Вы навсегда останетесь в наших сердцах. Верные сыны Земли, Отечества... Ещё раз, простите нас и примите мои соболезнования.^^

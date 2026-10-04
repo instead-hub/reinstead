@@ -27,7 +27,7 @@ key       ::= <текст до ':' нулевого уровня>         (* в�
 (* ---------- файл ---------- *)
 file      ::= { top }
 top       ::= meta | lang | fmt | include | require | events
-            | vars | setup | patch | fn | class | verb | talk
+            | vars | setup | patch | fn | class | verb | extend | talk
             | lua_section | decl | NEWLINE
 
 meta      ::= ("name" | "version" | "author" | "info") ":" BARE
@@ -62,6 +62,10 @@ class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
 verb      ::= "verb" CLASS ":" block
 (* поля verb: tag, event, words, patterns (список "- ..."), prio, hint,
    on/before/after *)
+
+extend    ::= "extend" NAME ":" block
+(* поля extend: words, patterns, prio, hint;
+   words: -> VerbExtendWord, только patterns: -> VerbExtend *)
 
 talk        ::= "talk" NAME ":" NEWLINE INDENT { talk_item } DEDENT
 talk_item   ::= "intro" ":" value

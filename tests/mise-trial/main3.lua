@@ -344,6 +344,18 @@ local function fn_cable_connect(s, wh)
   end
 end
 
+Path = Class {
+  ["before_Walk,Enter"] = function(s, w, wh)
+    if mp:check_inside(std.ref(s.walk_to)) then return end
+    walk(s.walk_to)
+  end;
+  before_Default = function(s, ev, w)
+    if s.desc then p(s.desc) return end
+    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
+  end;
+  default_Event = "Walk";
+}:attr 'scenery,enterable'
+
 global 'q1' (0)
 global 'q2' (0)
 global 'cablein' ("Кабель ни к чему не подключён.")

@@ -241,6 +241,27 @@ local function fn_music(name, ...)
   snd.music(name, ...)
 end
 
+local function fn_type_name(s, w)
+  if (w ^ 'имя' or w ^ 'машинка') and fn_have(_'карточка') and not type_done then
+    fn_say("Вы отстучали: М-А-Р-И-Я. Литеры ударили по бумаге, и в тумбе стола отскочила крышка тайника.")
+    type_done = true
+  else
+    return false
+  end
+end
+
+Path = Class {
+  ["before_Walk,Enter"] = function(s, w, wh)
+    if mp:check_inside(std.ref(s.walk_to)) then return end
+    walk(s.walk_to)
+  end;
+  before_Default = function(s, ev, w)
+    if s.desc then p(s.desc) return end
+    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
+  end;
+  default_Event = "Walk";
+}:attr 'scenery,enterable'
+
 function start(load)
   fn_move(fn_player(), _'набережная')
 end
@@ -276,19 +297,7 @@ Verb { '#Type', "[|на]печат/ать,отстуч/ать", "{noun}/вн : T
 
 Verb { '#Rewrite', "[пере|на]писать,нанести,[вы|на]бить", "{noun}/вн : Rewrite" }
 
-Verb { '#Play', "играть,сыграть,исполнить", "на {noun}/пр,held : Play", "{noun}/вн,held : Play" }
-
-Path = Class {
-  ["before_Walk,Enter"] = function(s, w, wh)
-    if mp:check_inside(std.ref(s.walk_to)) then return end
-    walk(s.walk_to)
-  end;
-  before_Default = function(s, ev, w)
-    if s.desc then p(s.desc) return end
-    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
-  end;
-  default_Event = "Walk";
-}:attr 'scenery,enterable'
+Verb { '#Play', "[|по]играть,сыгра/ть,исполни/ть", "на {noun}/пр,held : Play", "{noun}/вн,held : Play" }
 
 room {
   -"набережная,мойка,улица";
@@ -1327,14 +1336,8 @@ room {
       fn_say("Из лотка торчит учётная карточка.")
     end
   end;
-  before_Type = function(s, w)
-    if w ^ 'имя' and fn_have(_'карточка') and not type_done then
-      fn_say("Вы отстучали: М-А-Р-И-Я. Литеры ударили по бумаге, и в тумбе стола отскочила крышка тайника.")
-      type_done = true
-    else
-      return false
-    end
-  end;
+  before_Type = fn_type_name;
+  before_Push = fn_type_name;
   before_Exam = function(s, w)
     if w ^ 'тайник' and type_done and not fn_have(_'ключ_подвала') then
       fn_say("В тайнике — тяжёлый трёхгранный ключ от жалюзи машинного зала.")
@@ -1355,7 +1358,7 @@ room {
     };
 
     obj {
-      -"машинка|ундервуд|литеры";
+      -"машинка|ундервуд|литеры|клавиши";
       nam = "машинка";
     }:attr 'scenery,scenery';
 
