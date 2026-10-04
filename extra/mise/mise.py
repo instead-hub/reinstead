@@ -406,8 +406,6 @@ KEYWORDS = {
     "then", "else", "do", "local", "function", "end", "break", "repeat",
 }
 
-BARE_REF_RE = re.compile(r"^(?:[^\W\d]|#)\w*$", re.UNICODE)
-
 VARS = set()
 FUNCS = set()
 EVENT_NAMES = set()
@@ -615,19 +613,14 @@ class ExprEmit:
             return args, "any"
         self.err("unknown function %r (declare fn %s)" % (name, name))
 
-    def obj_str_ref(self, name):
-        if BARE_REF_RE.match(name):
-            self.err("string %r where obj expected; use the bare name"
-                     % name)
-        return "_'%s'" % name
-
     def primary(self):
         kind, val = self.next()
         if kind == "num":
             return val, "num", "lit", None
         if kind == "str":
-            if self.expected == "obj" and self.strval(val) in IDS:
-                return self.obj_str_ref(self.strval(val)), "obj", "objref", None
+            if self.expected == "obj":
+                self.err("strings are not objects; use a bare name (%r)"
+                         % self.strval(val))
             if self.expected == "event":
                 if self.strval(val) not in EVENT_NAMES:
                     self.err("unknown event %r" % self.strval(val))
@@ -710,13 +703,12 @@ class ExprEmit:
         code, t, k, v = self.concat_expr()
         while self.peek()[1] in ("==", "~=", "<", ">", "<=", ">=", "^"):
             op = self.next()[1]
+            if op == "^":
+                self.err("^ is forbidden; compare objects with ==")
             self.expected = ("event"
                              if t == "event" and op in ("==", "~=") else None)
             c2, _t2, _k2, _v2 = self.concat_expr()
             self.expected = None
-            if op == "^" and _k2 == "lit" and isinstance(_v2, str) \
-                    and _v2 in IDS:
-                self.obj_str_ref(_v2)
             code = "%s %s %s" % (code, op, c2)
             t, k, v = "bool", "expr", None
         return code, t, k, v
@@ -774,10 +766,9 @@ class ExprEmit:
                 nk, nv = self.next()
                 if nk != "name":
                     self.err("expected field name")
-                if t == "str" and val in IDS:
-                    code = self.obj_str_ref(val)
-                    t = "obj"
-                    val = None
+                if t == "str":
+                    self.err("strings are not objects; use a bare name (%r)"
+                             % (val,))
                 code = "%s.%s" % (code, nv)
                 kind = "field"
                 t = "any"
@@ -802,10 +793,9 @@ class ExprEmit:
                 plist, ret, variadic = FN_SIGS[nv]
                 if not plist:
                     self.err("fn %s takes no receiver" % nv)
-                if t == "str" and val in IDS:
-                    code = self.obj_str_ref(val)
-                    t = "obj"
-                    val = None
+                if t == "str":
+                    self.err("strings are not objects; use a bare name (%r)"
+                             % (val,))
                 self.check(t, plist[0][1], code)
                 nk, nv2 = self.peek()
                 if (not variadic and len(plist) == 1
@@ -1124,6 +1114,11 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None):
             if st[1]:
                 code, types = transpile_exprlist(st[1], env, where)
                 rtype = types[0] if types else "any"
+                m = re.fullmatch(r"'([^']*)'|\"([^\"]*)\"", code)
+                if m and (m.group(1) or m.group(2)) in IDS:
+                    raise LintError("%s: %r is an object name; return it "
+                                    "without quotes" % (where,
+                                    m.group(1) or m.group(2)))
             if ret and ret != "any" and rtype not in ("any", ret):
                 ctx = ("fn %s" % ret_name) if ret_name else "~~~do"
                 raise LintError("%s: return type is %s, expected %s"
@@ -1604,6 +1599,11 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
             name = parse_key(key[4:])[0]
             lines.append("%s%s = %s;" % (fi, name, lua_body(val, name, fi)))
             continue
+        if not parse_key(key)[1]:
+            for part in fbase.split(","):
+                if part in REF_FIELDS:
+                    check_ref_value(ident or "?", key, val)
+                    break
         try:
             rendered = lua_body(val, key, fi)
         except Error as e:
@@ -1634,8 +1634,13 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
             else:
                 refs = val if isinstance(val, list) else [val]
                 for r in refs:
-                    if not isinstance(r, (Bare, Text)):
-                        raise Error("%s must list identifiers" % key)
+                    if not isinstance(r, Bare):
+                        raise Error("%s must list bare identifiers, not "
+                                    "quoted strings (%s)" % (key, key))
+                    if not re.fullmatch(r"[#@\w]+", r.s, re.UNICODE):
+                        raise Error("%s: object name must be an identifier "
+                                    "without spaces/hyphens (%r)"
+                                    % (key, r.s))
                     obj_items.append("%s'%s';" % (fi + IND, r.s))
     blobs = []
     if obj_items:
@@ -1729,6 +1734,28 @@ def emit_verb_extend(block, ident, base):
     ctor = "VerbExtendWord" if words is not None else "VerbExtend"
     return "%s%s { %s%s }" % (base, ctor, ", ".join(fields),
                               (", " + ", ".join(extra)) if extra else "")
+
+
+REF_FIELDS = {
+    "n_to", "s_to", "e_to", "w_to", "nw_to", "ne_to", "sw_to", "se_to",
+    "in_to", "out_to", "u_to", "d_to", "door_to", "walk_to", "next_to",
+    "prev_to", "found_in", "talk_to",
+}
+
+
+def check_ref_value(where, key, v):
+    if isinstance(v, Text):
+        raise Error("%s.%s: object reference must be a bare name, not a "
+                    "quoted string (%r)" % (where, key, v.s))
+    if isinstance(v, Bare):
+        if not re.fullmatch(r"[#@\w]+", v.s, re.UNICODE):
+            raise Error("%s.%s: object name must be an identifier without "
+                        "spaces/hyphens (%r)" % (where, key, v.s))
+        return
+    if isinstance(v, list):
+        for r in v:
+            check_ref_value(where, key, r)
+        return
 
 
 PRESETS = {
@@ -1871,6 +1898,10 @@ def emit_decl(key, block, base):
     kind, ident = decl_key(key)
     if not kind:
         raise Error("bad declaration: " + key)
+    if ident and kind != "verb" and kind != "extend" and not re.fullmatch(
+            r"[#\w]+", ident, re.UNICODE):
+        raise Error("object names must be identifiers, no spaces/hyphens: %s"
+                    % ident)
     if kind == "verb":
         if not ident:
             raise Error("verb needs a name")

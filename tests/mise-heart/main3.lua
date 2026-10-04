@@ -1237,7 +1237,7 @@ room {
     end
   end;
   before_Exam = function(s, w)
-    if w == _'девушка' or w ^ 'кукла' then
+    if w == _'девушка' then
       if not doll_true then
         fn_say("Она кажется спящей, но грудь неподвижна, а на запястьях — шарнирные головки с винтами.")
       end
