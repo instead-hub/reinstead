@@ -5,7 +5,8 @@ from . import state as S
 from .common import *
 from .parse import parse_source
 from .prescan import apply_includes, prescan
-from .emit import Emitter, parse_fn_sig
+from .decl import classify, parse_fn_sig
+from .emit import Emitter
 from .emitlogic import emit_logic
 
 
@@ -20,28 +21,25 @@ def transpile(src, src_dir=""):
     fn_body = []
     reqs = []
     for key, val in root.items:
-        if key in ("name", "version", "author", "info"):
+        kind, info = classify(key)
+        if kind == "meta":
             header.append("--$%s:%s$" % (key.title(), val.s))
-        elif key in ("lang", "fmt", "include"):
+        elif kind == "skip":
             continue
-        elif key == "require":
+        elif kind == "require":
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 reqs.append(v.s if hasattr(v, "s") else str(v))
-        elif key == "events":
+        elif kind == "events":
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 name = v.s if hasattr(v, "s") else str(v)
                 ctx.extra_events[name] = name
-        elif key == "lua":
+        elif kind == "lua":
             body.append(val.s)
-        elif re.match(r"^class\s+[A-Z]", key):
-            m = re.match(r"^class\s+([A-Z][\w]*)\s*(?:\(([^)]*)\))?$",
-                         key)
-            if not m:
-                raise Error("bad class: " + key)
-            body.append(em.cls(val, m.group(1), m.group(2)))
-        elif re.match(r"^fn\s+[\w.+-]+", key):
+        elif kind == "class":
+            body.append(em.cls(val, info[0], info[1]))
+        elif kind == "fn":
             name, plist, ret, variadic = parse_fn_sig(key)
             prm = ", ".join(pn for pn, _pt in plist)
             if variadic:
@@ -58,16 +56,18 @@ def transpile(src, src_dir=""):
             ctx.fns.add(name)
             fn_body.append("local function fn_%s(%s)\n%s\nend"
                            % (name, prm, hb))
-        elif re.match(r"^patch\s+.+$", key):
-            body.append(em.patch(key[6:].strip(), val))
-        elif key == "setup":
+        elif kind == "patch":
+            body.append(em.patch(info, val))
+        elif kind == "setup":
             body.append("\n".join(em.setup(val)))
-        elif key == "const":
+        elif kind == "const":
             body.append("\n".join(em.const(val)))
-        elif key == "global":
+        elif kind == "global":
             body.append("\n".join(em.glob(val)))
-        else:
+        elif kind in ("decl", "verb", "extend", "talk"):
             body.append(em.decl(key, val, ""))
+        else:
+            raise Error("unknown declaration: " + key)
     body = fn_body + body
     lang = root.get("lang")
     lang = lang.s if isinstance(lang, Bare) else "ru"

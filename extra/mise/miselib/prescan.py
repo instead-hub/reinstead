@@ -3,18 +3,21 @@ import re
 
 from .common import *
 from .parse import parse_source
-from .emit import PRESETS, decl_key, parse_fn_sig
+from .decl import classify, parse_fn_sig
 
 def collect_ids(root):
     ids = {}
 
     def add_from(block):
         for key, val in block.items:
-            kind, ident = decl_key(key)
-            if not kind or not ident:
+            kind, info = classify(key)
+            if kind == "decl":
+                ident = info[1]
+            elif kind == "talk":
+                ident = info
+            else:
                 continue
-            if kind not in PRESETS and kind != "talk" and not re.fullmatch(
-                    r"[A-Z][\w]*", kind):
+            if not ident:
                 continue
             if ident not in ids:
                 ids[ident] = kind
@@ -118,7 +121,7 @@ def prescan(root, ctx):
     ctx.ids = set(ids)
     ctx.extra_events = {}
     for key, val in root.items:
-        kind, ident = decl_key(key)
+        kind, ident = classify(key)
         if kind == "verb" and ident and isinstance(val, Block):
             tag = val.get("tag")
             if not (isinstance(tag, Bool) and tag.s == "false"):
@@ -136,14 +139,14 @@ def prescan(root, ctx):
     ctx.fn_sigs = {}
     fn_names = set()
     for key, val in root.items:
-        if re.match(r"^fn\s+", key):
+        if classify(key)[0] == "fn":
             name, plist, ret, variadic = parse_fn_sig(key)
             if name in ctx.fn_sigs:
                 raise Error("duplicate fn: " + name)
             ctx.fn_sigs[name] = (plist, ret, variadic)
             fn_names.add(name)
     for key, val in root.items:
-        if key == "require":
+        if classify(key)[0] == "require":
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 text = scan_required(v.s if hasattr(v, "s") else str(v), ctx)
@@ -152,7 +155,7 @@ def prescan(root, ctx):
     const_names = set()
     ctx.global_types = {}
     for key, val in root.items:
-        if key in ("const", "global") and isinstance(val, Block):
+        if classify(key)[0] in ("const", "global") and isinstance(val, Block):
             for k, v in val.items:
                 const_names.add(k)
                 if isinstance(v, Num):
