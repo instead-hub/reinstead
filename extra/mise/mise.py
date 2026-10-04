@@ -786,14 +786,20 @@ def emit_on(block, indent, target=""):
     return out
 
 
-def emit_obj(block, ident, base, ctor, preset):
+def emit_obj(block, ident, base, ctor, preset, parent=None):
     fi = base + IND
-    lines = ["%s%s {" % (base, ctor)]
+    if parent:
+        lines = ["%s%s({" % (base, ctor)]
+    else:
+        lines = ["%s%s {" % (base, ctor)]
     words = block.get("words")
     if words is not None:
-        if not isinstance(words, Text):
+        if isinstance(words, Text):
+            lines.append('%s-"%%s";' % fi % words.s)
+        elif isinstance(words, Raw):
+            lines.append("%s%s;" % (fi, words.s))
+        else:
             raise Error("words must be a quoted string")
-        lines.append('%s-"%%s";' % fi % words.s)
     nam = block.get("nam")
     if nam is not None:
         lines.append("%snam = %s;" % (fi, lua_value(nam)))
@@ -805,7 +811,7 @@ def emit_obj(block, ident, base, ctor, preset):
         if isinstance(a, list):
             attrs += [x.s for x in a
                       if isinstance(x, (Sym, Bare, Text))]
-        elif isinstance(a, Sym):
+        elif isinstance(a, (Sym, Bare, Text)):
             attrs.append(a.s)
     obj_items = []
     nested = []
@@ -830,7 +836,10 @@ def emit_obj(block, ident, base, ctor, preset):
             rendered = lua_body(val, key, fi)
         except Error as e:
             raise Error("%s.%s: %s" % (ident, key, e))
-        lines.append("%s%s = %s;" % (fi, fbase, rendered))
+        if "," in fbase:
+            lines.append('%s["%s"] = %s;' % (fi, fbase, rendered))
+        else:
+            lines.append("%s%s = %s;" % (fi, fbase, rendered))
     on = block.get("on")
     if on:
         lines.extend(emit_on(on, fi))
@@ -867,7 +876,10 @@ def emit_obj(block, ident, base, ctor, preset):
                 lines.append("")
             lines.extend(b.split("\n"))
         lines.append("%s};" % fi)
-    tail = "%s}" % base
+    if parent:
+        tail = "%s}, %s)" % (base, parent)
+    else:
+        tail = "%s}" % base
     if attrs:
         tail += ":attr '%s'" % ",".join(attrs)
     if block.get("disabled"):
@@ -936,7 +948,8 @@ PRESETS = {
 
 def decl_key(key):
     m = re.match(
-        r'^([a-z]+)(?:\s+(?:"([^"]+)"|\'([^\']+)\'|([\w#.+-]+)))?$', key)
+        r'^([A-Za-z][A-Za-z0-9_]*)(?:\s+(?:"([^"]+)"|\'([^\']+)\'|([\w#.+-]+)))?$',
+        key)
     if not m:
         return None, None
     ident = m.group(2) or m.group(3) or m.group(4)
@@ -1055,6 +1068,11 @@ def emit_talk(block, name, base):
     return "\n".join(lines)
 
 
+def emit_class(block, name, parent):
+    body = emit_obj(block, None, "", "Class", [], parent)
+    return "%s = %s" % (name, body)
+
+
 def emit_decl(key, block, base):
     kind, ident = decl_key(key)
     if not kind:
@@ -1068,6 +1086,8 @@ def emit_decl(key, block, base):
             raise Error("talk needs a name")
         return emit_talk(block, ident, base)
     if kind not in PRESETS:
+        if re.fullmatch(r"[A-Z][\w]*", kind):
+            return emit_obj(block, ident, base, kind, [])
         raise Error("unknown kind: " + kind)
     ctor, preset = PRESETS[kind]
     return emit_obj(block, ident, base, ctor, preset)
@@ -1079,7 +1099,7 @@ def emit_setup(block):
     if fmt:
         vals = fmt if isinstance(fmt, list) else [fmt]
         for v in vals:
-            if isinstance(v, Sym):
+            if isinstance(v, (Sym, Bare, Text)):
                 lines.append("fmt.%s = true" % v.s)
     take = block.get("take")
     takes = []
@@ -1112,6 +1132,17 @@ def emit_setup(block):
             continue
         if key == "dsc":
             lines.append("game.dsc = %s" % lua_body(val, "dsc"))
+            continue
+        if key == "start":
+            if isinstance(val, Lua):
+                sb = reindent(val.s, IND)
+            elif isinstance(val, Logic):
+                sb = "\n".join(emit_logic(val.stmts, IND))
+            else:
+                raise Error("start must be a ~~~do/~~~lua block")
+            lines.append("function start(load)")
+            lines.append(sb)
+            lines.append("end")
             continue
         raise Error("unknown setup key: " + key)
     lines.append("function init()")
@@ -1170,8 +1201,10 @@ def collect_ids(root):
     def add_from(block):
         for key, val in block.items:
             kind, ident = decl_key(key)
-            if not kind or not ident or (kind not in PRESETS
-                                         and kind != "talk"):
+            if not kind or not ident:
+                continue
+            if kind not in PRESETS and kind != "talk" and not re.fullmatch(
+                    r"[A-Z][\w]*", kind):
                 continue
             if ident in ids:
                 raise Error("duplicate declaration: " + ident)
@@ -1245,13 +1278,19 @@ def transpile(src):
                 reqs.append(v.s if hasattr(v, "s") else str(v))
         elif key == "lua":
             body.append(val.s)
+        elif re.match(r"^class\s+[A-Z]", key):
+            m = re.match(r"^class\s+([A-Z][\w]*)\s*(?:\(([^)]*)\))?$",
+                         key)
+            if not m:
+                raise Error("bad class: " + key)
+            body.append(emit_class(val, m.group(1), m.group(2)))
         elif re.match(r"^handler\s+[\w.+-]+", key):
             m = re.match(r"^handler\s+([\w.+-]+)\s*(?:\(([^)]*)\))?$",
                          key)
             if not m:
                 raise Error("bad handler: " + key)
             name = m.group(1)
-            prm = m.group(2) or "s, w, wh"
+            prm = m.group(2) if m.group(2) is not None else "s, w, wh"
             if isinstance(val, Lua):
                 hb = reindent(val.s, IND)
             elif isinstance(val, Logic):
@@ -1275,7 +1314,14 @@ def transpile(src):
     lang = root.get("lang")
     lang = lang.s if isinstance(lang, Sym) else "ru"
     pre = ["-- generated by mise.py; do not edit", ""] + header + [
-        'require "fmt"', 'require "parser/mp-%s"' % lang]
+        'require "fmt"']
+    root_fmt = root.get("fmt")
+    if root_fmt:
+        vals = root_fmt if isinstance(root_fmt, list) else [root_fmt]
+        for v in vals:
+            if isinstance(v, (Sym, Bare, Text)):
+                pre.append("fmt.%s = true" % v.s)
+    pre.append('require "parser/mp-%s"' % lang)
     pre += ['require "%s"' % r for r in reqs]
     return "\n".join(pre) + "\n\n" + "\n\n".join(body) + "\n"
 
