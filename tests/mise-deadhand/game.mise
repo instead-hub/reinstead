@@ -42,13 +42,11 @@ global:
   good_to: 0
   know2: false
 
-fn in_room(r: obj) -> bool: ~~~lua
+fn in_room(r: obj) -> bool: |lua
   return here() ^ r
-  ~~~
 
-fn it(w: obj) -> str: ~~~lua
+fn it(w: obj) -> str: |lua
   return w:It()
-  ~~~
 
 setup:
   take: suit
@@ -57,38 +55,34 @@ setup:
     on:
       LetGo: Не стоит разбрасываться в космосе вещами.
   on:
-    Walk: ~~~do
-      local dir = compass_dir(w)
+    Walk: |
+      local dir = w:compass_dir
       if not dir:
         pass
       if dir == 'in_to' or dir == 'out_to':
         pass
       say Стороны света есть на Земле, а не в космосе.
-      ~~~
-    Taste: ~~~do
-      if has(suit, 'worn'):
+    Taste: |
+      if suit:has worn:
         say В скафандре?
         stop
       pass
-      ~~~
-    Smell: ~~~do
-      if hasnt(suit, 'worn'):
+    Smell: |
+      if suit:hasnt worn:
         pass
-      if not w or inside(w, player()):
+      if not w or w:inside(player):
         say В скафандре ничем не пахнет.
         stop
       say В скафандре это невозможно.
-      ~~~
     Jump, JumpOver: В невесомости это невозможно.
-    Listen: ~~~do
-      if hasnt(radio, 'on'):
+    Listen: |
+      if radio:hasnt on:
         say Для этого нужно включить радио.
       else:
         if freq:
           say Радио молчит.
         else:
           say Скафандр заполнен звуком радио.
-      ~~~
 
 
 story main:
@@ -102,63 +96,57 @@ story main:
 obj suit:
   words: скафандр
   attrs: worn, clothing
-  description: ~~~do
+  description: |
     say Твой скафандр оборудован различными приборами.
-    if here().rotate:
+    if here.rotate:
       say Но сейчас ты думаешь только о маневровых двигателях.
       stop
     if not known:
       say Например, радио.
-    ~~~
   on:
-    Enter, Climb: ~~~do
-      xaction("Wear", s)
-      ~~~
-    Exit, GetOff: ~~~do
-      xaction("Disrobe", s)
-      ~~~
-    Disrobe: ~~~do
-      if in_room ship2:
+    Enter, Climb: |
+      xaction(Wear, s)
+    Exit, GetOff: |
+      xaction(Disrobe, s)
+    Disrobe: |
+      if ship2:in_room:
         pass
       else:
         say Это самоубийство!
-      ~~~
   with:
     obj engines:
       words: маневровые двигатели,двигатели|двигатель
       attrs: switchable, scenery
       description: Маневровые двигатели позволяют ориентироваться в пространстве и перемещаться на небольшие расстояния. Ты можешь включить их.
       on:
-        after SwitchOn: ~~~do
-          if here().rotate:
+        after SwitchOn: |
+          if here.rotate:
             say [[Ты включаешь маневровые двигатели и пытаешься остановить вращение.
 В конце-концов тебе это удаётся! Только топлива ты потратил немало. Ты снова выключаешь двигатели.]]
-            set here().rotate = false
-            attr(s, '~on')
+            set here.rotate = false
+            s:attr ~on
           else:
-            if seen(tetr):
+            if tetr:seen:
               say Ты включаешь маневровые двигатели.
               stop
             say Ты даёшь пару импульсов. Лучше экономить горючее. Хотя... зачем?
-            attr(s, '~on')
-          ~~~
+            s:attr ~on
     obj radio:
       words: радио|рация|приёмник
       attrs: switchable, scenery
-      description: ~~~do
+      description: |
         say В скафандр встроен УКВ приёмник.
-        if has(s, 'on'):
+        if s:has on:
           if freq:
             say Задана рабочая частота 143,625 МГц.
           else:
             say Рабочая частота не настроена.
         pass
-        ~~~
-      daemon: ~~~do
+      daemon: |
         if timeout <= 0:
           stop
         if freq:
-          if good_to > DH_TO and once_tag(s, 'ack'):
+          if good_to > DH_TO and s:once_tag ack:
             say "Внезапно, пустота радиоэфира нарушилась.^", pres
             say ^^Сигналы прекратились. Ты заметил, что текст на экране изменился.
           else:
@@ -169,13 +157,12 @@ obj suit:
             stop
           set channel_pos += 1
           if channel_pos > #channels[freq_hz]:
-            set freq_hz = rnd(#channels)
-            set channel_pos = rnd(#channels[freq_hz])
-        ~~~
+            set freq_hz = rnd #channels
+            set channel_pos = rnd #channels[freq_hz]
       on:
-        after SwitchOn: ~~~do
+        after SwitchOn: |
           set freq = true
-          if once(s):
+          if s:once:
             say [[Ты включил радио на рабочей частоте.^^
 ... яю.. . аз... Ребята, если кто-то из вас уцелел. Запасов кислорода в ваших скафандрах недостаточно,
 чтобы мы успели найти и снять кого-нибудь из вас... Нам очень жаль... А сейчас, прослушайте
@@ -185,14 +172,12 @@ obj suit:
             set known = true
           else:
             say Ты включил радио на рабочей частоте 143,625 МГц.
-          daemonStart(radio)
-          if in_room space:
-            daemonStart(space)
-          ~~~
-        after SwitchOff: ~~~do
-          daemonStop(radio)
+          radio:daemonStart
+          if space:in_room:
+            space:daemonStart
+        after SwitchOff: |
+          radio:daemonStop
           pass
-          ~~~
 
 verb Fly:
   tag: false
@@ -207,28 +192,26 @@ verb Tune:
   patterns:
     - {noun}/вн : Tune
     - частоту|канал : Tune
-  on(s, w): ~~~do
+  on: |
     if not w or w ^ radio:
       set w = radio
-      if hasnt(w, 'on'):
+      if w:hasnt on:
         say Радио выключено.
         stop
       else:
         pass
     if w:
-      say it(w), "не {#if_hint/#first,plural,настраиваются,настраивается}."
+      say w:it, "не {#if_hint/#first,plural,настраиваются,настраивается}."
       stop
-    ~~~
-  after(s, w): ~~~do
+  after: |
     set freq = not freq
     if not freq:
       say Ты сменил частоту.
-      set freq_hz = rnd(#channels)
-      set channel_pos = rnd(#channels[freq_hz])
-      daemonStart(radio)
+      set freq_hz = rnd #channels
+      set channel_pos = rnd #channels[freq_hz]
+      radio:daemonStart
     else:
-      say "Ты вернул рабочую частоту: 143,625 МГц."
-    ~~~
+      say Ты вернул рабочую частоту: 143,625 МГц.
 
 scenery earth:
   words: Земля,планета|облака
@@ -262,93 +245,86 @@ obj tetr:
   Default: Он слишком далеко.
   on:
     Exam: pass
-    Walk, Climb, Enter: ~~~do
-      if hasnt(engines, 'on'):
+    Walk, Climb, Enter: |
+      if engines:hasnt on:
         say Сначала нужно включить двигатели.
         stop
-      walk(space2)
-      ~~~
+      space2:walk
 
 room space:
   title: открытый космос
   words: космос|пустота|пейзаж
   var rotate: true
   var step: 1
-  daemon: ~~~do
+  daemon: |
     set s.step += 1
-    if s.step > 3 and not here().rotate:
-      daemonStop(s)
-      place(tetr)
-      if isDaemon(radio):
-        line()
+    if s.step > 3 and not here.rotate:
+      s:daemonStop
+      tetr:place
+      if radio:isDaemon:
+        line
       say Тебе показалось, что ты видишь какой-то яркий объект.
-      daemonStop(s)
-    ~~~
-  dsc: ~~~do
+      s:daemonStop
+  dsc: |
     if s.rotate:
       say Быстро вращаясь, ты плывёшь в открытом космосе.
     else:
       say Ты плывёшь в открытом космосе. Под ногами простирается голубая гладь планеты Земля.
-    ~~~
-  Default: ~~~do
-    if not s.rotate or ev == 'Look' or ev == 'Wait' or ev == 'Inv':
+  Default: |
+    if not s.rotate or ev == Look or ev == Wait or ev == Inv:
       pass
-    if w and inside(w, player()) or w == player():
+    if w and w:inside(player) or w == player:
       pass
     say Из-за бешеного вращения, ты не можешь сориентироваться.
-    if once_tag(s, 'self'):
+    if s:once_tag self:
       say Может быть, попробовать осмотреть себя?
-    ~~~
 
 door gate:
   words: шлюзовой люк,люк,шлюзовой|шлюз
   attrs: static, openable, enterable, locked
   disabled: true
-  door_to: ~~~do
-    if in_room space2:
+  door_to: |
+    if space2:in_room:
       return ship
     else:
       return space2
-    ~~~
   on:
     Close: Он закрывается автоматически.
-  description: ~~~do
+  description: |
     say Рядом с люком находится красный рычаг.
-    enable(lever)
+    lever:enable
     pass
-    ~~~
 
 obj lever:
   words: красный рычаг|рычаг
   attrs: fixed, luminous
   disabled: true
   after:
-    Pull, Transfer: ~~~do
-      if in_room ship2:
-        if has(gate2, 'open'):
+    Pull, Transfer: |
+      if ship2:in_room:
+        if gate2:has open:
           say Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.
-          attr(gate2, '~open')
+          gate2:attr ~open
         else:
           say Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.
-          attr(gate2, 'open')
+          gate2:attr open
         stop
-      local open = has(gate, 'open')
-      if in_room ship:
+      local open = gate:has open
+      if ship:in_room:
         if not open:
           say Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.
-          attr(gate2, '~open')
+          gate2:attr ~open
       if open:
         say Ты дёрнул за рычаг и шлюзовой люк закрылся.
-        attr(gate, '~open')
+        gate:attr ~open
       else:
-        if in_room space2:
+        if space2:in_room:
           say Ты дёрнул за рычаг и шлюзовой люк открылся.
-        attr(gate, 'open')
-      if in_room ship:
+        gate:attr open
+      if ship:in_room:
         if open:
           say Через некоторое время открылся входной люк, ведущий внутрь корабля.
-          attr(gate2, 'open')
-      ~~~
+          gate2:attr open
 
 obj satellite:
   words: спутник,тетраэдр,корабль/но|объект|НЛО
@@ -360,31 +336,28 @@ obj satellite:
     obj corpus:
       words: корпус,антенн*,передат*
       attrs: scenery
-      description: ~~~do
-        if once(s):
+      description: |
+        if s:once:
           say Внимательно осмотрев корпус, ты заметил шлюзовой люк.
-          enable(gate)
+          gate:enable
         else:
           if perimetr:
             say Теперь ты знешь, что это за спутник.
           else:
             say Спутник связи, может быть?
-        ~~~
 
 room space2:
   title: открытый космос
   words: космос|пустота|пейзаж
-  in_to: ~~~do
-    if disabled(gate):
+  in_to: |
+    if gate:disabled:
       say Как ты попадёшь внутрь?
     else:
       return gate
-    ~~~
-  onenter: ~~~do
+  onenter: |
     say [[Управляя маневровыми двигателями и почти израсходовав топливо, ты смог согласовать свою орбиту с орбитой объекта.
 Им оказался спутник в форме тетраэдра.]]
-    attr(engines, '~on')
-    ~~~
+    engines:attr ~on
   dsc: Ты паришь в черной бездне рядом с неизвестным спутником. Под ногами проплывают земные облака над бирюзовой гладью.
   with: satellite, gate, lever
 
@@ -393,20 +366,18 @@ door gate2:
   attrs: static, openable, enterable, locked
   on:
     Close: Он закрывается автоматически.
-  door_to: ~~~do
-    if in_room ship:
+  door_to: |
+    if ship:in_room:
       return ship2
     else:
       return ship
-    ~~~
 
 room ship:
   title: шлюз
   words: шлюзовой отсек
-  onenter: ~~~do
+  onenter: |
     if f ^ space2:
       say Ты влетел в шлюзовой отсек.
-    ~~~
   out_to: gate
   in_to: gate2
   with: gate, lever, gate2
@@ -422,7 +393,7 @@ obj panel:
       attrs: static, concealed
       description: На кнопке ты не видишь никаких надписей или обозначений.
       on:
-        Push: ~~~do
+        Push: |
           if perimetr:
             set perimetr_ask += 1
             if perimetr_ask > 5:
@@ -437,15 +408,14 @@ obj panel:
             stop
           say Неизвестный корабль. Красная кнопка. Ты точно готов это сделать?^Подтверди. Да или нет?
           set ask = true
-          ~~~
     obj screen:
       words: экран,консоль,текст
       attrs: static
-      description: ~~~do
+      description: |
         if good_to > DH_TO:
-          daemonStop(ship2)
-          daemonStop(radio)
-          walkin(goodend)
+          ship2:daemonStop
+          radio:daemonStop
+          goodend:walkin
           stop
         if perimetr:
           say [[Программа "ПЕРИМЕТР" активирована.^^
@@ -453,7 +423,7 @@ obj panel:
           if perimetr_ask > 0:
             say "Режим голосовой отмены: ", freqs[perimetr_ask], "."
           else:
-            say "Режим голосовой отмены: выкл."
+            say Режим голосовой отмены: выкл.
           say [[^Отключение управления по каналам связи: да^
 Отсчёт времени до начала активной фазы: ]], timeout, [[^Ядерный удар первой волны: ожидание^
 Ядерный удар второй волны: ожидание^
@@ -461,60 +431,54 @@ obj panel:
           set know2 = true
         else:
           say Экран неактивен.
-        ~~~
 
 room ship2:
   words: корабль
   title: внутри корабля
   out_to: gate2
-  daemon: ~~~do
-    if good_to > DH_TO and once_tag(s, 'ack'):
-      if here() == s:
-        if not isDaemon(radio):
+  daemon: |
+    if good_to > DH_TO and s:once_tag ack:
+      if here == s:
+        if not radio:isDaemon:
           say Сигналы прекратились. Ты заметил, что текст на экране изменился.
-      daemonStop(s)
+      s:daemonStop
     else:
-      if here() == s:
+      if here == s:
         say Ты слышишь пульсирующий звуковой сигнал, который разносится по кораблю каждую секунду.
         if know2:
           say "До первой волны ", timeout, " с."
-    ~~~
-  onenter: ~~~do
-    if once(s):
+  onenter: |
+    if s:once:
       say С тревогой и надеждой, ты влетел внутрь странного корабля.
-    ~~~
-  dsc: ~~~do
+  dsc: |
     say Внутри корабля не так много места. Впрочем, к этому тебе не привыкать.
-    if has(gate2, 'open'):
+    if gate2:has open:
       say Здесь довольно темно. Детали обстановки плохо различимы в полумраке.
-    ~~~
-  onexit: ~~~do
-    if hasnt(suit, 'worn'):
+  onexit: |
+    if suit:hasnt worn:
       say Без скафандра? Самоубийство!
       pass
-    ~~~
-  Any: ~~~do
+  Any: |
     if perimetr:
       if perimetr_ask == 2:
         set good_to += 1
       else:
         set good_to = 0
-      set timeout -= rnd(25)
+      set timeout -= rnd 25
       if timeout < 0:
         if timeout < 0:
-          walkin(badend)
+          badend:walkin
           stop
-    if ask and (ev == 'Yes' or ev == 'No'):
-      if ev == 'No':
+    if ask and (ev == Yes or ev == No):
+      if ev == No:
         say Ну и правильно.
       else:
         say Ты нажал на кнопку и на экране консоли побежали строки текста.
-        daemonStart(ship2)
+        ship2:daemonStart
         set perimetr = true
       stop
     set ask = false
     pass
-    ~~~
   with: gate2, lever, panel
 
 story badend:
@@ -523,9 +487,8 @@ story badend:
 Почти обезумевший, ты смотрел с орбиты как Земля сгорает в ядерном аду.^
 Лучше бы ты погиб в открытом космосе...^
 ^{$fmt em|Но всё могло закончиться по-другому...}]]
-  onexit: ~~~do
+  onexit: |
     set timeout = 600
-    ~~~
 
 story goodend:
   title: false

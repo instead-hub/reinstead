@@ -408,6 +408,7 @@ KEYWORDS = {
 
 VARS = set()
 FUNCS = set()
+EVENT_NAMES = set()
 SRC_DIR = ""
 
 
@@ -460,6 +461,12 @@ def lex_lua(text):
             toks.append(("name", m.group(0)))
             i += m.end()
             continue
+        if c == "~" and i + 1 < n and (text[i + 1].isalpha()
+                                       or text[i + 1] == "_"):
+            m = re.match(r"~[^\W\d]\w*", text[i:], re.UNICODE)
+            toks.append(("name", m.group(0)))
+            i += m.end()
+            continue
         m = re.match(r"\.\.\.|\.\.|==|~=|<=|>=|::|//|[+\-*/%^#<>=(){}\[\],;:.]",
                      text[i:])
         if m:
@@ -471,12 +478,12 @@ def lex_lua(text):
     return toks
 
 
-TYPES = {"obj", "str", "num", "bool", "any"}
+TYPES = {"obj", "str", "num", "bool", "any", "event"}
 
 FN_SIGS = {}
 GLOBAL_TYPES = {}
 PARAM_TYPES = {
-    "s": "obj", "w": "obj", "wh": "obj", "ev": "str", "to": "str",
+    "s": "obj", "w": "obj", "wh": "obj", "ev": "event", "to": "str",
     "f": "any", "load": "bool",
 }
 def check_arity(name, plist, variadic, n):
@@ -553,6 +560,10 @@ class ExprEmit:
             if val in IDS:
                 return "_'%s'" % val
             self.err("unknown object %r (expected obj)" % val)
+        if exp == "event":
+            if val not in EVENT_NAMES:
+                self.err("unknown event %r" % val)
+            return tok
         if exp == "num":
             self.err("expected num, got str")
         if exp == "bool":
@@ -606,6 +617,10 @@ class ExprEmit:
         if kind == "str":
             if self.expected == "obj" and self.strval(val) in IDS:
                 return "_'%s'" % self.strval(val), "obj", "objref", None
+            if self.expected == "event":
+                if self.strval(val) not in EVENT_NAMES:
+                    self.err("unknown event %r" % self.strval(val))
+                return val, "event", "lit", self.strval(val)
             return val, "str", "lit", self.strval(val)
         if kind == "op" and val == "...":
             return val, "any", "lit", None
@@ -626,6 +641,10 @@ class ExprEmit:
                 return val, "fn", "name", val
             if val in VARS:
                 return val, GLOBAL_TYPES.get(val, "any"), "name", val
+            if self.expected == "event" and val in EVENT_NAMES:
+                return "'%s'" % val, "event", "lit", val
+            if self.expected == "event":
+                self.err("unknown event %r" % val)
             self.err("unknown name %r" % val)
         if kind == "op" and val == "(":
             self.expected = None
@@ -680,7 +699,10 @@ class ExprEmit:
         code, t, k, v = self.concat_expr()
         while self.peek()[1] in ("==", "~=", "<", ">", "<=", ">=", "^"):
             op = self.next()[1]
+            self.expected = ("event"
+                             if t == "event" and op in ("==", "~=") else None)
             c2, _t2, _k2, _v2 = self.concat_expr()
+            self.expected = None
             code = "%s %s %s" % (code, op, c2)
             t, k, v = "bool", "expr", None
         return code, t, k, v
@@ -719,9 +741,20 @@ class ExprEmit:
     def expr(self):
         return self.or_expr()
 
+    def autocall(self, code, t, kind, val):
+        if (kind == "name" and val in FN_SIGS
+                and not FN_SIGS[val][0]):
+            code = "%s()" % code
+            t = FN_SIGS[val][1]
+            kind = "call"
+            val = None
+        return code, t, kind, val
+
     def postfix(self, code, t, kind, val):
         while True:
             k, v = self.peek()
+            if not (k == "str" or (k == "op" and v == "(")):
+                code, t, kind, val = self.autocall(code, t, kind, val)
             if k == "op" and v == ".":
                 self.next()
                 nk, nv = self.next()
@@ -825,12 +858,6 @@ class ExprEmit:
                     self.err("call of field/expression is not allowed in "
                              "~~~do (wrap it in fn)")
             else:
-                if (kind == "name" and val in FN_SIGS
-                        and not FN_SIGS[val][0]):
-                    code = "%s()" % code
-                    t = FN_SIGS[val][1]
-                    kind = "call"
-                    val = None
                 return code, t, kind, val
 
 
@@ -838,6 +865,8 @@ def expr_cont(s):
     c = s[0]
     if c == "#":
         return False
+    if c == "~":
+        return not (len(s) > 1 and (s[1].isalpha() or s[1] == "_"))
     if c == "-":
         return not (len(s) > 1 and s[1].isdigit())
     if c in "=<>~+*/%^.,)]}:":
@@ -1126,6 +1155,32 @@ def parse_list(lines, i, indent):
     return items, i
 
 
+def pipe_value(lines, i, indent, tag):
+    body = []
+    j = i
+    while j < len(lines):
+        raw, ind = lines[j]
+        if (raw.strip() and ind <= indent
+                and long_balanced("\n".join(r for r, _i, _l in body))):
+            break
+        body.append((raw, ind, j + 1))
+        j += 1
+    while body and not body[-1][0].strip():
+        body.pop()
+    if tag == "|lua":
+        return Lua(reindent("\n".join(r for r, _ind, _lno in body),
+                            "")), j
+    k = 0
+    while k < len(body) and not body[k][0].strip():
+        k += 1
+    if k >= len(body):
+        return Logic([]), j
+    stmts, m = parse_logic(body, k, body[k][1])
+    if m != len(body):
+        parse_error(body[m][2], "trailing logic")
+    return Logic(stmts), j
+
+
 def parse_block(lines, i, indent, text_values=False):
     blk = Block()
     while i < len(lines):
@@ -1166,6 +1221,9 @@ def parse_block(lines, i, indent, text_values=False):
         elif rest in ("~~~lua", "~~~do"):
             val, i = fence_value(rest, lines, i + 1, line_no)
             blk.items.append((key, val))
+        elif rest in ("|", "|lua"):
+            val, i = pipe_value(lines, i + 1, indent, rest)
+            blk.items.append((key, val))
         elif rest.startswith("[["):
             val, i = read_long(lines, i, rest, line_no)
             blk.items.append((key, val))
@@ -1197,6 +1255,11 @@ def parse_source(src):
 
 
 def lua_str(s):
+    if "\n" not in s and "\r" not in s and "\\" not in s:
+        if '"' not in s:
+            return '"%s"' % s
+        if "'" not in s:
+            return "'%s'" % s
     for n in range(12):
         eq = "=" * n
         if "]" + eq + "]" not in s:
@@ -1910,7 +1973,7 @@ def apply_includes(root, seen=None):
 
 
 def prescan(root):
-    global IDS, EXTRA_EVENTS, FNS, VARS, FUNCS, FN_SIGS, GLOBAL_TYPES
+    global IDS, EXTRA_EVENTS, FNS, VARS, FUNCS, FN_SIGS, GLOBAL_TYPES, EVENT_NAMES
     FNS = set()
     ids = collect_ids(root)
     IDS = set(ids)
@@ -1929,6 +1992,7 @@ def prescan(root):
             for v in vals:
                 name = v.s if hasattr(v, "s") else str(v)
                 EXTRA_EVENTS[name] = name
+    EVENT_NAMES = set(EVENTS) | set(EXTRA_EVENTS.values())
     game_funcs, game_vars = collect_game_defs(root)
     FN_SIGS = {}
     fn_names = set()

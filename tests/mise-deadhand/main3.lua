@@ -175,8 +175,8 @@ global 'timeout' (600)
 global 'good_to' (0)
 global 'know2' (false)
 
-pl.description = [[Ты -- астронавт в скафандре.]]
-pl.before_LetGo = [[Не стоит разбрасываться в космосе вещами.]];
+pl.description = "Ты -- астронавт в скафандре."
+pl.before_LetGo = "Не стоит разбрасываться в космосе вещами.";
 game.before_Walk = function(s, w, wh)
   local dir = fn_compass_dir(w)
   if not dir then
@@ -185,35 +185,35 @@ game.before_Walk = function(s, w, wh)
   if dir == 'in_to' or dir == 'out_to' then
     return false
   end
-  fn_say([[Стороны света есть на Земле, а не в космосе.]])
+  fn_say("Стороны света есть на Земле, а не в космосе.")
 end;
 game.before_Taste = function(s, w, wh)
-  if fn_has(_'suit', 'worn') then
-    fn_say([[В скафандре?]])
+  if fn_has(_'suit', "worn") then
+    fn_say("В скафандре?")
     return
   end
   return false
 end;
 game.before_Smell = function(s, w, wh)
-  if fn_hasnt(_'suit', 'worn') then
+  if fn_hasnt(_'suit', "worn") then
     return false
   end
   if not w or fn_inside(w, fn_player()) then
-    fn_say([[В скафандре ничем не пахнет.]])
+    fn_say("В скафандре ничем не пахнет.")
     return
   end
-  fn_say([[В скафандре это невозможно.]])
+  fn_say("В скафандре это невозможно.")
 end;
-game.before_Jump = [[В невесомости это невозможно.]];
-game.before_JumpOver = [[В невесомости это невозможно.]];
+game.before_Jump = "В невесомости это невозможно.";
+game.before_JumpOver = "В невесомости это невозможно.";
 game.before_Listen = function(s, w, wh)
-  if fn_hasnt(_'radio', 'on') then
-    fn_say([[Для этого нужно включить радио.]])
+  if fn_hasnt(_'radio', "on") then
+    fn_say("Для этого нужно включить радио.")
   else
     if freq then
-      fn_say([[Радио молчит.]])
+      fn_say("Радио молчит.")
     else
-      fn_say([[Скафандр заполнен звуком радио.]])
+      fn_say("Скафандр заполнен звуком радио.")
     end
   end
 end;
@@ -222,7 +222,7 @@ function init()
 end
 
 cutscene {
-  nam = [[main]];
+  nam = "main";
   title = false;
   text = [[{$fmt c|***}^^Корпус корабля лопнул и его содержимое, в виде сотен блестящих на Солнце осколков, хлынуло в открытый космос.
 Всё произошло за один миг. Всего лишь пол секунды -- и сложный, отлаженный механизм превратился в облако космического мусора...^^
@@ -233,62 +233,62 @@ cutscene {
 
 obj {
   -"скафандр";
-  nam = [[suit]];
+  nam = "suit";
   description = function(s)
-    fn_say([[Твой скафандр оборудован различными приборами.]])
+    fn_say("Твой скафандр оборудован различными приборами.")
     if fn_here().rotate then
-      fn_say([[Но сейчас ты думаешь только о маневровых двигателях.]])
+      fn_say("Но сейчас ты думаешь только о маневровых двигателях.")
       return
     end
     if not known then
-      fn_say([[Например, радио.]])
+      fn_say("Например, радио.")
     end
   end;
   ["before_Enter,Climb"] = function(s, w, wh)
-    fn_xaction("Wear", s)
+    fn_xaction('Wear', s)
   end;
   ["before_Exit,GetOff"] = function(s, w, wh)
-    fn_xaction("Disrobe", s)
+    fn_xaction('Disrobe', s)
   end;
   before_Disrobe = function(s, w, wh)
     if fn_in_room(_'ship2') then
       return false
     else
-      fn_say([[Это самоубийство!]])
+      fn_say("Это самоубийство!")
     end
   end;
   obj = {
     obj {
       -"маневровые двигатели,двигатели|двигатель";
-      nam = [[engines]];
-      description = [[Маневровые двигатели позволяют ориентироваться в пространстве и перемещаться на небольшие расстояния. Ты можешь включить их.]];
+      nam = "engines";
+      description = "Маневровые двигатели позволяют ориентироваться в пространстве и перемещаться на небольшие расстояния. Ты можешь включить их.";
       after_SwitchOn = function(s, w, wh)
         if fn_here().rotate then
           fn_say([[Ты включаешь маневровые двигатели и пытаешься остановить вращение.
 В конце-концов тебе это удаётся! Только топлива ты потратил немало. Ты снова выключаешь двигатели.]])
           fn_here().rotate = false
-          fn_attr(s, '~on')
+          fn_attr(s, "~on")
         else
           if fn_seen(_'tetr') then
-            fn_say([[Ты включаешь маневровые двигатели.]])
+            fn_say("Ты включаешь маневровые двигатели.")
             return
           end
-          fn_say([[Ты даёшь пару импульсов. Лучше экономить горючее. Хотя... зачем?]])
-          fn_attr(s, '~on')
+          fn_say("Ты даёшь пару импульсов. Лучше экономить горючее. Хотя... зачем?")
+          fn_attr(s, "~on")
         end
       end;
     }:attr 'switchable,scenery';
 
     obj {
       -"радио|рация|приёмник";
-      nam = [[radio]];
+      nam = "radio";
       description = function(s)
-        fn_say([[В скафандр встроен УКВ приёмник.]])
-        if fn_has(s, 'on') then
+        fn_say("В скафандр встроен УКВ приёмник.")
+        if fn_has(s, "on") then
           if freq then
-            fn_say([[Задана рабочая частота 143,625 МГц.]])
+            fn_say("Задана рабочая частота 143,625 МГц.")
           else
-            fn_say([[Рабочая частота не настроена.]])
+            fn_say("Рабочая частота не настроена.")
           end
         end
         return false
@@ -298,11 +298,11 @@ obj {
           return
         end
         if freq then
-          if good_to > DH_TO and fn_once_tag(s, 'ack') then
+          if good_to > DH_TO and fn_once_tag(s, "ack") then
             fn_say("Внезапно, пустота радиоэфира нарушилась.^", pres)
-            fn_say([[^^Сигналы прекратились. Ты заметил, что текст на экране изменился.]])
+            fn_say("^^Сигналы прекратились. Ты заметил, что текст на экране изменился.")
           else
-            fn_say([[Ты слышишь шипящий звук из рации.]])
+            fn_say("Ты слышишь шипящий звук из рации.")
           end
         else
           fn_say(channels[freq_hz][channel_pos])
@@ -327,7 +327,7 @@ obj {
 ]] .. pres .. [[ Мы повторяем эту передачу каждые 15 минут в течении двух часов.]])
           known = true
         else
-          fn_say([[Ты включил радио на рабочей частоте 143,625 МГц.]])
+          fn_say("Ты включил радио на рабочей частоте 143,625 МГц.")
         end
         fn_daemonStart(_'radio')
         if fn_in_room(_'space') then
@@ -342,14 +342,14 @@ obj {
   };
 }:attr 'worn,clothing'
 
-Verb { [[[|по|под|в|за]лететь,[|по|под|в|за]лети]], [[к {noun}/дт,scene : Walk]], [[в {noun}/вн,scene : Enter]], [[на {compass1} : Walk]] }
+Verb { "[|по|под|в|за]лететь,[|по|под|в|за]лети", "к {noun}/дт,scene : Walk", "в {noun}/вн,scene : Enter", "на {compass1} : Walk" }
 
-Verb { '#Tune', [[[на|под|пере|перена]строить,[на|под|пере|перена]строй,смен/ить,замен/ить,переключ/иить]], [[{noun}/вн : Tune]], [[частоту|канал : Tune]] }
-mp.Tune = function(s, w)
+Verb { '#Tune', "[на|под|пере|перена]строить,[на|под|пере|перена]строй,смен/ить,замен/ить,переключ/иить", "{noun}/вн : Tune", "частоту|канал : Tune" }
+mp.Tune = function(s, w, wh)
   if not w or w ^ _'radio' then
     w = _'radio'
-    if fn_hasnt(w, 'on') then
-      fn_say([[Радио выключено.]])
+    if fn_hasnt(w, "on") then
+      fn_say("Радио выключено.")
       return
     else
       return false
@@ -360,10 +360,10 @@ mp.Tune = function(s, w)
     return
   end
 end
-mp.after_Tune = function(s, w)
+mp.after_Tune = function(s, w, wh)
   freq = not freq
   if not freq then
-    fn_say([[Ты сменил частоту.]])
+    fn_say("Ты сменил частоту.")
     freq_hz = fn_rnd(#channels)
     channel_pos = fn_rnd(#channels[freq_hz])
     fn_daemonStart(_'radio')
@@ -374,27 +374,27 @@ end
 
 obj {
   -"Земля,планета|облака";
-  nam = [[earth]];
-  description = [[Рано или поздно ты упадёшь на Землю и сгоришь в атмосфере. А пока твой дух захватывает от величия и красоты наблюдаемого космического пейзажа.]];
+  nam = "earth";
+  description = "Рано или поздно ты упадёшь на Землю и сгоришь в атмосфере. А пока твой дух захватывает от величия и красоты наблюдаемого космического пейзажа.";
   found_in = 'space';
-  before_Default = [[Земля слишком далеко.]];
+  before_Default = "Земля слишком далеко.";
   before_Exam = function() return false end;
-  ["before_Walk,Enter,Climb"] = [[Рано или поздно ты и так на неё упадёшь.]];
+  ["before_Walk,Enter,Climb"] = "Рано или поздно ты и так на неё упадёшь.";
 }:attr 'scenery'
 
 obj {
   -"звёзды/но|звезда/но";
-  nam = [[stars]];
-  description = [[Ты смотришь на россыпь звёзд. А они, кажется, смотрят внутрь тебя. Может быть, ты скоро станешь одной из них?]];
+  nam = "stars";
+  description = "Ты смотришь на россыпь звёзд. А они, кажется, смотрят внутрь тебя. Может быть, ты скоро станешь одной из них?";
   found_in = 'space';
-  before_Default = [[Звёзды слишком далеко.]];
+  before_Default = "Звёзды слишком далеко.";
   before_Exam = function() return false end;
 }:attr 'scenery'
 
 obj {
   -"обломки|осколки";
-  nam = [[debris]];
-  description = [[Это всё, что осталось от корабля.]];
+  nam = "debris";
+  description = "Это всё, что осталось от корабля.";
   found_in = 'space';
   ["before_Walk,Enter,Climb"] = [[Обломки корабля уже разлетелись друг от друга на большое расстояние.
 Нет смысла там что-то искать.]];
@@ -402,14 +402,14 @@ obj {
 
 obj {
   -"объект|НЛО";
-  nam = [[tetr]];
-  dsc = [[На фоне звёзд ты видишь какой-то яркий объект.]];
-  description = [[Отсюда только понятно, что он достаточно большой. Космический мусор? Он движется почти параллельным к тебе курсом.]];
-  before_Default = [[Он слишком далеко.]];
+  nam = "tetr";
+  dsc = "На фоне звёзд ты видишь какой-то яркий объект.";
+  description = "Отсюда только понятно, что он достаточно большой. Космический мусор? Он движется почти параллельным к тебе курсом.";
+  before_Default = "Он слишком далеко.";
   before_Exam = function() return false end;
   ["before_Walk,Climb,Enter"] = function(s, w, wh)
-    if fn_hasnt(_'engines', 'on') then
-      fn_say([[Сначала нужно включить двигатели.]])
+    if fn_hasnt(_'engines', "on") then
+      fn_say("Сначала нужно включить двигатели.")
       return
     end
     fn_walk(_'space2')
@@ -418,8 +418,8 @@ obj {
 
 room {
   -"космос|пустота|пейзаж";
-  nam = [[space]];
-  title = [[открытый космос]];
+  nam = "space";
+  title = "открытый космос";
   rotate = true;
   step = 1;
   daemon = function(s)
@@ -430,15 +430,15 @@ room {
       if fn_isDaemon(_'radio') then
         fn_line()
       end
-      fn_say([[Тебе показалось, что ты видишь какой-то яркий объект.]])
+      fn_say("Тебе показалось, что ты видишь какой-то яркий объект.")
       fn_daemonStop(s)
     end
   end;
   dsc = function(s)
     if s.rotate then
-      fn_say([[Быстро вращаясь, ты плывёшь в открытом космосе.]])
+      fn_say("Быстро вращаясь, ты плывёшь в открытом космосе.")
     else
-      fn_say([[Ты плывёшь в открытом космосе. Под ногами простирается голубая гладь планеты Земля.]])
+      fn_say("Ты плывёшь в открытом космосе. Под ногами простирается голубая гладь планеты Земля.")
     end
   end;
   before_Default = function(s, ev, w)
@@ -448,16 +448,16 @@ room {
     if w and fn_inside(w, fn_player()) or w == fn_player() then
       return false
     end
-    fn_say([[Из-за бешеного вращения, ты не можешь сориентироваться.]])
-    if fn_once_tag(s, 'self') then
-      fn_say([[Может быть, попробовать осмотреть себя?]])
+    fn_say("Из-за бешеного вращения, ты не можешь сориентироваться.")
+    if fn_once_tag(s, "self") then
+      fn_say("Может быть, попробовать осмотреть себя?")
     end
   end;
 }
 
 door {
   -"шлюзовой люк,люк,шлюзовой|шлюз";
-  nam = [[gate]];
+  nam = "gate";
   door_to = function(s)
     if fn_in_room(_'space2') then
       return _'ship'
@@ -466,47 +466,47 @@ door {
     end
   end;
   description = function(s)
-    fn_say([[Рядом с люком находится красный рычаг.]])
+    fn_say("Рядом с люком находится красный рычаг.")
     fn_enable(_'lever')
     return false
   end;
-  before_Close = [[Он закрывается автоматически.]];
+  before_Close = "Он закрывается автоматически.";
 }:attr 'static,openable,enterable,locked':disable()
 
 obj {
   -"красный рычаг|рычаг";
-  nam = [[lever]];
+  nam = "lever";
   ["after_Pull,Transfer"] = function(s, w, wh)
     if fn_in_room(_'ship2') then
-      if fn_has(_'gate2', 'open') then
-        fn_say([[Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.]])
-        fn_attr(_'gate2', '~open')
+      if fn_has(_'gate2', "open") then
+        fn_say("Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.")
+        fn_attr(_'gate2', "~open")
       else
-        fn_say([[Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.]])
-        fn_attr(_'gate2', 'open')
+        fn_say("Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.")
+        fn_attr(_'gate2', "open")
       end
       return
     end
-    local open = fn_has(_'gate', 'open')
+    local open = fn_has(_'gate', "open")
     if fn_in_room(_'ship') then
       if not open then
-        fn_say([[Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.]])
-        fn_attr(_'gate2', '~open')
+        fn_say("Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.")
+        fn_attr(_'gate2', "~open")
       end
     end
     if open then
-      fn_say([[Ты дёрнул за рычаг и шлюзовой люк закрылся.]])
-      fn_attr(_'gate', '~open')
+      fn_say("Ты дёрнул за рычаг и шлюзовой люк закрылся.")
+      fn_attr(_'gate', "~open")
     else
       if fn_in_room(_'space2') then
-        fn_say([[Ты дёрнул за рычаг и шлюзовой люк открылся.]])
+        fn_say("Ты дёрнул за рычаг и шлюзовой люк открылся.")
       end
-      fn_attr(_'gate', 'open')
+      fn_attr(_'gate', "open")
     end
     if fn_in_room(_'ship') then
       if open then
-        fn_say([[Через некоторое время открылся входной люк, ведущий внутрь корабля.]])
-        fn_attr(_'gate2', 'open')
+        fn_say("Через некоторое время открылся входной люк, ведущий внутрь корабля.")
+        fn_attr(_'gate2', "open")
       end
     end
   end;
@@ -514,22 +514,22 @@ obj {
 
 obj {
   -"спутник,тетраэдр,корабль/но|объект|НЛО";
-  nam = [[satellite]];
-  description = [[Спутник словно ёж утыкан антеннами и передатчиками. Серый корпус в виде тетраэдра медленно вращается вокруг своей оси.]];
-  ["before_Enter,Climb"] = [[Чтобы попасть внутрь, нужен шлюз.]];
+  nam = "satellite";
+  description = "Спутник словно ёж утыкан антеннами и передатчиками. Серый корпус в виде тетраэдра медленно вращается вокруг своей оси.";
+  ["before_Enter,Climb"] = "Чтобы попасть внутрь, нужен шлюз.";
   obj = {
     obj {
       -"корпус,антенн*,передат*";
-      nam = [[corpus]];
+      nam = "corpus";
       description = function(s)
         if fn_once(s) then
-          fn_say([[Внимательно осмотрев корпус, ты заметил шлюзовой люк.]])
+          fn_say("Внимательно осмотрев корпус, ты заметил шлюзовой люк.")
           fn_enable(_'gate')
         else
           if perimetr then
-            fn_say([[Теперь ты знешь, что это за спутник.]])
+            fn_say("Теперь ты знешь, что это за спутник.")
           else
-            fn_say([[Спутник связи, может быть?]])
+            fn_say("Спутник связи, может быть?")
           end
         end
       end;
@@ -539,11 +539,11 @@ obj {
 
 room {
   -"космос|пустота|пейзаж";
-  nam = [[space2]];
-  title = [[открытый космос]];
+  nam = "space2";
+  title = "открытый космос";
   in_to = function(s)
     if fn_disabled(_'gate') then
-      fn_say([[Как ты попадёшь внутрь?]])
+      fn_say("Как ты попадёшь внутрь?")
     else
       return _'gate'
     end
@@ -551,9 +551,9 @@ room {
   onenter = function(s, f)
     fn_say([[Управляя маневровыми двигателями и почти израсходовав топливо, ты смог согласовать свою орбиту с орбитой объекта.
 Им оказался спутник в форме тетраэдра.]])
-    fn_attr(_'engines', '~on')
+    fn_attr(_'engines', "~on")
   end;
-  dsc = [[Ты паришь в черной бездне рядом с неизвестным спутником. Под ногами проплывают земные облака над бирюзовой гладью.]];
+  dsc = "Ты паришь в черной бездне рядом с неизвестным спутником. Под ногами проплывают земные облака над бирюзовой гладью.";
   obj = {
     'satellite';
     'gate';
@@ -563,7 +563,7 @@ room {
 
 door {
   -"входной люк,люк,входной";
-  nam = [[gate2]];
+  nam = "gate2";
   door_to = function(s)
     if fn_in_room(_'ship') then
       return _'ship2'
@@ -571,16 +571,16 @@ door {
       return _'ship'
     end
   end;
-  before_Close = [[Он закрывается автоматически.]];
+  before_Close = "Он закрывается автоматически.";
 }:attr 'static,openable,enterable,locked'
 
 room {
   -"шлюзовой отсек";
-  nam = [[ship]];
-  title = [[шлюз]];
+  nam = "ship";
+  title = "шлюз";
   onenter = function(s, f)
     if f ^ _'space2' then
-      fn_say([[Ты влетел в шлюзовой отсек.]])
+      fn_say("Ты влетел в шлюзовой отсек.")
     end
   end;
   out_to = 'gate';
@@ -594,38 +594,38 @@ room {
 
 obj {
   -"панель управления,панель|приборы";
-  nam = [[panel]];
+  nam = "panel";
   description = [[Ты видишь множество приборов, назначение которых тебе непонятно, и экран консоли.
 Твоё внимание привлекает красная кнопка.]];
   obj = {
     obj {
       -"красная кнопка,красная,кнопка";
-      nam = [[button]];
-      description = [[На кнопке ты не видишь никаких надписей или обозначений.]];
+      nam = "button";
+      description = "На кнопке ты не видишь никаких надписей или обозначений.";
       before_Push = function(s, w, wh)
         if perimetr then
           perimetr_ask = perimetr_ask + (1)
           if perimetr_ask > 5 then
             perimetr_ask = 0
           end
-          fn_say([[Ты ещё раз нажал на кнопку.]])
-          fn_say([[Ты заметил, что на экране изменилась одна из строк.^]])
+          fn_say("Ты ещё раз нажал на кнопку.")
+          fn_say("Ты заметил, что на экране изменилась одна из строк.^")
           fn_append("Режим голосовой отмены: ")
           if perimetr_ask == 0 then
-            fn_say([[выкл.]])
+            fn_say("выкл.")
           else
             fn_say(freqs[perimetr_ask])
           end
           return
         end
-        fn_say([[Неизвестный корабль. Красная кнопка. Ты точно готов это сделать?^Подтверди. Да или нет?]])
+        fn_say("Неизвестный корабль. Красная кнопка. Ты точно готов это сделать?^Подтверди. Да или нет?")
         ask = true
       end;
     }:attr 'static,concealed';
 
     obj {
       -"экран,консоль,текст";
-      nam = [[screen]];
+      nam = "screen";
       description = function(s)
         if good_to > DH_TO then
           fn_daemonStop(_'ship2')
@@ -647,7 +647,7 @@ obj {
 Последняя волна: ожидание]])
           know2 = true
         else
-          fn_say([[Экран неактивен.]])
+          fn_say("Экран неактивен.")
         end
       end;
     }:attr 'static';
@@ -656,20 +656,20 @@ obj {
 
 room {
   -"корабль";
-  nam = [[ship2]];
-  title = [[внутри корабля]];
+  nam = "ship2";
+  title = "внутри корабля";
   out_to = 'gate2';
   daemon = function(s)
-    if good_to > DH_TO and fn_once_tag(s, 'ack') then
+    if good_to > DH_TO and fn_once_tag(s, "ack") then
       if fn_here() == s then
         if not fn_isDaemon(_'radio') then
-          fn_say([[Сигналы прекратились. Ты заметил, что текст на экране изменился.]])
+          fn_say("Сигналы прекратились. Ты заметил, что текст на экране изменился.")
         end
       end
       fn_daemonStop(s)
     else
       if fn_here() == s then
-        fn_say([[Ты слышишь пульсирующий звуковой сигнал, который разносится по кораблю каждую секунду.]])
+        fn_say("Ты слышишь пульсирующий звуковой сигнал, который разносится по кораблю каждую секунду.")
         if know2 then
           fn_say("До первой волны ", timeout, " с.")
         end
@@ -678,18 +678,18 @@ room {
   end;
   onenter = function(s, f)
     if fn_once(s) then
-      fn_say([[С тревогой и надеждой, ты влетел внутрь странного корабля.]])
+      fn_say("С тревогой и надеждой, ты влетел внутрь странного корабля.")
     end
   end;
   dsc = function(s)
-    fn_say([[Внутри корабля не так много места. Впрочем, к этому тебе не привыкать.]])
-    if fn_has(_'gate2', 'open') then
-      fn_say([[Здесь довольно темно. Детали обстановки плохо различимы в полумраке.]])
+    fn_say("Внутри корабля не так много места. Впрочем, к этому тебе не привыкать.")
+    if fn_has(_'gate2', "open") then
+      fn_say("Здесь довольно темно. Детали обстановки плохо различимы в полумраке.")
     end
   end;
   onexit = function(s, f)
-    if fn_hasnt(_'suit', 'worn') then
-      fn_say([[Без скафандра? Самоубийство!]])
+    if fn_hasnt(_'suit', "worn") then
+      fn_say("Без скафандра? Самоубийство!")
       return false
     end
   end;
@@ -710,9 +710,9 @@ room {
     end
     if ask and (ev == 'Yes' or ev == 'No') then
       if ev == 'No' then
-        fn_say([[Ну и правильно.]])
+        fn_say("Ну и правильно.")
       else
-        fn_say([[Ты нажал на кнопку и на экране консоли побежали строки текста.]])
+        fn_say("Ты нажал на кнопку и на экране консоли побежали строки текста.")
         fn_daemonStart(_'ship2')
         perimetr = true
       end
@@ -729,8 +729,8 @@ room {
 }
 
 cutscene {
-  nam = [[badend]];
-  title = [[Конец]];
+  nam = "badend";
+  title = "Конец";
   text = [[Ты так и не смог отключить машину судного дня.^
 Почти обезумевший, ты смотрел с орбиты как Земля сгорает в ядерном аду.^
 Лучше бы ты погиб в открытом космосе...^
@@ -741,7 +741,7 @@ cutscene {
 }
 
 cutscene {
-  nam = [[goodend]];
+  nam = "goodend";
   title = false;
   next_to = 'titles';
   text = {
@@ -758,7 +758,7 @@ cutscene {
 }
 
 gameover {
-  nam = [[titles]];
+  nam = "titles";
   title = fmt.c(fmt.b([[СУДНЫЙ ДЕНЬ]]));
   dsc = [[{$fmt c|Автор сюжета и кода: Косых Пётр^^
 Специально на ИНСТЕДОЗ-6^^

@@ -1,123 +1,92 @@
-fn here() -> obj: ~~~lua
+fn here() -> obj: |lua
   return here()
-  ~~~
 
-fn player() -> obj: ~~~lua
+fn player() -> obj: |lua
   return me()
-  ~~~
 
-fn has(s: obj, a: str) -> bool: ~~~lua
+fn has(s: obj, a: str) -> bool: |lua
   return s:has(a)
-  ~~~
 
-fn hasnt(s: obj, a: str) -> bool: ~~~lua
+fn hasnt(s: obj, a: str) -> bool: |lua
   return s:hasnt(a)
-  ~~~
 
-fn move(s: obj, where: obj): ~~~lua
+fn move(s: obj, where: obj): |lua
   move(s, where)
-  ~~~
 
-fn attr(s: obj, a: str): ~~~lua
+fn attr(s: obj, a: str): |lua
   s:attr(a)
-  ~~~
 
-fn inside(w: obj, x: obj) -> bool: ~~~lua
+fn inside(w: obj, x: obj) -> bool: |lua
   return w:inside(x)
-  ~~~
 
-fn compass_dir(w: obj) -> str: ~~~lua
+fn compass_dir(w: obj) -> str: |lua
   return mp:compass_dir(w)
-  ~~~
 
-fn once_tag(s: obj, t: str) -> bool: ~~~lua
+fn once_tag(s: obj, t: str) -> bool: |lua
   return s:once(t)
-  ~~~
 
-fn once(s: obj) -> bool: ~~~lua
+fn once(s: obj) -> bool: |lua
   return s:once()
-  ~~~
 
-fn say(text: str, ...): ~~~lua
+fn say(text: str, ...): |lua
   p(text, ...)
-  ~~~
 
-fn line(...): ~~~lua
+fn line(...): |lua
   pn(...)
-  ~~~
 
-fn append(text: str, ...): ~~~lua
+fn append(text: str, ...): |lua
   pr(text, ...)
-  ~~~
 
-fn rnd(...) -> num: ~~~lua
+fn rnd(...) -> num: |lua
   return rnd(...)
-  ~~~
 
-fn xaction(ev: str, s: obj): ~~~lua
+fn xaction(ev: event, s: obj): |lua
   mp:xaction(ev, s)
-  ~~~
 
-fn daemonStart(w: obj): ~~~lua
+fn daemonStart(w: obj): |lua
   DaemonStart(w)
-  ~~~
 
-fn daemonStop(w: obj): ~~~lua
+fn daemonStop(w: obj): |lua
   DaemonStop(w)
-  ~~~
 
-fn enable(w: obj): ~~~lua
+fn enable(w: obj): |lua
   enable(w)
-  ~~~
 
-fn disable(w: obj): ~~~lua
+fn disable(w: obj): |lua
   disable(w)
-  ~~~
 
-fn place(w: obj): ~~~lua
+fn place(w: obj): |lua
   place(w)
-  ~~~
 
-fn isDaemon(w: obj) -> bool: ~~~lua
+fn isDaemon(w: obj) -> bool: |lua
   return isDaemon(w)
-  ~~~
 
-fn disabled(w: obj) -> bool: ~~~lua
+fn disabled(w: obj) -> bool: |lua
   return disabled(w)
-  ~~~
 
-fn seen(w: obj) -> bool: ~~~lua
+fn seen(w: obj) -> bool: |lua
   return seen(w)
-  ~~~
 
-fn walk(where: obj): ~~~lua
+fn walk(where: obj): |lua
   walk(where)
-  ~~~
 
-fn walkin(where: obj): ~~~lua
+fn walkin(where: obj): |lua
   walkin(where)
-  ~~~
 
-fn take(w: obj): ~~~lua
+fn take(w: obj): |lua
   take(w)
-  ~~~
 
-fn drop(w: obj): ~~~lua
+fn drop(w: obj): |lua
   drop(w)
-  ~~~
 
-fn content(w: obj): ~~~lua
+fn content(w: obj): |lua
   mp:content(w)
-  ~~~
 
-fn walkout(): ~~~lua
+fn walkout(): |lua
   walkout()
-  ~~~
 
-fn visits(w: obj) -> num: ~~~lua
+fn visits(w: obj) -> num: |lua
   return visits(w)
-  ~~~
 
-fn event() -> str: ~~~lua
+fn event() -> event: |lua
   return mp.event
-  ~~~

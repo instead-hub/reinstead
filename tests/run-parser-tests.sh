@@ -20,9 +20,11 @@ trap cleanup EXIT INT TERM
 rc=0
 
 # timeout guards against hanging if tests never reach os.exit()
+echo "== parser-tests"
 SDL_VIDEODRIVER=dummy timeout 120 "$BIN" -appdata "$APPDATA" -noautosave "$ROOT/tests/parser-tests" || rc=1
 
 # golden snapshots of mp:match and mp:compl on a deterministic corpus
+echo "== match-dump (LuaJIT build ~40s; bundled Lua much slower)"
 SDL_VIDEODRIVER=dummy timeout 600 "$BIN" -appdata "$APPDATA" -noautosave "$DUMP" >/dev/null 2>&1 || rc=1
 for pair in "golden.txt:out.txt" "golden-compl.txt:out-compl.txt"; do
 	golden=${pair%%:*}
@@ -36,6 +38,7 @@ for pair in "golden.txt:out.txt" "golden-compl.txt:out-compl.txt"; do
 done
 
 # golden snapshot of the noun declension forms
+echo "== noun-forms"
 SDL_VIDEODRIVER=dummy timeout 120 "$BIN" -appdata "$APPDATA" -noautosave "$FORMS" >/dev/null 2>&1 || rc=1
 if diff -u "$FORMS/golden.txt" "$FORMS/out.txt"; then
 	rm -f "$FORMS/out.txt"
