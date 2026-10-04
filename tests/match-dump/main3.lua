@@ -167,7 +167,7 @@ local vocab = {
 
 local seed = 424242
 local function rnd(n)
-	seed = (seed * 1103515245 + 12345) % 2147483648
+	seed = (seed * 48271) % 2147483647
 	return seed % n
 end
 
