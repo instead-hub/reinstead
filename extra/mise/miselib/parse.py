@@ -3,20 +3,6 @@ import re
 from .common import *
 from .logicparse import parse_logic
 
-def fence_value(tag, lines, start, line_no):
-    body, i = read_fence(lines, start, line_no)
-    if tag == "~~~lua":
-        return Lua(reindent("\n".join(raw for raw, _ind, _lno in body),
-                            "")), i
-    j = 0
-    while j < len(body) and not body[j][0].strip():
-        j += 1
-    base = body[j][1] if j < len(body) else 0
-    stmts, k = parse_logic(body, j, base)
-    if k != len(body):
-        parse_error(line_no, "trailing logic")
-    return Logic(stmts), i
-
 def parse_list(lines, i, indent):
     items = []
     while i < len(lines):
@@ -93,12 +79,7 @@ def parse_block(lines, i, indent, text_values=False):
             j = i + 1
             while j < len(lines) and not lines[j][0].strip():
                 j += 1
-            if j < len(lines) and lines[j][0].strip() in (
-                    "~~~lua", "~~~do"):
-                tag = lines[j][0].strip()
-                val, i = fence_value(tag, lines, j + 1, line_no)
-                blk.items.append((key, val))
-            elif j < len(lines) and re.match(
+            if j < len(lines) and re.match(
                     r"^-\s", lines[j][0].strip()) and lines[j][1] > indent:
                 child, i = parse_list(lines, j, lines[j][1])
                 blk.items.append((key, child))
@@ -109,9 +90,6 @@ def parse_block(lines, i, indent, text_values=False):
             else:
                 blk.items.append((key, Block()))
                 i += 1
-        elif rest in ("~~~lua", "~~~do"):
-            val, i = fence_value(rest, lines, i + 1, line_no)
-            blk.items.append((key, val))
         elif rest in ("|", "|lua"):
             val, i = pipe_value(lines, i + 1, indent, rest)
             blk.items.append((key, val))

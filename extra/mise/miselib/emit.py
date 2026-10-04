@@ -382,7 +382,6 @@ PRESETS = {
     "door": ("door", []),
     "story": ("cutscene", []),
     "ending": ("gameover", []),
-    "dlg": ("dlg", []),
 }
 
 def decl_key(key):
@@ -569,7 +568,7 @@ def emit_setup(block):
             elif isinstance(val, Logic):
                 sb = "\n".join(emit_logic(val.stmts, IND, {"load": "bool"}))
             else:
-                raise Error("start must be a ~~~do/~~~lua block")
+                raise Error("start must be a | block")
             lines.append("function start(load)")
             lines.append(sb)
             lines.append("end")

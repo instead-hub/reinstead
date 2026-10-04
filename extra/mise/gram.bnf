@@ -43,7 +43,7 @@ vars      ::= ("const" | "global") ":" block
 (* ---------- декларации объектов ---------- *)
 decl      ::= kind [ NAME ] ":" block
 kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
-            | "dlg" | CLASS
+            | CLASS
 (* имена деклараций — только NAME (идентификатор/тег); кавычки допустимы
    лишь у patch ("patch 'game':"); with/contains/inside/parts перечисляют
    голые NAME; поля-ссылки (n_to/out_to/door_to/talk_to/found_in/...) —
@@ -84,7 +84,6 @@ setup     ::= "setup" ":" block
 patch     ::= "patch" (NAME | QNAME) ":" block
 
 lua_section ::= "lua" ":" "|lua" NEWLINE INDENT { lua_line } DEDENT
-(* legacy-совместимость: "lua:" NEWLINE "~~~lua" ... "~~~" *)
 
 (* ---------- значения ---------- *)
 value     ::= BARE | scalar | block | list | data
@@ -140,4 +139,4 @@ call_args ::= "(" [ expr_list ] ")"
    - event-параметр и сравнение принимают голое имя события
      (xaction(Wear, s), ev == Exam);
    - #тег — ссылка на объект; статическая _'…' в логике запрещена;
-   - |/|lua — основной блок; ~~~do/~~~lua — legacy-совместимость. *)
+   - |/|lua — блоки логики и Lua. *)

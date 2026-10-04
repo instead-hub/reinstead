@@ -60,7 +60,7 @@ def lex_lua(text):
             toks.append(("op", m.group(0)))
             i += m.end()
             continue
-        raise LintError("bad character %r in ~~~do: %s" % (c, text))
+        raise LintError("bad character %r in logic: %s" % (c, text))
     toks.append(("eof", ""))
     return toks
 
@@ -210,7 +210,7 @@ class ExprEmit:
                 return val, "bool" if val != "nil" else "any", "lit", None
             if val in S.KEYWORDS:
                 if val == "function":
-                    self.err("anonymous functions are not allowed (use ~~~lua)")
+                    self.err("anonymous functions are not allowed (use |lua)")
                 self.err("unexpected keyword %r" % val)
             if val in self.env:
                 return val, self.env[val], "name", val
@@ -233,7 +233,7 @@ class ExprEmit:
             self.expect(")")
             return "(%s)" % c, t, "expr", None
         if kind == "op" and val == "{":
-            self.err("table constructors are not allowed in ~~~do "
+            self.err("table constructors are not allowed in logic "
                      "(wrap it in fn)")
         self.err("unexpected %r" % val)
 
@@ -366,7 +366,7 @@ class ExprEmit:
                     self.err("expected method name")
                 if nv not in S.FN_SIGS:
                     self.err("method %r is not a fn (engine methods are "
-                             "not allowed in ~~~do)" % nv)
+                             "not allowed in logic)" % nv)
                 plist, ret, variadic = S.FN_SIGS[nv]
                 if not plist:
                     self.err("fn %s takes no receiver" % nv)
@@ -462,7 +462,7 @@ class ExprEmit:
                     val = None
                 else:
                     self.err("call of field/expression is not allowed in "
-                             "~~~do (wrap it in fn)")
+                             "logic (wrap it in fn)")
             else:
                 return code, t, kind, val
 

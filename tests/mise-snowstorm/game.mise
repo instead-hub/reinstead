@@ -37,21 +37,19 @@ fn tbl6(): |lua
 fn tbl7(): |lua
   return { "-- Дрянь! -- шипит Снежная Королева."; "Снежная Королева стонет."; "-- Я до тебя доберусь! -- произносит Снежная Королева."; }
 
-lua:
-~~~lua
-function pic_push(name)
-end
+lua: |lua
+  function pic_push(name)
+  end
 
-function pic_pop()
-end
+  function pic_pop()
+  end
 
-function pic_set(name)
-end
+  function pic_set(name)
+  end
 
-include "pic"
---"фонарик,фонарь"
---"сообщения|сообщение"
-~~~
+  include "pic"
+  --"фонарик,фонарь"
+  --"сообщения|сообщение"
 
 story intro:
   text: "Старенький синий седан едет по заснеженной трассе. Внутри машины -- двое.^^\n\t\tВедёт машину усталая женщина лет 35. На заднем сидении справа сидит её дочь -- девочка-подросток.^^\n\t\tДевочка прислонилась лбом к холодному стеклу. Мать продолжает начатый разговор...^^\n\t\t-- Вот увидишь, тебе там понравится."
@@ -717,26 +715,24 @@ Area поле:
         - двери
   with: машина
 
-lua:
-~~~lua
-game:dict {
-  ["деревья/мн,С"] = {
-    "деревья/им";
-    "деревья/вн";
-    "деревьев/рд";
-    "деревьями/тв";
-    "деревьях/пр";
-    "деревьям/дт";
-  };
-  ["огонь/вн"] = "огонь";
-  ["стены/рд"] = "стен";
-  ["голем/рд"] = "голема";
-  ["голем/дт"] = "голему";
-  ["голем/тв"] = "големом";
-  ["голем/вн"] = "голема";
-  ["голем/пр"] = "големе";
-}
-~~~
+lua: |lua
+  game:dict {
+    ["деревья/мн,С"] = {
+      "деревья/им";
+      "деревья/вн";
+      "деревьев/рд";
+      "деревьями/тв";
+      "деревьях/пр";
+      "деревьям/дт";
+    };
+    ["огонь/вн"] = "огонь";
+    ["стены/рд"] = "стен";
+    ["голем/рд"] = "голема";
+    ["голем/дт"] = "голему";
+    ["голем/тв"] = "големом";
+    ["голем/вн"] = "голема";
+    ["голем/пр"] = "големе";
+  }
 
 obj олень:
   words: олень
@@ -2419,278 +2415,274 @@ verb Sit:
   patterns:
     - на {noun}/вн : Enter
 
-lua:
-~~~lua
-if false then
-global 'hint_num' (5)
-function use_hint()
-end
-function mp:before_Think()
-  if here() ^ 'Тьма' then
-    return false
+lua: |lua
+  if false then
+  global 'hint_num' (5)
+  function use_hint()
   end
-  if here() ^ 'В_машине' then
-    if use_hint() then
-      return
+  function mp:before_Think()
+    if here() ^ 'Тьма' then
+      return false
     end
-    p [[Тебе приходит в голову ]];
-    if not visited'разговор1' then
-      p [[поговорить с матерью.]]
-    elseif not _'телефон'.seen then
-      p [[смотреть в телефон.]]
-    elseif have 'телефон' then
-      p [[отдать телефон матери.]]
-    elseif blizzard == 0 then
-      p [[смотреть в окно.]]
-    elseif blizzard == 1 then
-      p [[поговорить с матерью.]]
-    elseif blizzard < 11 then
-      p [[ждать.]]
-    else
-      p [[выйти из машины.]]
-    end
-    return
-  end
-  if here() ^ 'поле' then
-    if use_hint() then
-      return
-    end
-    p [[Тебе приходит в голову ]];
-    if not have 'телефон' or not have 'браслет' then
-      p [[осмотреть машину.]]
-      if not _'бардачок':has'open' then
-        p [[Затем открыть бардачок.]]
-      else
-        p [[взять всё из бардачка.]]
+    if here() ^ 'В_машине' then
+      if use_hint() then
+        return
       end
-    elseif not have 'скрипка' then
-      p [[взять скрипку.]]
-    elseif not _'телефон'.compass then
-      p [[посмотреть в телефон. В нём есть компас.]]
-    elseif not _'сова'.talked then
-      if not seen 'сова' then
-        p [[идти в лес.]]
+      p [[Тебе приходит в голову ]];
+      if not visited'разговор1' then
+        p [[поговорить с матерью.]]
+      elseif not _'телефон'.seen then
+        p [[смотреть в телефон.]]
+      elseif have 'телефон' then
+        p [[отдать телефон матери.]]
+      elseif blizzard == 0 then
+        p [[смотреть в окно.]]
+      elseif blizzard == 1 then
+        p [[поговорить с матерью.]]
+      elseif blizzard < 11 then
+        p [[ждать.]]
       else
-        if _'сова'.seen then
-          p [[поговорить с совой.]]
+        p [[выйти из машины.]]
+      end
+      return
+    end
+    if here() ^ 'поле' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]];
+      if not have 'телефон' or not have 'браслет' then
+        p [[осмотреть машину.]]
+        if not _'бардачок':has'open' then
+          p [[Затем открыть бардачок.]]
         else
-          p [[осмотреть сову.]]
+          p [[взять всё из бардачка.]]
         end
-      end
-    elseif not have 'перо' then
-      p [[взять перо.]]
-    else
-      p [[идти в лес.]]
-    end
-    return
-  end
-  if here() ^ 'В_лесу' then
-    if use_hint() then
-      return
-    end
-    p [[Тебе приходит в голову ]];
-    if not _'сова'.talked then
-      if where'сова' ^ 'В_лесу' then
-        p [[ждать.]];
+      elseif not have 'скрипка' then
+        p [[взять скрипку.]]
+      elseif not _'телефон'.compass then
+        p [[посмотреть в телефон. В нём есть компас.]]
+      elseif not _'сова'.talked then
+        if not seen 'сова' then
+          p [[идти в лес.]]
+        else
+          if _'сова'.seen then
+            p [[поговорить с совой.]]
+          else
+            p [[осмотреть сову.]]
+          end
+        end
+      elseif not have 'перо' then
+        p [[взять перо.]]
       else
-        p [[идти на восток.]];
+        p [[идти в лес.]]
       end
-    elseif not seen 'олень' or disabled 'олень' then
-      p [[идти на запад.]]
-    elseif not _'олень'.sit then
-      p [[дать оленю перо.]]
-    else
-      p [[сесть на оленя.]]
-    end
-    return
-  end
-  if here() ^ 'Ледяные_горы' then
-    if use_hint() then
       return
     end
-    p [[Тебе приходит в голову ]]
-    if _'#стена'.light == 0 then
-      p [[дотронуться стены.]]
-    else
-      p [[войти в свечение.]]
-    end
-    return
-  end
-  if here() ^ 'пещера' then
-    if use_hint() then
-      return
-    end
-    p [[Тебе приходит в голову ]]
-    if thedark(here) then
-      p [[посветить телефоном.]]
-    elseif disabled '#кристаллы' then
-      p [[осмотреть свечение.]]
-    elseif _'#кристаллы'.try < 2 then
-      p [[постучать по кристаллам.]]
-    elseif not _'#кристаллы'.broken then
-      p [[играть на скрипке.]]
-    elseif seen 'осколки' then
-      p [[взять осколки.]]
-    else
-      p [[идти на северо-запад.]]
-    end
-    return
-  end
-  if here() ^ 'пещера2' then
-    if use_hint() then
-      return
-    end
-    p [[Тебе приходит в голову ]]
-    if not seen 'осколки' then
-      if not have'осколки' then
-        p [[идти на юго-восток.]]
+    if here() ^ 'В_лесу' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]];
+      if not _'сова'.talked then
+        if where'сова' ^ 'В_лесу' then
+          p [[ждать.]];
+        else
+          p [[идти на восток.]];
+        end
+      elseif not seen 'олень' or disabled 'олень' then
+        p [[идти на запад.]]
+      elseif not _'олень'.sit then
+        p [[дать оленю перо.]]
       else
-        p [[бросить осколки.]]
+        p [[сесть на оленя.]]
       end
-    elseif thedark(here) then
-      p [[включить фонарик.]]
-    else
-      p [[идти на юго-запад.]]
-    end
-    return
-  end
-  if here() ^ 'обрыв' then
-    if use_hint() then
       return
     end
-    p [[Тебе приходит в голову перепрыгнуть через обрыв.]]
-    return
-  end
-  if here() ^ 'Другая_сторона' then
-    if use_hint() then
+    if here() ^ 'Ледяные_горы' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]]
+      if _'#стена'.light == 0 then
+        p [[дотронуться стены.]]
+      else
+        p [[войти в свечение.]]
+      end
       return
     end
-    p [[Тебе приходит в голову выйти наружу.]]
-    return
-  end
-  if here() ^ 'За_ледяной_стеной' then
-    if use_hint() then
+    if here() ^ 'пещера' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]]
+      if thedark(here) then
+        p [[посветить телефоном.]]
+      elseif disabled '#кристаллы' then
+        p [[осмотреть свечение.]]
+      elseif _'#кристаллы'.try < 2 then
+        p [[постучать по кристаллам.]]
+      elseif not _'#кристаллы'.broken then
+        p [[играть на скрипке.]]
+      elseif seen 'осколки' then
+        p [[взять осколки.]]
+      else
+        p [[идти на северо-запад.]]
+      end
       return
     end
-    p [[Тебе приходит в голову идти к скале.]]
-    return
-  end
-  if here() ^ 'У_замка' then
-    if use_hint() then
+    if here() ^ 'пещера2' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]]
+      if not seen 'осколки' then
+        if not have'осколки' then
+          p [[идти на юго-восток.]]
+        else
+          p [[бросить осколки.]]
+        end
+      elseif thedark(here) then
+        p [[включить фонарик.]]
+      else
+        p [[идти на юго-запад.]]
+      end
       return
     end
-    p [[Тебе приходит в голову ]]
-    if disabled 'ворота' then
-      p [[дать перо статуе.]]
-    else
-      p [[войти внутрь.]]
-    end
-    return
-  end
-  if here() ^ 'Тронный_зал' then
-    if use_hint() then
+    if here() ^ 'обрыв' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову перепрыгнуть через обрыв.]]
       return
     end
-    p [[Тебе приходит в голову ]]
-    if visited 'gotmirror' and not _'зеркало'.seen then
-      p [[посмотреть в зеркало.]]
-    elseif _'браслет':hasnt'worn' then
-      p [[надеть браслет.]]
-    elseif not _'Тронный_зал'.near then
-      p [[подойти к матери.]]
-    elseif not _'королева'.queen then
-      p [[осмотреть мать.]]
-    elseif not visited 'королева_диалог' then
-      p [[поговорить с матерью.]]
-    elseif disabled 'дверь' then
-      p [[идти к голему.]]
-    elseif not visited 'gotmirror' then
-      p [[идти вниз.]]
-    elseif _'дверь':has'open' then
-      p [[идти в дверь.]]
-    else
-      p [[открыть дверь.]]
-    end
-    return
-  end
-  if here() ^ 'Зал_с_зеркалами' then
-    if use_hint() then
+    if here() ^ 'Другая_сторона' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову выйти наружу.]]
       return
     end
-    p [[Тебе приходит в голову ]]
-    if not _'Зал_с_зеркалами'.know then
-      p [[бросить перо.]]
-    elseif not have 'перо' then
-      p [[взять перо.]]
-    elseif visited 'gotmirror' then
-      p [[идти наверх.]]
-    else
-      p [[идти на запад.]]
-    end
-    return
-  end
-  if here() ^ 'ледяное_пламя' then
-    if use_hint() then
+    if here() ^ 'За_ледяной_стеной' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову идти к скале.]]
       return
     end
-    p [[Тебе приходит в голову ]]
-    if visited 'gotmirror' then
-      if not _'зеркало'.seen then
+    if here() ^ 'У_замка' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]]
+      if disabled 'ворота' then
+        p [[дать перо статуе.]]
+      else
+        p [[войти внутрь.]]
+      end
+      return
+    end
+    if here() ^ 'Тронный_зал' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]]
+      if visited 'gotmirror' and not _'зеркало'.seen then
         p [[посмотреть в зеркало.]]
+      elseif _'браслет':hasnt'worn' then
+        p [[надеть браслет.]]
+      elseif not _'Тронный_зал'.near then
+        p [[подойти к матери.]]
+      elseif not _'королева'.queen then
+        p [[осмотреть мать.]]
+      elseif not visited 'королева_диалог' then
+        p [[поговорить с матерью.]]
+      elseif disabled 'дверь' then
+        p [[идти к голему.]]
+      elseif not visited 'gotmirror' then
+        p [[идти вниз.]]
+      elseif _'дверь':has'open' then
+        p [[идти в дверь.]]
       else
-        p [[идти на восток.]]
+        p [[открыть дверь.]]
       end
-    elseif _'ледяное_пламя'.warm <= 5 then
-      p [[ждать.]]
-    else
-      p [[войти в пламя.]]
-    end
-    return
-  end
-  if here() ^ 'комната' then
-    if use_hint() then
       return
     end
-    p [[Тебе приходит в голову ]]
-    if seen 'королева2' then
-      p [[войти в зеркало.]]
+    if here() ^ 'Зал_с_зеркалами' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]]
+      if not _'Зал_с_зеркалами'.know then
+        p [[бросить перо.]]
+      elseif not have 'перо' then
+        p [[взять перо.]]
+      elseif visited 'gotmirror' then
+        p [[идти наверх.]]
+      else
+        p [[идти на запад.]]
+      end
       return
     end
-    if not seen 'зеркало' and not have 'зеркало' then
-      if not visited 'gotmirror' then
-        p [[выйти из комнаты.]]
-      else
-        p [[идти и забрать зеркало оттуда, где ты его оставила.]]
+    if here() ^ 'ледяное_пламя' then
+      if use_hint() then
+        return
       end
-    elseif not _'зеркало'.seen then
-      p [[Посмотреть в зеркало.]]
-    elseif not _'сова2'.finside and _'сова2'.num < 3 then
-      p [[ждать.]]
-    elseif _'#окно':hasnt'open' and not _'сова2'.finside then
-      p [[открыть окно.]]
-    elseif not visited 'сова2_диалог1' and not visited 'сова2_диалог1' then
-      p [[поговорить с совой.]]
-    elseif not _'зеркало':where() ^ '#стена' then
-      p [[повесить зеркало на стену.]]
-    else
-      p [[поговорить с совой.]]
+      p [[Тебе приходит в голову ]]
+      if visited 'gotmirror' then
+        if not _'зеркало'.seen then
+          p [[посмотреть в зеркало.]]
+        else
+          p [[идти на восток.]]
+        end
+      elseif _'ледяное_пламя'.warm <= 5 then
+        p [[ждать.]]
+      else
+        p [[войти в пламя.]]
+      end
+      return
     end
-    return
-  end
-  if here() ^ 'Тьма' then
+    if here() ^ 'комната' then
+      if use_hint() then
+        return
+      end
+      p [[Тебе приходит в голову ]]
+      if seen 'королева2' then
+        p [[войти в зеркало.]]
+        return
+      end
+      if not seen 'зеркало' and not have 'зеркало' then
+        if not visited 'gotmirror' then
+          p [[выйти из комнаты.]]
+        else
+          p [[идти и забрать зеркало оттуда, где ты его оставила.]]
+        end
+      elseif not _'зеркало'.seen then
+        p [[Посмотреть в зеркало.]]
+      elseif not _'сова2'.finside and _'сова2'.num < 3 then
+        p [[ждать.]]
+      elseif _'#окно':hasnt'open' and not _'сова2'.finside then
+        p [[открыть окно.]]
+      elseif not visited 'сова2_диалог1' and not visited 'сова2_диалог1' then
+        p [[поговорить с совой.]]
+      elseif not _'зеркало':where() ^ '#стена' then
+        p [[повесить зеркало на стену.]]
+      else
+        p [[поговорить с совой.]]
+      end
+      return
+    end
+    if here() ^ 'Тьма' then
+      return false
+    end
     return false
   end
-  return false
-end
-end
-~~~
+  end
 
-lua:
-~~~lua
-function mp:Sing()
-  p [[То, что ты учишься в музыкальной школе не означает, что ты хорошо поёшь.]]
-end
-~~~
+lua: |lua
+  function mp:Sing()
+    p [[То, что ты учишься в музыкальной школе не означает, что ты хорошо поёшь.]]
+  end
 
 verb Ring:
   words: [|по]звон/ить

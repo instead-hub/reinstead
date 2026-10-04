@@ -7,7 +7,7 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None):
     for st in stmts:
         kind = st[0]
         lno = st[-1] if isinstance(st[-1], int) else None
-        where = ("~~~do:%d" % lno) if lno else "~~~do"
+        where = ("logic:%d" % lno) if lno else "logic"
         if kind == "return":
             code = ""
             rtype = "nil"
@@ -20,7 +20,7 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None):
                                     "without quotes" % (where,
                                     m.group(1) or m.group(2)))
             if ret and ret != "any" and rtype not in ("any", ret):
-                ctx = ("fn %s" % ret_name) if ret_name else "~~~do"
+                ctx = ("fn %s" % ret_name) if ret_name else "logic"
                 raise LintError("%s: return type is %s, expected %s"
                                 % (ctx, rtype, ret))
             out.append("%sreturn%s" % (indent, (" " + code) if code else ""))

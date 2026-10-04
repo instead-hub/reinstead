@@ -48,7 +48,7 @@ def transpile(src):
                 hb = "\n".join(emit_logic(val.stmts, IND,
                                           param_env(prm, name), ret, name))
             else:
-                raise Error("fn %s must be a ~~~do/~~~lua block"
+                raise Error("fn %s must be a | block"
                             % name)
             S.FNS.add(name)
             fn_body.append("local function fn_%s(%s)\n%s\nend"

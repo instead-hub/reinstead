@@ -197,16 +197,6 @@ def split_list(s):
         parts.append("".join(cur))
     return [p.strip() for p in parts if p.strip()]
 
-def read_fence(lines, i, line_no):
-    body = []
-    while i < len(lines):
-        raw, ind = lines[i]
-        if raw.strip() == "~~~":
-            return body, i + 1
-        body.append((raw, ind, i + 1))
-        i += 1
-    parse_error(line_no, "unterminated fence ~~~")
-
 def balanced_expr(text):
     depth = 0
     i = 0
