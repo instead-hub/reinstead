@@ -1679,7 +1679,6 @@ def emit_verb(block, ident, base):
 PRESETS = {
     "obj": ("obj", []),
     "scenery": ("obj", ["scenery"]),
-    "fixed": ("obj", ["fixed"]),
     "room": ("room", []),
     "door": ("door", []),
     "story": ("cutscene", []),

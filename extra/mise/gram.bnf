@@ -42,8 +42,8 @@ vars      ::= ("const" | "global") ":" block
 
 (* ---------- декларации объектов ---------- *)
 decl      ::= kind [ NAME ] ":" block
-kind      ::= "obj" | "scenery" | "fixed" | "furniture" | "box" | "npc"
-            | "room" | "door" | "story" | "ending" | "dlg" | CLASS
+kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
+            | "dlg" | CLASS
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
             | "var" IDENT ":" value
