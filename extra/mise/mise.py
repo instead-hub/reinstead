@@ -18,13 +18,6 @@ for _e in (
 ).split():
     EVENTS[_e] = _e
 
-ATTRS = {
-    "scenery", "static", "fixed", "container", "supporter", "transparent",
-    "enterable", "light", "luminous", "animate", "clothing", "worn",
-    "edible", "switchable", "concealed", "lockable", "locked", "open",
-    "openable", "on",
-}
-
 FIELD_PARAMS = {
     "daemon": "s", "description": "s", "dsc": "s", "title": "s", "inv": "s",
     "inside_dsc": "s", "init_dsc": "s", "dark_dsc": "s", "cant_go": "s, to",
@@ -49,11 +42,6 @@ class Lua:
 class Logic:
     def __init__(self, stmts):
         self.stmts = stmts
-
-
-class Sym:
-    def __init__(self, s):
-        self.s = s
 
 
 class Bare:
@@ -418,13 +406,6 @@ KEYWORDS = {
     "then", "else", "do", "local", "function", "end", "break", "repeat",
 }
 
-PURE_FUNCS = set("""
-assert error ipairs next pairs pcall print rawequal rawget rawset select
-tonumber tostring type unpack xpcall
-""".split())
-
-PURE_LIBS = {"math", "string", "table"}
-
 VARS = set()
 FUNCS = set()
 SRC_DIR = ""
@@ -498,7 +479,14 @@ PARAM_TYPES = {
     "s": "obj", "w": "obj", "wh": "obj", "ev": "str", "to": "str",
     "f": "any", "load": "bool",
 }
-PURE_RET = {"tonumber": "num", "tostring": "str", "type": "str"}
+def check_arity(name, plist, variadic, n):
+    if variadic:
+        if n < len(plist):
+            raise LintError("fn %s expects at least %d argument(s), got %d"
+                            % (name, len(plist), n))
+    elif n != len(plist):
+        raise LintError("fn %s expects %d argument(s), got %d"
+                        % (name, len(plist), n))
 
 
 class ExprEmit:
@@ -532,12 +520,6 @@ class ExprEmit:
     def err(self, msg):
         raise LintError("%s in %s: %s" % (
             msg, self.where, " ".join(t[1] for t in self.toks[:-1])))
-
-    def parse(self):
-        code, t, _k, _v = self.expr()
-        if self.peek()[0] != "eof":
-            self.err("unexpected %r" % self.peek()[1])
-        return code, t
 
     def exprlist(self, expected=None):
         codes = []
@@ -582,9 +564,6 @@ class ExprEmit:
             tok = self.next()
             exp = expected_list[0] if expected_list else None
             return self.str_arg(tok[1], exp), 1
-        if self.peek()[1] == "{":
-            self.next()
-            return self.table(), 1
         self.expect("(")
         codes = []
         n = 0
@@ -607,17 +586,11 @@ class ExprEmit:
         if name in FN_SIGS:
             plist, ret, variadic = FN_SIGS[name]
             args, n = self.arglist([pt for _pn, pt in plist])
-            if variadic:
-                if n < len(plist):
-                    self.err("fn %s expects at least %d argument(s), got %d"
-                             % (name, len(plist), n))
-            elif n != len(plist):
-                self.err("fn %s expects %d argument(s), got %d"
-                         % (name, len(plist), n))
+            try:
+                check_arity(name, plist, variadic, n)
+            except LintError as e:
+                self.err(str(e))
             return args, ret
-        if name in PURE_FUNCS:
-            args, _ = self.arglist(None)
-            return args, PURE_RET.get(name, "any")
         if name == "_":
             args, _ = self.arglist(None)
             return args, "obj"
@@ -649,10 +622,8 @@ class ExprEmit:
                 return "_'%s'" % val, "obj", "objref", None
             if val in FN_SIGS:
                 return "fn_" + val, "fn", "name", val
-            if val in FUNCS or val in PURE_FUNCS:
+            if val in FUNCS:
                 return val, "fn", "name", val
-            if val in PURE_LIBS:
-                return val, "any", "name", val
             if val in VARS:
                 return val, GLOBAL_TYPES.get(val, "any"), "name", val
             self.err("unknown name %r" % val)
@@ -662,36 +633,9 @@ class ExprEmit:
             self.expect(")")
             return "(%s)" % c, t, "expr", None
         if kind == "op" and val == "{":
-            return self.table(), "any", "expr", None
+            self.err("table constructors are not allowed in ~~~do "
+                     "(wrap it in fn)")
         self.err("unexpected %r" % val)
-
-    def table(self):
-        items = []
-        if not self.accept("}"):
-            while True:
-                if self.accept("["):
-                    self.expected = None
-                    kc, _kt, _kk, _kv = self.expr()
-                    self.expect("]")
-                    self.expect("=")
-                    self.expected = None
-                    vc, _vt, _vk, _vv = self.expr()
-                    items.append("[%s] = %s" % (kc, vc))
-                elif (self.peek()[0] == "name"
-                      and self.peek(1)[1] == "="):
-                    kn = self.next()[1]
-                    self.next()
-                    self.expected = None
-                    vc, _vt, _vk, _vv = self.expr()
-                    items.append("%s = %s" % (kn, vc))
-                else:
-                    self.expected = None
-                    vc, _vt, _vk, _vv = self.expr()
-                    items.append(vc)
-                if not (self.accept(",") or self.accept(";")):
-                    break
-            self.expect("}")
-        return "{ %s }" % ", ".join(items)
 
     def unary(self):
         _k, v = self.peek()
@@ -813,14 +757,10 @@ class ExprEmit:
                     self.err("fn %s takes no receiver" % nv)
                 self.check(t, plist[0][1], code)
                 args, n = self.arglist([pt for _pn, pt in plist[1:]])
-                need = len(plist) - 1
-                if variadic:
-                    if n < need:
-                        self.err("fn %s expects at least %d argument(s), "
-                                 "got %d" % (nv, need, n))
-                elif n != need:
-                    self.err("fn %s expects %d argument(s), got %d"
-                             % (nv, need, n))
+                try:
+                    check_arity(nv, plist[1:], variadic, n)
+                except LintError as e:
+                    self.err(str(e))
                 if args:
                     code = "fn_%s(%s, %s)" % (nv, code, args)
                 else:
@@ -837,9 +777,10 @@ class ExprEmit:
                     plist, rt, variadic = FN_SIGS[val]
                     if not plist:
                         self.err("fn %s takes no arguments" % val)
-                    if len(plist) != 1 and not variadic:
-                        self.err("fn %s expects %d argument(s), got 1"
-                                 % (val, len(plist)))
+                    try:
+                        check_arity(val, plist, variadic, 1)
+                    except LintError as e:
+                        self.err(str(e))
                     exp = plist[0][1]
                 self.expected = exp
                 c, t, _k2, _v2 = self.expr()
@@ -849,7 +790,7 @@ class ExprEmit:
                 t = rt
                 kind = "call"
                 val = None
-            elif (k == "str" or (k == "op" and v in ("(", "{"))):
+            elif (k == "str" or (k == "op" and v == "(")):
                 if kind == "name":
                     args, rt = self.call(val)
                     code = "%s(%s)" % (code, args)
@@ -883,13 +824,7 @@ def no_paren_call(text, env, where):
         if plist and plist[0][1] == "str":
             return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
         raise
-    if variadic:
-        if len(types) < len(plist):
-            raise LintError("fn %s expects at least %d argument(s), got %d"
-                            % (name, len(plist), len(types)))
-    elif len(types) != len(plist):
-        raise LintError("fn %s expects %d argument(s), got %d"
-                        % (name, len(plist), len(types)))
+    check_arity(name, plist, variadic, len(types))
     for (pn, pt), t in zip(plist, types):
         if pt != "any" and t not in ("any", pt):
             raise LintError("fn %s: argument %s expects %s, got %s"
@@ -1057,9 +992,6 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None):
     return out
 
 
-SAY_TYPES = ("str", "obj", "num", "any")
-
-
 def say_expr_start(s, env):
     c = s[0]
     if c in "'\"([{`_#":
@@ -1073,7 +1005,7 @@ def say_expr_start(s, env):
         return False
     tok = m.group(0)
     return (tok in env or tok in VARS or tok in IDS or tok in FN_SIGS
-            or tok in FUNCS or tok in PURE_FUNCS or tok in PURE_LIBS)
+            or tok in FUNCS)
 
 
 EXTRA_EVENTS = {}
@@ -1101,7 +1033,7 @@ def read_long(lines, i, first, line_no):
 
 def fence_value(tag, lines, start, line_no):
     body, i = read_fence(lines, start, line_no)
-    if tag in ("~~~lua", "```lua"):
+    if tag == "~~~lua":
         return Lua(reindent("\n".join(raw for raw, _ in body), "")), i
     j = 0
     while j < len(body) and not body[j][0].strip():
@@ -1166,7 +1098,7 @@ def parse_block(lines, i, indent, text_values=False):
             while j < len(lines) and not lines[j][0].strip():
                 j += 1
             if j < len(lines) and lines[j][0].strip() in (
-                    "~~~lua", "```lua", "~~~do", "```do", "~~~"):
+                    "~~~lua", "~~~do"):
                 tag = lines[j][0].strip()
                 val, i = fence_value(tag, lines, j + 1, line_no)
                 blk.items.append((key, val))
@@ -1181,7 +1113,7 @@ def parse_block(lines, i, indent, text_values=False):
             else:
                 blk.items.append((key, Block()))
                 i += 1
-        elif rest in ("~~~lua", "```lua", "~~~do", "```do", "~~~"):
+        elif rest in ("~~~lua", "~~~do"):
             val, i = fence_value(rest, lines, i + 1, line_no)
             blk.items.append((key, val))
         elif rest.startswith("[["):
@@ -1215,11 +1147,11 @@ def parse_source(src):
 
 
 def lua_str(s):
-    if "]]" not in s:
-        return "[[%s]]" % s
-    if "]==]" not in s:
-        return "[==[%s]==]" % s
-    return "[====[%s]====]" % s
+    for n in range(12):
+        eq = "=" * n
+        if "]" + eq + "]" not in s:
+            return "[" + eq + "[" + s + "]" + eq + "]"
+    raise Error("cannot quote string for Lua")
 
 
 def reindent(text, prefix):
@@ -1246,8 +1178,6 @@ def lua_value(v, ctx="s"):
         return lua_str(v.s)
     if isinstance(v, Lua):
         return "function(%s)\n%s\nend" % (FIELD_PARAMS.get(ctx, "s"), v.s)
-    if isinstance(v, Sym):
-        return "'%s'" % v.s
     if isinstance(v, Bare):
         return "'%s'" % v.s if v.s in IDS else lua_str(v.s)
     if isinstance(v, (Num, Bool)):
@@ -1266,7 +1196,7 @@ USE_RE = re.compile(r"^use\s+([\w.+-]+)$")
 
 
 def use_name(v):
-    if isinstance(v, (Text, Bare, Sym)):
+    if isinstance(v, (Text, Bare)):
         m = USE_RE.match(v.s.strip())
         if m:
             name = m.group(1)
@@ -1382,7 +1312,7 @@ def emit_on(block, indent, target=""):
                 body = "\n".join(emit_logic(val.stmts, indent + IND,
                                             param_env(prm)))
                 src = "function(%s)\n%s\n%s" % (prm, body, indent + "end")
-            elif (isinstance(val, (Text, Bare, Sym))
+            elif (isinstance(val, (Text, Bare))
                   and val.s.strip() == "pass"):
                 src = "function() return false end"
             else:
@@ -1422,8 +1352,8 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
     if a is not None:
         if isinstance(a, list):
             attrs += [x.s for x in a
-                      if isinstance(x, (Sym, Bare, Text))]
-        elif isinstance(a, (Sym, Bare, Text)):
+                      if isinstance(x, (Bare, Text))]
+        elif isinstance(a, (Bare, Text)):
             attrs.append(a.s)
     obj_items = []
     nested = []
@@ -1479,7 +1409,7 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
             else:
                 refs = val if isinstance(val, list) else [val]
                 for r in refs:
-                    if not isinstance(r, (Sym, Bare, Text)):
+                    if not isinstance(r, (Bare, Text)):
                         raise Error("%s must list identifiers" % key)
                     obj_items.append("%s'%s';" % (fi + IND, r.s))
     blobs = []
@@ -1530,7 +1460,7 @@ def emit_verb(block, ident, base):
     lines = ["%sVerb { %s%s }" % (base, ", ".join(fields),
                                   (", " + ", ".join(extra)) if extra else "")]
     ev_field = block.get("event")
-    ev = ev_field.s if isinstance(ev_field, Sym) else (ident or "?")
+    ev = ev_field.s if isinstance(ev_field, Bare) else (ident or "?")
     for key, val in block.items:
         base_key, params = parse_key(key)
         if base_key not in ("on", "before", "after"):
@@ -1553,9 +1483,6 @@ PRESETS = {
     "obj": ("obj", []),
     "scenery": ("obj", ["scenery"]),
     "fixed": ("obj", ["fixed"]),
-    "furniture": ("obj", ["static", "supporter"]),
-    "box": ("obj", ["container", "open", "openable"]),
-    "npc": ("obj", ["animate"]),
     "room": ("room", []),
     "door": ("door", []),
     "story": ("cutscene", []),
@@ -1575,7 +1502,7 @@ def decl_key(key):
 
 
 def sym_text(v):
-    if isinstance(v, (Sym, Bare, Text)):
+    if isinstance(v, (Bare, Text)):
         return v.s
     raise Error("expected expression")
 
@@ -1584,18 +1511,15 @@ def is_true(v):
     return isinstance(v, Bool) and v.s == "true"
 
 
-def logic_lines(v, indent, env=None):
-    if isinstance(v, Logic):
-        return emit_logic(v.stmts, indent, env)
-    if isinstance(v, Lua):
-        return [reindent(v.s, indent)]
-    raise Error("expected logic/lua block")
-
-
 def talk_act(reply, do, indent):
     if do is None:
         return reply
-    body = logic_lines(do, indent + IND, {"s": "obj"})
+    if isinstance(do, Logic):
+        body = emit_logic(do.stmts, indent + IND, {"s": "obj"})
+    elif isinstance(do, Lua):
+        body = [reindent(do.s, indent + IND)]
+    else:
+        raise Error("expected logic/lua block")
     if reply is not None:
         body = ["%sp(%s)" % (indent + IND, reply)] + body
     return ["%sfunction(s)" % indent] + body + ["%send" % indent]
@@ -1718,14 +1642,14 @@ def emit_setup(block):
     if fmt:
         vals = fmt if isinstance(fmt, list) else [fmt]
         for v in vals:
-            if isinstance(v, (Sym, Bare, Text)):
+            if isinstance(v, (Bare, Text)):
                 lines.append("fmt.%s = true" % v.s)
     take = block.get("take")
     takes = []
     if take:
         takes = take if isinstance(take, list) else [take]
         for t in takes:
-            if not isinstance(t, (Sym, Bare, Text)):
+            if not isinstance(t, (Bare, Text)):
                 raise Error("take must list identifiers")
     for key, val in block.items:
         if key in ("take", "fmt", "init"):
@@ -1845,7 +1769,7 @@ def check_refs(root, ids):
             return
         refs = val if isinstance(val, list) else [val]
         for r in refs:
-            if isinstance(r, (Sym, Bare)) and r.s not in ids:
+            if isinstance(r, (Bare,)) and r.s not in ids:
                 raise Error("unknown reference in %s: %s" % (key, r.s))
     for key, val in root.items:
         if not isinstance(val, Block):
@@ -1863,13 +1787,11 @@ def check_refs(root, ids):
         if take:
             refs = take if isinstance(take, list) else [take]
             for r in refs:
-                if isinstance(r, (Sym, Bare)) and r.s not in ids:
+                if isinstance(r, (Bare,)) and r.s not in ids:
                     raise Error("unknown reference in take: " + r.s)
 
 
-def scan_lua_defs(text, funcs, methods, vars_):
-    for m in re.finditer(r"function\s+[A-Za-z_][\w.]*[:.](\w+)", text):
-        methods.add(m.group(1))
+def scan_lua_defs(text, funcs, vars_):
     for m in re.finditer(r"function\s+([A-Za-z_]\w*)\s*\(", text):
         funcs.add(m.group(1))
     for m in re.finditer(r"([A-Za-z_]\w*)\s*=\s*function\s*\(", text):
@@ -1882,21 +1804,17 @@ def scan_lua_defs(text, funcs, methods, vars_):
 
 def collect_game_defs(root):
     funcs = set()
-    methods = set()
     vars_ = set()
 
     def walk(block):
         for key, val in block.items:
-            base, _ = parse_key(key)
-            if base and re.fullmatch(r"[A-Za-z_]\w*", base):
-                methods.add(base)
             if isinstance(val, Lua):
-                scan_lua_defs(val.s, funcs, methods, vars_)
+                scan_lua_defs(val.s, funcs, vars_)
             elif isinstance(val, Block):
                 walk(val)
 
     walk(root)
-    return funcs, methods, vars_
+    return funcs, vars_
 
 
 def scan_required(name):
@@ -1951,14 +1869,14 @@ def transpile(src):
             if not (isinstance(tag, Bool) and tag.s == "false"):
                 EXTRA_EVENTS[ident] = ident
             event = val.get("event")
-            if isinstance(event, Sym):
+            if isinstance(event, Bare):
                 EXTRA_EVENTS[event.s] = event.s
         elif key == "events":
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 name = v.s if hasattr(v, "s") else str(v)
                 EXTRA_EVENTS[name] = name
-    game_funcs, game_methods, game_vars = collect_game_defs(root)
+    game_funcs, game_vars = collect_game_defs(root)
     FN_SIGS = {}
     fn_names = set()
     for key, val in root.items:
@@ -1974,7 +1892,7 @@ def transpile(src):
             for v in vals:
                 text = scan_required(v.s if hasattr(v, "s") else str(v))
                 if text:
-                    scan_lua_defs(text, game_funcs, game_methods, game_vars)
+                    scan_lua_defs(text, game_funcs, game_vars)
     const_names = set()
     GLOBAL_TYPES = {}
     for key, val in root.items:
@@ -1990,7 +1908,7 @@ def transpile(src):
                 else:
                     GLOBAL_TYPES[k] = "any"
     VARS = game_vars | const_names
-    FUNCS = fn_names | game_funcs | PURE_FUNCS | {"_"}
+    FUNCS = fn_names | game_funcs | {"_"}
     FNS = fn_names
     check_refs(root, ids)
     header = []
@@ -2045,14 +1963,14 @@ def transpile(src):
         else:
             body.append(emit_decl(key, val, ""))
     lang = root.get("lang")
-    lang = lang.s if isinstance(lang, Sym) else "ru"
+    lang = lang.s if isinstance(lang, Bare) else "ru"
     pre = ["-- generated by mise.py; do not edit", ""] + header + [
         'require "fmt"']
     root_fmt = root.get("fmt")
     if root_fmt:
         vals = root_fmt if isinstance(root_fmt, list) else [root_fmt]
         for v in vals:
-            if isinstance(v, (Sym, Bare, Text)):
+            if isinstance(v, (Bare, Text)):
                 pre.append("fmt.%s = true" % v.s)
     pre.append('require "parser/mp-%s"' % lang)
     pre += ['require "%s"' % r for r in reqs]

@@ -110,10 +110,6 @@ lua:
 ```
 obj        — обычный объект
 scenery    — объект с атрибутом scenery
-fixed      — объект с атрибутом fixed
-furniture  — static,supporter
-box        — container,open,openable
-npc        — animate
 room       — комната
 door       — дверь
 story      — cutscene
@@ -215,11 +211,11 @@ Take: ~~~do
 запрещены `while`/`repeat`/`goto`, анонимные функции, `function`,
 длинные операторы вне грамматики. Вызовы движка в `~~~do` запрещены:
 разрешены только параметры, локальные, объявленные объекты, глобальные
-игры (`global:`/`const:`), вызовы `fn` и чистые функции Lua
-(`pairs`, `ipairs`, `tostring`, `tonumber`, `type`, ...). Значения
-`mp`/`std`/`game`/`pl` и вызовы методов (`s:has`, `s:once`,
-`mp:xaction`) — ошибка: оборачивайте в `fn`. Непокрытое — только через
-`~~~lua`.
+игры (`global:`/`const:`), вызовы `fn`. Значения
+`mp`/`std`/`game`/`pl`, вызовы методов (`s:has`, `s:once`,
+`mp:xaction`), чистые функции Lua (`pairs`, `math`, `tostring`, ...)
+и конструкторы таблиц `{...}` — ошибка: оборачивайте в `fn`.
+Непокрытое — только через `~~~lua`.
 
 `say`/`line`/`append` — обычные `fn` из `include: stdlib`
 (`say(text: str, ...)`, `line()`, `append(text: str)`). Аргумент `say`
