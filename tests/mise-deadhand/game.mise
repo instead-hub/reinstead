@@ -46,9 +46,9 @@ setup:
   hero:
     description: Ты -- астронавт в скафандре.
     on:
-      letgo: Не стоит разбрасываться в космосе вещами.
+      LetGo: Не стоит разбрасываться в космосе вещами.
   on:
-    walk: ~~~do
+    Walk: ~~~do
       local dir = mp:compass_dir(w)
       if not dir:
         pass
@@ -56,13 +56,13 @@ setup:
         pass
       say Стороны света есть на Земле, а не в космосе.
       ~~~
-    taste: ~~~do
+    Taste: ~~~do
       if suit:has worn:
         say В скафандре?
         stop
       pass
       ~~~
-    smell: ~~~do
+    Smell: ~~~do
       if suit:hasnt worn:
         pass
       if not w or w:inside(pl):
@@ -70,8 +70,8 @@ setup:
         stop
       say В скафандре это невозможно.
       ~~~
-    jump, jumpover: В невесомости это невозможно.
-    listen: ~~~do
+    Jump, JumpOver: В невесомости это невозможно.
+    Listen: ~~~do
       if radio:hasnt on:
         say Для этого нужно включить радио.
       else:
@@ -102,13 +102,13 @@ obj suit:
       say Например, радио.
     ~~~
   on:
-    enter, climb: ~~~do
+    Enter, Climb: ~~~do
       mp:xaction("Wear", s)
       ~~~
-    exit, getoff: ~~~do
+    Exit, GetOff: ~~~do
       mp:xaction("Disrobe", s)
       ~~~
-    disrobe: ~~~do
+    Disrobe: ~~~do
       if here() ^ ship2:
         pass
       else:
@@ -120,7 +120,7 @@ obj suit:
       attrs: switchable, scenery
       description: Маневровые двигатели позволяют ориентироваться в пространстве и перемещаться на небольшие расстояния. Ты можешь включить их.
       on:
-        after switchon: ~~~do
+        after SwitchOn: ~~~do
           if here().rotate:
             say [[Ты включаешь маневровые двигатели и пытаешься остановить вращение.
 В конце-концов тебе это удаётся! Только топлива ты потратил немало. Ты снова выключаешь двигатели.]]
@@ -164,7 +164,7 @@ obj suit:
             set channel_pos = rnd(#channels[freq_hz])
         ~~~
       on:
-        after switchon: ~~~do
+        after SwitchOn: ~~~do
           set freq = true
           if s:once():
             say [[Ты включил радио на рабочей частоте.^^
@@ -180,7 +180,7 @@ obj suit:
           if here() ^ space:
             DaemonStart space
           ~~~
-        after switchoff: ~~~do
+        after SwitchOff: ~~~do
           DaemonStop radio
           pass
           ~~~
@@ -226,34 +226,34 @@ scenery earth:
   description: Рано или поздно ты упадёшь на Землю и сгоришь в атмосфере. А пока твой дух захватывает от величия и красоты наблюдаемого космического пейзажа.
   found_in: space
   on:
-    exam: pass
-    walk, enter, climb: Рано или поздно ты и так на неё упадёшь.
-  default: Земля слишком далеко.
+    Exam: pass
+    Walk, Enter, Climb: Рано или поздно ты и так на неё упадёшь.
+  Default: Земля слишком далеко.
 
 scenery stars:
   words: звёзды/но|звезда/но
   description: Ты смотришь на россыпь звёзд. А они, кажется, смотрят внутрь тебя. Может быть, ты скоро станешь одной из них?
   found_in: space
   on:
-    exam: pass
-  default: Звёзды слишком далеко.
+    Exam: pass
+  Default: Звёзды слишком далеко.
 
 scenery debris:
   words: обломки|осколки
   description: Это всё, что осталось от корабля.
   found_in: space
   on:
-    walk, enter, climb: [[Обломки корабля уже разлетелись друг от друга на большое расстояние.
+    Walk, Enter, Climb: [[Обломки корабля уже разлетелись друг от друга на большое расстояние.
 Нет смысла там что-то искать.]]
 
 obj tetr:
   words: объект|НЛО
   dsc: На фоне звёзд ты видишь какой-то яркий объект.
   description: Отсюда только понятно, что он достаточно большой. Космический мусор? Он движется почти параллельным к тебе курсом.
-  default: Он слишком далеко.
+  Default: Он слишком далеко.
   on:
-    exam: pass
-    walk, climb, enter: ~~~do
+    Exam: pass
+    Walk, Climb, Enter: ~~~do
       if engines:hasnt on:
         say Сначала нужно включить двигатели.
         stop
@@ -281,7 +281,7 @@ room space:
     else:
       say Ты плывёшь в открытом космосе. Под ногами простирается голубая гладь планеты Земля.
     ~~~
-  default: ~~~do
+  Default: ~~~do
     if not s.rotate or ev == 'Look' or ev == 'Wait' or ev == 'Inv':
       pass
     if w and w:inside(pl) or w == pl:
@@ -302,7 +302,7 @@ door gate:
       return space2
     ~~~
   on:
-    close: Он закрывается автоматически.
+    Close: Он закрывается автоматически.
   description: ~~~do
     say Рядом с люком находится красный рычаг.
     enable lever
@@ -314,7 +314,7 @@ obj lever:
   attrs: fixed, luminous
   disabled: true
   after:
-    pull, transfer: ~~~do
+    Pull, Transfer: ~~~do
       if here() ^ ship2:
         if gate2:has open:
           say Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.
@@ -346,7 +346,7 @@ obj satellite:
   attrs: scenery
   description: Спутник словно ёж утыкан антеннами и передатчиками. Серый корпус в виде тетраэдра медленно вращается вокруг своей оси.
   on:
-    enter, climb: Чтобы попасть внутрь, нужен шлюз.
+    Enter, Climb: Чтобы попасть внутрь, нужен шлюз.
   with:
     obj corpus:
       words: корпус,антенн*,передат*
@@ -383,7 +383,7 @@ door gate2:
   words: входной люк,люк,входной
   attrs: static, openable, enterable, locked
   on:
-    close: Он закрывается автоматически.
+    Close: Он закрывается автоматически.
   door_to: ~~~do
     if here() ^ ship:
       return ship2
@@ -413,7 +413,7 @@ obj panel:
       attrs: static, concealed
       description: На кнопке ты не видишь никаких надписей или обозначений.
       on:
-        push: ~~~do
+        Push: ~~~do
           if perimetr:
             set perimetr_ask += 1
             if perimetr_ask > 5:
@@ -484,7 +484,7 @@ room ship2:
       say Без скафандра? Самоубийство!
       pass
     ~~~
-  any: ~~~do
+  Any: ~~~do
     if perimetr:
       if perimetr_ask == 2:
         set good_to += 1

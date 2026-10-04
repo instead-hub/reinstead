@@ -5,6 +5,8 @@
 --$Author:Пётр Косых$
 --$Info:Короткая зарисовка об одиноком космонавте.$
 require "fmt"
+fmt.dash = true
+fmt.quotes = true
 require "parser/mp-ru"
 
 const 'DH_TO' (2)
@@ -88,7 +90,7 @@ function init()
 end
 
 cutscene {
-  nam = 'main';
+  nam = [[main]];
   title = false;
   text = [[{$fmt c|***}^^Корпус корабля лопнул и его содержимое, в виде сотен блестящих на Солнце осколков, хлынуло в открытый космос.
 Всё произошло за один миг. Всего лишь пол секунды -- и сложный, отлаженный механизм превратился в облако космического мусора...^^
@@ -99,7 +101,7 @@ cutscene {
 
 obj {
   -"скафандр";
-  nam = 'suit';
+  nam = [[suit]];
   description = function(s)
     p([[Твой скафандр оборудован различными приборами.]])
     if here().rotate then
@@ -126,7 +128,7 @@ obj {
   obj = {
     obj {
       -"маневровые двигатели,двигатели|двигатель";
-      nam = 'engines';
+      nam = [[engines]];
       description = [[Маневровые двигатели позволяют ориентироваться в пространстве и перемещаться на небольшие расстояния. Ты можешь включить их.]];
       after_SwitchOn = function(s, w, wh)
         if here().rotate then
@@ -147,7 +149,7 @@ obj {
 
     obj {
       -"радио|рация|приёмник";
-      nam = 'radio';
+      nam = [[radio]];
       description = function(s)
         p([[В скафандр встроен УКВ приёмник.]])
         if s:has 'on' then
@@ -240,7 +242,7 @@ end
 
 obj {
   -"Земля,планета|облака";
-  nam = 'earth';
+  nam = [[earth]];
   description = [[Рано или поздно ты упадёшь на Землю и сгоришь в атмосфере. А пока твой дух захватывает от величия и красоты наблюдаемого космического пейзажа.]];
   found_in = 'space';
   before_Default = [[Земля слишком далеко.]];
@@ -250,7 +252,7 @@ obj {
 
 obj {
   -"звёзды/но|звезда/но";
-  nam = 'stars';
+  nam = [[stars]];
   description = [[Ты смотришь на россыпь звёзд. А они, кажется, смотрят внутрь тебя. Может быть, ты скоро станешь одной из них?]];
   found_in = 'space';
   before_Default = [[Звёзды слишком далеко.]];
@@ -259,7 +261,7 @@ obj {
 
 obj {
   -"обломки|осколки";
-  nam = 'debris';
+  nam = [[debris]];
   description = [[Это всё, что осталось от корабля.]];
   found_in = 'space';
   ["before_Walk,Enter,Climb"] = [[Обломки корабля уже разлетелись друг от друга на большое расстояние.
@@ -268,7 +270,7 @@ obj {
 
 obj {
   -"объект|НЛО";
-  nam = 'tetr';
+  nam = [[tetr]];
   dsc = [[На фоне звёзд ты видишь какой-то яркий объект.]];
   description = [[Отсюда только понятно, что он достаточно большой. Космический мусор? Он движется почти параллельным к тебе курсом.]];
   before_Default = [[Он слишком далеко.]];
@@ -284,7 +286,7 @@ obj {
 
 room {
   -"космос|пустота|пейзаж";
-  nam = 'space';
+  nam = [[space]];
   title = [[открытый космос]];
   rotate = true;
   step = 1;
@@ -323,7 +325,7 @@ room {
 
 door {
   -"шлюзовой люк,люк,шлюзовой|шлюз";
-  nam = 'gate';
+  nam = [[gate]];
   door_to = function(s)
     if here() ^ _'space2' then
       return _'ship'
@@ -341,7 +343,7 @@ door {
 
 obj {
   -"красный рычаг|рычаг";
-  nam = 'lever';
+  nam = [[lever]];
   ["after_Pull,Transfer"] = function(s, w, wh)
     if here() ^ _'ship2' then
       if _'gate2':has 'open' then
@@ -380,13 +382,13 @@ obj {
 
 obj {
   -"спутник,тетраэдр,корабль/но|объект|НЛО";
-  nam = 'satellite';
+  nam = [[satellite]];
   description = [[Спутник словно ёж утыкан антеннами и передатчиками. Серый корпус в виде тетраэдра медленно вращается вокруг своей оси.]];
   ["before_Enter,Climb"] = [[Чтобы попасть внутрь, нужен шлюз.]];
   obj = {
     obj {
       -"корпус,антенн*,передат*";
-      nam = 'corpus';
+      nam = [[corpus]];
       description = function(s)
         if s:once() then
           p([[Внимательно осмотрев корпус, ты заметил шлюзовой люк.]])
@@ -399,13 +401,13 @@ obj {
           end
         end
       end;
-    };
+    }:attr 'scenery';
   };
-}
+}:attr 'scenery'
 
 room {
   -"космос|пустота|пейзаж";
-  nam = 'space2';
+  nam = [[space2]];
   title = [[открытый космос]];
   in_to = function(s)
     if disabled(_'gate') then
@@ -429,7 +431,7 @@ room {
 
 door {
   -"входной люк,люк,входной";
-  nam = 'gate2';
+  nam = [[gate2]];
   door_to = function(s)
     if here() ^ _'ship' then
       return _'ship2'
@@ -442,7 +444,7 @@ door {
 
 room {
   -"шлюзовой отсек";
-  nam = 'ship';
+  nam = [[ship]];
   title = [[шлюз]];
   onenter = function(s, f)
     if f ^ _'space2' then
@@ -460,13 +462,13 @@ room {
 
 obj {
   -"панель управления,панель|приборы";
-  nam = 'panel';
+  nam = [[panel]];
   description = [[Ты видишь множество приборов, назначение которых тебе непонятно, и экран консоли.
 Твоё внимание привлекает красная кнопка.]];
   obj = {
     obj {
       -"красная кнопка,красная,кнопка";
-      nam = 'button';
+      nam = [[button]];
       description = [[На кнопке ты не видишь никаких надписей или обозначений.]];
       before_Push = function(s, w, wh)
         if perimetr then
@@ -491,7 +493,7 @@ obj {
 
     obj {
       -"экран,консоль,текст";
-      nam = 'screen';
+      nam = [[screen]];
       description = function(s)
         if good_to > DH_TO then
           DaemonStop(_'ship2')
@@ -516,13 +518,13 @@ obj {
           p([[Экран неактивен.]])
         end
       end;
-    };
+    }:attr 'static';
   };
 }:attr 'static,supporter'
 
 room {
   -"корабль";
-  nam = 'ship2';
+  nam = [[ship2]];
   title = [[внутри корабля]];
   out_to = 'gate2';
   daemon = function(s)
@@ -595,7 +597,7 @@ room {
 }
 
 cutscene {
-  nam = 'badend';
+  nam = [[badend]];
   title = [[Конец]];
   text = [[Ты так и не смог отключить машину судного дня.^
 Почти обезумевший, ты смотрел с орбиты как Земля сгорает в ядерном аду.^
@@ -607,7 +609,7 @@ cutscene {
 }
 
 cutscene {
-  nam = 'goodend';
+  nam = [[goodend]];
   title = false;
   next_to = 'titles';
   text = {
@@ -624,7 +626,7 @@ cutscene {
 }
 
 gameover {
-  nam = 'titles';
+  nam = [[titles]];
   title = fmt.c(fmt.b([[СУДНЫЙ ДЕНЬ]]));
   dsc = [[{$fmt c|Автор сюжета и кода: Косых Пётр^^
 Специально на ИНСТЕДОЗ-6^^

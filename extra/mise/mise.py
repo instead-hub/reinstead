@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import re
 import sys
 import textwrap
@@ -12,9 +13,10 @@ for _e in (
     "Taste Drink Push Pull Transfer Turn Wait Rub Sing Touch Give Show Burn "
     "Wake WakeOther Kiss Think Smell Listen Dig Cut Tear Tie Blow Attack Sleep "
     "Swim Fill Jump JumpOver WaveHands Wave Climb GetOff Buy Talk Tell Ask "
-    "AskFor Answer Yes No Next Look Receive ThrownAt LetGo LetIn"
+    "AskFor Answer Yes No Next Look Receive ThrownAt LetGo LetIn "
+    "Any Default"
 ).split():
-    EVENTS[_e.lower()] = _e
+    EVENTS[_e] = _e
 
 ATTRS = {
     "scenery", "static", "fixed", "container", "supporter", "transparent",
@@ -397,6 +399,428 @@ KEYWORDS = {
     "then", "else", "do", "local", "function", "end", "break", "repeat",
 }
 
+ENGINE_VARS = set("""
+mp std stead game fmt iface input instead theme snapshots prefs pl xact
+obj stat room menu dlg new delete gamefile player
+""".split())
+
+ENGINE_FUNCS = set("""
+Class DaemonStart DaemonStop MetaVerb Verb VerbExtend VerbExtendWord
+VerbHint VerbRemove _ actions change_pl close closed content core_eval
+disable disabled dprint drop empty enable for_all from getDaemons have here
+include inroom inside inspect instead_busy instead_clear instead_savepath
+instead_settings inv isDaemon life_walk lifeoff lifeon live loadmod lookup
+me move objs open p parent path pf pfn place player_moved pn pop pr purge
+push put remove replace rnd rnd_seed seen snd take time visited visits walk
+walkback walkin walkout ways where
+""".split())
+
+ENGINE_METHODS = set("""
+Answer Ask AskFor AskTo Attack Blow Burn Buy CLOSE_BEFORE COMPASS_EXAM
+CONTENT Climb Close Consult Cut DISROBE_BEFORE DROPPING_ALL Dig Disrobe Drop
+DropAll Eat Enter Exam Exit FILE Fill GetOff Give HAS_LIGHT HAS_ON HAS_OPEN
+HAS_WORN HELP INCOMPLETE_EXTRA INCOMPLETE_NOUN INCOMPLETE_SECOND_NOUN
+INFODSC Insert It JumpOver Kiss LIVE_ACTION Listen Lock Look LookUnder
+MetaAutoplay MetaDump MetaExpertOff MetaExpertOn MetaForm MetaHelp MetaLoad
+MetaNoun MetaRestart MetaSave MetaScore MetaTraceOff MetaTraceOn
+MetaTranscript MetaTranscriptOff MetaTranscriptOn MetaUndo MetaVerbs
+MetaVersion MetaWord NOROOM NOTHING NOTINV Next OFF ON OnError Open Pull
+Push PushDir PutOn Remove Rub SCORE Search Show Smell SwitchOff SwitchOn
+TAKE_BEFORE TAKING_ALL TITLE_SCORE TITLE_TURNS Take TakeAll Talk Taste Tear
+Tell ThrowAt Tie Touch Transfer Turn UNKNOWN_OBJ UNKNOWN_VERB
+UNKNOWN_VERB_HINT UNKNOWN_WORD Unlock Use WakeOther Walk Wave Wear __action
+__attach __call __detach __dirty __dump __gc __index __ini __newindex __pow
+__renam __save __start __startswith __tostring __where __xref a_noun abort
+access action actions add aftertak animate anoun attach attr autoplay_inp
+autoplay_pending autoscript busy cacheable call callpop callpush cat cctx
+check_held check_inside check_live check_no_live check_touch check_worn
+class clear click clone close closed cls_prompt cmd comment compass1
+compass2 compass_dir compile_element compl compl_ctx compl_ctx_current
+compl_ctx_poss compl_ctx_push compl_fill compl_filter compl_match
+compl_reset compl_verb completion content correct custom_input daemonStart
+daemonStop debug_match defpri del delete deref deref_str detach detailed_Inv
+dirty disable disabled display dispof distance docompl does doesnt done
+dprint dsc dump em empty enable enter eq err err_noun esc events events_call
+fading ff first firstit firstwhere fmt for_all for_each for_each_obj
+for_each_xref for_each_xref_outer for_plural from gamefile get_title go has
+hasnt have here hint hint_verbs his hook if_has if_hint ignore_filter
+include infodsc ini init inp_insert inp_left inp_remove inp_right inp_split
+input inroom inside inspect inventory is isDaemon is_obj is_once is_proxy
+is_system is_tag it join key key_enter key_history_next key_history_prev
+lastdisp lastreact life lifeoff lifeon light_scope live load loadmod log
+log10 look lookup lookup_noun lookup_short lookup_verb match match_words me
+mesg message method mod_call mod_call_rev mod_cmd mod_done mod_init mod_save
+mod_start mod_step mod_unload move moved multi_alias multidsc myself nameof
+need_scene new nop noparser norm noun noun_forms noun_obj nouns objects
+offerslight once onedit open p pager_mode par parse parse_element partof
+pattern pclr persist pf pget phrase_prefix pn pnoun post_action post_inp pow
+pr pre_input pref1 pref2 pref3 pref4 pref5 pref6 pref7 pref8 pref9
+pref_pattern present proxy purge push raw_mode raw_word reaction ref remove
+replace reset restore_ctx rnd rnd_seed round runmethods runorval save
+save_ctx save_members save_table save_var savepath scene second secondwhere
+select set_pl shortcut_obj shorten_input show_prompt skip_filter so sort
+split srch startswith step strip strip_input subaction suff_pattern synonyms
+take text that thats the_noun thedark thefirst thenoun thesecond time title
+titleof trace traceinside trim type unesc useit useon var varname verb
+verb_filter verb_find verb_remove verbs visible visible_scope visited visits
+vo walk walkin walkout where with word xaction xref y yourself zap
+""".split())
+
+VARS = set()
+FUNCS = set()
+METHODS = set()
+SRC_DIR = ""
+
+
+class LintError(Error):
+    pass
+
+
+def lex_lua(text):
+    toks = []
+    i = 0
+    n = len(text)
+    while i < n:
+        c = text[i]
+        if c in " \t\r\n":
+            i += 1
+            continue
+        if text.startswith("--", i):
+            j = text.find("\n", i)
+            i = n if j < 0 else j + 1
+            continue
+        if c in "\"'":
+            j = i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == c:
+                    j += 1
+                    break
+                j += 1
+            else:
+                raise LintError("unterminated string: %s" % text)
+            toks.append(("str", text[i:j]))
+            i = j
+            continue
+        if text.startswith("[[", i):
+            j = text.find("]]", i + 2)
+            if j < 0:
+                raise LintError("unterminated long string: %s" % text)
+            toks.append(("str", text[i:j + 2]))
+            i = j + 2
+            continue
+        if c.isdigit() or (c == "." and i + 1 < n and text[i + 1].isdigit()):
+            m = re.match(r"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?", text[i:])
+            toks.append(("num", m.group(0)))
+            i += m.end()
+            continue
+        if c.isalpha() or c == "_":
+            m = re.match(r"[^\W\d]\w*", text[i:], re.UNICODE)
+            toks.append(("name", m.group(0)))
+            i += m.end()
+            continue
+        m = re.match(r"\.\.\.|\.\.|==|~=|<=|>=|::|//|[+\-*/%^#<>=(){}\[\],;:.]",
+                     text[i:])
+        if m:
+            toks.append(("op", m.group(0)))
+            i += m.end()
+            continue
+        raise LintError("bad character %r in ~~~do: %s" % (c, text))
+    toks.append(("eof", ""))
+    return toks
+
+
+class ExprLint:
+    def __init__(self, toks, env, where):
+        self.toks = toks
+        self.i = 0
+        self.env = env
+        self.where = where
+
+    def peek(self):
+        return self.toks[self.i]
+
+    def next(self):
+        t = self.toks[self.i]
+        self.i += 1
+        return t
+
+    def accept(self, val):
+        if self.toks[self.i][1] == val:
+            self.i += 1
+            return True
+        return False
+
+    def expect(self, val):
+        k, v = self.next()
+        if v != val:
+            raise LintError("expected %r, got %r in %s: %s"
+                            % (val, v, self.where,
+                               " ".join(t[1] for t in self.toks[:-1])))
+
+    def err(self, msg):
+        raise LintError("%s in %s: %s" % (
+            msg, self.where, " ".join(t[1] for t in self.toks[:-1])))
+
+    def parse(self):
+        self.expr()
+        if self.peek()[0] != "eof":
+            self.err("unexpected %r" % self.peek()[1])
+
+    def exprlist(self):
+        self.expr()
+        while self.accept(","):
+            self.expr()
+
+    def expr(self):
+        self.or_expr()
+
+    def or_expr(self):
+        self.and_expr()
+        while self.peek()[1] == "or":
+            self.next()
+            self.and_expr()
+
+    def and_expr(self):
+        self.cmp_expr()
+        while self.peek()[1] == "and":
+            self.next()
+            self.cmp_expr()
+
+    def cmp_expr(self):
+        self.concat_expr()
+        while self.peek()[1] in ("==", "~=", "<", ">", "<=", ">=", "^"):
+            self.next()
+            self.concat_expr()
+
+    def concat_expr(self):
+        self.add_expr()
+        while self.peek()[1] == "..":
+            self.next()
+            self.add_expr()
+
+    def add_expr(self):
+        self.mul_expr()
+        while self.peek()[1] in ("+", "-"):
+            self.next()
+            self.mul_expr()
+
+    def mul_expr(self):
+        self.unary()
+        while self.peek()[1] in ("*", "/", "%", "//"):
+            self.next()
+            self.unary()
+
+    def unary(self):
+        if self.peek()[1] in ("not", "-", "#"):
+            self.next()
+            self.unary()
+            return
+        self.postfix(self.primary())
+
+    def primary(self):
+        kind, val = self.next()
+        if kind in ("num", "str"):
+            return "other"
+        if kind == "op" and val == "...":
+            return "other"
+        if kind == "name":
+            if val in ("nil", "true", "false"):
+                return "other"
+            if val in KEYWORDS or val in ("goto",):
+                if val == "function":
+                    self.err("anonymous functions are not allowed (use ~~~lua)")
+                self.err("unexpected keyword %r" % val)
+            if val not in self.env and val not in VARS and val not in FUNCS:
+                self.err("unknown name %r" % val)
+            return ("name", val)
+        if kind == "op" and val == "(":
+            self.expr()
+            self.expect(")")
+            return "other"
+        if kind == "op" and val == "{":
+            self.table()
+            return "other"
+        self.err("unexpected %r" % val)
+
+    def table(self):
+        if not self.accept("}"):
+            while True:
+                if self.accept("["):
+                    self.expr()
+                    self.expect("]")
+                    self.expect("=")
+                    self.expr()
+                elif (self.peek()[0] == "name"
+                      and self.toks[self.i + 1][1] == "="):
+                    self.next()
+                    self.next()
+                    self.expr()
+                else:
+                    self.expr()
+                if not (self.accept(",") or self.accept(";")):
+                    break
+            self.expect("}")
+
+    def args(self):
+        if self.peek()[0] == "str":
+            self.next()
+            return
+        if self.peek()[1] == "{":
+            self.next()
+            self.table()
+            return
+        self.expect("(")
+        if not self.accept(")"):
+            self.exprlist()
+            self.expect(")")
+
+    def postfix(self, base):
+        while True:
+            kind, val = self.peek()
+            if kind == "op" and val == ".":
+                self.next()
+                k, v = self.next()
+                if k != "name":
+                    self.err("expected field name")
+                base = ("field", v)
+            elif kind == "op" and val == "[":
+                self.next()
+                self.expr()
+                self.expect("]")
+                base = "other"
+            elif kind == "op" and val == ":":
+                self.next()
+                k, v = self.next()
+                if k != "name":
+                    self.err("expected method name")
+                if v not in METHODS:
+                    self.err("unknown method %r" % v)
+                self.args()
+                base = "other"
+            elif (kind == "str" or (kind == "op" and val in ("(", "{"))):
+                if isinstance(base, tuple) and base[0] == "name":
+                    nm = base[1]
+                    if nm not in FUNCS and nm not in self.env:
+                        self.err("unknown function %r" % nm)
+                self.args()
+                base = "other"
+            else:
+                return base
+
+
+def lint_exprlist(code, env, where):
+    if not code.strip():
+        return
+    p = ExprLint(lex_lua(code), env, where)
+    p.exprlist()
+    if p.peek()[0] != "eof":
+        p.err("unexpected %r" % p.peek()[1])
+
+
+def lint_stmt(code, env, where):
+    p = ExprLint(lex_lua(code), env, where)
+    kind, val = p.peek()
+    if kind == "name" and val == "local":
+        p.next()
+        names = []
+        while True:
+            k, v = p.next()
+            if k != "name":
+                p.err("expected local name")
+            names.append(v)
+            if not p.accept(","):
+                break
+        if p.accept("="):
+            p.exprlist()
+        if p.peek()[0] != "eof":
+            p.err("unexpected %r" % p.peek()[1])
+        env.update(names)
+        return
+    if kind == "name" and val == "break":
+        p.next()
+        if p.peek()[0] != "eof":
+            p.err("unexpected %r" % p.peek()[1])
+        return
+    p.expr()
+    if p.accept("="):
+        p.exprlist()
+    if p.peek()[0] != "eof":
+        p.err("unexpected %r" % p.peek()[1])
+
+
+def lint_for(header, env, where):
+    if re.search(r"\bin\b", header):
+        names, iterable = re.split(r"\bin\b", header, 1)
+        vars_ = [v.strip() for v in names.split(",") if v.strip()]
+        for v in vars_:
+            if not re.fullmatch(r"[^\W\d]\w*", v, re.UNICODE):
+                raise LintError("bad loop variable %r in %s" % (v, where))
+        lint_exprlist(iterable, env, where)
+        return vars_
+    parts = split_list(header)
+    m = re.match(r"^([^\W\d]\w*)\s*=\s*(.*)$", parts[0], re.UNICODE)
+    if not m:
+        raise LintError("bad for header in %s: %s" % (where, header))
+    for p in parts[1:]:
+        lint_exprlist(p, env, where)
+    lint_exprlist(m.group(2), env, where)
+    return [m.group(1)]
+
+
+def emit_logic(stmts, indent, env=None):
+    env = set(env or ())
+    out = []
+    for st in stmts:
+        kind = st[0]
+        where = "~~~do"
+        if kind in ("say", "line", "append"):
+            fn = {"say": "p", "line": "pn", "append": "pr"}[kind]
+            arg = logic_arg(st[1])
+            lint_exprlist(arg, env, where)
+            out.append("%s%s(%s)" % (indent, fn, arg))
+        elif kind == "return":
+            code = rewrite_expr(st[1]) if st[1] else ""
+            if code:
+                lint_exprlist(code, env, where)
+            out.append("%sreturn%s" % (indent, (" " + code) if code else ""))
+        elif kind == "set":
+            lhs, op, rhs = st[1], st[2], rewrite_expr(st[3])
+            lint_stmt("%s = 0" % lhs, env, where)
+            lint_exprlist(rhs, env, where)
+            if op == "=":
+                out.append("%s%s = %s" % (indent, lhs, rhs))
+            else:
+                sign = "+" if op == "+=" else "-"
+                out.append("%s%s = %s %s (%s)" % (indent, lhs, lhs, sign, rhs))
+        elif kind == "stmt":
+            code = rewrite_expr(st[1])
+            lint_stmt(code, env, where)
+            out.append(indent + code)
+        elif kind == "for":
+            header = rewrite_expr(st[1])
+            vars_ = lint_for(header, env, where)
+            out.append("%sfor %s do" % (indent, header))
+            out.extend(emit_logic(st[2], indent + IND, env | set(vars_)))
+            out.append(indent + "end")
+        elif kind == "if":
+            branches, else_body = st[1], st[2]
+            for idx, (cond, body) in enumerate(branches):
+                code = rewrite_expr(cond)
+                lint_exprlist(code, env, where)
+                out.append("%s%s %s then" % (indent,
+                                             "if" if idx == 0 else "elseif",
+                                             code))
+                out.extend(emit_logic(body, indent + IND, set(env)))
+            if else_body is not None:
+                out.append(indent + "else")
+                out.extend(emit_logic(else_body, indent + IND, set(env)))
+            out.append(indent + "end")
+    return out
+
+
 EXTRA_EVENTS = {}
 
 
@@ -418,6 +842,16 @@ def rewrite_expr(text):
                     j += 1
                     break
                 j += 1
+            val = text[i + 1:j - 1]
+            k = j
+            while k < n and text[k] in " \t":
+                k += 1
+            if (val in IDS and k < n and (
+                    text[k] == ":" or
+                    (text[k] == "." and (k + 1 >= n or text[k + 1] != ".")))):
+                out.append("_'%s'" % val)
+                i = j
+                continue
             out.append(text[i:j])
             i = j
             continue
@@ -429,29 +863,43 @@ def rewrite_expr(text):
             out.append(text[i:j + 2])
             i = j + 2
             continue
-        if c.isalpha() or c == "_":
+        ref = None
+        if c == "#" and i + 1 < n and (text[i + 1].isalpha()
+                                       or text[i + 1] == "_"):
+            j = i + 1
+            while j < n and (text[j].isalnum() or text[j] == "_"):
+                j += 1
+            if text[i:j] in IDS:
+                ref = text[i:j]
+        elif c.isalpha() or c == "_":
             j = i
             while j < n and (text[j].isalnum() or text[j] == "_"):
                 j += 1
             name = text[i:j]
+            if name in IDS:
+                ref = name
+        if ref is not None:
             k = j
             while k < n and text[k] in " \t":
                 k += 1
-            if name in IDS:
-                if k < n and text[k] == ":":
-                    out.append("_'%s':" % name)
-                    i = k + 1
-                    continue
-                wrapped = "_'%s'" % name
-                prev = "".join(out).rstrip()
-                if prev and (prev[-1].isalnum() or prev[-1] in "_'\")]"):
-                    m2 = re.search(r"([A-Za-z_][A-Za-z0-9_]*)$", prev)
-                    if not (m2 and m2.group(1) in KEYWORDS):
-                        wrapped = "(%s)" % wrapped
-                out.append(wrapped)
-                i = j
+            if k < n and text[k] == ":":
+                out.append("_'%s':" % ref)
+                i = k + 1
                 continue
-            out.append(name)
+            wrapped = "_'%s'" % ref
+            prev = "".join(out).rstrip()
+            if prev and (prev[-1].isalnum() or prev[-1] in "_'\")]"):
+                m2 = re.search(r"([A-Za-z_][A-Za-z0-9_]*)$", prev)
+                if not (m2 and m2.group(1) in KEYWORDS):
+                    wrapped = "(%s)" % wrapped
+            out.append(wrapped)
+            i = j
+            continue
+        if c.isalpha() or c == "_" or (c == "#" and i + 1 < n):
+            j = i + 1
+            while j < n and (text[j].isalnum() or text[j] == "_"):
+                j += 1
+            out.append(text[i:j])
             i = j
             continue
         out.append(c)
@@ -477,43 +925,6 @@ def logic_arg(text):
                     s):
         return rewrite_expr(s)
     return lua_str(s)
-
-
-def emit_logic(stmts, indent):
-    out = []
-    for st in stmts:
-        kind = st[0]
-        if kind in ("say", "line", "append"):
-            fn = {"say": "p", "line": "pn", "append": "pr"}[kind]
-            out.append("%s%s(%s)" % (indent, fn, logic_arg(st[1])))
-        elif kind == "return":
-            out.append("%sreturn%s" % (
-                indent, (" " + rewrite_expr(st[1])) if st[1] else ""))
-        elif kind == "set":
-            lhs, op, rhs = st[1], st[2], rewrite_expr(st[3])
-            if op == "=":
-                out.append("%s%s = %s" % (indent, lhs, rhs))
-            else:
-                sign = "+" if op == "+=" else "-"
-                out.append("%s%s = %s %s (%s)" % (indent, lhs, lhs, sign, rhs))
-        elif kind == "stmt":
-            out.append(indent + rewrite_expr(st[1]))
-        elif kind == "for":
-            out.append("%sfor %s do" % (indent, rewrite_expr(st[1])))
-            out.extend(emit_logic(st[2], indent + IND))
-            out.append(indent + "end")
-        elif kind == "if":
-            branches, else_body = st[1], st[2]
-            for idx, (cond, body) in enumerate(branches):
-                out.append("%s%s %s then" % (indent,
-                                             "if" if idx == 0 else "elseif",
-                                             rewrite_expr(cond)))
-                out.extend(emit_logic(body, indent + IND))
-            if else_body is not None:
-                out.append(indent + "else")
-                out.extend(emit_logic(else_body, indent + IND))
-            out.append(indent + "end")
-    return out
 
 
 def read_long(lines, i, first, line_no):
@@ -713,6 +1124,11 @@ def use_name(v):
     return None
 
 
+def param_env(params):
+    return set(p.strip() for p in (params or "").split(",")
+               if p.strip() and p.strip() != "...")
+
+
 def lua_body(v, key, indent=""):
     base, params = parse_key(key)
     prm = params or FIELD_PARAMS.get(base, "s")
@@ -723,7 +1139,7 @@ def lua_body(v, key, indent=""):
         body = reindent(v.s, indent + IND)
         return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
     if isinstance(v, Logic):
-        body = "\n".join(emit_logic(v.stmts, indent + IND))
+        body = "\n".join(emit_logic(v.stmts, indent + IND, param_env(prm)))
         return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
     return lua_value(v)
 
@@ -745,11 +1161,10 @@ def emit_on(block, indent, target=""):
             if m:
                 pfx = m.group(1) + "_"
                 part = m.group(2)
-            if part in ("any", "default"):
-                names.append((part.title(), "before_"))
+            if part in ("Any", "Default"):
+                names.append((part, "before_"))
             else:
-                year = EVENTS.get(part.lower()) or EXTRA_EVENTS.get(
-                    part.lower())
+                year = EVENTS.get(part) or EXTRA_EVENTS.get(part)
                 if not year:
                     raise Error("unknown event: " + part)
                 names.append((year, pfx))
@@ -769,7 +1184,8 @@ def emit_on(block, indent, target=""):
                 body = reindent(val.s, indent + IND)
                 src = "function(%s)\n%s\n%s" % (prm, body, indent + "end")
             elif isinstance(val, Logic):
-                body = "\n".join(emit_logic(val.stmts, indent + IND))
+                body = "\n".join(emit_logic(val.stmts, indent + IND,
+                                            param_env(prm)))
                 src = "function(%s)\n%s\n%s" % (prm, body, indent + "end")
             elif (isinstance(val, (Text, Bare, Sym))
                   and val.s.strip() == "pass"):
@@ -802,9 +1218,10 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
             raise Error("words must be a quoted string")
     nam = block.get("nam")
     if nam is not None:
-        lines.append("%snam = %s;" % (fi, lua_value(nam)))
-    elif ident:
-        lines.append("%snam = '%s';" % (fi, ident))
+        raise Error("nam: is not supported; the declaration name is the "
+                    "object name")
+    if ident:
+        lines.append("%snam = %s;" % (fi, lua_str(ident)))
     attrs = list(preset)
     a = block.get("attrs")
     if a is not None:
@@ -817,7 +1234,7 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
     nested = []
     texts = block.all("text")
     for key, val in block.items:
-        if key in ("words", "nam", "on", "contains", "parts", "inside",
+        if key in ("words", "on", "contains", "parts", "inside",
                    "with", "attrs", "disabled", "before", "after", "post"):
             continue
         if key == "text" and len(texts) > 1:
@@ -828,7 +1245,7 @@ def emit_obj(block, ident, base, ctor, preset, parent=None):
             lines.extend(emit_on(one, fi))
             continue
         fbase, _ = parse_key(key)
-        if fbase in ("any", "default"):
+        if fbase in ("Any", "Default"):
             one = Block()
             one.items = [(key, val)]
             lines.extend(emit_on(one, fi))
@@ -930,7 +1347,8 @@ def emit_verb(block, ident, base):
         if isinstance(val, Lua):
             body = reindent(val.s, base + IND)
         else:
-            body = "\n".join(emit_logic(val.stmts, base + IND))
+            body = "\n".join(emit_logic(val.stmts, base + IND,
+                                        param_env(params or "s, w, wh")))
         lines.append("%s%s = function(%s)\n%s\n%s"
                      % (base, mpname, params or "s, w, wh", body, base + "end"))
     return "\n".join(lines)
@@ -971,9 +1389,9 @@ def is_true(v):
     return isinstance(v, Bool) and v.s == "true"
 
 
-def logic_lines(v, indent):
+def logic_lines(v, indent, env=None):
     if isinstance(v, Logic):
-        return emit_logic(v.stmts, indent)
+        return emit_logic(v.stmts, indent, env)
     if isinstance(v, Lua):
         return [reindent(v.s, indent)]
     raise Error("expected logic/lua block")
@@ -982,7 +1400,7 @@ def logic_lines(v, indent):
 def talk_act(reply, do, indent):
     if do is None:
         return reply
-    body = logic_lines(do, indent + IND)
+    body = logic_lines(do, indent + IND, {"s"})
     if reply is not None:
         body = ["%sp(%s)" % (indent + IND, reply)] + body
     return ["%sfunction(s)" % indent] + body + ["%send" % indent]
@@ -1142,7 +1560,7 @@ def emit_setup(block):
             if isinstance(val, Lua):
                 sb = reindent(val.s, IND)
             elif isinstance(val, Logic):
-                sb = "\n".join(emit_logic(val.stmts, IND))
+                sb = "\n".join(emit_logic(val.stmts, IND, {"load"}))
             else:
                 raise Error("start must be a ~~~do/~~~lua block")
             lines.append("function start(load)")
@@ -1173,8 +1591,8 @@ def emit_patch(target, block):
         base, _ = parse_key(key)
         if base in ("on", "before", "after", "post") and isinstance(val, Block):
             lines.extend(emit_on(val, "", ref + "."))
-        elif base in ("any", "default") or base in EVENTS or (
-                base.lower() in EXTRA_EVENTS):
+        elif base in ("Any", "Default") or base in EVENTS or (
+                base in EXTRA_EVENTS):
             one = Block()
             one.items = [(key, val)]
             lines.extend(emit_on(one, "", ref + "."))
@@ -1211,9 +1629,8 @@ def collect_ids(root):
             if kind not in PRESETS and kind != "talk" and not re.fullmatch(
                     r"[A-Z][\w]*", kind):
                 continue
-            if ident in ids:
-                raise Error("duplicate declaration: " + ident)
-            ids[ident] = kind
+            if ident not in ids:
+                ids[ident] = kind
             for pkey in ("parts", "with"):
                 sub = val.get(pkey) if isinstance(val, Block) else None
                 if isinstance(sub, Block):
@@ -1252,8 +1669,48 @@ def check_refs(root, ids):
                     raise Error("unknown reference in take: " + r.s)
 
 
+def scan_lua_defs(text, funcs, methods, vars_):
+    for m in re.finditer(r"function\s+[A-Za-z_][\w.]*[:.](\w+)", text):
+        methods.add(m.group(1))
+    for m in re.finditer(r"function\s+([A-Za-z_]\w*)\s*\(", text):
+        funcs.add(m.group(1))
+    for m in re.finditer(r"([A-Za-z_]\w*)\s*=\s*function\s*\(", text):
+        funcs.add(m.group(1))
+    for m in re.finditer(r"^\s*local\s+([A-Za-z_]\w*)", text, re.M):
+        vars_.add(m.group(1))
+    for m in re.finditer(r"^\s*([A-Za-z_]\w*)\s*=", text, re.M):
+        vars_.add(m.group(1))
+
+
+def collect_game_defs(root):
+    funcs = set()
+    methods = set()
+    vars_ = set()
+
+    def walk(block):
+        for key, val in block.items:
+            base, _ = parse_key(key)
+            if base and re.fullmatch(r"[A-Za-z_]\w*", base):
+                methods.add(base)
+            if isinstance(val, Lua):
+                scan_lua_defs(val.s, funcs, methods, vars_)
+            elif isinstance(val, Block):
+                walk(val)
+
+    walk(root)
+    return funcs, methods, vars_
+
+
+def scan_required(name):
+    path = os.path.join(SRC_DIR, name + ".lua")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    return None
+
+
 def transpile(src):
-    global IDS, EXTRA_EVENTS, HANDLERS
+    global IDS, EXTRA_EVENTS, HANDLERS, VARS, FUNCS, METHODS
     HANDLERS = set()
     root = parse_source(src)
     ids = collect_ids(root)
@@ -1264,10 +1721,40 @@ def transpile(src):
         if kind == "verb" and ident and isinstance(val, Block):
             tag = val.get("tag")
             if not (isinstance(tag, Bool) and tag.s == "false"):
-                EXTRA_EVENTS[ident.lower()] = ident
+                EXTRA_EVENTS[ident] = ident
             event = val.get("event")
             if isinstance(event, Sym):
-                EXTRA_EVENTS[event.s.lower()] = event.s
+                EXTRA_EVENTS[event.s] = event.s
+        elif key == "events":
+            vals = val if isinstance(val, list) else [val]
+            for v in vals:
+                name = v.s if hasattr(v, "s") else str(v)
+                EXTRA_EVENTS[name] = name
+    game_funcs, game_methods, game_vars = collect_game_defs(root)
+    handlers = set()
+    for key, val in root.items:
+        if re.match(r"^handler\s+", key):
+            m = re.match(r"^handler\s+([\w.+-]+)", key)
+            if m:
+                handlers.add(m.group(1))
+    for key, val in root.items:
+        if key == "require":
+            vals = val if isinstance(val, list) else [val]
+            for v in vals:
+                text = scan_required(v.s if hasattr(v, "s") else str(v))
+                if text:
+                    scan_lua_defs(text, game_funcs, game_methods, game_vars)
+    const_names = set()
+    for key, val in root.items:
+        if key in ("const", "global") and isinstance(val, Block):
+            const_names.update(k for k, _ in val.items)
+    VARS = set(ENGINE_VARS) | game_vars | const_names
+    FUNCS = set(ENGINE_FUNCS) | handlers | game_funcs
+    METHODS = set(ENGINE_METHODS) | game_methods
+    for e in set(EVENTS) | set(EXTRA_EVENTS.values()):
+        METHODS.add("before_" + e)
+        METHODS.add("after_" + e)
+    HANDLERS = handlers
     check_refs(root, ids)
     header = []
     body = []
@@ -1285,7 +1772,7 @@ def transpile(src):
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 name = v.s if hasattr(v, "s") else str(v)
-                EXTRA_EVENTS[name.lower()] = name
+                EXTRA_EVENTS[name] = name
         elif key == "lua":
             body.append(val.s)
         elif re.match(r"^class\s+[A-Z]", key):
@@ -1304,7 +1791,7 @@ def transpile(src):
             if isinstance(val, Lua):
                 hb = reindent(val.s, IND)
             elif isinstance(val, Logic):
-                hb = "\n".join(emit_logic(val.stmts, IND))
+                hb = "\n".join(emit_logic(val.stmts, IND, param_env(prm)))
             else:
                 raise Error("handler %s must be a ~~~do/~~~lua block"
                             % name)
@@ -1337,9 +1824,11 @@ def transpile(src):
 
 
 def main(argv):
+    global SRC_DIR
     if len(argv) < 2:
         print("usage: mise.py <game.mise> [-o out.lua]", file=sys.stderr)
         return 2
+    SRC_DIR = os.path.dirname(os.path.abspath(argv[1]))
     with open(argv[1], encoding="utf-8") as f:
         src = f.read()
     out = transpile(src)
