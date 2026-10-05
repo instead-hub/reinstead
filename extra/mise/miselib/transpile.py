@@ -42,6 +42,9 @@ def transpile(src, src_dir=""):
             body.append(em.cls(val, info[0], info[1]))
         elif kind == "fn":
             name, plist, ret, variadic = parse_fn_sig(key)
+            ctx.fns.add(name)
+            if name in ctx.wrappers:
+                continue
             prm = ", ".join(pn for pn, _pt in plist)
             if variadic:
                 prm = (prm + ", ...") if prm else "..."
@@ -54,7 +57,6 @@ def transpile(src, src_dir=""):
             else:
                 raise Error("fn %s must be a | block"
                             % name)
-            ctx.fns.add(name)
             fn_body.append("local function %s(%s)\n%s\nend"
                            % (fn_name(name), prm, hb))
         elif kind == "patch":

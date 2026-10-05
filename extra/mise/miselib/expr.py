@@ -78,7 +78,28 @@ def fn_name(name):
     return "fn_" + name
 
 
-def fn_call(name, args):
+_SIMPLE_ARG = re.compile(r"[A-Za-z_]\w*|\d+(?:\.\d+)?|'[^']*'")
+
+
+def _wrap_params(template, plist, args):
+    for i, ((pn, _pt), a) in enumerate(zip(plist, args)):
+        ph = "\x00%d\x00" % i
+        pat = re.compile(r"(?<![\w.])%s(?![\w])" % re.escape(pn))
+        if _SIMPLE_ARG.fullmatch(a):
+            template = pat.sub(ph, template)
+            continue
+        template = re.sub(r"^%s(?=:)" % re.escape(pn), ph, template)
+        template = re.sub(r"(?<=[(,\s])%s(?=[,)\s]|$)" % re.escape(pn),
+                          ph, template)
+        template = pat.sub("(%s)" % ph, template)
+    return re.sub(r"\x00(\d+)\x00", lambda m: args[int(m.group(1))],
+                  template)
+
+
+def fn_call(ctx, name, args):
+    if name in ctx.wrappers:
+        plist, template = ctx.wrappers[name]
+        return _wrap_params(template, plist, args)
     return "%s(%s)" % (fn_name(name), ", ".join(args))
 
 class ExprEmit:
@@ -339,7 +360,7 @@ class ExprEmit:
     def autocall(self, code, t, kind, val):
         if (kind == "name" and val in self.ctx.fn_sigs
                 and not self.ctx.fn_sigs[val][0]):
-            code = fn_call(val, [])
+            code = fn_call(self.ctx, val, [])
             t = self.ctx.fn_sigs[val][1]
             kind = "call"
             val = None
@@ -390,7 +411,7 @@ class ExprEmit:
                 if (not variadic and len(plist) == 1
                         and not (nk == "str"
                                  or (nk == "op" and nv2 == "("))):
-                    code = fn_call(nv, [code])
+                    code = fn_call(self.ctx, nv, [code])
                     t = ret
                     kind = "call"
                     val = None
@@ -410,20 +431,20 @@ class ExprEmit:
                     elif nm in self.ctx.ids:
                         arg, at = "_'%s'" % nm, "obj"
                     elif nm in self.ctx.fn_sigs and not self.ctx.fn_sigs[nm][0]:
-                        arg, at = fn_call(nm, []), self.ctx.fn_sigs[nm][1]
+                        arg, at = fn_call(self.ctx, nm, []), self.ctx.fn_sigs[nm][1]
                     elif nm in self.ctx.vars:
                         arg, at = nm, self.ctx.global_types.get(nm, "any")
                     else:
                         self.err("unknown name %r" % nm)
                     self.check(at, pt, arg)
-                    code = fn_call(nv, [code, arg])
+                    code = fn_call(self.ctx, nv, [code, arg])
                     t = ret
                     kind = "call"
                     val = None
                     continue
                 codes, n = self.arglist([pt for _pn, pt in plist[1:]])
                 self.check_arity(nv, plist[1:], variadic, n)
-                code = fn_call(nv, [code] + codes)
+                code = fn_call(self.ctx, nv, [code] + codes)
                 t = ret
                 kind = "call"
                 val = None
@@ -452,7 +473,7 @@ class ExprEmit:
                         c, t, _k2, _v2 = self.expr()
                 self.expected = None
                 self.check(t, exp, c)
-                code = fn_call(val, [c])
+                code = fn_call(self.ctx, val, [c])
                 t = rt
                 kind = "call"
                 val = None
@@ -496,24 +517,24 @@ def no_paren_call(text, env, where, ctx):
         if expr_cont(rest):
             return None
         if not expr_like(rest, env, ctx):
-            return fn_call(name, [lua_str(rest)]), ["str"]
+            return fn_call(ctx, name, [lua_str(rest)]), ["str"]
     elif not variadic and plist[0][1] != "str":
         return None
     elif not expr_like(rest, env, ctx):
-        return fn_call(name, [lua_str(rest)]), ["str"]
+        return fn_call(ctx, name, [lua_str(rest)]), ["str"]
     try:
         code, types = transpile_exprlist(
             rest, env, where, plist[0][1] if plist else None, ctx)
     except LintError:
         if plist and plist[0][1] == "str":
-            return fn_call(name, [lua_str(rest)]), ["str"]
+            return fn_call(ctx, name, [lua_str(rest)]), ["str"]
         raise
     check_arity(name, plist, variadic, len(types))
     for (pn, pt), t in zip(plist, types):
         if pt != "any" and t not in ("any", pt):
             raise LintError("fn %s: argument %s expects %s, got %s"
                             % (name, pn, pt, t))
-    return fn_call(name, [code]), [ret]
+    return fn_call(ctx, name, [code]), [ret]
 
 def transpile_exprlist(text, env, where, expected=None, ctx=None):
     raw = no_paren_call(text, env, where, ctx)
@@ -530,7 +551,7 @@ def transpile_exprlist(text, env, where, expected=None, ctx=None):
 def transpile_stmt(text, env, where, ctx):
     s = text.strip()
     if s in ctx.fn_sigs and not ctx.fn_sigs[s][0]:
-        return fn_call(s, [])
+        return fn_call(ctx, s, [])
     raw = no_paren_call(text, env, where, ctx)
     if raw is not None:
         return raw[0]

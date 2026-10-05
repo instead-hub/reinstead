@@ -115,6 +115,37 @@ def apply_includes(root, ctx, seen=None):
         root.items = extra + root.items
     return root
 
+def wrapper_template(text):
+    """Return the inner call if body is a single call/return-call, else None."""
+    b = text.strip()
+    if not b or "\n" in b or "..." in b or ";" in b:
+        return None
+    if b.startswith("return "):
+        b = b[7:].strip()
+    if not re.match(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*(?::[A-Za-z_]\w*)?\s*\(",
+                    b):
+        return None
+    depth = 0
+    i = b.index("(")
+    while i < len(b):
+        c = b[i]
+        if c in "\"'":
+            q = c
+            i += 1
+            while i < len(b) and b[i] != q:
+                if b[i] == "\\":
+                    i += 1
+                i += 1
+        elif c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if depth == 0:
+                return b if b[i + 1:].strip() == "" else None
+        i += 1
+    return None
+
+
 def prescan(root, ctx):
     ctx.fns = set()
     ids = collect_ids(root)
@@ -145,6 +176,17 @@ def prescan(root, ctx):
                 raise Error("duplicate fn: " + name)
             ctx.fn_sigs[name] = (plist, ret, variadic)
             fn_names.add(name)
+            if not variadic and isinstance(val, Lua):
+                t = wrapper_template(val.s)
+                if t and "fn_" in t:
+                    t = None
+                if t and plist and any(
+                        len(re.findall(r"(?<![\w.])%s(?![\w])"
+                                       % re.escape(pn), t)) > 1
+                        for pn, _pt in plist):
+                    t = None
+                if t:
+                    ctx.wrappers[name] = (plist, t)
     for key, val in root.items:
         if classify(key)[0] == "require":
             vals = val if isinstance(val, list) else [val]
@@ -169,4 +211,22 @@ def prescan(root, ctx):
     ctx.vars = game_vars | const_names
     ctx.funcs = fn_names | game_funcs | {"_"}
     ctx.fns = fn_names
+    use_refs = set()
+
+    def walk_use(block):
+        for _k, v in block.items:
+            if isinstance(v, (Text, Bare)):
+                m = re.match(r"^use\s+([\w.+-]+)$", v.s.strip())
+                if m:
+                    use_refs.add(m.group(1))
+            elif isinstance(v, Block):
+                walk_use(v)
+            elif isinstance(v, list):
+                for x in v:
+                    if isinstance(x, Block):
+                        walk_use(x)
+
+    walk_use(root)
+    for n in use_refs:
+        ctx.wrappers.pop(n, None)
     check_refs(root, ids)

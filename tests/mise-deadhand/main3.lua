@@ -9,46 +9,6 @@ fmt.dash = true
 fmt.quotes = true
 require "parser/mp-ru"
 
-local function fn_here()
-  return here()
-end
-
-local function fn_player()
-  return me()
-end
-
-local function fn_has(s, a)
-  return s:has(a)
-end
-
-local function fn_hasnt(s, a)
-  return s:hasnt(a)
-end
-
-local function fn_move(s, where)
-  move(s, where)
-end
-
-local function fn_attr(s, a)
-  s:attr(a)
-end
-
-local function fn_inside(w, x)
-  return w:inside(x)
-end
-
-local function fn_compass_dir(w)
-  return mp:compass_dir(w)
-end
-
-local function fn_once_tag(s, t)
-  return s:once(t)
-end
-
-local function fn_once(s)
-  return s:once()
-end
-
 local function fn_say(text, ...)
   p(text, ...)
 end
@@ -61,172 +21,20 @@ local function fn_append(text, ...)
   pr(text, ...)
 end
 
-local function fn_rnd(n)
-  return rnd(n)
-end
-
 local function fn_xaction(ev, ...)
   mp:xaction(ev, ...)
-end
-
-local function fn_daemonStart(w)
-  DaemonStart(w)
-end
-
-local function fn_daemonStop(w)
-  DaemonStop(w)
-end
-
-local function fn_enable(w)
-  enable(w)
-end
-
-local function fn_disable(w)
-  disable(w)
-end
-
-local function fn_place(w)
-  place(w)
-end
-
-local function fn_isDaemon(w)
-  return isDaemon(w)
-end
-
-local function fn_disabled(w)
-  return disabled(w)
-end
-
-local function fn_seen(w)
-  return seen(w)
-end
-
-local function fn_walk(where)
-  walk(where)
-end
-
-local function fn_walkin(where)
-  walkin(where)
-end
-
-local function fn_take(w)
-  take(w)
-end
-
-local function fn_drop(w)
-  drop(w)
-end
-
-local function fn_content(w)
-  mp:content(w)
-end
-
-local function fn_walkout()
-  walkout()
-end
-
-local function fn_visits(w)
-  return visits(w)
 end
 
 local function fn_event()
   return mp.event
 end
 
-local function fn_have(w)
-  return have(w)
-end
-
-local function fn_visited(w)
-  return visited(w)
-end
-
-local function fn_where(w)
-  return where(w)
-end
-
-local function fn_thedark(what)
-  return mp:thedark(what)
-end
-
-local function fn_noun(s, c)
-  return s:noun(c)
-end
-
-local function fn_Noun(s)
-  return s:Noun()
-end
-
-local function fn_it(s)
-  return s:It()
-end
-
-local function fn_hint(s, h)
-  s:hint(h)
-end
-
-local function fn_multi_alias(s)
-  return s:multi_alias()
-end
-
 local function fn_walkback(...)
   walkback(...)
 end
 
-local function fn_remove(w)
-  remove(w)
-end
-
-local function fn_push(w)
-  push(w)
-end
-
-local function fn_from()
-  return from()
-end
-
-local function fn_check_held(w)
-  return mp:check_held(w)
-end
-
-local function fn_check_live(w)
-  return mp:check_live(w)
-end
-
-local function fn_clear()
-  mp:clear()
-end
-
-local function fn_need_scene(s, v)
-  s:need_scene(v)
-end
-
-local function fn_player_moved()
-  player_moved()
-end
-
-local function fn_lifeon(w)
-  lifeon(w)
-end
-
-local function fn_lifeoff(w)
-  lifeoff(w)
-end
-
 local function fn_call_before(s, ev)
   s['before_' .. ev](s)
-end
-
-local function fn_theme_name()
-  return theme.name()
-end
-
-local function fn_pclr()
-  std.pclr()
-end
-
-local function fn_ref(name)
-  return std.ref(name)
 end
 
 local function fn_arg_word(i)
@@ -294,7 +102,7 @@ global 'know2' (false)
 pl.description = "Ты -- астронавт в скафандре."
 pl.before_LetGo = "Не стоит разбрасываться в космосе вещами.";
 game.before_Walk = function(s, w, wh)
-  local dir = fn_compass_dir(w)
+  local dir = mp:compass_dir(w)
   if not dir then
     return false
   end
@@ -304,17 +112,17 @@ game.before_Walk = function(s, w, wh)
   fn_say("Стороны света есть на Земле, а не в космосе.")
 end;
 game.before_Taste = function(s, w, wh)
-  if fn_has(_'suit', "worn") then
+  if _'suit':has("worn") then
     fn_say("В скафандре?")
     return
   end
   return false
 end;
 game.before_Smell = function(s, w, wh)
-  if fn_hasnt(_'suit', "worn") then
+  if _'suit':hasnt("worn") then
     return false
   end
-  if not w or fn_inside(w, fn_player()) then
+  if not w or w:inside(me()) then
     fn_say("В скафандре ничем не пахнет.")
     return
   end
@@ -323,7 +131,7 @@ end;
 game.before_Jump = "В невесомости это невозможно.";
 game.before_JumpOver = "В невесомости это невозможно.";
 game.before_Listen = function(s, w, wh)
-  if fn_hasnt(_'radio', "on") then
+  if _'radio':hasnt("on") then
     fn_say("Для этого нужно включить радио.")
   else
     if freq then
@@ -352,7 +160,7 @@ obj {
   nam = "suit";
   description = function(s)
     fn_say("Твой скафандр оборудован различными приборами.")
-    if fn_here().rotate then
+    if here().rotate then
       fn_say("Но сейчас ты думаешь только о маневровых двигателях.")
       return
     end
@@ -379,18 +187,18 @@ obj {
       nam = "engines";
       description = "Маневровые двигатели позволяют ориентироваться в пространстве и перемещаться на небольшие расстояния. Ты можешь включить их.";
       after_SwitchOn = function(s, w, wh)
-        if fn_here().rotate then
+        if here().rotate then
           fn_say([[Ты включаешь маневровые двигатели и пытаешься остановить вращение.
 В конце-концов тебе это удаётся! Только топлива ты потратил немало. Ты снова выключаешь двигатели.]])
-          fn_here().rotate = false
-          fn_attr(s, "~on")
+          here().rotate = false
+          s:attr("~on")
         else
-          if fn_seen(_'tetr') then
+          if seen(_'tetr') then
             fn_say("Ты включаешь маневровые двигатели.")
             return
           end
           fn_say("Ты даёшь пару импульсов. Лучше экономить горючее. Хотя... зачем?")
-          fn_attr(s, "~on")
+          s:attr("~on")
         end
       end;
     }:attr 'switchable,scenery';
@@ -400,7 +208,7 @@ obj {
       nam = "radio";
       description = function(s)
         fn_say("В скафандр встроен УКВ приёмник.")
-        if fn_has(s, "on") then
+        if s:has("on") then
           if freq then
             fn_say("Задана рабочая частота 143,625 МГц.")
           else
@@ -414,7 +222,7 @@ obj {
           return
         end
         if freq then
-          if good_to > DH_TO and fn_once_tag(s, "ack") then
+          if good_to > DH_TO and s:once("ack") then
             fn_say("Внезапно, пустота радиоэфира нарушилась.^", pres)
             fn_say("^^Сигналы прекратились. Ты заметил, что текст на экране изменился.")
           else
@@ -427,14 +235,14 @@ obj {
           end
           channel_pos = channel_pos + (1)
           if channel_pos > #channels[freq_hz] then
-            freq_hz = fn_rnd(#channels)
-            channel_pos = fn_rnd(#channels[freq_hz])
+            freq_hz = rnd(#channels)
+            channel_pos = rnd(#channels[freq_hz])
           end
         end
       end;
       after_SwitchOn = function(s, w, wh)
         freq = true
-        if fn_once(s) then
+        if s:once() then
           fn_say([[Ты включил радио на рабочей частоте.^^
 ... яю.. . аз... Ребята, если кто-то из вас уцелел. Запасов кислорода в ваших скафандрах недостаточно,
 чтобы мы успели найти и снять кого-нибудь из вас... Нам очень жаль... А сейчас, прослушайте
@@ -445,13 +253,13 @@ obj {
         else
           fn_say("Ты включил радио на рабочей частоте 143,625 МГц.")
         end
-        fn_daemonStart(_'radio')
+        DaemonStart(_'radio')
         if fn_in_room(_'space') then
-          fn_daemonStart(_'space')
+          DaemonStart(_'space')
         end
       end;
       after_SwitchOff = function(s, w, wh)
-        fn_daemonStop(_'radio')
+        DaemonStop(_'radio')
         return false
       end;
     }:attr 'switchable,scenery';
@@ -464,7 +272,7 @@ Verb { '#Tune', "[на|под|пере|перена]строить,[на|под|
 mp.Tune = function(s, w, wh)
   if not w or w == _'radio' then
     w = _'radio'
-    if fn_hasnt(w, "on") then
+    if w:hasnt("on") then
       fn_say("Радио выключено.")
       return
     else
@@ -472,7 +280,7 @@ mp.Tune = function(s, w, wh)
     end
   end
   if w then
-    fn_say(fn_it(w), "не {#if_hint/#first,plural,настраиваются,настраивается}.")
+    fn_say(w:It(), "не {#if_hint/#first,plural,настраиваются,настраивается}.")
     return
   end
 end
@@ -480,9 +288,9 @@ mp.after_Tune = function(s, w, wh)
   freq = not freq
   if not freq then
     fn_say("Ты сменил частоту.")
-    freq_hz = fn_rnd(#channels)
-    channel_pos = fn_rnd(#channels[freq_hz])
-    fn_daemonStart(_'radio')
+    freq_hz = rnd(#channels)
+    channel_pos = rnd(#channels[freq_hz])
+    DaemonStart(_'radio')
   else
     fn_say("Ты вернул рабочую частоту: 143,625 МГц.")
   end
@@ -524,11 +332,11 @@ obj {
   before_Default = "Он слишком далеко.";
   before_Exam = function() return false end;
   ["before_Walk,Climb,Enter"] = function(s, w, wh)
-    if fn_hasnt(_'engines', "on") then
+    if _'engines':hasnt("on") then
       fn_say("Сначала нужно включить двигатели.")
       return
     end
-    fn_walk(_'space2')
+    walk(_'space2')
   end;
 }
 
@@ -540,14 +348,14 @@ room {
   step = 1;
   daemon = function(s)
     s.step = s.step + (1)
-    if s.step > 3 and not fn_here().rotate then
-      fn_daemonStop(s)
-      fn_place(_'tetr')
-      if fn_isDaemon(_'radio') then
+    if s.step > 3 and not here().rotate then
+      DaemonStop(s)
+      place(_'tetr')
+      if isDaemon(_'radio') then
         fn_line()
       end
       fn_say("Тебе показалось, что ты видишь какой-то яркий объект.")
-      fn_daemonStop(s)
+      DaemonStop(s)
     end
   end;
   dsc = function(s)
@@ -561,11 +369,11 @@ room {
     if not s.rotate or ev == 'Look' or ev == 'Wait' or ev == 'Inv' then
       return false
     end
-    if w and fn_inside(w, fn_player()) or w == fn_player() then
+    if w and w:inside(me()) or w == me() then
       return false
     end
     fn_say("Из-за бешеного вращения, ты не можешь сориентироваться.")
-    if fn_once_tag(s, "self") then
+    if s:once("self") then
       fn_say("Может быть, попробовать осмотреть себя?")
     end
   end;
@@ -583,7 +391,7 @@ door {
   end;
   description = function(s)
     fn_say("Рядом с люком находится красный рычаг.")
-    fn_enable(_'lever')
+    enable(_'lever')
     return false
   end;
   before_Close = "Он закрывается автоматически.";
@@ -594,35 +402,35 @@ obj {
   nam = "lever";
   ["after_Pull,Transfer"] = function(s, w, wh)
     if fn_in_room(_'ship2') then
-      if fn_has(_'gate2', "open") then
+      if _'gate2':has("open") then
         fn_say("Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.")
-        fn_attr(_'gate2', "~open")
+        _'gate2':attr("~open")
       else
         fn_say("Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.")
-        fn_attr(_'gate2', "open")
+        _'gate2':attr("open")
       end
       return
     end
-    local open = fn_has(_'gate', "open")
+    local open = _'gate':has("open")
     if fn_in_room(_'ship') then
       if not open then
         fn_say("Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.")
-        fn_attr(_'gate2', "~open")
+        _'gate2':attr("~open")
       end
     end
     if open then
       fn_say("Ты дёрнул за рычаг и шлюзовой люк закрылся.")
-      fn_attr(_'gate', "~open")
+      _'gate':attr("~open")
     else
       if fn_in_room(_'space2') then
         fn_say("Ты дёрнул за рычаг и шлюзовой люк открылся.")
       end
-      fn_attr(_'gate', "open")
+      _'gate':attr("open")
     end
     if fn_in_room(_'ship') then
       if open then
         fn_say("Через некоторое время открылся входной люк, ведущий внутрь корабля.")
-        fn_attr(_'gate2', "open")
+        _'gate2':attr("open")
       end
     end
   end;
@@ -638,9 +446,9 @@ obj {
       -"корпус,антенн*,передат*";
       nam = "corpus";
       description = function(s)
-        if fn_once(s) then
+        if s:once() then
           fn_say("Внимательно осмотрев корпус, ты заметил шлюзовой люк.")
-          fn_enable(_'gate')
+          enable(_'gate')
         else
           if perimetr then
             fn_say("Теперь ты знешь, что это за спутник.")
@@ -658,7 +466,7 @@ room {
   nam = "space2";
   title = "открытый космос";
   in_to = function(s)
-    if fn_disabled(_'gate') then
+    if disabled(_'gate') then
       fn_say("Как ты попадёшь внутрь?")
     else
       return _'gate'
@@ -667,7 +475,7 @@ room {
   onenter = function(s, f)
     fn_say([[Управляя маневровыми двигателями и почти израсходовав топливо, ты смог согласовать свою орбиту с орбитой объекта.
 Им оказался спутник в форме тетраэдра.]])
-    fn_attr(_'engines', "~on")
+    _'engines':attr("~on")
   end;
   dsc = "Ты паришь в черной бездне рядом с неизвестным спутником. Под ногами проплывают земные облака над бирюзовой гладью.";
   obj = {
@@ -744,9 +552,9 @@ obj {
       nam = "screen";
       description = function(s)
         if good_to > DH_TO then
-          fn_daemonStop(_'ship2')
-          fn_daemonStop(_'radio')
-          fn_walkin(_'goodend')
+          DaemonStop(_'ship2')
+          DaemonStop(_'radio')
+          walkin(_'goodend')
           return
         end
         if perimetr then
@@ -776,15 +584,15 @@ room {
   title = "внутри корабля";
   out_to = 'gate2';
   daemon = function(s)
-    if good_to > DH_TO and fn_once_tag(s, "ack") then
-      if fn_here() == s then
-        if not fn_isDaemon(_'radio') then
+    if good_to > DH_TO and s:once("ack") then
+      if here() == s then
+        if not isDaemon(_'radio') then
           fn_say("Сигналы прекратились. Ты заметил, что текст на экране изменился.")
         end
       end
-      fn_daemonStop(s)
+      DaemonStop(s)
     else
-      if fn_here() == s then
+      if here() == s then
         fn_say("Ты слышишь пульсирующий звуковой сигнал, который разносится по кораблю каждую секунду.")
         if know2 then
           fn_say("До первой волны ", timeout, " с.")
@@ -793,18 +601,18 @@ room {
     end
   end;
   onenter = function(s, f)
-    if fn_once(s) then
+    if s:once() then
       fn_say("С тревогой и надеждой, ты влетел внутрь странного корабля.")
     end
   end;
   dsc = function(s)
     fn_say("Внутри корабля не так много места. Впрочем, к этому тебе не привыкать.")
-    if fn_has(_'gate2', "open") then
+    if _'gate2':has("open") then
       fn_say("Здесь довольно темно. Детали обстановки плохо различимы в полумраке.")
     end
   end;
   onexit = function(s, f)
-    if fn_hasnt(_'suit', "worn") then
+    if _'suit':hasnt("worn") then
       fn_say("Без скафандра? Самоубийство!")
       return false
     end
@@ -816,10 +624,10 @@ room {
       else
         good_to = 0
       end
-      timeout = timeout - (fn_rnd(25))
+      timeout = timeout - (rnd(25))
       if timeout < 0 then
         if timeout < 0 then
-          fn_walkin(_'badend')
+          walkin(_'badend')
           return
         end
       end
@@ -829,7 +637,7 @@ room {
         fn_say("Ну и правильно.")
       else
         fn_say("Ты нажал на кнопку и на экране консоли побежали строки текста.")
-        fn_daemonStart(_'ship2')
+        DaemonStart(_'ship2')
         perimetr = true
       end
       return

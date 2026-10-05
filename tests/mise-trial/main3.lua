@@ -8,46 +8,6 @@ require "fmt"
 require "parser/mp-ru"
 require "snd"
 
-local function fn_here()
-  return here()
-end
-
-local function fn_player()
-  return me()
-end
-
-local function fn_has(s, a)
-  return s:has(a)
-end
-
-local function fn_hasnt(s, a)
-  return s:hasnt(a)
-end
-
-local function fn_move(s, where)
-  move(s, where)
-end
-
-local function fn_attr(s, a)
-  s:attr(a)
-end
-
-local function fn_inside(w, x)
-  return w:inside(x)
-end
-
-local function fn_compass_dir(w)
-  return mp:compass_dir(w)
-end
-
-local function fn_once_tag(s, t)
-  return s:once(t)
-end
-
-local function fn_once(s)
-  return s:once()
-end
-
 local function fn_say(text, ...)
   p(text, ...)
 end
@@ -60,172 +20,20 @@ local function fn_append(text, ...)
   pr(text, ...)
 end
 
-local function fn_rnd(n)
-  return rnd(n)
-end
-
 local function fn_xaction(ev, ...)
   mp:xaction(ev, ...)
-end
-
-local function fn_daemonStart(w)
-  DaemonStart(w)
-end
-
-local function fn_daemonStop(w)
-  DaemonStop(w)
-end
-
-local function fn_enable(w)
-  enable(w)
-end
-
-local function fn_disable(w)
-  disable(w)
-end
-
-local function fn_place(w)
-  place(w)
-end
-
-local function fn_isDaemon(w)
-  return isDaemon(w)
-end
-
-local function fn_disabled(w)
-  return disabled(w)
-end
-
-local function fn_seen(w)
-  return seen(w)
-end
-
-local function fn_walk(where)
-  walk(where)
-end
-
-local function fn_walkin(where)
-  walkin(where)
-end
-
-local function fn_take(w)
-  take(w)
-end
-
-local function fn_drop(w)
-  drop(w)
-end
-
-local function fn_content(w)
-  mp:content(w)
-end
-
-local function fn_walkout()
-  walkout()
-end
-
-local function fn_visits(w)
-  return visits(w)
 end
 
 local function fn_event()
   return mp.event
 end
 
-local function fn_have(w)
-  return have(w)
-end
-
-local function fn_visited(w)
-  return visited(w)
-end
-
-local function fn_where(w)
-  return where(w)
-end
-
-local function fn_thedark(what)
-  return mp:thedark(what)
-end
-
-local function fn_noun(s, c)
-  return s:noun(c)
-end
-
-local function fn_Noun(s)
-  return s:Noun()
-end
-
-local function fn_it(s)
-  return s:It()
-end
-
-local function fn_hint(s, h)
-  s:hint(h)
-end
-
-local function fn_multi_alias(s)
-  return s:multi_alias()
-end
-
 local function fn_walkback(...)
   walkback(...)
 end
 
-local function fn_remove(w)
-  remove(w)
-end
-
-local function fn_push(w)
-  push(w)
-end
-
-local function fn_from()
-  return from()
-end
-
-local function fn_check_held(w)
-  return mp:check_held(w)
-end
-
-local function fn_check_live(w)
-  return mp:check_live(w)
-end
-
-local function fn_clear()
-  mp:clear()
-end
-
-local function fn_need_scene(s, v)
-  s:need_scene(v)
-end
-
-local function fn_player_moved()
-  player_moved()
-end
-
-local function fn_lifeon(w)
-  lifeon(w)
-end
-
-local function fn_lifeoff(w)
-  lifeoff(w)
-end
-
 local function fn_call_before(s, ev)
   s['before_' .. ev](s)
-end
-
-local function fn_theme_name()
-  return theme.name()
-end
-
-local function fn_pclr()
-  std.pclr()
-end
-
-local function fn_ref(name)
-  return std.ref(name)
 end
 
 local function fn_arg_word(i)
@@ -249,23 +57,19 @@ local function fn_toggle_autoplay()
   mp.autohelp = not mp.autohelp
 end
 
-local function fn_teleport(name)
-  move(me(), name)
-end
-
 local function fn_in_room(r)
   return here() ^ r
 end
 
 local function fn_drive(s, w)
-  if fn_compass_dir(w) == 'e_to' then
+  if mp:compass_dir(w) == 'e_to' then
     if q2 == 0 then
       fn_say("Ближайшая станция на востоке. Но разве я могу оставить купол, там же моя напарница? Все запасы кислорода в малом куполе и немного в вездеходе. Ехать часа три и кислорода на одного в обрез. Могу ли я проявить такое малодушие и сбежать, выжить бросив товарища?")
       q2 = 1
       return false
     else
       fn_say("Я уверенно втопил педаль в пол. Вездеход стронулся с места и покатился набирая скорость. В зеркало я увидел как из станции выбежала Марина. Ещё подумалось, наверное это хорошо, что связь не работает.")
-      fn_teleport(_'Плохая_концовка')
+      move(me(), _'Плохая_концовка')
     end
   elseif w == _'Малый_купол' or w == _'Антенна' then
     if rover == 'Вездеход стоит возле большого купола.' then
@@ -273,7 +77,7 @@ local function fn_drive(s, w)
       rover = 'Вездеход стоит возле малого купола.'
     else
       fn_say("Я смотрел на стенку купола перед лобовым стеклом и внезапно сумасшедшая идея возникла у меня в голове. Я отъехал назад и вжал педаль в пол на полную.")
-      fn_teleport(_'Одна_из_хороших_концовок')
+      move(me(), _'Одна_из_хороших_концовок')
     end
   else
     fn_say("Ближайшая следующая станция на востоке. На запад ехать где-то раза в полтора дальше. Хм, энергии то хватит, а вот кислорода в баллоне вездехода в обрез даже для одного.")
@@ -284,7 +88,7 @@ local function fn_cable_connect(s, wh)
   if wh == _'Вездеход' then
     if cablein == 'Кабель ни к чему не подключён.' then
       fn_say("Я подключил кабель к разъему вездехода.")
-      fn_drop(s)
+      drop(s)
       cablein = 'Кабель подключён к вездеходу.'
     elseif cablein == 'Кабель подключён к куполу.' then
       fn_say("Я подключил второй конец кабеля к разъему вездехода.")
@@ -298,7 +102,7 @@ local function fn_cable_connect(s, wh)
   elseif wh == _'Розетка' or wh == _'Станция' then
     if cablein == 'Кабель ни к чему не подключён.' then
       fn_say("Я подключил кабель к розетке купола.")
-      fn_drop(s)
+      drop(s)
       cablein = 'Кабель подключён к куполу.'
     elseif cablein == 'Кабель подключён к вездеходу.' then
       fn_say("Я подключил второй конец кабеля к розетке у шлюза купола.")
@@ -312,7 +116,7 @@ local function fn_cable_connect(s, wh)
   elseif wh == _'Оборванные_провода' then
     if cablein == 'Кабель ни к чему не подключён.' then
       fn_say("Немного повозившись я смог пристроить оборванный провод к контактам своего кабеля. Главное это не шевелить.")
-      fn_drop(s)
+      drop(s)
       cablein = 'Кабель подключён к оборванному проводу.'
     elseif cablein == 'Кабель подключён к куполу.' then
       fn_say("Немного повозившись я смог пристроить оборванный провод к контактам своего кабеля. Главное это не шевелить.")
@@ -326,7 +130,7 @@ local function fn_cable_connect(s, wh)
     if rover == 'Вездеход стоит возле малого купола.' then
       if cablein == 'Кабель ни к чему не подключён.' then
         fn_say("Я нашёл в основании антенны служебный разъем и подключил к нему кабель.")
-        fn_drop(s)
+        drop(s)
         cablein = 'Кабель подключён к антенне.'
       elseif cablein == 'Кабель подключён к вездеходу.' then
         fn_say("Я нашёл в основании антенны служебный разъем и подключил к нему второй конец кабель.")
@@ -385,7 +189,7 @@ room {
     if q1 == 0 then
       return false
     else
-      fn_walk(_'Снаружи_станции')
+      walk(_'Снаружи_станции')
     end
   end;
   cant_go = function(s, to)
@@ -418,7 +222,7 @@ obj {
     if q1 == 0 then
       fn_say("Сначала мне нужно взять небольшой образец лишайника. Зря я что ли сюда шёл?")
     else
-      fn_teleport(_'Снаружи_станции')
+      move(me(), _'Снаружи_станции')
     end
   end;
 }:attr 'open,scenery'
@@ -428,7 +232,7 @@ obj {
   nam = "Сумка";
   description = function(s)
     fn_say("На бедре у меня закреплена сумка со множеством ячеек, часть из них уже заполнена.")
-    fn_content(s)
+    mp:content(s)
   end;
   found_in = 'Комбинезон';
 }:attr 'container,open,openable'
@@ -558,7 +362,7 @@ obj {
 room {
   nam = "Снаружи_станции";
   onenter = function(s, f)
-    if fn_visits(s) == 0 then
+    if visits(s) == 0 then
       fn_say("На подходе к станции я понял, что тут явно что-то случилось. В переходе между куполами было что-то неправильное. Марина, что с ней? Я попытался вызвать её, но получил только шипение в наушнике в ответ. Я ускорил шаг и вскоре был у станции.")
     end
   end;
@@ -596,7 +400,7 @@ obj {
   end;
   door_to = 'Внутри_большого_купола';
   before_Enter = function(s, w, wh)
-    fn_teleport(_'Внутри_большого_купола')
+    move(me(), _'Внутри_большого_купола')
   end;
 }:attr 'open,scenery'
 
@@ -606,7 +410,7 @@ obj {
   description = "Шлюз разблокирован. Можно идти внутрь. У входа есть розетка.";
   door_to = 'Внутри_большого_купола';
   before_Enter = function(s, w, wh)
-    fn_teleport(_'Внутри_большого_купола')
+    move(me(), _'Внутри_большого_купола')
   end;
 }:attr 'open,scenery'
 
@@ -636,7 +440,7 @@ obj {
   end;
   door_to = 'Внутри_вездехода';
   before_Enter = function(s, w, wh)
-    fn_teleport(_'Внутри_вездехода')
+    move(me(), _'Внутри_вездехода')
   end;
 }:attr 'open,scenery'
 
@@ -660,10 +464,10 @@ room {
   out_to = 'Снаружи_станции';
   u_to = 'На_крыше';
   before_Walk = function(s, w, wh)
-    if fn_compass_dir(w) == 'out_to' then
-      fn_teleport(_'Снаружи_станции')
-    elseif fn_compass_dir(w) == 'u_to' then
-      fn_teleport(_'На_крыше')
+    if mp:compass_dir(w) == 'out_to' then
+      move(me(), _'Снаружи_станции')
+    elseif mp:compass_dir(w) == 'u_to' then
+      move(me(), _'На_крыше')
     else
       fn_say("Чтобы куда-то идти, надо сначала выбраться из вездехода наружу.")
     end
@@ -719,7 +523,7 @@ obj {
   before_SwitchOn = function(s, w, wh)
     if cablein == 'Кабель соединяет вездеход и антенну.' then
       fn_say("Я включил радио, нашёл в меню сигнал бедствия. Хм, похоже слишком мало мощности для большой антенны. Я вытащил панель передатчика, покопался немного в проводах и замкнул напрямик. Спустя несколько минут передатчик задымился. Чёрт, надеюсь этого было достаточно.")
-      fn_walk(_'Самая_хорошая_концовка')
+      walk(_'Самая_хорошая_концовка')
     else
       fn_say("Я включил и пощелкал каналами в радио. Только шипение. Впрочем и неудивительно, антенна вездехода годится только для локальной связи.")
     end
@@ -783,7 +587,7 @@ room {
 room {
   nam = "Внутри_большого_купола";
   onenter = function(s, f)
-    if fn_visits(s) == 0 then
+    if visits(s) == 0 then
       fn_say('Шлюз оказался разблокированным. Давление внутри оказалось равным наружному. Впрочем мы частенько так оставляли большой купол. Портиться там было нечему, а вот приборы и инструменты часто приходилось таскать туда-сюда.^Едва я успел войти, споткнувшись о моток какого-то кабеля, как на меня набросилась Марина.^-- Дурак! -- Приглушённо закричала она из под маски. -- Я тут с ума схожу, думала ты там внутри был. А ты где-то шатаешься!')
     end
   end;
@@ -836,7 +640,7 @@ dlg {
           "Хватит, Марина!";
           function(s)
             fn_say("Я взял за плечо девушку. -- У нас есть еще немного времени, мы что-то придумаем ещё. Регенератора не хватит тебе для дыхания даже во сне, а до соседней станции три часа гнать на максималке.^-- Олежек, спаси нас. Я не хочу тут умирать..")
-            fn_walkout()
+            walkout()
             q1 = 2
           end;
         };
@@ -850,7 +654,7 @@ dlg {
         "Мы не вышли сегодня на сеанс связи, если мы не выйдем и завтра, то нас наверняка спохватятся.";
         function(s)
           fn_say("-- Надеюсь ты прав, Олег.")
-          fn_walk(_'Почти_хорошая_концовка')
+          walk(_'Почти_хорошая_концовка')
         end;
       };
       cond = function() return cablein == 'Кабель соединяет купол и вездеход.' end;
@@ -859,7 +663,7 @@ dlg {
       "Я скоро вернусь.";
       function(s)
         fn_say("-- Хорошо, я поищу ещё баллоны, тут кажется был резерв. Может углекислотные поглотители.. Нет, их давно уже не делают.. Иди, я тут сама справлюсь.")
-        fn_walkout()
+        walkout()
       end;
       always = true;
     };
@@ -898,7 +702,7 @@ obj {
   description = "У стены установлен компьютерный терминал, в его стойке есть сервисная розетка. Терминал выключен.";
   before_SwitchOn = function(s, w, wh)
     fn_say("Я включил терминал.")
-    fn_walk(_'Консоль_терминала')
+    walk(_'Консоль_терминала')
   end;
 }:attr 'scenery'
 
@@ -932,7 +736,7 @@ dlg {
       "Выключить терминал.";
       function(s)
         fn_say("Я выключил терминал.")
-        fn_walkout()
+        walkout()
       end;
       always = true;
     };
@@ -952,12 +756,12 @@ obj {
       fn_say("Я отсоединил кабель и смотал его в бухту.")
       cablein = 'Кабель ни к чему не подключён.'
     end
-    fn_take(s)
+    take(s)
   end;
   ["before_Insert,Activate"] = fn_cable_connect;
   before_Deactivate = function(s, wh)
     fn_say("Я отсоединил кабель и смотал его в бухту.")
-    fn_take(s)
+    take(s)
     cablein = 'Кабель ни к чему не подключён.'
   end;
 }

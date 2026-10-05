@@ -9,46 +9,6 @@ fmt.dash = true
 fmt.quotes = true
 require "parser/mp-ru"
 
-local function fn_here()
-  return here()
-end
-
-local function fn_player()
-  return me()
-end
-
-local function fn_has(s, a)
-  return s:has(a)
-end
-
-local function fn_hasnt(s, a)
-  return s:hasnt(a)
-end
-
-local function fn_move(s, where)
-  move(s, where)
-end
-
-local function fn_attr(s, a)
-  s:attr(a)
-end
-
-local function fn_inside(w, x)
-  return w:inside(x)
-end
-
-local function fn_compass_dir(w)
-  return mp:compass_dir(w)
-end
-
-local function fn_once_tag(s, t)
-  return s:once(t)
-end
-
-local function fn_once(s)
-  return s:once()
-end
-
 local function fn_say(text, ...)
   p(text, ...)
 end
@@ -61,172 +21,20 @@ local function fn_append(text, ...)
   pr(text, ...)
 end
 
-local function fn_rnd(n)
-  return rnd(n)
-end
-
 local function fn_xaction(ev, ...)
   mp:xaction(ev, ...)
-end
-
-local function fn_daemonStart(w)
-  DaemonStart(w)
-end
-
-local function fn_daemonStop(w)
-  DaemonStop(w)
-end
-
-local function fn_enable(w)
-  enable(w)
-end
-
-local function fn_disable(w)
-  disable(w)
-end
-
-local function fn_place(w)
-  place(w)
-end
-
-local function fn_isDaemon(w)
-  return isDaemon(w)
-end
-
-local function fn_disabled(w)
-  return disabled(w)
-end
-
-local function fn_seen(w)
-  return seen(w)
-end
-
-local function fn_walk(where)
-  walk(where)
-end
-
-local function fn_walkin(where)
-  walkin(where)
-end
-
-local function fn_take(w)
-  take(w)
-end
-
-local function fn_drop(w)
-  drop(w)
-end
-
-local function fn_content(w)
-  mp:content(w)
-end
-
-local function fn_walkout()
-  walkout()
-end
-
-local function fn_visits(w)
-  return visits(w)
 end
 
 local function fn_event()
   return mp.event
 end
 
-local function fn_have(w)
-  return have(w)
-end
-
-local function fn_visited(w)
-  return visited(w)
-end
-
-local function fn_where(w)
-  return where(w)
-end
-
-local function fn_thedark(what)
-  return mp:thedark(what)
-end
-
-local function fn_noun(s, c)
-  return s:noun(c)
-end
-
-local function fn_Noun(s)
-  return s:Noun()
-end
-
-local function fn_it(s)
-  return s:It()
-end
-
-local function fn_hint(s, h)
-  s:hint(h)
-end
-
-local function fn_multi_alias(s)
-  return s:multi_alias()
-end
-
 local function fn_walkback(...)
   walkback(...)
 end
 
-local function fn_remove(w)
-  remove(w)
-end
-
-local function fn_push(w)
-  push(w)
-end
-
-local function fn_from()
-  return from()
-end
-
-local function fn_check_held(w)
-  return mp:check_held(w)
-end
-
-local function fn_check_live(w)
-  return mp:check_live(w)
-end
-
-local function fn_clear()
-  mp:clear()
-end
-
-local function fn_need_scene(s, v)
-  s:need_scene(v)
-end
-
-local function fn_player_moved()
-  player_moved()
-end
-
-local function fn_lifeon(w)
-  lifeon(w)
-end
-
-local function fn_lifeoff(w)
-  lifeoff(w)
-end
-
 local function fn_call_before(s, ev)
   s['before_' .. ev](s)
-end
-
-local function fn_theme_name()
-  return theme.name()
-end
-
-local function fn_pclr()
-  std.pclr()
-end
-
-local function fn_ref(name)
-  return std.ref(name)
 end
 
 local function fn_arg_word(i)
@@ -242,7 +50,7 @@ local function fn_music(name, ...)
 end
 
 local function fn_type_name(s, w)
-  if (w == _'имя' or w == _'машинка') and fn_have(_'карточка') and not type_done then
+  if (w == _'имя' or w == _'машинка') and have(_'карточка') and not type_done then
     fn_say("Вы отстучали: М-А-Р-И-Я. Литеры ударили по бумаге, и в тумбе стола отскочила крышка тайника.")
     type_done = true
   else
@@ -263,7 +71,7 @@ Path = Class {
 }:attr 'scenery,enterable'
 
 function start(load)
-  fn_move(fn_player(), _'набережная')
+  move(me(), _'набережная')
 end
 function init()
 end
@@ -305,7 +113,7 @@ room {
   title = "Набережная Мойки";
   dsc = function(s)
     fn_say("Петроград, глухая ночь января 1920 года. Мороз сорок градусов. Белый стылый сумрак над промёрзшей Мойкой. За чугунной оградой — гранитная громада бывшего Ссудного Банка, опутанная трубами. Над ней мерцает рубиновый глазок семафора. В ограде — приоткрытая калитка; за ней — высокое крыльцо с гранитным портиком. И странно: в мёртвом воздухе, в вое паропроводов, слышится глухой рокот прибоя. Здесь моря нет и быть не может. Но оно — есть. Три дня назад Сюзанна ушла сюда заложить материнский медальон и не вернулась.")
-    if not fn_have(_'спички') then
+    if not have(_'спички') then
       fn_say("На обледенелых ступенях подле пилона лежит фигура в рваном пальто. Пальцы мертвеца сжимают спичечный коробок.")
     end
   end;
@@ -344,10 +152,10 @@ room {
       -"прочь|уйти";
       nam = "прочь";
       before_Walk = function(s, w, wh)
-        fn_walk(_'badend')
+        walk(_'badend')
       end;
       before_Enter = function(s, w, wh)
-        fn_walk(_'badend')
+        walk(_'badend')
       end;
     }:attr 'scenery,scenery';
   };
@@ -391,7 +199,7 @@ room {
       -"набережная,калитка";
       nam = "путь_крыльцо_набережная";
       ["before_Walk,Enter"] = function(s, w, wh)
-        fn_move(fn_player(), _'набережная')
+        move(me(), _'набережная')
       end;
     }:attr 'scenery,scenery';
 
@@ -409,10 +217,10 @@ room {
   title = "Парадный вестибюль";
   dsc = function(s)
     fn_say("Зал-колодец из белого мрамора, тронутый сажей. Потолок теряется в темноте, где в латунных трубах с шипением пролетают гильзы пневмопочты. Вдоль стен поднимаются чугунные шахты лифтов со шкалами до минус сорокового горизонта. В центре — остывшая буржуйка. На стене — высокие часы с маятником-гильотиной. За конторкой — чиновник в суконном вицмундире. Слева — тёмный проём гардеробной. Справа — низкая дверь караулки. За барьером, у стены, — буфетная. А в глубине, за шахтами лифтов, наверх ведёт широкая лестница — в галерею второго яруса.")
-    if not candle_lit and not fn_have(_'свеча') then
+    if not candle_lit and not have(_'свеча') then
       fn_say("На краю полированного барьера — толстая стеариновая свеча.")
     end
-    if not candle_lit and fn_have(_'свеча') then
+    if not candle_lit and have(_'свеча') then
       fn_say("Свеча у вас в руке. Белый толстый фитиль холоден.")
     end
     if candle_lit then
@@ -444,12 +252,12 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w == _'карточка' and fn_have(_'карточка') then
+    if w == _'карточка' and have(_'карточка') then
       if not clerk_saved then
         fn_say('Компостер падает. Глаза расширяются. "Маша Бранд... Ордер на разборку за моим личным номером! Я подписал его за осьмушку чая и облатку сахарина. Возьмите ключ. Он отпирает парадный зал на втором этаже. Спасите тех, кого ещё не пустили на шестерни!"')
         clerk_saved = true
-        fn_enable(_'ключ_клерка')
-        fn_take(_'ключ_клерка')
+        enable(_'ключ_клерка')
+        take(_'ключ_клерка')
       else
         fn_say("Клерк уже видел карточку. Он лишь беззвучно вздрагивает, глядя в стол.")
       end
@@ -465,7 +273,7 @@ room {
         if matches_warm and not candle_lit then
           fn_say("Спичка чиркнула жарко и сухо. Жёлтый огонёк встал над фитилём, оттеснив холодную тьму.")
           candle_lit = true
-        elseif fn_have(_'спички') and not matches_warm and not candle_lit then
+        elseif have(_'спички') and not matches_warm and not candle_lit then
           fn_say("Серная головка обледенела и крошится. Спички нужно отогреть у тепла.")
         end
       end;
@@ -494,7 +302,7 @@ room {
       -"крыльцо";
       nam = "путь_вестибюль_крыльцо";
       ["before_Walk,Enter"] = function(s, w, wh)
-        fn_move(fn_player(), _'крыльцо')
+        move(me(), _'крыльцо')
       end;
     }:attr 'scenery,scenery';
 
@@ -524,7 +332,7 @@ room {
           fn_say("Лестница обрывается в темноту. Шагнуть без огня — сорваться в провал.")
           return
         end
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
     }:attr 'scenery,scenery,enterable';
   };
@@ -536,7 +344,7 @@ room {
   title = "Парадный гардероб";
   dsc = function(s)
     fn_say("Ряды чугунных крючьев уходят в ледяную полутьму. Механические вешалки со скрипом перебирают пустоту. С лепного карниза свисают иглы сосулек, под ногами хрустит чёрная наледь. Позади — дверь в вестибюль.")
-    if not fn_have(_'осколок') then
+    if not have(_'осколок') then
       fn_say("В лёд под разбитым трюмо вмёрз крупный осколок зеркала в серебряном ободе.")
     end
   end;
@@ -576,10 +384,10 @@ room {
       -"вестибюль";
       nam = "путь_гардероб_вестибюль";
       before_Walk = function(s, w, wh)
-        fn_move(fn_player(), _'вестибюль')
+        move(me(), _'вестибюль')
       end;
       before_Enter = function(s, w, wh)
-        fn_move(fn_player(), _'вестибюль')
+        move(me(), _'вестибюль')
       end;
     }:attr 'scenery,scenery';
   };
@@ -606,7 +414,7 @@ room {
   before_PutOn = function(s, w, wh)
     if w == _'спички' and wh == _'калорифер' and not matches_warm then
       fn_say("Вы разложили коробок на горячих трубах калорифера. Лёд сошёл, серные головки оттаяли.")
-      fn_remove(_'спички')
+      remove(_'спички')
       matches_warm = true
     else
       return false
@@ -632,10 +440,10 @@ room {
       -"вестибюль";
       nam = "путь_буфет_вестибюль";
       before_Walk = function(s, w, wh)
-        fn_move(fn_player(), _'вестибюль')
+        move(me(), _'вестибюль')
       end;
       before_Enter = function(s, w, wh)
-        fn_move(fn_player(), _'вестибюль')
+        move(me(), _'вестибюль')
       end;
     }:attr 'scenery,scenery';
   };
@@ -650,10 +458,10 @@ room {
     if not guard_out then
       fn_say("На табурете — караульный в форменной шинели. На голове — медный шлем с решётчатым забралом. Челюсти непрерывно жуют табак.")
     end
-    if guard_out and not fn_have(_'лампа') then
+    if guard_out and not have(_'лампа') then
       fn_say("Железный шкаф распахнут. Лампа исчезла.")
     end
-    if guard_out and fn_have(_'лампа') and not lantern_lit then
+    if guard_out and have(_'лампа') and not lantern_lit then
       fn_say("Лампа в руке. За толстым стеклом плещется керосин.")
     end
     if guard_out and lantern_lit then
@@ -675,7 +483,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w == _'осколок' and fn_have(_'осколок') and not guard_out then
+    if w == _'осколок' and have(_'осколок') and not guard_out then
       fn_say("В зеркале отразилась крысиная морда, впаянная в шестерни шлема. Тварь зашлась визгом, бросила винтовку и скользнула в люк пневмосброса.")
       guard_out = true
     else
@@ -713,7 +521,7 @@ room {
       -"вестибюль";
       nam = "путь_охрана_вестибюль";
       ["before_Walk,Enter"] = function(s, w, wh)
-        fn_move(fn_player(), _'вестибюль')
+        move(me(), _'вестибюль')
       end;
     }:attr 'scenery,scenery';
 
@@ -725,7 +533,7 @@ room {
           fn_say("Ледяная тяга из шахты собьёт пламя свечи. Без закрытого фонаря — гибель.")
           return
         end
-        fn_move(fn_player(), _'подвал')
+        move(me(), _'подвал')
       end;
     }:attr 'scenery,scenery,enterable';
   };
@@ -785,10 +593,10 @@ room {
         corridor_shock = true
         return
       end
-      if fn_have(_'ключ_клерка') and not hall_unlocked then
+      if have(_'ключ_клерка') and not hall_unlocked then
         fn_say("Ключ провернулся. Створки зала ушли в пазы.")
         hall_unlocked = true
-      elseif not fn_have(_'ключ_клерка') and not hall_unlocked then
+      elseif not have(_'ключ_клерка') and not hall_unlocked then
         fn_say("Замок с фигурным пазом. Нужен специальный ключ.")
       end
     else
@@ -802,9 +610,9 @@ room {
         corridor_shock = true
         return
       end
-      if fn_have(_'флейта') and not hall_unlocked then
+      if have(_'флейта') and not hall_unlocked then
         fn_say("Створки заперты броневыми жалюзи. Звук разобьётся о сталь.")
-      elseif fn_have(_'флейта') and hall_unlocked and not rats_cleared then
+      elseif have(_'флейта') and hall_unlocked and not rats_cleared then
         fn_say("Вы поднесли флейту к губам и извлекли пронзительную ноту. В зале — вой. Механические люки распахнулись, и сотни серых теней с визгом посыпались через пробитые витражи наружу, в метель.")
         rats_cleared = true
       end
@@ -846,7 +654,7 @@ room {
           corridor_shock = true
           return
         end
-        fn_move(fn_player(), _'вестибюль')
+        move(me(), _'вестибюль')
       end;
     }:attr 'scenery,scenery,enterable';
 
@@ -859,7 +667,7 @@ room {
           corridor_shock = true
           return
         end
-        fn_move(fn_player(), _'библиотека')
+        move(me(), _'библиотека')
       end;
     }:attr 'scenery,scenery,enterable';
 
@@ -872,7 +680,7 @@ room {
           corridor_shock = true
           return
         end
-        fn_move(fn_player(), _'архив')
+        move(me(), _'архив')
       end;
     }:attr 'scenery,scenery,enterable';
 
@@ -885,7 +693,7 @@ room {
           corridor_shock = true
           return
         end
-        fn_move(fn_player(), _'кабинет')
+        move(me(), _'кабинет')
       end;
     }:attr 'scenery,scenery,enterable';
 
@@ -898,7 +706,7 @@ room {
           corridor_shock = true
           return
         end
-        fn_move(fn_player(), _'будуар')
+        move(me(), _'будуар')
       end;
     }:attr 'scenery,scenery,enterable';
 
@@ -911,7 +719,7 @@ room {
           corridor_shock = true
           return
         end
-        fn_move(fn_player(), _'бухгалтерия')
+        move(me(), _'бухгалтерия')
       end;
     }:attr 'scenery,scenery,enterable';
 
@@ -928,7 +736,7 @@ room {
           fn_say("За дверями — чавкающий пир. Войти — гибель.")
           return
         end
-        fn_move(fn_player(), _'зал')
+        move(me(), _'зал')
       end;
     }:attr 'scenery,scenery,enterable';
   };
@@ -969,10 +777,10 @@ room {
       -"коридор|галерея";
       nam = "путь_библиотека_коридор";
       before_Walk = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
       before_Enter = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
     }:attr 'scenery,scenery';
   };
@@ -992,9 +800,9 @@ room {
     if w == _'картина' then
       fn_say("Залитый солнцем Зурбаган. Белые террасы, лазурная бухта, клипера на волне, акации. От полотна веет солью и теплом нагретого камня.")
     elseif w == _'рама' then
-      if not fn_have(_'осколок') and not arch_open then
+      if not have(_'осколок') and not arch_open then
         fn_say("Рама сплошная, вмурованная в кладку.")
-      elseif fn_have(_'осколок') and not arch_open then
+      elseif have(_'осколок') and not arch_open then
         fn_say("Сквозь скол видна зубчатая передача за позолотой. Полотно — на скрытых рельсах сейфа.")
       else
         fn_say("Полотно уже отъехало, открывая нишу с сейфом.")
@@ -1026,8 +834,8 @@ room {
     if not poet_saved and not poet_lost then
       fn_say('"Пишите. Ваше слово сильнее всех шестерёнок". Женщина поднимает глаза: "Возьмите песнь о Зурбагане и карандаш. Она — для тех, чьё сердце не согласно стать механизмом."')
       poet_saved = true
-      fn_enable(_'поэма')
-      fn_take(_'поэма')
+      enable(_'поэма')
+      take(_'поэма')
     else
       return false
     end
@@ -1042,9 +850,9 @@ room {
   end;
   before_Enter = function(s, w, wh)
     if w == _'сейф_архив' then
-      if arch_open and fn_have(_'поэма') then
-        fn_move(fn_player(), _'зурбаган')
-      elseif arch_open and not fn_have(_'поэма') then
+      if arch_open and have(_'поэма') then
+        move(me(), _'зурбаган')
+      elseif arch_open and not have(_'поэма') then
         fn_say("Вы шагнули в люк, но упёрлись в глухую заслонку. Без живой мечты этот ход мёртв.")
       else
         fn_say("Сейф ещё закрыт.")
@@ -1093,10 +901,10 @@ room {
       -"коридор|галерея";
       nam = "путь_архив_коридор";
       before_Walk = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
       before_Enter = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
     }:attr 'scenery,scenery';
   };
@@ -1117,7 +925,7 @@ room {
     if boss_banished then
       fn_say("Камин чадит. В кресле — цилиндр, опавшая визитка и горсть пепла.")
     end
-    if boss_banished and not fn_have(_'печать') then
+    if boss_banished and not have(_'печать') then
       fn_say("На пульте — тяжёлая серебряная печать Правления.")
     end
   end;
@@ -1164,7 +972,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w == _'осколок' and fn_have(_'осколок') and not boss_banished then
+    if w == _'осколок' and have(_'осколок') and not boss_banished then
       fn_say("Вы вскинули осколок перед его глазами. В амальгаме — плешивая крыса в золотой короне из шестерён. Тварь завизжала, дёрнула рычаг люка и провалилась в жерло мусоросброса.")
       boss_banished = true
     else
@@ -1172,8 +980,8 @@ room {
     end
   end;
   before_Give = function(s, w, wh)
-    if w == _'осколок' and fn_have(_'осколок') and not boss_banished then
-      fn_walk(_'dollend')
+    if w == _'осколок' and have(_'осколок') and not boss_banished then
+      walk(_'dollend')
     else
       return false
     end
@@ -1211,10 +1019,10 @@ room {
       -"коридор|галерея";
       nam = "путь_кабинет_коридор";
       before_Walk = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
       before_Enter = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
     }:attr 'scenery,scenery';
   };
@@ -1254,7 +1062,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w == _'осколок' and fn_have(_'осколок') then
+    if w == _'осколок' and have(_'осколок') then
       if not doll_true then
         fn_say("В зеркале вместо шёлка — латунный скелет, пружинные тяги и микропоршни.")
         doll_true = true
@@ -1267,10 +1075,10 @@ room {
   end;
   before_Rewrite = function(s, w, wh)
     if w == _'строка' then
-      if doll_true and fn_have(_'поэма') and not corinna_awake then
+      if doll_true and have(_'поэма') and not corinna_awake then
         fn_say('Карандашом поэтессы вы нанесли строфу о Зурбагане на барабан шкатулки. Музыка ожила хрустальным перезвоном. Кукла повернула голову: "Вы подарили мне душу. Я открыла потайной люк в изолятор кукол. Спешите! А в машинном зале вложите стихи в считывающий валик органа — остальное я сделаю сама."')
         corinna_awake = true
-      elseif doll_true and fn_have(_'поэма') and corinna_awake then
+      elseif doll_true and have(_'поэма') and corinna_awake then
         fn_say("Строфа уже выбита на барабане. Механизм Коринны оживлён.")
       end
     else
@@ -1304,7 +1112,7 @@ room {
       -"коридор|галерея";
       nam = "путь_будуар_коридор";
       ["before_Walk,Enter"] = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
     }:attr 'scenery,scenery';
 
@@ -1313,7 +1121,7 @@ room {
       nam = "путь_будуар_кладовая";
       ["before_Walk,Enter"] = function(s, w, wh)
         if corinna_awake then
-          fn_move(fn_player(), _'кладовая')
+          move(me(), _'кладовая')
         elseif doll_true then
           fn_say("Пружинный ригель заперт снаружи. Коринна должна открыть его изнутри — но она ещё спит.")
           return
@@ -1332,17 +1140,17 @@ room {
   title = "Расчетная палата";
   dsc = function(s)
     fn_say("Зал конторских столов, засыпанных перфолентами. В центре — пишущая машинка «Ундервуд», соединённая тягами с замками конторки. Позади — дверь в галерею.")
-    if not fn_have(_'карточка') then
+    if not have(_'карточка') then
       fn_say("Из лотка торчит учётная карточка.")
     end
   end;
   before_Type = fn_type_name;
   before_Push = fn_type_name;
   before_Exam = function(s, w, wh)
-    if w == _'тайник' and type_done and not fn_have(_'ключ_подвала') then
+    if w == _'тайник' and type_done and not have(_'ключ_подвала') then
       fn_say("В тайнике — тяжёлый трёхгранный ключ от жалюзи машинного зала.")
-      fn_enable(_'ключ_подвала')
-      fn_take(_'ключ_подвала')
+      enable(_'ключ_подвала')
+      take(_'ключ_подвала')
     else
       return false
     end
@@ -1376,10 +1184,10 @@ room {
       -"коридор|галерея";
       nam = "путь_бухгалтерия_коридор";
       before_Walk = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
       before_Enter = function(s, w, wh)
-        fn_move(fn_player(), _'коридор')
+        move(me(), _'коридор')
       end;
     }:attr 'scenery,scenery';
   };
@@ -1444,7 +1252,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w == _'карточка' and fn_have(_'карточка') then
+    if w == _'карточка' and have(_'карточка') then
       if not brand_spoken then
         fn_say('Старик роняет лопату. "Значит, разобрали мою девочку на шестерни... Слушай и запоминай ритм восстания: семь долей вверх, четыре вниз — так усыпляют стаю и сбивают ход гигантских поршней. Флейта мастера — в сейфе депозитария." Он тихо напевает древнюю мелодию Крысолова.')
         brand_spoken = true
@@ -1520,10 +1328,10 @@ room {
     if not dep_open then
       fn_say("Сейф закрыт шестью ригелями.")
     end
-    if dep_open and fn_have(_'флейта') then
+    if dep_open and have(_'флейта') then
       fn_say("Сейф распахнут, лоток пуст.")
     end
-    if dep_open and not fn_have(_'флейта') then
+    if dep_open and not have(_'флейта') then
       fn_say("В сейфе — резная чёрная флейта с чеканными серебряными кольцами.")
     end
   end;
@@ -1532,7 +1340,7 @@ room {
       if code_known then
         fn_say("Диски провернулись: 4-12-709. Стальная плита отошла в сторону.")
         dep_open = true
-        fn_enable(_'флейта')
+        enable(_'флейта')
       else
         fn_say("Вы вертите лимб наугад. Механизм молчит — нужно знать комбинацию.")
       end
@@ -1574,7 +1382,7 @@ room {
   title = "Санитарная прачечная";
   dsc = function(s)
     fn_say("Каменные чаны с щелочной пеной. Потолок рассечён трещиной, сквозь которую хлещет вода. Как будто где-то рядом, за стеной, шумит прибой. Позади — дверь в коллектор.")
-    if not fn_have(_'медальон') then
+    if not have(_'медальон') then
       fn_say("На краю цинкового лотка поблёскивает вещица.")
     end
   end;
@@ -1643,9 +1451,9 @@ room {
   before_Eat = function(s, w, wh)
     if w == _'столы' then
       if not rats_cleared then
-        fn_walk(_'death_eat1')
+        walk(_'death_eat1')
       else
-        fn_walk(_'death_eat2')
+        walk(_'death_eat2')
       end
     else
       return false
@@ -1671,7 +1479,7 @@ room {
           fn_say("За дверью — чавкающий пир. Не пройти.")
           return
         end
-        fn_move(fn_player(), _'кладовая')
+        move(me(), _'кладовая')
       end;
     }:attr 'scenery,scenery,enterable';
 
@@ -1679,15 +1487,15 @@ room {
       -"сердце|решётка|машинный";
       nam = "путь_зал_сердце";
       ["before_Walk,Enter"] = function(s, w, wh)
-        if not fn_have(_'ключ_подвала') then
+        if not have(_'ключ_подвала') then
           fn_say("Доступ преграждает тяжёлая решётка. Замок не сдвинуть без ключа.")
           return
         end
-        if not fn_have(_'печать') then
+        if not have(_'печать') then
           fn_say("Решётка поднята, но пульт заблокирован щитом с гербовым гнездом под печать Правления.")
           return
         end
-        fn_move(fn_player(), _'сердце')
+        move(me(), _'сердце')
       end;
     }:attr 'scenery,scenery,enterable';
   };
@@ -1708,10 +1516,10 @@ room {
   end;
   before_Exam = function(s, w, wh)
     if w == _'фигура' then
-      if fn_have(_'осколок') and not fake_tested then
+      if have(_'осколок') and not fake_tested then
         fn_say("Под восковой кожей — латунный каркас и взведённая пружина. Приманка! Настоящая Сюзанна жива и заперта у главного привода машины.")
         fake_tested = true
-      elseif not fn_have(_'осколок') then
+      elseif not have(_'осколок') then
         fn_say("Девушка кажется спящей, но неподвижность пугает. На запястье нет пульса.")
       end
     else
@@ -1721,7 +1529,7 @@ room {
   before_Touch = function(s, w, wh)
     if w == _'фигура' then
       if not fake_tested then
-        fn_walk(_'death_embrace')
+        walk(_'death_embrace')
       else
         fn_say("Вы знаете, что это смертоносный муляж. Прикасаться — безумие.")
       end
@@ -1743,7 +1551,7 @@ room {
           fn_say("Пружинный ригель заперт снаружи.")
           return
         end
-        fn_move(fn_player(), _'будуар')
+        move(me(), _'будуар')
       end;
     }:attr 'scenery,scenery,enterable';
 
@@ -1755,7 +1563,7 @@ room {
           fn_say("За дверью — чавкающий пир. Не пройти.")
           return
         end
-        fn_move(fn_player(), _'зал')
+        move(me(), _'зал')
       end;
     }:attr 'scenery,scenery,enterable';
   };
@@ -1776,7 +1584,7 @@ room {
     end
   end;
   before_Show = function(s, w, wh)
-    if w == _'медальон' and fn_have(_'медальон') and wh == _'сюзанна' then
+    if w == _'медальон' and have(_'медальон') and wh == _'сюзанна' then
       if not medallion_shown then
         fn_say("Сюзанна видит тусклый блеск меди и прижимает ладонь к стеклу изнутри. По её щеке бежит слеза. Дыхание выравнивается.")
         medallion_shown = true
@@ -1800,9 +1608,9 @@ room {
     end
   end;
   before_Play = function(s, w, wh)
-    if w == _'флейта' and fn_have(_'флейта') then
+    if w == _'флейта' and have(_'флейта') then
       if brand_spoken then
-        fn_walk(_'win1')
+        walk(_'win1')
       else
         fn_say("Дерево молчит под пальцами: вы не знаете напева. Старик у топок помнит ритм бунта.")
       end
@@ -1811,15 +1619,15 @@ room {
     end
   end;
   before_Insert = function(s, w, wh)
-    if wh == _'валик' and fn_have(_'поэма') then
+    if wh == _'валик' and have(_'поэма') then
       if corinna_awake then
-        fn_walk(_'win3')
+        walk(_'win3')
       else
         fn_say("Вы не знаете, как перенастроить сложную гидравлику органа на ритм строфы. Нужна помощь Коринны — той, что знает устройство машины.")
       end
-    elseif wh == _'распределитель' and fn_have(_'клапан') then
-      if fn_have(_'ключ_подвала') then
-        fn_walk(_'win2')
+    elseif wh == _'распределитель' and have(_'клапан') then
+      if have(_'ключ_подвала') then
+        walk(_'win2')
       else
         fn_say("Клапан не вогнать в шестерни голыми руками. Нужен тяжёлый трёхгранный ключ.")
       end
@@ -1878,7 +1686,7 @@ room {
     end
   end;
   before_Wait = function(s, w, wh)
-    fn_walk(_'win4')
+    walk(_'win4')
   end;
   obj = {
     obj {
