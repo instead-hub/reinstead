@@ -408,7 +408,7 @@ obj {
   nam = "Станция2";
   description = "Одна из целой цепочки станций наблюдения, построенных по всей продолжительности каньона Маринера.";
   door_to = 'Снаружи_станции';
-  before_Default = function(s, ev)
+  before_Default = function(s, ev, w)
     if ev == 'Exam' then
       return false
     end
@@ -520,7 +520,7 @@ obj {
 }:attr 'scenery'
 
 Verb { '#Realize', "осознать, обдумать", "{noun}/вн,scene : Realize" }
-mp.Realize = function(s)
+mp.Realize = function(s, w, wh)
   s = _'Всё'
 end
 
@@ -528,7 +528,7 @@ obj {
   -"Солнце";
   found_in = { 'main', 'Снаружи_станции', 'На_крыше' };
   description = "Солнце уже клонится к закату. Небо начинает наливаться синевой.";
-  before_Default = function(s, ev)
+  before_Default = function(s, ev, w)
     if ev == 'Exam' then
       return false
     end
@@ -540,7 +540,7 @@ obj {
   -"небо";
   found_in = { 'main', 'Снаружи_станции', 'На_крыше' };
   description = "Небо на Марсе обычно красноватое или желтое в пыльную бурю. Но иногда вечером, как сейчас, наливается синевой. Почти как на Земле.";
-  before_Default = function(s, ev)
+  before_Default = function(s, ev, w)
     if ev == 'Exam' then
       return false
     end
@@ -557,7 +557,7 @@ obj {
 
 room {
   nam = "Снаружи_станции";
-  onenter = function(s)
+  onenter = function(s, f)
     if fn_visits(s) == 0 then
       fn_say("На подходе к станции я понял, что тут явно что-то случилось. В переходе между куполами было что-то неправильное. Марина, что с ней? Я попытался вызвать её, но получил только шипение в наушнике в ответ. Я ускорил шаг и вскоре был у станции.")
     end
@@ -620,7 +620,7 @@ obj {
   -"антенна";
   nam = "Антенна";
   description = "Антенна выглядит неповрежденной.";
-  before_Default = function(s, ev)
+  before_Default = function(s, ev, w)
     if ev == 'Exam' then
       return false
     end
@@ -659,7 +659,7 @@ room {
   hint_verbs = { "#Drive" };
   out_to = 'Снаружи_станции';
   u_to = 'На_крыше';
-  before_Walk = function(s, w)
+  before_Walk = function(s, w, wh)
     if fn_compass_dir(w) == 'out_to' then
       fn_teleport(_'Снаружи_станции')
     elseif fn_compass_dir(w) == 'u_to' then
@@ -692,7 +692,7 @@ obj {
   -"малый купол,купол/но";
   nam = "Малый_купол";
   description = "Купол вроде цел, но доступа в него похоже уже нет. Переход разрушен.";
-  before_Default = function(s, ev)
+  before_Default = function(s, ev, w)
     if ev == 'Exam' then
       return false
     end
@@ -782,7 +782,7 @@ room {
 
 room {
   nam = "Внутри_большого_купола";
-  onenter = function(s)
+  onenter = function(s, f)
     if fn_visits(s) == 0 then
       fn_say('Шлюз оказался разблокированным. Давление внутри оказалось равным наружному. Впрочем мы частенько так оставляли большой купол. Портиться там было нечему, а вот приборы и инструменты часто приходилось таскать туда-сюда.^Едва я успел войти, споткнувшись о моток какого-то кабеля, как на меня набросилась Марина.^-- Дурак! -- Приглушённо закричала она из под маски. -- Я тут с ума схожу, думала ты там внутри был. А ты где-то шатаешься!')
     end
