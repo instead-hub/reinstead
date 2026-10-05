@@ -146,6 +146,24 @@ def wrapper_template(text):
     return None
 
 
+def adapter_callee(text, plist):
+    """Return callee if body forwards exactly (params..., ...) to it."""
+    b = text.strip()
+    if not b or "\n" in b:
+        return None
+    if b.startswith("return "):
+        b = b[7:].strip()
+    m = re.match(r"^([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*"
+                 r"(?::[A-Za-z_]\w*)?)\s*\(([^()]*)\)$", b)
+    if not m:
+        return None
+    callee, raw = m.group(1), m.group(2)
+    got = [a.strip() for a in raw.split(",") if a.strip()]
+    if got != [pn for pn, _pt in plist] + ["..."]:
+        return None
+    return None if "fn_" in callee else callee
+
+
 def prescan(root, ctx):
     ctx.fns = set()
     ids = collect_ids(root)
@@ -176,6 +194,10 @@ def prescan(root, ctx):
                 raise Error("duplicate fn: " + name)
             ctx.fn_sigs[name] = (plist, ret, variadic)
             fn_names.add(name)
+            if variadic and isinstance(val, Lua):
+                callee = adapter_callee(val.s, plist)
+                if callee:
+                    ctx.adapters[name] = callee
             if not variadic and isinstance(val, Lua):
                 t = wrapper_template(val.s)
                 if t and "fn_" in t:
@@ -229,4 +251,5 @@ def prescan(root, ctx):
     walk_use(root)
     for n in use_refs:
         ctx.wrappers.pop(n, None)
+        ctx.adapters.pop(n, None)
     check_refs(root, ids)

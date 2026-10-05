@@ -28,4 +28,5 @@ class Ctx:
         self.event_names = set()
         self.extra_events = {}
         self.wrappers = {}
+        self.adapters = {}
         self.src_dir = src_dir

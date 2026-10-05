@@ -53,7 +53,7 @@ class Emitter:
                 name = m.group(1)
                 if name not in self.ctx.fns:
                     raise Error("unknown fn in use: " + name)
-                if name in self.ctx.wrappers:
+                if name in self.ctx.wrappers or name in self.ctx.adapters:
                     raise Error("wrapper fn %s cannot be used with use"
                                 % name)
                 return name

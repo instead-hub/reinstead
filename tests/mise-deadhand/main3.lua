@@ -9,28 +9,8 @@ fmt.dash = true
 fmt.quotes = true
 require "parser/mp-ru"
 
-local function fn_say(text, ...)
-  p(text, ...)
-end
-
-local function fn_line(...)
-  pn(...)
-end
-
-local function fn_append(text, ...)
-  pr(text, ...)
-end
-
-local function fn_xaction(ev, ...)
-  mp:xaction(ev, ...)
-end
-
 local function fn_event()
   return mp.event
-end
-
-local function fn_walkback(...)
-  walkback(...)
 end
 
 local function fn_call_before(s, ev)
@@ -43,10 +23,6 @@ end
 
 local function fn_tiny()
   return instead.tiny
-end
-
-local function fn_music(name, ...)
-  snd.music(name, ...)
 end
 
 local function fn_in_room(r)
@@ -109,11 +85,11 @@ game.before_Walk = function(s, w, wh)
   if dir == 'in_to' or dir == 'out_to' then
     return false
   end
-  fn_say("Стороны света есть на Земле, а не в космосе.")
+  p("Стороны света есть на Земле, а не в космосе.")
 end;
 game.before_Taste = function(s, w, wh)
   if _'suit':has("worn") then
-    fn_say("В скафандре?")
+    p("В скафандре?")
     return
   end
   return false
@@ -123,21 +99,21 @@ game.before_Smell = function(s, w, wh)
     return false
   end
   if not w or w:inside(me()) then
-    fn_say("В скафандре ничем не пахнет.")
+    p("В скафандре ничем не пахнет.")
     return
   end
-  fn_say("В скафандре это невозможно.")
+  p("В скафандре это невозможно.")
 end;
 game.before_Jump = "В невесомости это невозможно.";
 game.before_JumpOver = "В невесомости это невозможно.";
 game.before_Listen = function(s, w, wh)
   if _'radio':hasnt("on") then
-    fn_say("Для этого нужно включить радио.")
+    p("Для этого нужно включить радио.")
   else
     if freq then
-      fn_say("Радио молчит.")
+      p("Радио молчит.")
     else
-      fn_say("Скафандр заполнен звуком радио.")
+      p("Скафандр заполнен звуком радио.")
     end
   end
 end;
@@ -159,13 +135,13 @@ obj {
   -"скафандр";
   nam = "suit";
   description = function(s)
-    fn_say("Твой скафандр оборудован различными приборами.")
+    p("Твой скафандр оборудован различными приборами.")
     if here().rotate then
-      fn_say("Но сейчас ты думаешь только о маневровых двигателях.")
+      p("Но сейчас ты думаешь только о маневровых двигателях.")
       return
     end
     if not known then
-      fn_say("Например, радио.")
+      p("Например, радио.")
     end
   end;
   ["before_Enter,Climb"] = function(s, w, wh)
@@ -178,7 +154,7 @@ obj {
     if fn_in_room(_'ship2') then
       return false
     else
-      fn_say("Это самоубийство!")
+      p("Это самоубийство!")
     end
   end;
   obj = {
@@ -188,16 +164,16 @@ obj {
       description = "Маневровые двигатели позволяют ориентироваться в пространстве и перемещаться на небольшие расстояния. Ты можешь включить их.";
       after_SwitchOn = function(s, w, wh)
         if here().rotate then
-          fn_say([[Ты включаешь маневровые двигатели и пытаешься остановить вращение.
+          p([[Ты включаешь маневровые двигатели и пытаешься остановить вращение.
 В конце-концов тебе это удаётся! Только топлива ты потратил немало. Ты снова выключаешь двигатели.]])
           here().rotate = false
           s:attr("~on")
         else
           if seen(_'tetr') then
-            fn_say("Ты включаешь маневровые двигатели.")
+            p("Ты включаешь маневровые двигатели.")
             return
           end
-          fn_say("Ты даёшь пару импульсов. Лучше экономить горючее. Хотя... зачем?")
+          p("Ты даёшь пару импульсов. Лучше экономить горючее. Хотя... зачем?")
           s:attr("~on")
         end
       end;
@@ -207,12 +183,12 @@ obj {
       -"радио|рация|приёмник";
       nam = "radio";
       description = function(s)
-        fn_say("В скафандр встроен УКВ приёмник.")
+        p("В скафандр встроен УКВ приёмник.")
         if s:has("on") then
           if freq then
-            fn_say("Задана рабочая частота 143,625 МГц.")
+            p("Задана рабочая частота 143,625 МГц.")
           else
-            fn_say("Рабочая частота не настроена.")
+            p("Рабочая частота не настроена.")
           end
         end
         return false
@@ -223,13 +199,13 @@ obj {
         end
         if freq then
           if good_to > DH_TO and s:once("ack") then
-            fn_say("Внезапно, пустота радиоэфира нарушилась.^", pres)
-            fn_say("^^Сигналы прекратились. Ты заметил, что текст на экране изменился.")
+            p("Внезапно, пустота радиоэфира нарушилась.^", pres)
+            p("^^Сигналы прекратились. Ты заметил, что текст на экране изменился.")
           else
-            fn_say("Ты слышишь шипящий звук из рации.")
+            p("Ты слышишь шипящий звук из рации.")
           end
         else
-          fn_say(channels[freq_hz][channel_pos])
+          p(channels[freq_hz][channel_pos])
           if #channels[freq_hz] == 1 then
             return
           end
@@ -243,7 +219,7 @@ obj {
       after_SwitchOn = function(s, w, wh)
         freq = true
         if s:once() then
-          fn_say([[Ты включил радио на рабочей частоте.^^
+          p([[Ты включил радио на рабочей частоте.^^
 ... яю.. . аз... Ребята, если кто-то из вас уцелел. Запасов кислорода в ваших скафандрах недостаточно,
 чтобы мы успели найти и снять кого-нибудь из вас... Нам очень жаль... А сейчас, прослушайте
 обращение президента:^
@@ -251,7 +227,7 @@ obj {
 ]] .. pres .. [[ Мы повторяем эту передачу каждые 15 минут в течении двух часов.]])
           known = true
         else
-          fn_say("Ты включил радио на рабочей частоте 143,625 МГц.")
+          p("Ты включил радио на рабочей частоте 143,625 МГц.")
         end
         DaemonStart(_'radio')
         if fn_in_room(_'space') then
@@ -273,26 +249,26 @@ mp.Tune = function(s, w, wh)
   if not w or w == _'radio' then
     w = _'radio'
     if w:hasnt("on") then
-      fn_say("Радио выключено.")
+      p("Радио выключено.")
       return
     else
       return false
     end
   end
   if w then
-    fn_say(w:It(), "не {#if_hint/#first,plural,настраиваются,настраивается}.")
+    p(w:It(), "не {#if_hint/#first,plural,настраиваются,настраивается}.")
     return
   end
 end
 mp.after_Tune = function(s, w, wh)
   freq = not freq
   if not freq then
-    fn_say("Ты сменил частоту.")
+    p("Ты сменил частоту.")
     freq_hz = rnd(#channels)
     channel_pos = rnd(#channels[freq_hz])
     DaemonStart(_'radio')
   else
-    fn_say("Ты вернул рабочую частоту: 143,625 МГц.")
+    p("Ты вернул рабочую частоту: 143,625 МГц.")
   end
 end
 
@@ -333,7 +309,7 @@ obj {
   before_Exam = function() return false end;
   ["before_Walk,Climb,Enter"] = function(s, w, wh)
     if _'engines':hasnt("on") then
-      fn_say("Сначала нужно включить двигатели.")
+      p("Сначала нужно включить двигатели.")
       return
     end
     walk(_'space2')
@@ -352,17 +328,17 @@ room {
       DaemonStop(s)
       place(_'tetr')
       if isDaemon(_'radio') then
-        fn_line()
+        pn()
       end
-      fn_say("Тебе показалось, что ты видишь какой-то яркий объект.")
+      p("Тебе показалось, что ты видишь какой-то яркий объект.")
       DaemonStop(s)
     end
   end;
   dsc = function(s)
     if s.rotate then
-      fn_say("Быстро вращаясь, ты плывёшь в открытом космосе.")
+      p("Быстро вращаясь, ты плывёшь в открытом космосе.")
     else
-      fn_say("Ты плывёшь в открытом космосе. Под ногами простирается голубая гладь планеты Земля.")
+      p("Ты плывёшь в открытом космосе. Под ногами простирается голубая гладь планеты Земля.")
     end
   end;
   before_Default = function(s, ev, w)
@@ -372,9 +348,9 @@ room {
     if w and w:inside(me()) or w == me() then
       return false
     end
-    fn_say("Из-за бешеного вращения, ты не можешь сориентироваться.")
+    p("Из-за бешеного вращения, ты не можешь сориентироваться.")
     if s:once("self") then
-      fn_say("Может быть, попробовать осмотреть себя?")
+      p("Может быть, попробовать осмотреть себя?")
     end
   end;
 }
@@ -390,7 +366,7 @@ door {
     end
   end;
   description = function(s)
-    fn_say("Рядом с люком находится красный рычаг.")
+    p("Рядом с люком находится красный рычаг.")
     enable(_'lever')
     return false
   end;
@@ -403,10 +379,10 @@ obj {
   ["after_Pull,Transfer"] = function(s, w, wh)
     if fn_in_room(_'ship2') then
       if _'gate2':has("open") then
-        fn_say("Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.")
+        p("Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.")
         _'gate2':attr("~open")
       else
-        fn_say("Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.")
+        p("Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.")
         _'gate2':attr("open")
       end
       return
@@ -414,22 +390,22 @@ obj {
     local open = _'gate':has("open")
     if fn_in_room(_'ship') then
       if not open then
-        fn_say("Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.")
+        p("Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.")
         _'gate2':attr("~open")
       end
     end
     if open then
-      fn_say("Ты дёрнул за рычаг и шлюзовой люк закрылся.")
+      p("Ты дёрнул за рычаг и шлюзовой люк закрылся.")
       _'gate':attr("~open")
     else
       if fn_in_room(_'space2') then
-        fn_say("Ты дёрнул за рычаг и шлюзовой люк открылся.")
+        p("Ты дёрнул за рычаг и шлюзовой люк открылся.")
       end
       _'gate':attr("open")
     end
     if fn_in_room(_'ship') then
       if open then
-        fn_say("Через некоторое время открылся входной люк, ведущий внутрь корабля.")
+        p("Через некоторое время открылся входной люк, ведущий внутрь корабля.")
         _'gate2':attr("open")
       end
     end
@@ -447,13 +423,13 @@ obj {
       nam = "corpus";
       description = function(s)
         if s:once() then
-          fn_say("Внимательно осмотрев корпус, ты заметил шлюзовой люк.")
+          p("Внимательно осмотрев корпус, ты заметил шлюзовой люк.")
           enable(_'gate')
         else
           if perimetr then
-            fn_say("Теперь ты знешь, что это за спутник.")
+            p("Теперь ты знешь, что это за спутник.")
           else
-            fn_say("Спутник связи, может быть?")
+            p("Спутник связи, может быть?")
           end
         end
       end;
@@ -467,13 +443,13 @@ room {
   title = "открытый космос";
   in_to = function(s)
     if disabled(_'gate') then
-      fn_say("Как ты попадёшь внутрь?")
+      p("Как ты попадёшь внутрь?")
     else
       return _'gate'
     end
   end;
   onenter = function(s, f)
-    fn_say([[Управляя маневровыми двигателями и почти израсходовав топливо, ты смог согласовать свою орбиту с орбитой объекта.
+    p([[Управляя маневровыми двигателями и почти израсходовав топливо, ты смог согласовать свою орбиту с орбитой объекта.
 Им оказался спутник в форме тетраэдра.]])
     _'engines':attr("~on")
   end;
@@ -504,7 +480,7 @@ room {
   title = "шлюз";
   onenter = function(s, f)
     if f == _'space2' then
-      fn_say("Ты влетел в шлюзовой отсек.")
+      p("Ты влетел в шлюзовой отсек.")
     end
   end;
   out_to = 'gate';
@@ -532,17 +508,17 @@ obj {
           if perimetr_ask > 5 then
             perimetr_ask = 0
           end
-          fn_say("Ты ещё раз нажал на кнопку.")
-          fn_say("Ты заметил, что на экране изменилась одна из строк.^")
-          fn_append("Режим голосовой отмены: ")
+          p("Ты ещё раз нажал на кнопку.")
+          p("Ты заметил, что на экране изменилась одна из строк.^")
+          pr("Режим голосовой отмены: ")
           if perimetr_ask == 0 then
-            fn_say("выкл.")
+            p("выкл.")
           else
-            fn_say(freqs[perimetr_ask])
+            p(freqs[perimetr_ask])
           end
           return
         end
-        fn_say("Неизвестный корабль. Красная кнопка. Ты точно готов это сделать?^Подтверди. Да или нет?")
+        p("Неизвестный корабль. Красная кнопка. Ты точно готов это сделать?^Подтверди. Да или нет?")
         ask = true
       end;
     }:attr 'static,concealed';
@@ -558,20 +534,20 @@ obj {
           return
         end
         if perimetr then
-          fn_say([[Программа "ПЕРИМЕТР" активирована.^^
+          p([[Программа "ПЕРИМЕТР" активирована.^^
 Переход в автономный режим: да^]])
           if perimetr_ask > 0 then
-            fn_say("Режим голосовой отмены: ", freqs[perimetr_ask], ".")
+            p("Режим голосовой отмены: ", freqs[perimetr_ask], ".")
           else
-            fn_say("Режим голосовой отмены: выкл.")
+            p("Режим голосовой отмены: выкл.")
           end
-          fn_say([[^Отключение управления по каналам связи: да^
+          p([[^Отключение управления по каналам связи: да^
 Отсчёт времени до начала активной фазы: ]], timeout, [[^Ядерный удар первой волны: ожидание^
 Ядерный удар второй волны: ожидание^
 Последняя волна: ожидание]])
           know2 = true
         else
-          fn_say("Экран неактивен.")
+          p("Экран неактивен.")
         end
       end;
     }:attr 'static';
@@ -587,33 +563,33 @@ room {
     if good_to > DH_TO and s:once("ack") then
       if here() == s then
         if not isDaemon(_'radio') then
-          fn_say("Сигналы прекратились. Ты заметил, что текст на экране изменился.")
+          p("Сигналы прекратились. Ты заметил, что текст на экране изменился.")
         end
       end
       DaemonStop(s)
     else
       if here() == s then
-        fn_say("Ты слышишь пульсирующий звуковой сигнал, который разносится по кораблю каждую секунду.")
+        p("Ты слышишь пульсирующий звуковой сигнал, который разносится по кораблю каждую секунду.")
         if know2 then
-          fn_say("До первой волны ", timeout, " с.")
+          p("До первой волны ", timeout, " с.")
         end
       end
     end
   end;
   onenter = function(s, f)
     if s:once() then
-      fn_say("С тревогой и надеждой, ты влетел внутрь странного корабля.")
+      p("С тревогой и надеждой, ты влетел внутрь странного корабля.")
     end
   end;
   dsc = function(s)
-    fn_say("Внутри корабля не так много места. Впрочем, к этому тебе не привыкать.")
+    p("Внутри корабля не так много места. Впрочем, к этому тебе не привыкать.")
     if _'gate2':has("open") then
-      fn_say("Здесь довольно темно. Детали обстановки плохо различимы в полумраке.")
+      p("Здесь довольно темно. Детали обстановки плохо различимы в полумраке.")
     end
   end;
   onexit = function(s, f)
     if _'suit':hasnt("worn") then
-      fn_say("Без скафандра? Самоубийство!")
+      p("Без скафандра? Самоубийство!")
       return false
     end
   end;
@@ -634,9 +610,9 @@ room {
     end
     if ask and (ev == 'Yes' or ev == 'No') then
       if ev == 'No' then
-        fn_say("Ну и правильно.")
+        p("Ну и правильно.")
       else
-        fn_say("Ты нажал на кнопку и на экране консоли побежали строки текста.")
+        p("Ты нажал на кнопку и на экране консоли побежали строки текста.")
         DaemonStart(_'ship2')
         perimetr = true
       end

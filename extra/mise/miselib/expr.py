@@ -97,6 +97,8 @@ def _wrap_params(template, plist, args):
 
 
 def fn_call(ctx, name, args):
+    if name in ctx.adapters:
+        return "%s(%s)" % (ctx.adapters[name], ", ".join(args))
     if name in ctx.wrappers:
         plist, template = ctx.wrappers[name]
         return _wrap_params(template, plist, args)
