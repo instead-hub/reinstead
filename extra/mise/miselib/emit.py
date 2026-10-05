@@ -5,7 +5,7 @@ from .common import *
 from .emitlogic import emit_logic
 from .decl import (REF_FIELDS, PRESETS, check_ref_value, decl_key,
                    is_true, sym_text)
-from .expr import transpile_exprlist
+from .expr import fn_name, transpile_exprlist
 
 
 
@@ -76,7 +76,7 @@ class Emitter:
         uname = self.use_name(v)
         if uname:
             self.check_use(uname, prm)
-            return "fn_" + uname
+            return fn_name(uname)
         if isinstance(v, Lua):
             body = reindent(v.s, indent + IND)
             return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
@@ -89,7 +89,7 @@ class Emitter:
         uname = self.use_name(val)
         if uname:
             self.check_use(uname, prm)
-            return "fn_" + uname
+            return fn_name(uname)
         if isinstance(val, Lua):
             body = reindent(val.s, indent + IND)
             return "function(%s)\n%s\n%s" % (prm, body, indent + "end")

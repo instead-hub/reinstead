@@ -73,6 +73,14 @@ def check_arity(name, plist, variadic, n):
         raise LintError("fn %s expects %d argument(s), got %d"
                         % (name, len(plist), n))
 
+
+def fn_name(name):
+    return "fn_" + name
+
+
+def fn_call(name, args):
+    return "%s(%s)" % (fn_name(name), ", ".join(args))
+
 class ExprEmit:
     def __init__(self, toks, env, where, ctx):
         self.toks = toks
@@ -158,7 +166,7 @@ class ExprEmit:
         if self.peek()[0] == "str":
             tok = self.next()
             exp = expected_list[0] if expected_list else None
-            return self.str_arg(tok[1], exp), 1
+            return [self.str_arg(tok[1], exp)], 1
         self.expect("(")
         codes = []
         n = 0
@@ -175,23 +183,23 @@ class ExprEmit:
                 if not self.accept(","):
                     break
             self.expect(")")
-        return ", ".join(codes), n
+        return codes, n
 
     def call(self, name):
         if name in self.ctx.fn_sigs:
             plist, ret, variadic = self.ctx.fn_sigs[name]
-            args, n = self.arglist([pt for _pn, pt in plist])
+            codes, n = self.arglist([pt for _pn, pt in plist])
             self.check_arity(name, plist, variadic, n)
-            return args, ret
+            return codes, ret
         if name == "_":
             if self.peek()[0] == "str":
                 self.err("_'...' is not allowed; use a bare name, #tag "
                          "or quoted name")
-            args, _ = self.arglist(None)
-            return args, "obj"
+            codes, _ = self.arglist(None)
+            return codes, "obj"
         if name in self.ctx.funcs or name in self.env:
-            args, _ = self.arglist(None)
-            return args, "any"
+            codes, _ = self.arglist(None)
+            return codes, "any"
         self.err("unknown function %r (declare fn %s)" % (name, name))
 
     def primary(self):
@@ -221,7 +229,7 @@ class ExprEmit:
             if val in self.ctx.ids:
                 return "_'%s'" % val, "obj", "objref", None
             if val in self.ctx.fn_sigs:
-                return "fn_" + val, "fn", "name", val
+                return fn_name(val), "fn", "name", val
             if val in self.ctx.funcs:
                 return val, "fn", "name", val
             if val in self.ctx.vars:
@@ -331,7 +339,7 @@ class ExprEmit:
     def autocall(self, code, t, kind, val):
         if (kind == "name" and val in self.ctx.fn_sigs
                 and not self.ctx.fn_sigs[val][0]):
-            code = "%s()" % code
+            code = fn_call(val, [])
             t = self.ctx.fn_sigs[val][1]
             kind = "call"
             val = None
@@ -382,7 +390,7 @@ class ExprEmit:
                 if (not variadic and len(plist) == 1
                         and not (nk == "str"
                                  or (nk == "op" and nv2 == "("))):
-                    code = "fn_%s(%s)" % (nv, code)
+                    code = fn_call(nv, [code])
                     t = ret
                     kind = "call"
                     val = None
@@ -402,23 +410,20 @@ class ExprEmit:
                     elif nm in self.ctx.ids:
                         arg, at = "_'%s'" % nm, "obj"
                     elif nm in self.ctx.fn_sigs and not self.ctx.fn_sigs[nm][0]:
-                        arg, at = "fn_%s()" % nm, self.ctx.fn_sigs[nm][1]
+                        arg, at = fn_call(nm, []), self.ctx.fn_sigs[nm][1]
                     elif nm in self.ctx.vars:
                         arg, at = nm, self.ctx.global_types.get(nm, "any")
                     else:
                         self.err("unknown name %r" % nm)
                     self.check(at, pt, arg)
-                    code = "fn_%s(%s, %s)" % (nv, code, arg)
+                    code = fn_call(nv, [code, arg])
                     t = ret
                     kind = "call"
                     val = None
                     continue
-                args, n = self.arglist([pt for _pn, pt in plist[1:]])
+                codes, n = self.arglist([pt for _pn, pt in plist[1:]])
                 self.check_arity(nv, plist[1:], variadic, n)
-                if args:
-                    code = "fn_%s(%s, %s)" % (nv, code, args)
-                else:
-                    code = "fn_%s(%s)" % (nv, code)
+                code = fn_call(nv, [code] + codes)
                 t = ret
                 kind = "call"
                 val = None
@@ -447,14 +452,14 @@ class ExprEmit:
                         c, t, _k2, _v2 = self.expr()
                 self.expected = None
                 self.check(t, exp, c)
-                code = "%s(%s)" % (code, c)
+                code = fn_call(val, [c])
                 t = rt
                 kind = "call"
                 val = None
             elif (k == "str" or (k == "op" and v == "(")):
                 if kind == "name":
-                    args, rt = self.call(val)
-                    code = "%s(%s)" % (code, args)
+                    codes, rt = self.call(val)
+                    code = "%s(%s)" % (code, ", ".join(codes))
                     t = rt
                     kind = "call"
                     val = None
@@ -491,24 +496,24 @@ def no_paren_call(text, env, where, ctx):
         if expr_cont(rest):
             return None
         if not expr_like(rest, env, ctx):
-            return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
+            return fn_call(name, [lua_str(rest)]), ["str"]
     elif not variadic and plist[0][1] != "str":
         return None
     elif not expr_like(rest, env, ctx):
-        return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
+        return fn_call(name, [lua_str(rest)]), ["str"]
     try:
         code, types = transpile_exprlist(
             rest, env, where, plist[0][1] if plist else None, ctx)
     except LintError:
         if plist and plist[0][1] == "str":
-            return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
+            return fn_call(name, [lua_str(rest)]), ["str"]
         raise
     check_arity(name, plist, variadic, len(types))
     for (pn, pt), t in zip(plist, types):
         if pt != "any" and t not in ("any", pt):
             raise LintError("fn %s: argument %s expects %s, got %s"
                             % (name, pn, pt, t))
-    return "fn_%s(%s)" % (name, code), [ret]
+    return fn_call(name, [code]), [ret]
 
 def transpile_exprlist(text, env, where, expected=None, ctx=None):
     raw = no_paren_call(text, env, where, ctx)
@@ -525,7 +530,7 @@ def transpile_exprlist(text, env, where, expected=None, ctx=None):
 def transpile_stmt(text, env, where, ctx):
     s = text.strip()
     if s in ctx.fn_sigs and not ctx.fn_sigs[s][0]:
-        return "fn_%s()" % s
+        return fn_call(s, [])
     raw = no_paren_call(text, env, where, ctx)
     if raw is not None:
         return raw[0]

@@ -8,6 +8,7 @@ from .prescan import apply_includes, prescan
 from .decl import classify, parse_fn_sig
 from .emit import Emitter
 from .emitlogic import emit_logic
+from .expr import fn_name
 
 
 def transpile(src, src_dir=""):
@@ -54,8 +55,8 @@ def transpile(src, src_dir=""):
                 raise Error("fn %s must be a | block"
                             % name)
             ctx.fns.add(name)
-            fn_body.append("local function fn_%s(%s)\n%s\nend"
-                           % (name, prm, hb))
+            fn_body.append("local function %s(%s)\n%s\nend"
+                           % (fn_name(name), prm, hb))
         elif kind == "patch":
             body.append(em.patch(info, val))
         elif kind == "setup":
