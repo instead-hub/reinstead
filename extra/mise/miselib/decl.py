@@ -66,11 +66,12 @@ def parse_fn_sig(key):
     if params is None:
         plist = [("s", "obj"), ("w", "obj"), ("wh", "obj")]
     elif params.strip():
-        for p in params.split(","):
-            p = p.strip()
-            if not p:
-                continue
+        parts = [p.strip() for p in params.split(",") if p.strip()]
+        for idx, p in enumerate(parts):
             if p == "...":
+                if idx != len(parts) - 1:
+                    raise Error("fn %s: ... must be the last parameter"
+                                % name)
                 variadic = True
                 continue
             if ":" in p:

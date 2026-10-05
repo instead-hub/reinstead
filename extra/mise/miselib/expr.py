@@ -237,7 +237,7 @@ class ExprEmit:
                 return val, "event", "lit", self.strval(val)
             return val, "str", "lit", self.strval(val)
         if kind == "op" and val == "...":
-            return val, "any", "lit", None
+            self.err("... is not allowed in logic; use |lua for varargs")
         if kind == "name":
             if val in ("nil", "true", "false"):
                 return val, "bool" if val != "nil" else "any", "lit", None
