@@ -490,11 +490,11 @@ def no_paren_call(text, env, where, ctx):
     if not plist:
         if expr_cont(rest):
             return None
-        if not say_expr_start(rest, env, ctx):
+        if not expr_like(rest, env, ctx):
             return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
     elif not variadic and plist[0][1] != "str":
         return None
-    elif not say_expr_start(rest, env, ctx):
+    elif not expr_like(rest, env, ctx):
         return "fn_%s(%s)" % (name, lua_str(rest)), ["str"]
     try:
         code, types = transpile_exprlist(
@@ -621,7 +621,7 @@ def transpile_for(header, env, where, ctx):
     return ("for %s = %s" % (m.group(1), ", ".join(codes)),
             {m.group(1): "num"})
 
-def say_expr_start(s, env, ctx):
+def expr_like(s, env, ctx):
     c = s[0]
     if c in "'\"([{`_#":
         return True
