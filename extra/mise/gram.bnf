@@ -45,17 +45,16 @@ decl      ::= kind [ NAME ] ":" block
 kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
             | CLASS
 (* имена деклараций — только NAME (идентификатор/тег); кавычки допустимы
-   лишь у patch ("patch 'game':"); with/contains/inside/parts перечисляют
+   лишь у patch ("patch 'game':"); with/inside перечисляют
    голые NAME; поля-ссылки (n_to/out_to/door_to/talk_to/found_in/...) —
    голое NAME, строка-имя объекта — ошибка *)
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
-            | "var" IDENT ":" value
 param     ::= IDENT [ ":" type ] | "..."
 type      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
 (* key события — EventName в движковом регистре (Walk, Enter, SwitchOn, ...);
    Any/Default — тоже события; before/after/post — префикс: "after Put",
-   "before Turn, Tune". Спец-ключи: with/contains/inside/parts (вложенные
+   "before Turn, Tune". Спец-ключи: with/inside (вложенные
    декларации или список ссылок), words/word, attrs, disabled, on/before/
    after/post, found_in, переходы (n_to, out_to, ...), тексты и т.п. *)
 
@@ -100,11 +99,10 @@ data      ::= "{" <сбалансированный Lua-литерал> "}"
    Значение-обработчик: value, либо "pass", либо "use IDENT". *)
 
 (* ---------- логика (|) ---------- *)
-logic_line ::= stop | pass | ret | set | if | for | local | break | stmt
+logic_line ::= stop | pass | ret | if | for | local | break | stmt
 stop      ::= "stop"
 pass      ::= "pass"
 ret       ::= "return" [ expr_list ]
-set       ::= "set" lvalue ( "=" | "+=" | "-=" ) expr_list
 if        ::= "if" expr ":" INDENT { logic_line } DEDENT
               { "elseif" expr ":" INDENT { logic_line } DEDENT }
               [ "else" ":" INDENT { logic_line } DEDENT ]
@@ -113,7 +111,7 @@ for_header::= IDENT "=" expr "," expr [ "," expr ]     (* числовой *)
             | IDENT { "," IDENT } "in" expr            (* generic *)
 local     ::= "local" IDENT { "," IDENT } [ "=" expr_list ]
 break     ::= "break"
-stmt      ::= lvalue "=" expr_list                      (* присваивание *)
+stmt      ::= lvalue ( "=" | "+=" | "-=" ) expr_list    (* присваивание *)
             | call                                      (* вызов *)
 lvalue    ::= IDENT { "." IDENT | "[" expr "]" }
 

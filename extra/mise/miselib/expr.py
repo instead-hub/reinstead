@@ -54,7 +54,7 @@ def lex_lua(text):
             toks.append(("name", m.group(0)))
             i += m.end()
             continue
-        m = re.match(r"\.\.\.|\.\.|==|~=|<=|>=|::|//|[+\-*/%^#<>=(){}\[\],;:.]",
+        m = re.match(r"\.\.\.|\.\.|==|~=|<=|>=|\+=|-=|::|//|[+\-*/%^#<>=(){}\[\],;:.]",
                      text[i:])
         if m:
             toks.append(("op", m.group(0)))
@@ -570,7 +570,16 @@ def transpile_stmt(text, env, where, ctx):
         return "break"
     p.expected = None
     lhs, _lt, lk, lv = p.expr()
-    if p.accept("="):
+    op = None
+    k1, v1 = p.peek()
+    if k1 == "op" and v1 in ("=", "+=", "-="):
+        op = p.next()[1]
+    elif (k1 == "op" and v1 in ("+", "-")
+          and p.peek(1)[1] == "="):
+        p.next()
+        p.next()
+        op = v1 + "="
+    if op is not None:
         codes = []
         types = []
         while True:
@@ -585,7 +594,10 @@ def transpile_stmt(text, env, where, ctx):
             p.err("unexpected %r" % p.peek()[1])
         if lk == "name" and lv in env and types:
             env[lv] = types[0]
-        return "%s = %s" % (lhs, ", ".join(codes))
+        if op == "=":
+            return "%s = %s" % (lhs, ", ".join(codes))
+        sign = "+" if op == "+=" else "-"
+        return "%s = %s %s (%s)" % (lhs, lhs, sign, ", ".join(codes))
     if p.peek()[0] != "eof":
         p.err("unexpected %r" % p.peek()[1])
     if lk == "name" and lv in ctx.fn_sigs:

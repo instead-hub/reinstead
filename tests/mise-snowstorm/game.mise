@@ -870,7 +870,7 @@ Area В_лесу:
       stop
     s.depth = s.depth + 1
     if s.depth > 8:
-      set s.depth = 6 + rnd(3)
+      s.depth = 6 + rnd(3)
     forest_scenery(s)
     player:need_scene(true)
     say "Ты идешь некоторое время на ", (_('@'..t).word), "."
@@ -1137,7 +1137,7 @@ room пещера:
     if not w or not have скрипка:
       pass
     if not w:
-      set w = скрипка
+      w = скрипка
     if not (w == скрипка):
       pass
     if #кристаллы.try == 0 or #кристаллы.broken:

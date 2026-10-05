@@ -55,7 +55,7 @@ verb Play:
 fn type_name(s: obj, w: obj): |
   if (w == имя or w == машинка) and have карточка and not type_done:
     say Вы отстучали: М-А-Р-И-Я. Литеры ударили по бумаге, и в тумбе стола отскочила крышка тайника.
-    set type_done = true
+    type_done = true
   else:
     pass
 
@@ -170,7 +170,7 @@ room вестибюль:
     Exam(s, w): |
       if w == часы:
         say Стрелки замерли на 4:12. Внутри — лихорадочный бег храповика: пружина взведена до предела. Маятник-гильотина блестит, как лезвие.
-        set code_known = true
+        code_known = true
       elseif w == пневмопочта:
         say Латунные трубы втягивают воздух и со стуком выплёвывают гильзы с сургучной печатью. Каждая — чей-то приговор.
       else:
@@ -187,7 +187,7 @@ room вестибюль:
       if w == карточка and have карточка:
         if not clerk_saved:
           say Компостер падает. Глаза расширяются. "Маша Бранд... Ордер на разборку за моим личным номером! Я подписал его за осьмушку чая и облатку сахарина. Возьмите ключ. Он отпирает парадный зал на втором этаже. Спасите тех, кого ещё не пустили на шестерни!"
-          set clerk_saved = true
+          clerk_saved = true
           enable ключ_клерка
           take ключ_клерка
         else:
@@ -203,7 +203,7 @@ room вестибюль:
         Burn(s, w): |
           if matches_warm and not candle_lit:
             say Спичка чиркнула жарко и сухо. Жёлтый огонёк встал над фитилём, оттеснив холодную тьму.
-            set candle_lit = true
+            candle_lit = true
           elseif have спички and not matches_warm and not candle_lit:
             say Серная головка обледенела и крошится. Спички нужно отогреть у тепла.
         Take(s, w): |
@@ -322,7 +322,7 @@ room буфет:
       if w == спички and wh == калорифер and not matches_warm:
         say Вы разложили коробок на горячих трубах калорифера. Лёд сошёл, серные головки оттаяли.
         remove спички
-        set matches_warm = true
+        matches_warm = true
       else:
         pass
   with:
@@ -378,7 +378,7 @@ room охрана:
     Show(s, w, wh): |
       if w == осколок and have осколок and not guard_out:
         say В зеркале отразилась крысиная морда, впаянная в шестерни шлема. Тварь зашлась визгом, бросила винтовку и скользнула в люк пневмосброса.
-        set guard_out = true
+        guard_out = true
       else:
         pass
   with:
@@ -393,7 +393,7 @@ room охрана:
         Burn(s, w): |
           if candle_lit and not lantern_lit:
             say Вы поднесли свечу к фитилю. Керосин занялся ровным ярким пламенем.
-            set lantern_lit = true
+            lantern_lit = true
           elseif not candle_lit and not lantern_lit:
             say Не от чего зажечь фитиль. Сначала нужен открытый огонь.
         Take(s, w): |
@@ -439,20 +439,20 @@ room коридор:
     Look(s, w): |
       if not corridor_shock:
         say Вы вглядываетесь в своды — и тишину разрывает телефонный набат!
-        set corridor_shock = true
+        corridor_shock = true
         stop
       say Холодный мрамор, позолота, тишина.
     Listen(s, w): |
       if not corridor_shock:
         say Вы замерли у раструба — и прямо в ухо ударил яростный звонок!
-        set corridor_shock = true
+        corridor_shock = true
         stop
       say Только шорох ковра да далёкий гул в шахтах.
     Exam(s, w): |
       if w == статуи:
         if not corridor_shock:
           say Вы шагнули к нише, но телефон взорвался трезвоном над головой!
-          set corridor_shock = true
+          corridor_shock = true
           stop
         say Слепые богини с пустыми глазницами держат раструбы, вслушиваясь в каждый шорох.
       else:
@@ -461,11 +461,11 @@ room коридор:
       if w == путь_коридор_зал:
         if not corridor_shock:
           say Вы потянулись к замку, но медный звон оборвал сердце!
-          set corridor_shock = true
+          corridor_shock = true
           stop
         if have ключ_клерка and not hall_unlocked:
           say Ключ провернулся. Створки зала ушли в пазы.
-          set hall_unlocked = true
+          hall_unlocked = true
         elseif not have ключ_клерка and not hall_unlocked:
           say Замок с фигурным пазом. Нужен специальный ключ.
       else:
@@ -474,13 +474,13 @@ room коридор:
       if w == флейта:
         if not corridor_shock:
           say Вы подняли инструмент, но треск звонков сорвал дыхание!
-          set corridor_shock = true
+          corridor_shock = true
           stop
         if have флейта and not hall_unlocked:
           say Створки заперты броневыми жалюзи. Звук разобьётся о сталь.
         elseif have флейта and hall_unlocked and not rats_cleared:
           say Вы поднесли флейту к губам и извлекли пронзительную ноту. В зале — вой. Механические люки распахнулись, и сотни серых теней с визгом посыпались через пробитые витражи наружу, в метель.
-          set rats_cleared = true
+          rats_cleared = true
       else:
         pass
   with:
@@ -493,14 +493,14 @@ room коридор:
         Take(s, w): |
           if not corridor_shock:
             say Вы сорвали трубку, заглушая звон. В мембране — механический голос: "Канцелярия брака. Код списания партии кукол — 709. Повторяю: семьсот девять. Сбросить в изолятор." И — тише, будто из-под воды: "...помогите..."
-            set corridor_shock = true
-            set phone_heard = true
-            set code_known = true
+            corridor_shock = true
+            phone_heard = true
+            code_known = true
             stop
           if not phone_heard and not rats_cleared:
             say Вы прижали трубку. Механический голос: "Канцелярия брака. Код списания партии кукол — 709." И тише: "...помогите..."
-            set phone_heard = true
-            set code_known = true
+            phone_heard = true
+            code_known = true
     scenery статуи:
       words: статуи,богини,ниши
       attrs: scenery
@@ -513,7 +513,7 @@ room коридор:
         Walk, Enter(s, w): |
           if not corridor_shock:
             say Вы попятились, но телефон взорвался звоном!
-            set corridor_shock = true
+            corridor_shock = true
             stop
           player:move вестибюль
     scenery путь_коридор_библиотека:
@@ -523,7 +523,7 @@ room коридор:
         Walk, Enter(s, w): |
           if not corridor_shock:
             say Вы шагнули к дверям, но раскатистый трезвон отшатнул вас!
-            set corridor_shock = true
+            corridor_shock = true
             stop
           player:move библиотека
     scenery путь_коридор_архив:
@@ -533,7 +533,7 @@ room коридор:
         Walk, Enter(s, w): |
           if not corridor_shock:
             say В тишине разорвался набат, эхом ударив по камню!
-            set corridor_shock = true
+            corridor_shock = true
             stop
           player:move архив
     scenery путь_коридор_кабинет:
@@ -543,7 +543,7 @@ room коридор:
         Walk, Enter(s, w): |
           if not corridor_shock:
             say Вы взялись за ручку, но визг аппарата за спиной замер!
-            set corridor_shock = true
+            corridor_shock = true
             stop
           player:move кабинет
     scenery путь_коридор_будуар:
@@ -553,7 +553,7 @@ room коридор:
         Walk, Enter(s, w): |
           if not corridor_shock:
             say Звон хлестнул по ушам, сбив шаг!
-            set corridor_shock = true
+            corridor_shock = true
             stop
           player:move будуар
     scenery путь_коридор_бухгалтерия:
@@ -565,7 +565,7 @@ room коридор:
         Walk, Enter(s, w): |
           if not corridor_shock:
             say Треск медных чаш сотряс галерею!
-            set corridor_shock = true
+            corridor_shock = true
             stop
           player:move бухгалтерия
     scenery путь_коридор_зал:
@@ -578,7 +578,7 @@ room коридор:
         Walk, Enter(s, w): |
           if not corridor_shock:
             say Звон сорвал тишину в клочья!
-            set corridor_shock = true
+            corridor_shock = true
             stop
           if not rats_cleared:
             say За дверями — чавкающий пир. Войти — гибель.
@@ -596,7 +596,7 @@ room библиотека:
     Exam(s, w): |
       if w == дневник and not dnevnik:
         say «Они именуют себя Избавителями от страданий. Их логика проста: живой человек голодает, мёрзнет и мыслит. Заводной автомат, оживлённый человеческим сердцем, сыт и покорен. Сюзанну увели на нижний горизонт...»
-        set dnevnik = true
+        dnevnik = true
       elseif w == полки:
         say Атласы по часовым механизмам, анатомия гидравлических кукол, финансовые гроссбухи. Среди них — старые морские карты: Зурбаган, Лисс, Гель-Гью. Схемы подключения живых вен к золотниковым коробкам помечены «Одобрено к производству».
       else:
@@ -648,7 +648,7 @@ room архив:
       if w == код_архив and not arch_open:
         if code_known:
           say Вы провернули лимб: 4-12-709. Свист воздуха, и картина отъехала в сторону.
-          set arch_open = true
+          arch_open = true
         else:
           say Вы вертите лимб наугад. Механизм молчит — нужно знать комбинацию.
       else:
@@ -661,7 +661,7 @@ room архив:
     Yes(s, w): |
       if not poet_saved and not poet_lost:
         say "Пишите. Ваше слово сильнее всех шестерёнок". Женщина поднимает глаза: "Возьмите песнь о Зурбагане и карандаш. Она — для тех, чьё сердце не согласно стать механизмом."
-        set poet_saved = true
+        poet_saved = true
         enable поэма
         take поэма
       else:
@@ -669,7 +669,7 @@ room архив:
     No(s, w): |
       if not poet_saved and not poet_lost:
         say "Бросьте рифмы. В этом мире выживают сталью и пайками". Женщина гасит лампу и уходит во тьму.
-        set poet_lost = true
+        poet_lost = true
       else:
         pass
     Enter(s, w): |
@@ -759,7 +759,7 @@ room кабинет:
       if w == клетка:
         if boss_banished and not bird_freed:
           say Вы откинули крючок. Соловей встрепенулся, издал чистую трель — словно свобода вдохнула душу в металл — и спорхнул на карниз открытой форточки, растворившись серебряным отблеском в метели.
-          set bird_freed = true
+          bird_freed = true
         elseif bird_freed:
           say Клетка уже открыта, птица на свободе.
         else:
@@ -777,7 +777,7 @@ room кабинет:
     Show(s, w, wh): |
       if w == осколок and have осколок and not boss_banished:
         say Вы вскинули осколок перед его глазами. В амальгаме — плешивая крыса в золотой короне из шестерён. Тварь завизжала, дёрнула рычаг люка и провалилась в жерло мусоросброса.
-        set boss_banished = true
+        boss_banished = true
       else:
         pass
     Give(s, w, wh): |
@@ -850,7 +850,7 @@ room будуар:
       if w == осколок and have осколок:
         if not doll_true:
           say В зеркале вместо шёлка — латунный скелет, пружинные тяги и микропоршни.
-          set doll_true = true
+          doll_true = true
         else:
           say В зеркале всё тот же холодный латунный каркас. Скрывать больше нечего.
       else:
@@ -859,7 +859,7 @@ room будуар:
       if w == строка:
         if doll_true and have поэма and not corinna_awake:
           say Карандашом поэтессы вы нанесли строфу о Зурбагане на барабан шкатулки. Музыка ожила хрустальным перезвоном. Кукла повернула голову: "Вы подарили мне душу. Я открыла потайной люк в изолятор кукол. Спешите! А в машинном зале вложите стихи в считывающий валик органа — остальное я сделаю сама."
-          set corinna_awake = true
+          corinna_awake = true
         elseif doll_true and have поэма and corinna_awake:
           say Строфа уже выбита на барабане. Механизм Коринны оживлён.
       else:
@@ -1010,7 +1010,7 @@ room котельная:
       if w == карточка and have карточка:
         if not brand_spoken:
           say Старик роняет лопату. "Значит, разобрали мою девочку на шестерни... Слушай и запоминай ритм восстания: семь долей вверх, четыре вниз — так усыпляют стаю и сбивают ход гигантских поршней. Флейта мастера — в сейфе депозитария." Он тихо напевает древнюю мелодию Крысолова.
-          set brand_spoken = true
+          brand_spoken = true
         else:
           say Старик уже знает правду о Маше. Он молча смотрит в пламя топок.
       else:
@@ -1072,7 +1072,7 @@ room депозитарий:
       if w == код_депо and not dep_open:
         if code_known:
           say Диски провернулись: 4-12-709. Стальная плита отошла в сторону.
-          set dep_open = true
+          dep_open = true
           enable флейта
         else:
           say Вы вертите лимб наугад. Механизм молчит — нужно знать комбинацию.
@@ -1115,7 +1115,7 @@ room прачечная:
     Exam(s, w): |
       if w == вода:
         say Струя бьёт в таз мерно, как заводной механизм: 4 резких удара, 12 глухих капель, после паузы — частый плеск на 709 ударов. Ритм гидроаккумулятора.
-        set code_known = true
+        code_known = true
       elseif w == чаны:
         say В баках замочена гражданская одежда. Людей раздевали здесь перед отправкой на конвейер.
       else:
@@ -1224,7 +1224,7 @@ room кладовая:
       if w == фигура:
         if have осколок and not fake_tested:
           say Под восковой кожей — латунный каркас и взведённая пружина. Приманка! Настоящая Сюзанна жива и заперта у главного привода машины.
-          set fake_tested = true
+          fake_tested = true
         elseif not have осколок:
           say Девушка кажется спящей, но неподвижность пугает. На запястье нет пульса.
       else:
@@ -1280,7 +1280,7 @@ room сердце:
       if w == медальон and have медальон and wh == сюзанна:
         if not medallion_shown:
           say Сюзанна видит тусклый блеск меди и прижимает ладонь к стеклу изнутри. По её щеке бежит слеза. Дыхание выравнивается.
-          set medallion_shown = true
+          medallion_shown = true
         else:
           say Сюзанна по-прежнему прижимает ладонь к стеклу, не отрывая от вас преданного взгляда.
       else:
@@ -1289,7 +1289,7 @@ room сердце:
       if w == колба:
         if not tube_hit:
           say Вы ударили по кварцу кулаком. Кварц отозвался глухим гулом и острой болью в суставах пальцев.
-          set tube_hit = true
+          tube_hit = true
         else:
           say Кварц не поддаётся. Кулак уже саднит, а толку нет.
       else:

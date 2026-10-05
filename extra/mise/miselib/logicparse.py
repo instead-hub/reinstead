@@ -86,12 +86,6 @@ def parse_logic(lines, i, indent):
             stmts.append(("for", header, body, lno))
             i = j
             continue
-        m = re.match(r"^set\s+(.+?)\s*(\+=|-=|=)\s*(.+)$", text, re.S)
-        if m:
-            stmts.append(("set", m.group(1).strip(), m.group(2),
-                          m.group(3).strip(), lno))
-            i += 1
-            continue
         stmts.append(("stmt", text, lno))
         i += 1
     return stmts, i

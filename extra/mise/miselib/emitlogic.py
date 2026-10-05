@@ -25,15 +25,6 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
                 raise LintError("%s: return type is %s, expected %s"
                                 % (c, rtype, ret))
             out.append("%sreturn%s" % (indent, (" " + code) if code else ""))
-        elif kind == "set":
-            lcode, _ = transpile_exprlist(st[1], env, where, None, ctx=ctx)
-            rcode, _ = transpile_exprlist(st[3], env, where, None, ctx=ctx)
-            if st[2] == "=":
-                out.append("%s%s = %s" % (indent, lcode, rcode))
-            else:
-                sign = "+" if st[2] == "+=" else "-"
-                out.append("%s%s = %s %s (%s)"
-                           % (indent, lcode, lcode, sign, rcode))
         elif kind == "stmt":
             out.append(indent + transpile_stmt(st[1], env, where, ctx=ctx))
         elif kind == "for":

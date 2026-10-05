@@ -183,8 +183,8 @@ class Emitter:
         nested = []
         texts = block.all("text")
         for key, val in block.items:
-            if key in ("words", "on", "contains", "parts", "inside",
-                       "with", "attrs", "disabled", "before", "after", "post"):
+            if key in ("words", "on", "inside", "with", "attrs",
+                       "disabled", "before", "after", "post"):
                 continue
             if key == "text" and len(texts) > 1:
                 continue
@@ -198,10 +198,6 @@ class Emitter:
                 one = Block()
                 one.items = [(key, val)]
                 lines.extend(self.on(one, fi))
-                continue
-            if key.startswith("var "):
-                name = parse_key(key[4:])[0]
-                lines.append("%s%s = %s;" % (fi, name, self.body(val, name, fi)))
                 continue
             if not parse_key(key)[1]:
                 for part in fbase.split(","):
@@ -219,19 +215,13 @@ class Emitter:
         on = block.get("on")
         if on:
             lines.extend(self.on(on, fi))
-        for pfx in ("before", "after", "post"):
-            blk = block.get(pfx)
-            if isinstance(blk, Block):
-                tmp = Block()
-                tmp.items = [("%s %s" % (pfx, k), v) for k, v in blk.items]
-                lines.extend(self.on(tmp, fi))
         if len(texts) > 1:
             lines.append("%stext = {" % fi)
             for t in texts:
                 lines.append("%s%s%s;" % (fi, IND, self.value(t)))
             lines.append("%s};" % fi)
         for key, val in block.items:
-            if key in ("contains", "inside", "parts", "with"):
+            if key in ("inside", "with"):
                 if isinstance(val, Block):
                     for nk, nv in val.items:
                         nested.append(self.decl(nk, nv, fi + IND) + ";")

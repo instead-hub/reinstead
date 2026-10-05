@@ -23,7 +23,7 @@ def collect_ids(root):
                 ids[ident] = kind
             elif not ident.startswith("#"):
                 raise Error("duplicate declaration: " + ident)
-            for pkey in ("parts", "with"):
+            for pkey in ("with",):
                 sub = val.get(pkey) if isinstance(val, Block) else None
                 if isinstance(sub, Block):
                     add_from(sub)
@@ -41,7 +41,7 @@ def check_refs(root, ids):
 
     def walk(block):
         for key, val in block.items:
-            if key in ("with", "contains", "inside", "found_in"):
+            if key in ("with", "inside", "found_in"):
                 refs(key, val)
             if isinstance(val, Block):
                 walk(val)

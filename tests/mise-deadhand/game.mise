@@ -122,7 +122,7 @@ obj suit:
           if here.rotate:
             say [[Ты включаешь маневровые двигатели и пытаешься остановить вращение.
 В конце-концов тебе это удаётся! Только топлива ты потратил немало. Ты снова выключаешь двигатели.]]
-            set here.rotate = false
+            here.rotate = false
             s:attr ~on
           else:
             if tetr:seen:
@@ -157,13 +157,13 @@ obj suit:
           say channels[freq_hz][channel_pos]
           if #channels[freq_hz] == 1:
             stop
-          set channel_pos += 1
+          channel_pos += 1
           if channel_pos > #channels[freq_hz]:
-            set freq_hz = rnd #channels
-            set channel_pos = rnd #channels[freq_hz]
+            freq_hz = rnd #channels
+            channel_pos = rnd #channels[freq_hz]
       on:
         after SwitchOn: |
-          set freq = true
+          freq = true
           if s:once:
             say [[Ты включил радио на рабочей частоте.^^
 ... яю.. . аз... Ребята, если кто-то из вас уцелел. Запасов кислорода в ваших скафандрах недостаточно,
@@ -171,7 +171,7 @@ obj suit:
 обращение президента:^
 ...^
 ]]..pres..[[ Мы повторяем эту передачу каждые 15 минут в течении двух часов.]]
-            set known = true
+            known = true
           else:
             say Ты включил радио на рабочей частоте 143,625 МГц.
           radio:daemonStart
@@ -196,7 +196,7 @@ verb Tune:
     - частоту|канал : Tune
   on: |
     if not w or w == radio:
-      set w = radio
+      w = radio
       if w:hasnt on:
         say Радио выключено.
         stop
@@ -206,11 +206,11 @@ verb Tune:
       say w:it, "не {#if_hint/#first,plural,настраиваются,настраивается}."
       stop
   after: |
-    set freq = not freq
+    freq = not freq
     if not freq:
       say Ты сменил частоту.
-      set freq_hz = rnd #channels
-      set channel_pos = rnd #channels[freq_hz]
+      freq_hz = rnd #channels
+      channel_pos = rnd #channels[freq_hz]
       radio:daemonStart
     else:
       say Ты вернул рабочую частоту: 143,625 МГц.
@@ -267,10 +267,10 @@ room space:
     - космос
     - пустота
     - пейзаж
-  var rotate: true
-  var step: 1
+  rotate: true
+  step: 1
   daemon: |
-    set s.step += 1
+    s.step += 1
     if s.step > 3 and not here.rotate:
       s:daemonStop
       tetr:place
@@ -316,32 +316,31 @@ obj lever:
     - рычаг
   attrs: fixed, luminous
   disabled: true
-  after:
-    Pull, Transfer: |
-      if ship2:in_room:
-        if gate2:has open:
-          say Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.
-          gate2:attr ~open
-        else:
-          say Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.
-          gate2:attr open
-        stop
-      local open = gate:has open
-      if ship:in_room:
-        if not open:
-          say Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.
-          gate2:attr ~open
-      if open:
-        say Ты дёрнул за рычаг и шлюзовой люк закрылся.
-        gate:attr ~open
+  after Pull, Transfer: |
+    if ship2:in_room:
+      if gate2:has open:
+        say Ты дёрнул за рычаг и входной люк закрылся. При этом, внутри корабля включилось освещение.
+        gate2:attr ~open
       else:
-        if space2:in_room:
-          say Ты дёрнул за рычаг и шлюзовой люк открылся.
-        gate:attr open
-      if ship:in_room:
-        if open:
-          say Через некоторое время открылся входной люк, ведущий внутрь корабля.
-          gate2:attr open
+        say Ты дёрнул за рычаг и входной люк открылся. Освещение выключилось.
+        gate2:attr open
+      stop
+    local open = gate:has open
+    if ship:in_room:
+      if not open:
+        say Ты дёрнул за рычаг и входной люк закрылся. Затем открылся шлюзовой люк.
+        gate2:attr ~open
+    if open:
+      say Ты дёрнул за рычаг и шлюзовой люк закрылся.
+      gate:attr ~open
+    else:
+      if space2:in_room:
+        say Ты дёрнул за рычаг и шлюзовой люк открылся.
+      gate:attr open
+    if ship:in_room:
+      if open:
+        say Через некоторое время открылся входной люк, ведущий внутрь корабля.
+        gate2:attr open
 
 obj satellite:
   words:
@@ -420,9 +419,9 @@ obj panel:
       on:
         Push: |
           if perimetr:
-            set perimetr_ask += 1
+            perimetr_ask += 1
             if perimetr_ask > 5:
-              set perimetr_ask = 0
+              perimetr_ask = 0
             say Ты ещё раз нажал на кнопку.
             say Ты заметил, что на экране изменилась одна из строк.^
             append "Режим голосовой отмены: "
@@ -432,7 +431,7 @@ obj panel:
               say freqs[perimetr_ask]
             stop
           say Неизвестный корабль. Красная кнопка. Ты точно готов это сделать?^Подтверди. Да или нет?
-          set ask = true
+          ask = true
     obj screen:
       words:
         - экран
@@ -456,7 +455,7 @@ obj panel:
 Отсчёт времени до начала активной фазы: ]], timeout, [[^Ядерный удар первой волны: ожидание^
 Ядерный удар второй волны: ожидание^
 Последняя волна: ожидание]]
-          set know2 = true
+          know2 = true
         else:
           say Экран неактивен.
 
@@ -489,10 +488,10 @@ room ship2:
   Any: |
     if perimetr:
       if perimetr_ask == 2:
-        set good_to += 1
+        good_to += 1
       else:
-        set good_to = 0
-      set timeout -= rnd 25
+        good_to = 0
+      timeout -= rnd 25
       if timeout < 0:
         if timeout < 0:
           badend:walkin
@@ -503,9 +502,9 @@ room ship2:
       else:
         say Ты нажал на кнопку и на экране консоли побежали строки текста.
         ship2:daemonStart
-        set perimetr = true
+        perimetr = true
       stop
-    set ask = false
+    ask = false
     pass
   with: gate2, lever, panel
 
@@ -516,7 +515,7 @@ story badend:
 Лучше бы ты погиб в открытом космосе...^
 ^{$fmt em|Но всё могло закончиться по-другому...}]]
   onexit: |
-    set timeout = 600
+    timeout = 600
 
 story goodend:
   title: false
