@@ -14,6 +14,7 @@ from .expr import fn_name
 def transpile(src, src_dir=""):
     ctx = S.Ctx(src_dir)
     em = Emitter(ctx)
+    CURRENT_LINE[0] = None
     root = parse_source(src)
     apply_includes(root, ctx)
     prescan(root, ctx)
@@ -21,7 +22,8 @@ def transpile(src, src_dir=""):
     body = []
     fn_body = []
     reqs = []
-    for key, val in root.items:
+    for _i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(_i)
         kind, info = classify(key)
         if kind == "meta":
             header.append("--$%s:%s$" % (key.title(), val.s))

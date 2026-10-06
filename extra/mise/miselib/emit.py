@@ -156,6 +156,7 @@ class Emitter:
             lines = ["%s%s {" % (base, ctor)]
         words = block.get("words")
         if words is not None:
+            CURRENT_LINE[0] = block.line("words") or block.line("word")
             if isinstance(words, Text):
                 lines.append('%s-"%%s";' % fi % words.s)
             elif isinstance(words, Raw):
@@ -171,6 +172,7 @@ class Emitter:
                 raise Error("words must be a quoted string or list")
         nam = block.get("nam")
         if nam is not None:
+            CURRENT_LINE[0] = block.line("nam")
             raise Error("nam: is not supported; the declaration name is the "
                         "object name")
         if ident:
@@ -191,6 +193,7 @@ class Emitter:
                 raise Error("%s.attrs: quotes are not allowed"
                             % (ident or "?"))
         if attrs and "attr" in self.ctx.types:
+            CURRENT_LINE[0] = block.line("attrs")
             for an in attrs:
                 msg = type_value_error(self.ctx, "attr", an)
                 if msg:
@@ -198,7 +201,8 @@ class Emitter:
         obj_items = []
         nested = []
         texts = block.all("text")
-        for key, val in block.items:
+        for _i, (key, val) in enumerate(block.items):
+            CURRENT_LINE[0] = block.line_at(_i)
             if key in ("words", "on", "inside", "with", "attrs",
                        "disabled", "dict", "before", "after", "post"):
                 continue
@@ -272,6 +276,7 @@ class Emitter:
             tail += ":attr '%s'" % ",".join(attrs)
         d = block.get("dict")
         if d is not None:
+            CURRENT_LINE[0] = block.line("dict")
             if not isinstance(d, (Data, Raw)):
                 raise Error("%s.dict: must be a table literal { ... }"
                             % (ident or "?"))

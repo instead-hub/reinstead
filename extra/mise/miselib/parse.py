@@ -84,31 +84,32 @@ def parse_block(lines, i, indent, text_values=False):
             if j < len(lines) and re.match(
                     r"^-\s", lines[j][0].strip()) and lines[j][1] > indent:
                 child, i = parse_list(lines, j, lines[j][1])
-                blk.items.append((key, child))
+                blk.add(key, child, line_no)
             elif j < len(lines) and lines[j][1] > indent:
                 child, i = parse_block(lines, j, lines[j][1],
                                        key in HANDLER_KEYS)
-                blk.items.append((key, child))
+                blk.add(key, child, line_no)
             else:
-                blk.items.append((key, Block()))
+                blk.add(key, Block(), line_no)
                 i += 1
         elif rest in ("|", "|lua"):
             val, i = pipe_value(lines, i + 1, indent, rest)
-            blk.items.append((key, val))
+            blk.add(key, val, line_no)
         elif rest.startswith("[["):
             val, i = read_long(lines, i, rest, line_no)
-            blk.items.append((key, val))
+            blk.add(key, val, line_no)
         elif (rest.startswith(("{", "["))
               and not (text_values or key in TEXT_KEYS)):
             val, i = read_bracket(lines, i, rest, line_no)
-            blk.items.append((key, val))
+            blk.add(key, val, line_no)
         else:
             tm = text_values or key in TEXT_KEYS
             parts = split_list(rest)
             if len(parts) > 1 and not tm:
-                blk.items.append((key, [parse_scalar(p, line_no) for p in parts]))
+                blk.add(key, [parse_scalar(p, line_no) for p in parts],
+                        line_no)
             else:
-                blk.items.append((key, parse_scalar(rest, line_no, tm)))
+                blk.add(key, parse_scalar(rest, line_no, tm), line_no)
             i += 1
     return blk, i
 

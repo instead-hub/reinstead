@@ -10,7 +10,8 @@ def collect_ids(root):
     ids = {}
 
     def add_from(block):
-        for key, val in block.items:
+        for i, (key, val) in enumerate(block.items):
+            CURRENT_LINE[0] = block.line_at(i)
             kind, info = classify(key)
             if kind == "decl":
                 ident = info[1]
@@ -41,8 +42,9 @@ def check_refs(root, ids):
                 raise Error("unknown reference in %s: %s" % (key, r.s))
 
     def walk(block):
-        for key, val in block.items:
+        for i, (key, val) in enumerate(block.items):
             if key in ("with", "inside", "found_in"):
+                CURRENT_LINE[0] = block.line_at(i)
                 refs(key, val)
             if isinstance(val, Block):
                 walk(val)
@@ -70,7 +72,8 @@ def scan_lua_defs(text, funcs, vars_):
 
 def collect_types(root, ctx):
     ctx.types = {}
-    for key, val in root.items:
+    for _i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(_i)
         kind, name = classify(key)
         if kind == "type":
             if name in ctx.types:
@@ -194,6 +197,7 @@ def find_include(name, ctx):
 def apply_includes(root, ctx, seen=None):
     seen = seen or set()
     extra = []
+    extra_lines = []
     for key, val in root.items:
         if key != "include":
             continue
@@ -207,8 +211,10 @@ def apply_includes(root, ctx, seen=None):
                                     encoding="utf-8").read())
             apply_includes(sub, ctx, seen)
             extra += sub.items
+            extra_lines += sub.lines
     if extra:
         root.items = extra + root.items
+        root.lines = extra_lines + root.lines
     return root
 
 def wrapper_template(text):
@@ -277,7 +283,8 @@ def prescan(root, ctx):
     ctx.ids = set(ids)
     collect_field_types(root, ctx)
     ctx.extra_events = {}
-    for key, val in root.items:
+    for _i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(_i)
         kind, ident = classify(key)
         if kind == "event_decl":
             if isinstance(val, Block):
@@ -286,7 +293,8 @@ def prescan(root, ctx):
     game_funcs, game_vars = collect_game_defs(root)
     ctx.fn_sigs = {}
     fn_names = set()
-    for key, val in root.items:
+    for _i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(_i)
         if classify(key)[0] == "fn":
             name, plist, ret, variadic = parse_fn_sig(key, set(ctx.types))
             if name in ctx.fn_sigs:
@@ -325,7 +333,8 @@ def prescan(root, ctx):
                     t = None
                 if t:
                     ctx.inline[name] = ("wrap", (plist, t))
-    for key, val in root.items:
+    for _i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(_i)
         if classify(key)[0] == "require":
             vals = val if isinstance(val, list) else [val]
             for v in vals:
@@ -334,7 +343,8 @@ def prescan(root, ctx):
                     scan_lua_defs(text, game_funcs, game_vars)
     const_names = set()
     ctx.global_types = {}
-    for key, val in root.items:
+    for _i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(_i)
         if classify(key)[0] in ("const", "global") and isinstance(val, Block):
             for k, v in val.items:
                 const_names.add(k)

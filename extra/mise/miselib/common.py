@@ -22,7 +22,11 @@ FIELD_PARAMS = {
 }
 
 class Error(Exception):
-    pass
+    def __init__(self, msg):
+        line = CURRENT_LINE[0]
+        if line and "line " not in str(msg) and "logic:" not in str(msg):
+            msg = "line %d: %s" % (line, msg)
+        super().__init__(msg)
 
 class Text:
     def __init__(self, s):
@@ -59,9 +63,26 @@ class Raw:
     def __init__(self, s):
         self.s = s
 
+CURRENT_LINE = [None]
+
+
 class Block:
     def __init__(self):
         self.items = []
+        self.lines = []
+
+    def add(self, key, val, line):
+        self.items.append((key, val))
+        self.lines.append(line)
+
+    def line_at(self, idx):
+        return self.lines[idx] if idx < len(self.lines) else None
+
+    def line(self, key):
+        for i, (k, _v) in enumerate(self.items):
+            if k == key:
+                return self.line_at(i)
+        return None
 
     def get(self, key):
         for k, v in self.items:
