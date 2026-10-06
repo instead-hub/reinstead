@@ -51,3 +51,6 @@ _'box'.before_Take = function(s, w, wh)
   end
 end;
 _'box'.after_Drop = fn_helper;
+_'box'.before_Wait = fn_helper;
+_'box'.after_Any = fn_helper;
+_'box'.before_Default = fn_helper;

@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+  on:
+    Default: |lua
+      return false
