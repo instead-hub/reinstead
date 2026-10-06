@@ -147,7 +147,7 @@ room {
   };
 }
 
-cutscene {
+gameover {
   nam = "happyend";
   title = "Конец";
   dsc = "Поздравляем! Вы прошли игру.";

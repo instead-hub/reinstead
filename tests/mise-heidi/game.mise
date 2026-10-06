@@ -17,7 +17,7 @@ setup:
     description: Здесь нет зеркала.
     capacity: 1
   start: |
-    move(player, before_cottage)
+    player:move before_cottage
 
 room before_cottage:
   words: перед домом
@@ -69,7 +69,7 @@ room clearing:
       description: [[Величавое дерево стоит посреди поляны.
         Кажется, по его стволу будет несложно влезть наверх.]]
       before Climb: |
-        move(player, top_of_tree)
+        player:move top_of_tree
 
 room top_of_tree:
   words: верхушка
@@ -89,6 +89,6 @@ room top_of_tree:
         if bird:inside nest and nest:inside branch:
           walk happyend
 
-story happyend:
+ending happyend:
   title: Конец
-  dsc: [[Поздравляем! Вы прошли игру.]]
+  dsc: Поздравляем! Вы прошли игру.
