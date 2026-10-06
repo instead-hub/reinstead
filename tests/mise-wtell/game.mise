@@ -92,7 +92,7 @@ Prop прилавки:
   found_in: street, below_square
 
 Prop товары:
-  words: товары|товар|еда|одежда|интсрумент|барахло
+  words: товары|товар|еда|одежда|инструмент|барахло
   description: Ничто не приковывает твой взгляд.
   found_in: street, below_square
 
