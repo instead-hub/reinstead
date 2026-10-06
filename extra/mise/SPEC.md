@@ -442,6 +442,13 @@ obj Кабель:
 | `line` | `(...)` | `pn(...)` |
 | `append` | `(str, ...)` | `pr(...)` |
 
+Дополнительные тонкие обёртки над API (все inline):
+`subaction(ev, ...)`, `runmethods(тип, метод, ...)`,
+`runorval(w, имя, ...)`, `check_touch()`, `check_worn(w)`,
+`offerslight(w)`, `visible_scope(where) -> obj?`, `inroom(w)`,
+`getDaemons() -> tbl`, `cls_prompt()`, `gram(s) -> tbl`, `access(s)`,
+`xevent() -> event?`.
+
 Игровые обёртки удобно добавлять в `stdlib.mise` по мере надобности.
 `include: stdlib` также добавляет пустой объект `none` — заглушку
 «ничего» для объектных переменных (`local o = none`), невидимую парсеру

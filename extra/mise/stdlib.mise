@@ -48,6 +48,9 @@ fn rnd(n: num) -> num: |lua
 fn xaction(ev: event, ...): |lua
   mp:xaction(ev, ...)
 
+fn subaction(ev: event, ...): |lua
+  mp:subaction(ev, ...)
+
 fn daemonStart(w: obj): |lua
   DaemonStart(w)
 
@@ -65,6 +68,9 @@ fn place(w: obj): |lua
 
 fn isDaemon(w: obj) -> bool: |lua
   return isDaemon(w)
+
+fn getDaemons() -> tbl: |lua
+  return getDaemons()
 
 fn disabled(w: obj) -> bool: |lua
   return disabled(w)
@@ -106,14 +112,28 @@ fn visits(w: obj) -> num: |lua
 
 fn event() -> event?: `mp.event`
 
+fn xevent() -> event?: `mp.xevent or nil`
+
 fn have(w: obj) -> obj?: |lua
   return have(w)
 
 fn visited(w: obj) -> bool: |lua
   return visited(w)
 
+fn access(s: obj) -> bool: |lua
+  return s:access()
+
+fn offerslight(w: obj) -> bool: |lua
+  return mp:offerslight(w)
+
+fn visible_scope(where: obj) -> obj?: |lua
+  return mp:visible_scope(where)
+
 fn where(w: obj) -> obj?: |lua
   return where(w)
+
+fn inroom(w: obj) -> obj: |lua
+  return inroom(w)
 
 fn thedark(what: obj) -> bool: |lua
   return mp:thedark(what)
@@ -133,6 +153,9 @@ fn hint(s: obj, h: str): |lua
 fn multi_alias(s: obj) -> num: |lua
   return s:multi_alias()
 
+fn gram(s: obj) -> tbl: |lua
+  return s:gram()
+
 fn walkback(...): |lua
   walkback(...)
 
@@ -151,8 +174,17 @@ fn check_held(w: obj) -> bool: |lua
 fn check_live(w: obj) -> bool: |lua
   return mp:check_live(w)
 
+fn check_touch() -> bool: |lua
+  return mp:check_touch()
+
+fn check_worn(w: obj) -> bool: |lua
+  return mp:check_worn(w)
+
 fn clear(): |lua
   mp:clear()
+
+fn cls_prompt(): |lua
+  mp:cls_prompt()
 
 fn need_scene(s: obj, v: bool): |lua
   s:need_scene(v)
@@ -168,6 +200,12 @@ fn lifeoff(w: obj): |lua
 
 fn call_before(s: obj, ev: event): |lua
   return std.call(s, 'before_' .. ev)
+
+fn runmethods(what: str, meth: str, ...): |lua
+  mp:runmethods(what, meth, ...)
+
+fn runorval(w: obj, name: str, ...) -> any: |lua
+  return mp:runorval(w, name, ...)
 
 fn theme_name() -> str: |lua
   return theme.name()
