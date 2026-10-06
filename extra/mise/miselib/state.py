@@ -31,5 +31,5 @@ class Ctx:
         self.types = {}
         self.enum_values = {}
         self.fields = {}
-        self.current_class = None
+        self.current_owner = None
         self.src_dir = src_dir

@@ -413,8 +413,8 @@ class ExprEmit:
                     recv = val
                 elif (kind == "name" and val == "s"
                       and self.env.get("s") == "obj"
-                      and self.ctx.current_class):
-                    recv = self.ctx.current_class
+                      and self.ctx.current_owner):
+                    recv = self.ctx.current_owner
                 raw = "%s.%s" % (code, nv)
                 info = (self.ctx.fields.get(recv, {}).get(nv)
                         if recv is not None else None)

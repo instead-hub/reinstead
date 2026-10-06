@@ -149,6 +149,15 @@ class Emitter:
         return out
 
     def obj(self, block, ident, base, ctor, preset, parent=None):
+        prev = self.ctx.current_owner
+        if ident:
+            self.ctx.current_owner = ident
+        try:
+            return self._obj(block, ident, base, ctor, preset, parent)
+        finally:
+            self.ctx.current_owner = prev
+
+    def _obj(self, block, ident, base, ctor, preset, parent=None):
         fi = base + IND
         if parent:
             lines = ["%s%s({" % (base, ctor)]
@@ -457,12 +466,12 @@ class Emitter:
         return "\n".join(lines)
 
     def cls(self, block, name, parent):
-        prev = self.ctx.current_class
-        self.ctx.current_class = name
+        prev = self.ctx.current_owner
+        self.ctx.current_owner = name
         try:
             body = self.obj(block, None, "", "Class", [], parent)
         finally:
-            self.ctx.current_class = prev
+            self.ctx.current_owner = prev
         return "%s = %s" % (name, body)
 
     def decl(self, key, block, base):

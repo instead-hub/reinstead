@@ -52,7 +52,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | `inline` | inline-функции: `name -> (kind, payload)` (см. ниже) |
 | `types` | типы-перечисления: `name -> {values, negate}` |
 | `fields` | `obj/класс -> {поле: (тип, is_ref)}` |
-| `current_class` | класс, чьё тело сейчас эмитится (для `s.field`) |
+| `current_owner` | класс/именованный объект, чьё тело сейчас эмитится (для `s.field`) |
 | `src_dir` | каталог игры (для `include`/`require`) |
 
 Константы: `TYPES` (примитивы: obj/str/num/bool/any/event/tbl),
@@ -155,7 +155,9 @@ transpile (main loop) обход корневых элементов → Emitter
 - `obj`/`decl` — объекты и классы-экземпляры: `words`, `attrs`
   (с проверкой enum `attr`), `dict` → `:dict {...}` в tail, вложенные
   `with`/`inside`, пресеты (`PRESETS`), `:attr`/`:disable()`.
-- `cls` — `class` (поле `ctx.current_class` на время эмиссии).
+- `cls`/`obj` — owner-контекст `ctx.current_owner` (класс или именованный
+  объект) на время эмиссии тела: даёт типизацию `s.field` в
+  обработчиках.
 - `verb` — только `Verb {...}`: `tag/words/patterns/prio/hint`;
   `on`/`before`/`after` внутри `verb` — ошибка (действия в `event`).
 - `event` — `on:` → `mp.Имя`, `before`/`after` → `mp.before_/after_Имя`.
