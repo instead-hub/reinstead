@@ -60,46 +60,11 @@ room Drawing_Room:
 с жарко пылающим камином, мягким ковриком перед ним,
 и глубоким удобным креслом, в котором можно свернуться
 клубочком и немного подремать.]]
-  before Exit, Walk: |
-    if where(player) ~= mantelpiece:
-      pass
-    if compass_dir(w) == d_to or compass_dir(w) == out_to or w == s:
-      say Таким путем вряд ли удастся спуститься с каминной полки!
-      stop
-    pass
   before Exam, Search, Enter, ThrowAt, ThrownAt, Reflect, Touch: pass
-  before Default(s, ev, w, wh): |
-    if where(player) ~= mantelpiece:
-      pass
-    if w and not inside(w, mantelpiece):
-      say 'Отсюда трудно дотянуться до '
-      say(w:noun 'рд', '.')
-      stop
-    if wh and not inside(wh, mantelpiece):
-      say 'Отсюда трудно дотянуться до '
-      say(w:noun 'рд', '.')
-      stop
-    pass
 
 obj red_queen:
   words: Чёрная Королева,королева,чёрная/жр|ферзь
-  dsc: |
-    if white_kitten.state == QUEEN_STATE or black_kitten.state == QUEEN_STATE:
-      stop
-    pass
   description: Маленькая (но какая своенравная!) шахматная фигурка.
-  after Take: |
-    if white_kitten.state == QUEEN_STATE:
-      white_kitten.state = CHAIR_STATE
-    if black_kitten.state == QUEEN_STATE:
-      black_kitten.state = CHAIR_STATE
-    pass
-  after PutOn, Transfer, Insert: |
-    if w == chess_board:
-      say [[В гордом одиночестве на шахматной доске, Черная Королева --
-           самодержавная повелительница 32 белых и 32 черных клеток.]]
-      stop
-    pass
   attrs: ~animate
 
 obj chess_board:
@@ -126,6 +91,135 @@ obj rug:
     say [[Красивый каминный коврик из какой-то далекой страны -- может быть, Индии или Аравии.]]
   before Take: Но коврик слишком большой и тяжелый!
   before Push, Pull: Но место каминного коврика -- рядом с камином!
+  attrs: concealed, static, supporter, enterable
+
+obj armchair:
+  words: кресло|стул
+  found_in: Drawing_Room
+  moved: false
+  before Transfer: "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]"
+  before Climb, Enter: |
+    player:move s
+    say Алиса забралась с ногами в мягкое удобное кресло.
+  before Take: Но кресло слишком тяжелое для маленькой девочки!
+  attrs: static, concealed, supporter, enterable
+
+obj mantelpiece:
+  words: каминная полка,полка
+  found_in: Drawing_Room
+  attrs: concealed, supporter, enterable, static
+
+obj mirror:
+  words: зеркало,стекло
+  found_in: Drawing_Room
+  before Touch, Pull, Push: Рука проходит сквозь серебристый туман, не встречая сопротивления!
+  before ThrownAt: И заработать семь лет несчастий и бед?!
+  attrs: static, concealed, enterable
+
+obj worsted:
+  words: клубок шерсти,клубок|шерсть
+  found_in: Drawing_Room
+  sputan: false
+obj window:
+  words: окно|рама
+  found_in: Drawing_Room
+  description: [[За окном неторопливо кружатся снежинки,
+   заставляющие Алису радоваться, что она внутри дома, в тепле и уюте.]]
+  before Open: |
+    say И подхватить простуду?! Лучше оставить окно закрытым.
+  before Search: |
+    xaction(Exam, s)
+  attrs: scenery
+
+class Kitten:
+  attrs: animate
+  other_kitten: none
+  life Kiss: |
+    say('Алиса чмокнула ', s:noun('вн', 1), [[ в носик,
+         и тот взглянул на нее сконфуженно, но довольно.]])
+  life Attack: Разве можно напасть на такое крохотное и беззащитное создание!
+  on Show(s, w): |
+    say(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun 'рд', '.')
+  before Touch, Rub: |
+    say(s:Noun(1), ' в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.')
+Kitten white_kitten:
+  state: `CHAIR_STATE`
+  words: белый котенок,котенок,белый
+  seen: false
+  found_in: Drawing_Room
+  this_kittens_turn: false
+  other_kitten: black_kitten
+
+Kitten black_kitten:
+  state: `CHAIR_STATE`
+  words: чёрный котенок,котенок,чёрный
+  seen: false
+  found_in: Drawing_Room
+  this_kittens_turn: true
+  other_kitten: white_kitten
+
+extend #Exam:
+  patterns:
+    - {noun}/вн,scene в {noun}/пр,2,scene : Reflect
+    - ~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect
+    - ~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse
+
+event Untangle:
+  on: |
+    say Что, распутать ЭТО?!
+
+verb Untangle:
+  words: размот/ать,распут/ать
+  patterns:
+    - {noun}/вн : Untangle
+
+verb Touch2:
+  words: ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/
+  patterns:
+    - {noun}/вн : Touch
+
+impl Drawing_Room:
+  before Exit, Walk: |
+    if where(player) ~= mantelpiece:
+      pass
+    if compass_dir(w) == d_to or compass_dir(w) == out_to or w == s:
+      say Таким путем вряд ли удастся спуститься с каминной полки!
+      stop
+    pass
+  before Default(s, ev, w, wh): |
+    if where(player) ~= mantelpiece:
+      pass
+    if w and not inside(w, mantelpiece):
+      say 'Отсюда трудно дотянуться до '
+      say(w:noun 'рд', '.')
+      stop
+    if wh and not inside(wh, mantelpiece):
+      say 'Отсюда трудно дотянуться до '
+      say(w:noun 'рд', '.')
+      stop
+    pass
+
+impl red_queen:
+  dsc: |
+    if white_kitten.state == QUEEN_STATE or black_kitten.state == QUEEN_STATE:
+      stop
+    pass
+
+  after Take: |
+    if white_kitten.state == QUEEN_STATE:
+      white_kitten.state = CHAIR_STATE
+    if black_kitten.state == QUEEN_STATE:
+      black_kitten.state = CHAIR_STATE
+    pass
+
+  after PutOn, Transfer, Insert: |
+    if w == chess_board:
+      say [[В гордом одиночестве на шахматной доске, Черная Королева --
+           самодержавная повелительница 32 белых и 32 черных клеток.]]
+      stop
+    pass
+
+impl rug:
   before LookUnder: |
     if where(player) == mantelpiece or where(player) == armchair:
       say Отсюда вряд ли возможно дотянуться до коврика!
@@ -142,12 +236,8 @@ obj rug:
     обнаружила там Черную Королеву из шахматного набора!]]
       stop
     pass
-  attrs: concealed, static, supporter, enterable
 
-obj armchair:
-  words: кресло|стул
-  found_in: Drawing_Room
-  moved: false
+impl armchair:
   description: |
     say [[Большое глубокое кресло. Отличное место для котенка
     или маленькой девочки, где можно устроиться поудобнее и подремать.
@@ -157,6 +247,7 @@ obj armchair:
     else:
       say окном.
     pass
+
   before Push, Pull: |
     local loc = where(player)
     if loc:
@@ -183,21 +274,14 @@ obj armchair:
       stop
     s.moved = true
     say Алиса придвинула кресло ближе к камину.
-  before Transfer: "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]"
-  before Climb, Enter: |
-    player:move s
-    say Алиса забралась с ногами в мягкое удобное кресло.
-  before Take: Но кресло слишком тяжелое для маленькой девочки!
-  attrs: static, concealed, supporter, enterable
 
-obj mantelpiece:
-  words: каминная полка,полка
-  found_in: Drawing_Room
+impl mantelpiece:
   description: |
     say [[Она довольно высоко (гораздо выше, чем Алиса может достать),
     но зато выглядит достаточно прочной и широкой,
     чтобы на ней можно было стоять без риска.]]
     pass
+
   before Enter, Climb: |
     if where(player) == s:
       say Но Алиса уже на ней!
@@ -213,16 +297,14 @@ obj mantelpiece:
       stop
     player:move mantelpiece
     say Алиса ловко вскарабкалась на каминную полку.
+
   before Receive, LetGo: |
     if where(player) ~= s and (where(player) ~= armchair or not armchair.moved):
       say Полка слишком высоко, за пределами досягаемости.
       stop
     pass
-  attrs: concealed, supporter, enterable, static
 
-obj mirror:
-  words: зеркало,стекло
-  found_in: Drawing_Room
+impl mirror:
   description: |
     if where(player) == mantelpiece:
       say [[Невероятно -- но стеклянная поверхность зеркала
@@ -237,29 +319,26 @@ obj mirror:
       stop
     say [[Отсюда в зеркале можно разглядеть только потолок гостиной.
        Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]]
+
   before Any: |
     if event() ~= Exam and event() ~= Reflect and event() ~= Search and event() ~= ThrownAt and where(player) ~= mantelpiece:
       say Отсюда невозможно даже дотянуться до зеркала!
       stop
     pass
-  before Touch, Pull, Push: Рука проходит сквозь серебристый туман, не встречая сопротивления!
-  before ThrownAt: И заработать семь лет несчастий и бед?!
+
   before Enter: |
     say [[Рука Алисы без труда прошла через серебряный туман...
          за ней последовало остальное тело...
          и вот она уже по ту сторону зеркала!!!]]
     walk theend
-  attrs: static, concealed, enterable
 
-obj worsted:
-  words: клубок шерсти,клубок|шерсть
-  found_in: Drawing_Room
-  sputan: false
+impl worsted:
   dsc: |
     if where(s) ~= here:
       pass
     if white_kitten.state ~= WOOL_STATE and black_kitten.state ~= WOOL_STATE:
       say На полу лежит клубок шерсти.
+
   description: |
     if s.sputan:
       say [[Сейчас он спутан так, что почти не размотаешь.
@@ -267,6 +346,7 @@ obj worsted:
            аккуратным клубком -- и вот, теперь на него страшно взглянуть!]]
     else:
       say Клубок очень хорошей голубой шерсти, готовый к вязанию.
+
   before Untangle: |
     if s.sputan:
       s.sputan = false
@@ -274,6 +354,7 @@ obj worsted:
        зато теперь клубок совсем как новый -- тугой и аккуратный!]]
     else:
       say Но шерсть не спутана!
+
   after Take: |
     if white_kitten.state == WOOL_STATE:
       white_kitten.state = CHAIR_STATE
@@ -281,20 +362,7 @@ obj worsted:
       black_kitten.state = CHAIR_STATE
     pass
 
-obj window:
-  words: окно|рама
-  found_in: Drawing_Room
-  description: [[За окном неторопливо кружатся снежинки,
-   заставляющие Алису радоваться, что она внутри дома, в тепле и уюте.]]
-  before Open: |
-    say И подхватить простуду?! Лучше оставить окно закрытым.
-  before Search: |
-    xaction(Exam, s)
-  attrs: scenery
-
-class Kitten:
-  attrs: animate
-  other_kitten: none
+impl Kitten:
   dsc: |
     if s.state == QUEEN_STATE:
       say('^', s:Noun(1), ' играет с Черной Королевой.')
@@ -311,21 +379,18 @@ class Kitten:
       stop
     else:
       stop
+
   description: |
     say [[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
          и намного симпатичней ей, чем непослушный и непоседливый ]]
     say(s.other_kitten:noun(), '.')
-  life_Ask,Answer,Tell,Talk: |
+
+  life Ask, Answer, Tell, Talk: |
     say(s:Noun(1), [[, шевеля усами, смотрит на Алису
         с таким умным видом, что она почти готова поверить,
         будто он понимает каждое ее слово.]])
-  life_Kiss: |
-    say('Алиса чмокнула ', s:noun('вн', 1), [[ в носик,
-         и тот взглянул на нее сконфуженно, но довольно.]])
-  life_Attack: Разве можно напасть на такое крохотное и беззащитное создание!
-  on Show(s, w): |
-    say(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun 'рд', '.')
-  life_Give,ThrowAt(s, w): |
+
+  life Give, ThrowAt(s, w): |
     if w ~= red_queen and w ~= worsted:
       if event() == ThrowAt:
         w:move Drawing_Room
@@ -348,6 +413,7 @@ class Kitten:
     else:
       s.state = QUEEN_STATE
     say '.'
+
   before Take: |
     if have(s.other_kitten):
       say Двух котят сразу Алисе ни за что не удержать!
@@ -355,12 +421,12 @@ class Kitten:
     s.state = HELD_STATE
     s:move player
     say('Алиса взяла на руки ', s:noun 'вн', '. Ну что за прелестное создание!')
-  before Touch, Rub: |
-    say(s:Noun(1), ' в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.')
+
   after Drop: |
     s.state = CHAIR_STATE
     s:move Drawing_Room
     say(s:Noun(1), ', выскользнув из рук Алисы, убежал прочь.')
+
   after Transfer, PutOn, Insert: |
     s.state = CHAIR_STATE
     local p = where(s)
@@ -368,6 +434,7 @@ class Kitten:
       append(s:Noun(1), ', спрыгнув с ', p:noun 'рд')
     s:move Drawing_Room
     say ', ловко приземлился на полу и убежал прочь.'
+
   daemon: |
     s.seen = false
     s.this_kittens_turn = not s.this_kittens_turn
@@ -452,42 +519,6 @@ class Kitten:
         say ' трется головой о ножки кресла.'
       elseif n == 5:
         say ' гоняется за своим хвостом.' 
-
-Kitten white_kitten:
-  state: `CHAIR_STATE`
-  words: белый котенок,котенок,белый
-  seen: false
-  found_in: Drawing_Room
-  this_kittens_turn: false
-  other_kitten: black_kitten
-
-Kitten black_kitten:
-  state: `CHAIR_STATE`
-  words: чёрный котенок,котенок,чёрный
-  seen: false
-  found_in: Drawing_Room
-  this_kittens_turn: true
-  other_kitten: white_kitten
-
-extend #Exam:
-  patterns:
-    - {noun}/вн,scene в {noun}/пр,2,scene : Reflect
-    - ~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect
-    - ~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse
-
-event Untangle:
-  on: |
-    say Что, распутать ЭТО?!
-
-verb Untangle:
-  words: размот/ать,распут/ать
-  patterns:
-    - {noun}/вн : Untangle
-
-verb Touch2:
-  words: ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/
-  patterns:
-    - {noun}/вн : Touch
 
 ending theend:
   title: Конец

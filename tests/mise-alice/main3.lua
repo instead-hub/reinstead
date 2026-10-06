@@ -95,62 +95,13 @@ room {
 с жарко пылающим камином, мягким ковриком перед ним,
 и глубоким удобным креслом, в котором можно свернуться
 клубочком и немного подремать.]];
-  ["before_Exit,Walk"] = function(s, w, wh)
-    if where(me()) ~= _'mantelpiece' then
-      return false
-    end
-    if (mp:compass_dir(w) or nil) == "d_to" or (mp:compass_dir(w) or nil) == "out_to" or w == s then
-      p("Таким путем вряд ли удастся спуститься с каминной полки!")
-      return
-    end
-    return false
-  end;
   ["before_Exam,Search,Enter,ThrowAt,ThrownAt,Reflect,Touch"] = function() return false end;
-  before_Default = function(s, ev, w, wh)
-    if where(me()) ~= _'mantelpiece' then
-      return false
-    end
-    if w and not w:inside(_'mantelpiece') then
-      p('Отсюда трудно дотянуться до ')
-      p(w:noun('рд'), '.')
-      return
-    end
-    if wh and not wh:inside(_'mantelpiece') then
-      p('Отсюда трудно дотянуться до ')
-      p(w:noun('рд'), '.')
-      return
-    end
-    return false
-  end;
 }
 
 obj {
   -"Чёрная Королева,королева,чёрная/жр|ферзь";
   nam = "red_queen";
-  dsc = function(s)
-    if _'white_kitten'.state == QUEEN_STATE or _'black_kitten'.state == QUEEN_STATE then
-      return
-    end
-    return false
-  end;
   description = "Маленькая (но какая своенравная!) шахматная фигурка.";
-  after_Take = function(s, w, wh)
-    if _'white_kitten'.state == QUEEN_STATE then
-      _'white_kitten'.state = CHAIR_STATE
-    end
-    if _'black_kitten'.state == QUEEN_STATE then
-      _'black_kitten'.state = CHAIR_STATE
-    end
-    return false
-  end;
-  ["after_PutOn,Transfer,Insert"] = function(s, w, wh)
-    if w == _'chess_board' then
-      p([[В гордом одиночестве на шахматной доске, Черная Королева --
-самодержавная повелительница 32 белых и 32 черных клеток.]])
-      return
-    end
-    return false
-  end;
 }:attr '~animate'
 
 obj {
@@ -181,26 +132,6 @@ obj {
   end;
   before_Take = "Но коврик слишком большой и тяжелый!";
   ["before_Push,Pull"] = "Но место каминного коврика -- рядом с камином!";
-  before_LookUnder = function(s, w, wh)
-    if where(me()) == _'mantelpiece' or where(me()) == _'armchair' then
-      p("Отсюда вряд ли возможно дотянуться до коврика!")
-      return
-    end
-    if where(me()) == s then
-      p([[Алиса попыталась приподнять угол коврика, но потерпела неудачу.
-Причиной оказалось то, что она стояла прямо на нем.
-Мм-да, мир полон неожиданностей.]])
-      return
-    end
-    if not s.founded then
-      s.founded = true
-      move(_'red_queen', me())
-      p([[Алиса приподняла угол коврика -- и, заглянув под него,
-обнаружила там Черную Королеву из шахматного набора!]])
-      return
-    end
-    return false
-  end;
 }:attr 'concealed,static,supporter,enterable'
 
 obj {
@@ -208,50 +139,6 @@ obj {
   nam = "armchair";
   found_in = 'Drawing_Room';
   moved = false;
-  description = function(s)
-    p([[Большое глубокое кресло. Отличное место для котенка
-или маленькой девочки, где можно устроиться поудобнее и подремать.
-Сейчас оно стоит рядом с ]])
-    if s.moved then
-      p("камином.")
-    else
-      p("окном.")
-    end
-    return false
-  end;
-  ["before_Push,Pull"] = function(s, w, wh)
-    local loc = where(me())
-    if loc then
-      if loc ~= _'Drawing_Room' then
-        p('Для начала необходимо покинуть ', loc:noun('вн'), '.')
-        return
-      end
-    end
-    if have(_'white_kitten') or have(_'black_kitten') then
-      p("Только не с котенком в руках!")
-      return
-    end
-    local k = _'none'
-    if _'white_kitten'.state == CHAIR_STATE then
-      k = _'white_kitten'
-    elseif _'black_kitten'.state == CHAIR_STATE then
-      k = _'black_kitten'
-    end
-    if k ~= _'none' then
-      p([[Начав двигать кресло, Алиса обнаружила, что ]])
-      p(k:noun(1))
-      p([[ находится прямо на его пути. Хорошо, что она заметила это
-вовремя -- а то могла бы просто раздавить бедное создание!]])
-      return
-    end
-    if s.moved then
-      s.moved = false
-      p("Алиса отодвинула кресло дальше от камина.")
-      return
-    end
-    s.moved = true
-    p("Алиса придвинула кресло ближе к камину.")
-  end;
   before_Transfer = "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]";
   ["before_Climb,Enter"] = function(s, w, wh)
     move(me(), s)
@@ -264,77 +151,14 @@ obj {
   -"каминная полка,полка";
   nam = "mantelpiece";
   found_in = 'Drawing_Room';
-  description = function(s)
-    p([[Она довольно высоко (гораздо выше, чем Алиса может достать),
-но зато выглядит достаточно прочной и широкой,
-чтобы на ней можно было стоять без риска.]])
-    return false
-  end;
-  ["before_Enter,Climb"] = function(s, w, wh)
-    if where(me()) == s then
-      p("Но Алиса уже на ней!")
-      return
-    end
-    if where(me()) ~= _'armchair' then
-      p("Каминная полка слишком высоко, чтобы до нее достать.")
-      return
-    end
-    if not _'armchair'.moved then
-      p("Отсюда невозможно дотянуться до каминной полки!")
-      return
-    end
-    if (#(inv())) > 0 then
-      p("Для этого руки должны быть свободны!")
-      return
-    end
-    move(me(), _'mantelpiece')
-    p("Алиса ловко вскарабкалась на каминную полку.")
-  end;
-  ["before_Receive,LetGo"] = function(s, w, wh)
-    if where(me()) ~= s and (where(me()) ~= _'armchair' or not _'armchair'.moved) then
-      p("Полка слишком высоко, за пределами досягаемости.")
-      return
-    end
-    return false
-  end;
 }:attr 'concealed,supporter,enterable,static'
 
 obj {
   -"зеркало,стекло";
   nam = "mirror";
   found_in = 'Drawing_Room';
-  description = function(s)
-    if where(me()) == _'mantelpiece' then
-      p([[Невероятно -- но стеклянная поверхность зеркала
-тает на глазах, подобно призрачному серебристому пару!]])
-      return
-    end
-    if where(me()) == _'armchair' then
-      p([[В зеркале отражается хорошо знакомая гостиная -- в ней
-все такое же, как и по эту сторону, только наоборот.
-Но почему-то Алиса уверена в том, что за краем зеркала,
-куда никак невозможно заглянуть, лежит мир Зазеркалья --
-и он совершенно не похож на привычный...]])
-      return
-    end
-    p([[Отсюда в зеркале можно разглядеть только потолок гостиной.
-Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]])
-  end;
-  before_Any = function(s, ev, w)
-    if (mp.event) ~= 'Exam' and (mp.event) ~= 'Reflect' and (mp.event) ~= 'Search' and (mp.event) ~= 'ThrownAt' and where(me()) ~= _'mantelpiece' then
-      p("Отсюда невозможно даже дотянуться до зеркала!")
-      return
-    end
-    return false
-  end;
   ["before_Touch,Pull,Push"] = { "Рука проходит сквозь серебристый туман", "не встречая сопротивления!" };
   before_ThrownAt = "И заработать семь лет несчастий и бед?!";
-  before_Enter = function(s, w, wh)
-    p([[Рука Алисы без труда прошла через серебряный туман...
-за ней последовало остальное тело...
-и вот она уже по ту сторону зеркала!!!]])
-    walk(_'theend')
-  end;
 }:attr 'static,concealed,enterable'
 
 obj {
@@ -342,41 +166,6 @@ obj {
   nam = "worsted";
   found_in = 'Drawing_Room';
   sputan = false;
-  dsc = function(s)
-    if where(s) ~= here() then
-      return false
-    end
-    if _'white_kitten'.state ~= WOOL_STATE and _'black_kitten'.state ~= WOOL_STATE then
-      p("На полу лежит клубок шерсти.")
-    end
-  end;
-  description = function(s)
-    if s.sputan then
-      p([[Сейчас он спутан так, что почти не размотаешь.
-Сколько времени Алиса потратила на то, чтобы намотать шерсть
-аккуратным клубком -- и вот, теперь на него страшно взглянуть!]])
-    else
-      p("Клубок очень хорошей голубой шерсти, готовый к вязанию.")
-    end
-  end;
-  before_Untangle = function(s, w, wh)
-    if s.sputan then
-      s.sputan = false
-      p([[Это оказалось не быстрым и не простым делом...
-зато теперь клубок совсем как новый -- тугой и аккуратный!]])
-    else
-      p("Но шерсть не спутана!")
-    end
-  end;
-  after_Take = function(s, w, wh)
-    if _'white_kitten'.state == WOOL_STATE then
-      _'white_kitten'.state = CHAIR_STATE
-    end
-    if _'black_kitten'.state == WOOL_STATE then
-      _'black_kitten'.state = CHAIR_STATE
-    end
-    return false
-  end;
 }
 
 obj {
@@ -395,37 +184,7 @@ obj {
 
 Kitten = Class {
   other_kitten = 'none';
-  dsc = function(s)
-    if s.state == QUEEN_STATE then
-      p('^', s:Noun(1), ' играет с Черной Королевой.')
-    elseif s.state == WOOL_STATE then
-      p('^', s:Noun(1), ' играет с клубком шерсти.')
-    elseif s.state == CHAIR_STATE then
-      if s.seen then
-        return
-      end
-      if _(s.other_kitten).state == CHAIR_STATE then
-        _(s.other_kitten).seen = true
-        p([[^Пара котят резвятся друг с другом на коврике рядом с креслом.]])
-        return
-      end
-      p(s:Noun(1), ' резвится на коврике рядом с креслом.')
-      return
-    else
-      return
-    end
-  end;
-  description = function(s)
-    p([[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
-и намного симпатичней ей, чем непослушный и непоседливый ]])
-    p(_(s.other_kitten):noun(), '.')
-  end;
-  ["life_Ask,Answer,Tell,Talk"] = function(s)
-    p(s:Noun(1), [[, шевеля усами, смотрит на Алису
-с таким умным видом, что она почти готова поверить,
-будто он понимает каждое ее слово.]])
-  end;
-  life_Kiss = function(s)
+  life_Kiss = function(s, w, wh)
     p('Алиса чмокнула ', s:noun('вн', 1), [[ в носик,
 и тот взглянул на нее сконфуженно, но довольно.]])
   end;
@@ -433,153 +192,8 @@ Kitten = Class {
   Show = function(s, w)
     p(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun('рд'), '.')
   end;
-  ["life_Give,ThrowAt"] = function(s, w)
-    if w ~= _'red_queen' and w ~= _'worsted' then
-      if (mp.event) == 'ThrowAt' then
-        move(w, _'Drawing_Room')
-        p('Алиса бросила ', w:noun('вн'), ' на пол, и ', s:noun(1))
-      else
-        p(s:Noun(1))
-      end
-      p(' рассматривает ', w:noun('вн'), ' с озадаченным видом.')
-      return
-    end
-    p('Алиса бросила ', w:noun('вн'), ' на пол. Немедленно ')
-    pr(s:noun(1))
-    if have(s) then
-      p(', выскользнув из ее рук,')
-    end
-    move(w, _'Drawing_Room')
-    move(s, _'Drawing_Room')
-    pr(' бросился за ', w:noun('тв'))
-    if w == _'worsted' then
-      _'worsted'.sputan = true
-      s.state = WOOL_STATE
-      pr(', мгновенно превратив его в дикую путаницу')
-    else
-      s.state = QUEEN_STATE
-    end
-    p('.')
-  end;
-  before_Take = function(s, w, wh)
-    if have(_(s.other_kitten)) then
-      p("Двух котят сразу Алисе ни за что не удержать!")
-      return
-    end
-    s.state = HELD_STATE
-    move(s, me())
-    p('Алиса взяла на руки ', s:noun('вн'), '. Ну что за прелестное создание!')
-  end;
   ["before_Touch,Rub"] = function(s, w, wh)
     p(s:Noun(1), ' в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.')
-  end;
-  after_Drop = function(s, w, wh)
-    s.state = CHAIR_STATE
-    move(s, _'Drawing_Room')
-    p(s:Noun(1), ', выскользнув из рук Алисы, убежал прочь.')
-  end;
-  ["after_Transfer,PutOn,Insert"] = function(s, w, wh)
-    s.state = CHAIR_STATE
-    local p = where(s)
-    if p then
-      pr(s:Noun(1), ', спрыгнув с ', p:noun('рд'))
-    end
-    move(s, _'Drawing_Room')
-    p(', ловко приземлился на полу и убежал прочь.')
-  end;
-  daemon = function(s)
-    s.seen = false
-    s.this_kittens_turn = not s.this_kittens_turn
-    if not s.this_kittens_turn or rnd(3) == 2 then
-      return
-    end
-    p(s:Noun(1))
-    if s.state == HELD_STATE then
-      local n = rnd(5)
-      if n == 1 then
-        p(' жалобно мяукнул.')
-      elseif n == 2 then
-        p(' тихо мурлыкнул.')
-      elseif n == 3 then
-        p(' удовлетворенно промурлыкал что-то.')
-      elseif n == 4 then
-        p(' потерся ушками о руку Алисы.')
-      elseif n == 5 then
-        move(s, _'Drawing_Room')
-        s.state = CHAIR_STATE
-        p(' спрыгнул на пол, ловко выскользнув из Алисиных рук.')
-      end
-      return
-    elseif s.state == QUEEN_STATE then
-      local n = rnd(5)
-      if n == 1 then
-        p(' ткнул Черную Королеву лапкой.')
-      elseif n == 2 then
-        p(' оставив на время игру, сидит с подчеркнуто невинным видом.')
-      elseif n == 3 then
-        p(' катает бедную Королеву туда-сюда по полу.')
-      elseif n == 4 then
-        p(' кончил умываться и осматривается по сторонам.')
-      elseif n == 5 then
-        p([[ взял Черную Королеву, укусил, и начал яростно трясти,
-чтобы убедиться, что с ней покончено.]])
-      end
-      return
-    elseif s.state == WOOL_STATE then
-      _'worsted'.sputan = true
-      local n = rnd(5)
-      if n == 1 then
-        p(' ткнул клубок шерсти лапкой.')
-      elseif n == 2 then
-        p(' покатил клубок по полу, преследуя его по пятам.')
-      elseif n == 3 then
-        p(' сцепился с клубком в жестокой схватке.')
-      elseif n == 4 then
-        p([[ прыгнул на клубок сверху,
-и окончательно запутался в мешанине шерстяных нитей.]])
-      elseif n == 5 then
-        p(' прервав игру, чешет себя за ушами.')
-      end
-      return
-    elseif s.state == CHAIR_STATE then
-      if _(s.other_kitten).state == CHAIR_STATE and rnd(2) == 1 then
-        local n = rnd(5)
-        if n == 1 then
-          p(' преследует ')
-        elseif n == 2 then
-          p(' прыгнул на ')
-        elseif n == 3 then
-          p(' умывает лапкой ')
-        elseif n == 4 then
-          p(' обежал вокруг ')
-        elseif n == 5 then
-          p(' ткнул ')
-        end
-        pr(_(s.other_kitten):noun('вн'))
-        if n == 2 then
-          p(' и они вместе покатились по полу.')
-        elseif n == 4 then
-          p(' и бросился за ним.')
-        elseif n == 5 then
-          p(' лапкой.')
-        else
-          p('.')
-        end
-        return
-      end
-      local n = rnd(5)
-      if n == 1 then
-        p(' гоняет по полу комок пыли.')
-      elseif n == 2 then
-        p(' катается по полу.')
-      elseif n == 3 then
-        p(' сидит и тщательно вылизывает свой хвост.')
-      elseif n == 4 then
-        p(' трется головой о ножки кресла.')
-      elseif n == 5 then
-        p(' гоняется за своим хвостом.')
-      end
-    end
   end;
 }:attr 'animate'
 
@@ -612,6 +226,547 @@ end
 Verb { '#Untangle', "размот/ать,распут/ать", "{noun}/вн : Untangle" }
 
 Verb { '#Touch2', "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/", "{noun}/вн : Touch" }
+
+_'Drawing_Room'.before_Exit = function(s, w, wh)
+  if where(me()) ~= _'mantelpiece' then
+    return false
+  end
+  if (mp:compass_dir(w) or nil) == "d_to" or (mp:compass_dir(w) or nil) == "out_to" or w == s then
+    p("Таким путем вряд ли удастся спуститься с каминной полки!")
+    return
+  end
+  return false
+end;
+_'Drawing_Room'.before_Walk = function(s, w, wh)
+  if where(me()) ~= _'mantelpiece' then
+    return false
+  end
+  if (mp:compass_dir(w) or nil) == "d_to" or (mp:compass_dir(w) or nil) == "out_to" or w == s then
+    p("Таким путем вряд ли удастся спуститься с каминной полки!")
+    return
+  end
+  return false
+end;
+_'Drawing_Room'.before_Default = function(s, ev, w, wh)
+  if where(me()) ~= _'mantelpiece' then
+    return false
+  end
+  if w and not w:inside(_'mantelpiece') then
+    p('Отсюда трудно дотянуться до ')
+    p(w:noun('рд'), '.')
+    return
+  end
+  if wh and not wh:inside(_'mantelpiece') then
+    p('Отсюда трудно дотянуться до ')
+    p(w:noun('рд'), '.')
+    return
+  end
+  return false
+end;
+
+_'red_queen'.dsc = function(s)
+  if _'white_kitten'.state == QUEEN_STATE or _'black_kitten'.state == QUEEN_STATE then
+    return
+  end
+  return false
+end
+_'red_queen'.after_Take = function(s, w, wh)
+  if _'white_kitten'.state == QUEEN_STATE then
+    _'white_kitten'.state = CHAIR_STATE
+  end
+  if _'black_kitten'.state == QUEEN_STATE then
+    _'black_kitten'.state = CHAIR_STATE
+  end
+  return false
+end;
+_'red_queen'.after_PutOn = function(s, w, wh)
+  if w == _'chess_board' then
+    p([[В гордом одиночестве на шахматной доске, Черная Королева --
+самодержавная повелительница 32 белых и 32 черных клеток.]])
+    return
+  end
+  return false
+end;
+_'red_queen'.after_Transfer = function(s, w, wh)
+  if w == _'chess_board' then
+    p([[В гордом одиночестве на шахматной доске, Черная Королева --
+самодержавная повелительница 32 белых и 32 черных клеток.]])
+    return
+  end
+  return false
+end;
+_'red_queen'.after_Insert = function(s, w, wh)
+  if w == _'chess_board' then
+    p([[В гордом одиночестве на шахматной доске, Черная Королева --
+самодержавная повелительница 32 белых и 32 черных клеток.]])
+    return
+  end
+  return false
+end;
+
+_'rug'.before_LookUnder = function(s, w, wh)
+  if where(me()) == _'mantelpiece' or where(me()) == _'armchair' then
+    p("Отсюда вряд ли возможно дотянуться до коврика!")
+    return
+  end
+  if where(me()) == s then
+    p([[Алиса попыталась приподнять угол коврика, но потерпела неудачу.
+Причиной оказалось то, что она стояла прямо на нем.
+Мм-да, мир полон неожиданностей.]])
+    return
+  end
+  if not s.founded then
+    s.founded = true
+    move(_'red_queen', me())
+    p([[Алиса приподняла угол коврика -- и, заглянув под него,
+обнаружила там Черную Королеву из шахматного набора!]])
+    return
+  end
+  return false
+end;
+
+_'armchair'.description = function(s)
+  p([[Большое глубокое кресло. Отличное место для котенка
+или маленькой девочки, где можно устроиться поудобнее и подремать.
+Сейчас оно стоит рядом с ]])
+  if s.moved then
+    p("камином.")
+  else
+    p("окном.")
+  end
+  return false
+end
+_'armchair'.before_Push = function(s, w, wh)
+  local loc = where(me())
+  if loc then
+    if loc ~= _'Drawing_Room' then
+      p('Для начала необходимо покинуть ', loc:noun('вн'), '.')
+      return
+    end
+  end
+  if have(_'white_kitten') or have(_'black_kitten') then
+    p("Только не с котенком в руках!")
+    return
+  end
+  local k = _'none'
+  if _'white_kitten'.state == CHAIR_STATE then
+    k = _'white_kitten'
+  elseif _'black_kitten'.state == CHAIR_STATE then
+    k = _'black_kitten'
+  end
+  if k ~= _'none' then
+    p([[Начав двигать кресло, Алиса обнаружила, что ]])
+    p(k:noun(1))
+    p([[ находится прямо на его пути. Хорошо, что она заметила это
+вовремя -- а то могла бы просто раздавить бедное создание!]])
+    return
+  end
+  if s.moved then
+    s.moved = false
+    p("Алиса отодвинула кресло дальше от камина.")
+    return
+  end
+  s.moved = true
+  p("Алиса придвинула кресло ближе к камину.")
+end;
+_'armchair'.before_Pull = function(s, w, wh)
+  local loc = where(me())
+  if loc then
+    if loc ~= _'Drawing_Room' then
+      p('Для начала необходимо покинуть ', loc:noun('вн'), '.')
+      return
+    end
+  end
+  if have(_'white_kitten') or have(_'black_kitten') then
+    p("Только не с котенком в руках!")
+    return
+  end
+  local k = _'none'
+  if _'white_kitten'.state == CHAIR_STATE then
+    k = _'white_kitten'
+  elseif _'black_kitten'.state == CHAIR_STATE then
+    k = _'black_kitten'
+  end
+  if k ~= _'none' then
+    p([[Начав двигать кресло, Алиса обнаружила, что ]])
+    p(k:noun(1))
+    p([[ находится прямо на его пути. Хорошо, что она заметила это
+вовремя -- а то могла бы просто раздавить бедное создание!]])
+    return
+  end
+  if s.moved then
+    s.moved = false
+    p("Алиса отодвинула кресло дальше от камина.")
+    return
+  end
+  s.moved = true
+  p("Алиса придвинула кресло ближе к камину.")
+end;
+
+_'mantelpiece'.description = function(s)
+  p([[Она довольно высоко (гораздо выше, чем Алиса может достать),
+но зато выглядит достаточно прочной и широкой,
+чтобы на ней можно было стоять без риска.]])
+  return false
+end
+_'mantelpiece'.before_Enter = function(s, w, wh)
+  if where(me()) == s then
+    p("Но Алиса уже на ней!")
+    return
+  end
+  if where(me()) ~= _'armchair' then
+    p("Каминная полка слишком высоко, чтобы до нее достать.")
+    return
+  end
+  if not _'armchair'.moved then
+    p("Отсюда невозможно дотянуться до каминной полки!")
+    return
+  end
+  if (#(inv())) > 0 then
+    p("Для этого руки должны быть свободны!")
+    return
+  end
+  move(me(), _'mantelpiece')
+  p("Алиса ловко вскарабкалась на каминную полку.")
+end;
+_'mantelpiece'.before_Climb = function(s, w, wh)
+  if where(me()) == s then
+    p("Но Алиса уже на ней!")
+    return
+  end
+  if where(me()) ~= _'armchair' then
+    p("Каминная полка слишком высоко, чтобы до нее достать.")
+    return
+  end
+  if not _'armchair'.moved then
+    p("Отсюда невозможно дотянуться до каминной полки!")
+    return
+  end
+  if (#(inv())) > 0 then
+    p("Для этого руки должны быть свободны!")
+    return
+  end
+  move(me(), _'mantelpiece')
+  p("Алиса ловко вскарабкалась на каминную полку.")
+end;
+_'mantelpiece'.before_Receive = function(s, w, wh)
+  if where(me()) ~= s and (where(me()) ~= _'armchair' or not _'armchair'.moved) then
+    p("Полка слишком высоко, за пределами досягаемости.")
+    return
+  end
+  return false
+end;
+_'mantelpiece'.before_LetGo = function(s, w, wh)
+  if where(me()) ~= s and (where(me()) ~= _'armchair' or not _'armchair'.moved) then
+    p("Полка слишком высоко, за пределами досягаемости.")
+    return
+  end
+  return false
+end;
+
+_'mirror'.description = function(s)
+  if where(me()) == _'mantelpiece' then
+    p([[Невероятно -- но стеклянная поверхность зеркала
+тает на глазах, подобно призрачному серебристому пару!]])
+    return
+  end
+  if where(me()) == _'armchair' then
+    p([[В зеркале отражается хорошо знакомая гостиная -- в ней
+все такое же, как и по эту сторону, только наоборот.
+Но почему-то Алиса уверена в том, что за краем зеркала,
+куда никак невозможно заглянуть, лежит мир Зазеркалья --
+и он совершенно не похож на привычный...]])
+    return
+  end
+  p([[Отсюда в зеркале можно разглядеть только потолок гостиной.
+Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]])
+end
+_'mirror'.before_Any = function(s, ev, w)
+  if (mp.event) ~= 'Exam' and (mp.event) ~= 'Reflect' and (mp.event) ~= 'Search' and (mp.event) ~= 'ThrownAt' and where(me()) ~= _'mantelpiece' then
+    p("Отсюда невозможно даже дотянуться до зеркала!")
+    return
+  end
+  return false
+end;
+_'mirror'.before_Enter = function(s, w, wh)
+  p([[Рука Алисы без труда прошла через серебряный туман...
+за ней последовало остальное тело...
+и вот она уже по ту сторону зеркала!!!]])
+  walk(_'theend')
+end;
+
+_'worsted'.dsc = function(s)
+  if where(s) ~= here() then
+    return false
+  end
+  if _'white_kitten'.state ~= WOOL_STATE and _'black_kitten'.state ~= WOOL_STATE then
+    p("На полу лежит клубок шерсти.")
+  end
+end
+_'worsted'.description = function(s)
+  if s.sputan then
+    p([[Сейчас он спутан так, что почти не размотаешь.
+Сколько времени Алиса потратила на то, чтобы намотать шерсть
+аккуратным клубком -- и вот, теперь на него страшно взглянуть!]])
+  else
+    p("Клубок очень хорошей голубой шерсти, готовый к вязанию.")
+  end
+end
+_'worsted'.before_Untangle = function(s, w, wh)
+  if s.sputan then
+    s.sputan = false
+    p([[Это оказалось не быстрым и не простым делом...
+зато теперь клубок совсем как новый -- тугой и аккуратный!]])
+  else
+    p("Но шерсть не спутана!")
+  end
+end;
+_'worsted'.after_Take = function(s, w, wh)
+  if _'white_kitten'.state == WOOL_STATE then
+    _'white_kitten'.state = CHAIR_STATE
+  end
+  if _'black_kitten'.state == WOOL_STATE then
+    _'black_kitten'.state = CHAIR_STATE
+  end
+  return false
+end;
+
+Kitten.dsc = function(s)
+  if s.state == QUEEN_STATE then
+    p('^', s:Noun(1), ' играет с Черной Королевой.')
+  elseif s.state == WOOL_STATE then
+    p('^', s:Noun(1), ' играет с клубком шерсти.')
+  elseif s.state == CHAIR_STATE then
+    if s.seen then
+      return
+    end
+    if _(s.other_kitten).state == CHAIR_STATE then
+      _(s.other_kitten).seen = true
+      p([[^Пара котят резвятся друг с другом на коврике рядом с креслом.]])
+      return
+    end
+    p(s:Noun(1), ' резвится на коврике рядом с креслом.')
+    return
+  else
+    return
+  end
+end
+Kitten.description = function(s)
+  p([[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
+и намного симпатичней ей, чем непослушный и непоседливый ]])
+  p(_(s.other_kitten):noun(), '.')
+end
+Kitten.life_Ask = function(s, w, wh)
+  p(s:Noun(1), [[, шевеля усами, смотрит на Алису
+с таким умным видом, что она почти готова поверить,
+будто он понимает каждое ее слово.]])
+end;
+Kitten.life_Answer = function(s, w, wh)
+  p(s:Noun(1), [[, шевеля усами, смотрит на Алису
+с таким умным видом, что она почти готова поверить,
+будто он понимает каждое ее слово.]])
+end;
+Kitten.life_Tell = function(s, w, wh)
+  p(s:Noun(1), [[, шевеля усами, смотрит на Алису
+с таким умным видом, что она почти готова поверить,
+будто он понимает каждое ее слово.]])
+end;
+Kitten.life_Talk = function(s, w, wh)
+  p(s:Noun(1), [[, шевеля усами, смотрит на Алису
+с таким умным видом, что она почти готова поверить,
+будто он понимает каждое ее слово.]])
+end;
+Kitten.life_Give = function(s, w)
+  if w ~= _'red_queen' and w ~= _'worsted' then
+    if (mp.event) == 'ThrowAt' then
+      move(w, _'Drawing_Room')
+      p('Алиса бросила ', w:noun('вн'), ' на пол, и ', s:noun(1))
+    else
+      p(s:Noun(1))
+    end
+    p(' рассматривает ', w:noun('вн'), ' с озадаченным видом.')
+    return
+  end
+  p('Алиса бросила ', w:noun('вн'), ' на пол. Немедленно ')
+  pr(s:noun(1))
+  if have(s) then
+    p(', выскользнув из ее рук,')
+  end
+  move(w, _'Drawing_Room')
+  move(s, _'Drawing_Room')
+  pr(' бросился за ', w:noun('тв'))
+  if w == _'worsted' then
+    _'worsted'.sputan = true
+    s.state = WOOL_STATE
+    pr(', мгновенно превратив его в дикую путаницу')
+  else
+    s.state = QUEEN_STATE
+  end
+  p('.')
+end;
+Kitten.life_ThrowAt = function(s, w)
+  if w ~= _'red_queen' and w ~= _'worsted' then
+    if (mp.event) == 'ThrowAt' then
+      move(w, _'Drawing_Room')
+      p('Алиса бросила ', w:noun('вн'), ' на пол, и ', s:noun(1))
+    else
+      p(s:Noun(1))
+    end
+    p(' рассматривает ', w:noun('вн'), ' с озадаченным видом.')
+    return
+  end
+  p('Алиса бросила ', w:noun('вн'), ' на пол. Немедленно ')
+  pr(s:noun(1))
+  if have(s) then
+    p(', выскользнув из ее рук,')
+  end
+  move(w, _'Drawing_Room')
+  move(s, _'Drawing_Room')
+  pr(' бросился за ', w:noun('тв'))
+  if w == _'worsted' then
+    _'worsted'.sputan = true
+    s.state = WOOL_STATE
+    pr(', мгновенно превратив его в дикую путаницу')
+  else
+    s.state = QUEEN_STATE
+  end
+  p('.')
+end;
+Kitten.before_Take = function(s, w, wh)
+  if have(_(s.other_kitten)) then
+    p("Двух котят сразу Алисе ни за что не удержать!")
+    return
+  end
+  s.state = HELD_STATE
+  move(s, me())
+  p('Алиса взяла на руки ', s:noun('вн'), '. Ну что за прелестное создание!')
+end;
+Kitten.after_Drop = function(s, w, wh)
+  s.state = CHAIR_STATE
+  move(s, _'Drawing_Room')
+  p(s:Noun(1), ', выскользнув из рук Алисы, убежал прочь.')
+end;
+Kitten.after_Transfer = function(s, w, wh)
+  s.state = CHAIR_STATE
+  local p = where(s)
+  if p then
+    pr(s:Noun(1), ', спрыгнув с ', p:noun('рд'))
+  end
+  move(s, _'Drawing_Room')
+  p(', ловко приземлился на полу и убежал прочь.')
+end;
+Kitten.after_PutOn = function(s, w, wh)
+  s.state = CHAIR_STATE
+  local p = where(s)
+  if p then
+    pr(s:Noun(1), ', спрыгнув с ', p:noun('рд'))
+  end
+  move(s, _'Drawing_Room')
+  p(', ловко приземлился на полу и убежал прочь.')
+end;
+Kitten.after_Insert = function(s, w, wh)
+  s.state = CHAIR_STATE
+  local p = where(s)
+  if p then
+    pr(s:Noun(1), ', спрыгнув с ', p:noun('рд'))
+  end
+  move(s, _'Drawing_Room')
+  p(', ловко приземлился на полу и убежал прочь.')
+end;
+Kitten.daemon = function(s)
+  s.seen = false
+  s.this_kittens_turn = not s.this_kittens_turn
+  if not s.this_kittens_turn or rnd(3) == 2 then
+    return
+  end
+  p(s:Noun(1))
+  if s.state == HELD_STATE then
+    local n = rnd(5)
+    if n == 1 then
+      p(' жалобно мяукнул.')
+    elseif n == 2 then
+      p(' тихо мурлыкнул.')
+    elseif n == 3 then
+      p(' удовлетворенно промурлыкал что-то.')
+    elseif n == 4 then
+      p(' потерся ушками о руку Алисы.')
+    elseif n == 5 then
+      move(s, _'Drawing_Room')
+      s.state = CHAIR_STATE
+      p(' спрыгнул на пол, ловко выскользнув из Алисиных рук.')
+    end
+    return
+  elseif s.state == QUEEN_STATE then
+    local n = rnd(5)
+    if n == 1 then
+      p(' ткнул Черную Королеву лапкой.')
+    elseif n == 2 then
+      p(' оставив на время игру, сидит с подчеркнуто невинным видом.')
+    elseif n == 3 then
+      p(' катает бедную Королеву туда-сюда по полу.')
+    elseif n == 4 then
+      p(' кончил умываться и осматривается по сторонам.')
+    elseif n == 5 then
+      p([[ взял Черную Королеву, укусил, и начал яростно трясти,
+чтобы убедиться, что с ней покончено.]])
+    end
+    return
+  elseif s.state == WOOL_STATE then
+    _'worsted'.sputan = true
+    local n = rnd(5)
+    if n == 1 then
+      p(' ткнул клубок шерсти лапкой.')
+    elseif n == 2 then
+      p(' покатил клубок по полу, преследуя его по пятам.')
+    elseif n == 3 then
+      p(' сцепился с клубком в жестокой схватке.')
+    elseif n == 4 then
+      p([[ прыгнул на клубок сверху,
+и окончательно запутался в мешанине шерстяных нитей.]])
+    elseif n == 5 then
+      p(' прервав игру, чешет себя за ушами.')
+    end
+    return
+  elseif s.state == CHAIR_STATE then
+    if _(s.other_kitten).state == CHAIR_STATE and rnd(2) == 1 then
+      local n = rnd(5)
+      if n == 1 then
+        p(' преследует ')
+      elseif n == 2 then
+        p(' прыгнул на ')
+      elseif n == 3 then
+        p(' умывает лапкой ')
+      elseif n == 4 then
+        p(' обежал вокруг ')
+      elseif n == 5 then
+        p(' ткнул ')
+      end
+      pr(_(s.other_kitten):noun('вн'))
+      if n == 2 then
+        p(' и они вместе покатились по полу.')
+      elseif n == 4 then
+        p(' и бросился за ним.')
+      elseif n == 5 then
+        p(' лапкой.')
+      else
+        p('.')
+      end
+      return
+    end
+    local n = rnd(5)
+    if n == 1 then
+      p(' гоняет по полу комок пыли.')
+    elseif n == 2 then
+      p(' катается по полу.')
+    elseif n == 3 then
+      p(' сидит и тщательно вылизывает свой хвост.')
+    elseif n == 4 then
+      p(' трется головой о ножки кресла.')
+    elseif n == 5 then
+      p(' гоняется за своим хвостом.')
+    end
+  end
+end
 
 gameover {
   nam = "theend";
