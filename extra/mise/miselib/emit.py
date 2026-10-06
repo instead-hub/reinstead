@@ -218,7 +218,8 @@ class Emitter:
             if not parse_key(key)[1]:
                 for part in fbase.split(","):
                     if part in REF_FIELDS:
-                        check_ref_value(ident or "?", key, val)
+                        check_ref_value(ident or "?", key, val,
+                                        self.ctx.ids)
                         break
             try:
                 rendered = self.body(val, key, fi)

@@ -111,7 +111,7 @@ def parse_fn_sig(key, types=None):
     return name, plist, ret, variadic
 
 
-def check_ref_value(where, key, v):
+def check_ref_value(where, key, v, ids=None):
     if isinstance(v, Text):
         raise Error("%s.%s: object reference must be a bare name, not a "
                     "quoted string (%r)" % (where, key, v.s))
@@ -119,10 +119,13 @@ def check_ref_value(where, key, v):
         if not re.fullmatch(r"[#@\w]+", v.s, re.UNICODE):
             raise Error("%s.%s: object name must be an identifier without "
                         "spaces/hyphens (%r)" % (where, key, v.s))
+        if ids is not None and v.s not in ids:
+            raise Error("%s.%s: unknown object reference %r"
+                        % (where, key, v.s))
         return
     if isinstance(v, list):
         for r in v:
-            check_ref_value(where, key, r)
+            check_ref_value(where, key, r, ids)
         return
 
 

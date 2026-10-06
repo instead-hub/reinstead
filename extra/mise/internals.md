@@ -82,7 +82,9 @@ transpile (main loop) обход корневых элементов → Emitter
 7. `const`/`global` → `global_types` через `literal_type`.
 8. `walk_use` — имена из `use ...` выкидываются из `inline`, кроме
    `expr` (expr-функцию нельзя использовать как обработчик).
-9. `check_refs` — поля-ссылки (`REF_FIELDS`) сверяются с `ctx.ids`.
+9. `check_refs` — `with`/`inside`/`found_in` сверяются с `ctx.ids`;
+   прочие поля-ссылки (`REF_FIELDS`: `n_to`, `door_to`, …) проверяет
+   `Emitter.obj` через `check_ref_value(..., ctx.ids)`.
 
 ## Inline-функции
 
