@@ -30,5 +30,6 @@ class Ctx:
         self.wrappers = {}
         self.exprs = {}
         self.types = {}
+        self.field_types = {}
         self.adapters = {}
         self.src_dir = src_dir

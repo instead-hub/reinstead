@@ -108,6 +108,74 @@ def collect_types(root, ctx):
     return ctx.types
 
 
+FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
+              "nam", "text", "patterns", "pattern", "tag", "prio", "hint"}
+
+
+def field_value_type(val):
+    if isinstance(val, list):
+        return "tbl"
+    if isinstance(val, Num):
+        return "num"
+    if isinstance(val, Bool):
+        return "bool"
+    if isinstance(val, Nil):
+        return "nil"
+    if isinstance(val, (Text, Bare)):
+        return "str"
+    if isinstance(val, Data):
+        return "tbl"
+    return "any"
+
+
+def collect_block_fields(block, ctx, into):
+    for key, val in block.items:
+        if key in ("with", "inside") and isinstance(val, Block):
+            for nk, nv in val.items:
+                k2, info = classify(nk)
+                if k2 == "decl" and info[1] and isinstance(nv, Block):
+                    fields = dict(ctx.field_types.get(info[0], {}))
+                    ctx.field_types[info[1]] = fields
+                    collect_block_fields(nv, ctx, fields)
+            continue
+        if isinstance(val, Block):
+            continue
+        base, _params = parse_key(key)
+        if (base in FIELD_SKIP or base in ("Any", "Default")
+                or re.match(r"^(before|after|post)\s", base)):
+            continue
+        into[base] = field_value_type(val)
+
+
+def collect_field_types(root, ctx):
+    ctx.field_types = {}
+    class_defs = {}
+    for key, val in root.items:
+        kind, info = classify(key)
+        if kind == "class" and isinstance(val, Block):
+            class_defs[info[0]] = (info[1], val)
+    done = set()
+
+    def resolve(name):
+        if name in done or name not in class_defs:
+            return dict(ctx.field_types.get(name, {}))
+        done.add(name)
+        parent, blk = class_defs[name]
+        fields = resolve(parent) if parent else {}
+        collect_block_fields(blk, ctx, fields)
+        ctx.field_types[name] = fields
+        return fields
+
+    for name in class_defs:
+        resolve(name)
+    for key, val in root.items:
+        kind, info = classify(key)
+        if kind == "decl" and info[1] and isinstance(val, Block):
+            fields = dict(ctx.field_types.get(info[0], {}))
+            ctx.field_types[info[1]] = fields
+            collect_block_fields(val, ctx, fields)
+
+
 def collect_game_defs(root):
     funcs = set()
     vars_ = set()
@@ -218,6 +286,7 @@ def adapter_callee(text, plist):
 def prescan(root, ctx):
     ctx.fns = set()
     collect_types(root, ctx)
+    collect_field_types(root, ctx)
     ids = collect_ids(root)
     ctx.ids = set(ids)
     ctx.extra_events = {}

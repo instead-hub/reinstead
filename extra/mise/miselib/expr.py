@@ -261,7 +261,7 @@ class ExprEmit:
             if val in self.env:
                 return val, self.env[val], "name", val
             if val in self.ctx.ids:
-                return "_'%s'" % val, "obj", "objref", None
+                return "_'%s'" % val, "obj", "objref", val
             if val in self.ctx.fn_sigs:
                 return fn_name(val), "fn", "name", val
             if val in self.ctx.funcs:
@@ -403,10 +403,15 @@ class ExprEmit:
                 if t == "str":
                     self.err("strings are not objects; use a bare name (%r)"
                              % (val,))
+                recv = val if kind == "objref" else None
                 code = "%s.%s" % (code, nv)
                 kind = "field"
-                t = "any"
-                val = None
+                known = (recv is not None
+                         and recv in self.ctx.field_types)
+                t = (self.ctx.field_types[recv].get(nv, "any")
+                     if known else "any")
+                val = (recv, nv) if (known and nv in
+                                     self.ctx.field_types[recv]) else None
             elif k == "op" and v == "[":
                 self.next()
                 self.expected = None
@@ -622,7 +627,7 @@ def transpile_stmt(text, env, where, ctx):
         if p.peek()[0] != "eof":
             p.err("unexpected %r" % p.peek()[1])
         for n, t in zip(names, types):
-            env[n] = t
+            env[n] = "any" if t == "nil" else t
         return code
     if kind == "name" and val == "break":
         p.next()
@@ -654,7 +659,20 @@ def transpile_stmt(text, env, where, ctx):
         if p.peek()[0] != "eof":
             p.err("unexpected %r" % p.peek()[1])
         if lk == "name" and lv in env and types:
-            env[lv] = types[0]
+            old, new = env[lv], types[0]
+            if old == "any":
+                env[lv] = new
+            elif new != "any" and not type_ok(ctx, new, old):
+                raise LintError("%s: %s (%s) cannot take %s"
+                                % (where, lv, old, new))
+        if (lk == "field" and isinstance(lv, tuple)
+                and lv[0] in ctx.field_types
+                and lv[1] in ctx.field_types[lv[0]] and types):
+            old = ctx.field_types[lv[0]][lv[1]]
+            new = types[0]
+            if old != "any" and new != "any" and not type_ok(ctx, new, old):
+                raise LintError("%s: %s.%s (%s) cannot take %s"
+                                % (where, lv[0], lv[1], old, new))
         if op == "=":
             return "%s = %s" % (lhs, ", ".join(codes))
         sign = "+" if op == "+=" else "-"
