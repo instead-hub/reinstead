@@ -2,14 +2,10 @@ name: t
 lang: ru
 include: stdlib
 
-behavior A:
+mixin A:
   before Talk: |
     say [[a]]
 
-behavior B:
+mixin A:
   before Talk: |
     say [[b]]
-
-obj box:
-  words: коробка
-  behavior: A, B

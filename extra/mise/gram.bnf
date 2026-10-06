@@ -25,7 +25,7 @@ key       ::= <текст до ':' нулевого уровня>         (* в�
 (* ---------- файл ---------- *)
 file      ::= { top }
 top       ::= meta | lang | fmt | include | require | evdecl
-            | vars | setup | impl | fn | class | behavior | verb | extend
+            | vars | setup | impl | fn | class | mixin | verb | extend
             | custom_type
             | talk
             | lua_section | decl | NEWLINE
@@ -69,8 +69,8 @@ fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
               [ "->" type ] ":" value
 (* value: блок |/|lua или inline-выражение в бэктиках (`#v`) *)
 class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
-behavior  ::= "behavior" CLASS ":" block
-(* набор полей/обработчиков; привязка `behavior: A, B` в obj/class/impl *)
+mixin  ::= "mixin" CLASS ":" block
+(* набор полей/обработчиков; привязка `mixins: A, B` в obj/class/impl *)
 
 verb      ::= "verb" CLASS ":" block
 (* поля verb: tag, words, patterns (список "- ..."), prio, hint;

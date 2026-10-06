@@ -4,4 +4,4 @@ include: stdlib
 
 obj box:
   words: коробка
-  behavior: Nope
+  mixins: Nope

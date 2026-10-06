@@ -163,23 +163,23 @@ class Emitter:
         finally:
             self.ctx.current_owner = prev
 
-    def expand_behaviors(self, block):
-        """Merge attached behaviors' keys (own keys win)."""
-        val = block.get("behavior")
+    def expand_mixins(self, block):
+        """Merge attached mixins' keys (own keys win)."""
+        val = block.get("mixins")
         if val is None:
             return block
-        CURRENT_LINE[0] = block.line("behavior") or CURRENT_LINE[0]
-        own = {k for k, _ in block.items if k != "behavior"}
+        CURRENT_LINE[0] = block.line("mixins") or CURRENT_LINE[0]
+        own = {k for k, _ in block.items if k != "mixins"}
         merged = Block()
         seen = {}
         for v in (val if isinstance(val, list) else [val]):
             name = v.s if hasattr(v, "s") else str(v)
-            bdef = self.ctx.behavior_defs.get(name)
+            bdef = self.ctx.mixin_defs.get(name)
             if bdef is None:
-                raise Error("unknown behavior: " + name)
+                raise Error("unknown mixin: " + name)
             for i, (k, bv) in enumerate(bdef.items):
                 if k in seen:
-                    raise Error("behavior key conflict: %s (%s and %s)"
+                    raise Error("mixin key conflict: %s (%s and %s)"
                                 % (k, seen[k], name))
                 seen[k] = name
                 if k in own:
@@ -187,14 +187,14 @@ class Emitter:
                 merged.items.append((k, bv))
                 merged.lines.append(bdef.line_at(i))
         for i, (k, bv) in enumerate(block.items):
-            if k == "behavior":
+            if k == "mixins":
                 continue
             merged.items.append((k, bv))
             merged.lines.append(block.line_at(i))
         return merged
 
     def _obj(self, block, ident, base, ctor, preset, parent=None):
-        block = self.expand_behaviors(block)
+        block = self.expand_mixins(block)
         fi = base + IND
         lines = ["%s%s({" % (base, ctor) if parent
                  else "%s%s {" % (base, ctor)]
@@ -615,7 +615,7 @@ class Emitter:
         return lines
 
     def impl(self, target, block):
-        block = self.expand_behaviors(block)
+        block = self.expand_mixins(block)
         t = target.strip()
         if (t.startswith("'") and t.endswith("'")) or (
                 t.startswith('"') and t.endswith('"')):

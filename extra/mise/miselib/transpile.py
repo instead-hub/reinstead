@@ -27,7 +27,7 @@ def transpile(src, src_dir=""):
         kind, info = classify(key)
         if kind == "meta":
             header.append("--$%s:%s$" % (key.title(), val.s))
-        elif kind in ("skip", "type", "extend_type", "behavior"):
+        elif kind in ("skip", "type", "extend_type", "mixin"):
             continue
         elif kind == "require":
             vals = val if isinstance(val, list) else [val]

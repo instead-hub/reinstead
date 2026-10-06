@@ -118,7 +118,7 @@ def collect_types(root, ctx):
 
 FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
               "dict", "nam", "text", "patterns", "pattern", "tag", "prio",
-              "hint", "behavior"}
+              "hint", "mixins"}
 
 
 def field_base(key, val, ctx):
@@ -139,29 +139,29 @@ def field_base(key, val, ctx):
     return base
 
 
-def attach_behaviors(block, ctx, into):
-    """Merge attached behaviors' fields first (own keys override)."""
-    val = block.get("behavior")
+def attach_mixins(block, ctx, into):
+    """Merge attached mixins' fields first (own keys override)."""
+    val = block.get("mixins")
     if val is None:
         return
-    CURRENT_LINE[0] = block.line("behavior") or CURRENT_LINE[0]
+    CURRENT_LINE[0] = block.line("mixins") or CURRENT_LINE[0]
     seen = {}
     for v in (val if isinstance(val, list) else [val]):
-        CURRENT_LINE[0] = block.line("behavior") or CURRENT_LINE[0]
+        CURRENT_LINE[0] = block.line("mixins") or CURRENT_LINE[0]
         name = v.s if hasattr(v, "s") else str(v)
-        bdef = ctx.behavior_defs.get(name)
+        bdef = ctx.mixin_defs.get(name)
         if bdef is None:
-            raise Error("unknown behavior: " + name)
+            raise Error("unknown mixin: " + name)
         for k, _bv in bdef.items:
             if k in seen:
-                raise Error("behavior key conflict: %s (%s and %s)"
+                raise Error("mixin key conflict: %s (%s and %s)"
                             % (k, seen[k], name))
             seen[k] = name
         collect_block_fields(bdef, ctx, into)
 
 
 def collect_block_fields(block, ctx, into):
-    attach_behaviors(block, ctx, into)
+    attach_mixins(block, ctx, into)
     for i, (key, val) in enumerate(block.items):
         CURRENT_LINE[0] = block.line_at(i)
         if key in ("with", "inside") and isinstance(val, Block):
@@ -185,22 +185,22 @@ def collect_block_fields(block, ctx, into):
 def collect_field_types(root, ctx):
     ctx.fields = {}
     class_defs = {}
-    behavior_defs = {}
+    mixin_defs = {}
     for i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(i)
         kind, info = classify(key)
         if kind == "class" and isinstance(val, Block):
             class_defs[info[0]] = (info[1], val)
-        elif kind == "behavior" and isinstance(val, Block):
-            if info in behavior_defs:
-                raise Error("duplicate behavior: " + info)
-            if any(re.match(r"^behavior\b", k2) for k2, _ in val.items):
-                raise Error("behavior %s cannot include behavior" % info)
-            behavior_defs[info] = val
-    ctx.behavior_defs = behavior_defs
+        elif kind == "mixin" and isinstance(val, Block):
+            if info in mixin_defs:
+                raise Error("duplicate mixin: " + info)
+            if any(re.match(r"^mixins?\b", k2) for k2, _ in val.items):
+                raise Error("mixin %s cannot include mixin" % info)
+            mixin_defs[info] = val
+    ctx.mixin_defs = mixin_defs
     ctx.class_parents = {n: info[0] for n, info in class_defs.items()}
     ctx.classes = set(class_defs)
-    for name, blk in behavior_defs.items():
+    for name, blk in mixin_defs.items():
         fields = {}
         collect_block_fields(blk, ctx, fields)
         ctx.fields[name] = fields
@@ -235,11 +235,11 @@ def check_bare_names(root, ctx):
     def walk_fields(block):
         for i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(i)
-            if key == "behavior":
+            if key == "mixins":
                 for v in (val if isinstance(val, list) else [val]):
                     name = v.s if hasattr(v, "s") else str(v)
-                    if name not in ctx.behavior_defs:
-                        raise Error("unknown behavior: " + name)
+                    if name not in ctx.mixin_defs:
+                        raise Error("unknown mixin: " + name)
                 continue
             base = field_base(key, val, ctx)
             if (base is not None and isinstance(val, Bare)
@@ -252,7 +252,7 @@ def check_bare_names(root, ctx):
         if not isinstance(val, Block):
             continue
         kind, _info = classify(key)
-        if kind == "behavior":
+        if kind == "mixin":
             walk_fields(val)
         elif kind == "impl":
             walk_fields(val)

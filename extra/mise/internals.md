@@ -70,7 +70,7 @@ transpile (main loop) обход корневых элементов → Emitter
 3. `collect_field_types` — `ctx.fields`; `collect_block_fields` рекурсивно
    по `with`; у классов поля наследуются; тип поля — `literal_type`
    (`typing.py`), у голого имени-объекта — `obj` + флаг `is_ref`;
-   `behavior_defs` — именованные наборы, `attach_behaviors` вливает их
+   `ctx.mixins` — именованные наборы, `attach_mixins` вливает их
    поля в цель до собственных;
    затем `check_bare_names` сверяет голые значения тем же правилом в
    `impl`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
@@ -165,8 +165,8 @@ transpile (main loop) обход корневых элементов → Emitter
 
 ## Эмиссия (`emit.py:Emitter`)
 
-- `expand_behaviors` — ключи привязанных `behavior` вливаются до
-  собственных ключей (свои перекрывают); конфликт двух behaviors — ошибка.
+- `expand_mixins` — ключи привязанных `mixins` вливаются до
+  собственных ключей (свои перекрывают); конфликт двух mixins — ошибка.
 - `value`/`body`/`handler`/`on` — значения, тела, обработчики
   (в т.ч. составные ключи `before A, B`; фаза обязательна: `on X` —
   метод события (`X = function…`), `before/after/post/life X` — с префиксом;

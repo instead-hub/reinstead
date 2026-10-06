@@ -2,29 +2,29 @@ name: t
 lang: ru
 include: stdlib
 
-behavior Talkative:
+mixin Talkative:
   heard: false
   before Talk: |
     s.heard = true
     say [[поговорили]]
 
-behavior Flying:
+mixin Flying:
   before Climb: |
     say [[взлетел]]
 
 class Bird:
   attrs: animate
-  behavior: Flying
+  mixins: Flying
 
 Bird eagle:
   words: орёл
 
 obj parrot:
   words: попугай
-  behavior: Talkative
+  mixins: Talkative
 
 obj crow:
   words: ворона
-  behavior: Talkative
+  mixins: Talkative
   before Talk: |
     say [[кар]]

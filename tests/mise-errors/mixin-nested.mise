@@ -2,9 +2,9 @@ name: t
 lang: ru
 include: stdlib
 
-behavior B:
+mixin B:
   before Talk: |
     say [[b]]
 
-behavior A:
-  behavior: B
+mixin A:
+  mixins: B
