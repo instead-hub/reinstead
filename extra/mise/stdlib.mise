@@ -185,6 +185,17 @@ fn tiny() -> bool: `instead.tiny`
 fn music(name: str, ...): |lua
   snd.music(name, ...)
 
+class Door(door):
+  attrs: open
+  from: none
+  to: none
+  door_to: |
+    if here == s.from:
+      return s.to
+    if here == s.to:
+      return s.from
+    pass
+
 class Path:
   attrs: scenery, enterable
   before Walk, Enter: |lua

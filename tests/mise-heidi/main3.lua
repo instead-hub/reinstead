@@ -8,6 +8,20 @@ obj {
   nam = "none";
 }
 
+Door = Class({
+  from = 'none';
+  to = 'none';
+  door_to = function(s)
+    if here() == _(s.from) then
+      return _(s.to)
+    end
+    if here() == _(s.to) then
+      return _(s.from)
+    end
+    return false
+  end;
+}, door):attr 'open'
+
 Path = Class {
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(std.ref(s.walk_to)) then return end
