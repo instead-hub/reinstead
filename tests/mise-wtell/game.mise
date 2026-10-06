@@ -14,8 +14,7 @@ const:
 fn score_up(): |lua
   mp.score = mp.score + 1
 
-fn cur_score() -> num: |lua
-  return mp.score
+fn cur_score() -> num: `mp.score`
 
 fn BowOrArrow(o: obj?) -> bool: |
   if not o or o == bow or o.arrow:

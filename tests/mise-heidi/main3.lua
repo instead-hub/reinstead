@@ -4,25 +4,8 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_compass_dir(w)
-  local d = mp:compass_dir(w)
-  return d or nil
-end
-
-local function fn_event()
-  return mp.event
-end
-
-local function fn_call_before(s, ev)
-  s['before_' .. ev](s)
-end
-
 local function fn_arg_word(i)
   return mp.args[i] and mp.args[i].word or ''
-end
-
-local function fn_tiny()
-  return instead.tiny
 end
 
 obj {

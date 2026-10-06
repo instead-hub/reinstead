@@ -4,25 +4,8 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_compass_dir(w)
-  local d = mp:compass_dir(w)
-  return d or nil
-end
-
-local function fn_event()
-  return mp.event
-end
-
-local function fn_call_before(s, ev)
-  s['before_' .. ev](s)
-end
-
 local function fn_arg_word(i)
   return mp.args[i] and mp.args[i].word or ''
-end
-
-local function fn_tiny()
-  return instead.tiny
 end
 
 obj {
@@ -106,7 +89,7 @@ room {
     if where(me()) ~= _'mantelpiece' then
       return false
     end
-    if fn_compass_dir(w) == "d_to" or fn_compass_dir(w) == "out_to" or w == s then
+    if (mp:compass_dir(w) or nil) == "d_to" or (mp:compass_dir(w) or nil) == "out_to" or w == s then
       p("Таким путем вряд ли удастся спуститься с каминной полки!")
       return
     end
@@ -328,7 +311,7 @@ obj {
 Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]])
   end;
   before_Any = function(s, ev, w)
-    if fn_event() ~= 'Exam' and fn_event() ~= 'Reflect' and fn_event() ~= 'Search' and fn_event() ~= 'ThrownAt' and where(me()) ~= _'mantelpiece' then
+    if (mp.event) ~= 'Exam' and (mp.event) ~= 'Reflect' and (mp.event) ~= 'Search' and (mp.event) ~= 'ThrownAt' and where(me()) ~= _'mantelpiece' then
       p("Отсюда невозможно даже дотянуться до зеркала!")
       return
     end
@@ -442,7 +425,7 @@ Kitten = Class {
   end;
   ["life_Give,ThrowAt"] = function(s, w)
     if w ~= _'red_queen' and w ~= _'worsted' then
-      if fn_event() == 'ThrowAt' then
+      if (mp.event) == 'ThrowAt' then
         move(w, _'Drawing_Room')
         p('Алиса бросила ', w:noun('вн'), ' на пол, и ', s:noun(1))
       else

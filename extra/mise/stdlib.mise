@@ -25,9 +25,7 @@ fn attr(s: obj, a: attr): |lua
 fn inside(w: obj, x: obj) -> bool: |lua
   return w:inside(x)
 
-fn compass_dir(w: obj) -> direction?: |lua
-  local d = mp:compass_dir(w)
-  return d or nil
+fn compass_dir(w: obj) -> direction?: `mp:compass_dir(w) or nil`
 
 fn once_tag(s: obj, t: str) -> bool: |lua
   return s:once(t)
@@ -106,8 +104,7 @@ fn walkout(): |lua
 fn visits(w: obj) -> num: |lua
   return visits(w)
 
-fn event() -> event?: |lua
-  return mp.event
+fn event() -> event?: `mp.event`
 
 fn have(w: obj) -> obj?: |lua
   return have(w)
@@ -170,7 +167,7 @@ fn lifeoff(w: obj): |lua
   lifeoff(w)
 
 fn call_before(s: obj, ev: event): |lua
-  s['before_' .. ev](s)
+  return std.call(s, 'before_' .. ev)
 
 fn theme_name() -> str: |lua
   return theme.name()
@@ -184,8 +181,7 @@ fn ref(name: str) -> obj?: |lua
 fn arg_word(i: num) -> str: |lua
   return mp.args[i] and mp.args[i].word or ''
 
-fn tiny() -> bool: |lua
-  return instead.tiny
+fn tiny() -> bool: `instead.tiny`
 
 fn music(name: str, ...): |lua
   snd.music(name, ...)

@@ -4,25 +4,8 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_compass_dir(w)
-  local d = mp:compass_dir(w)
-  return d or nil
-end
-
-local function fn_event()
-  return mp.event
-end
-
-local function fn_call_before(s, ev)
-  s['before_' .. ev](s)
-end
-
 local function fn_arg_word(i)
   return mp.args[i] and mp.args[i].word or ''
-end
-
-local function fn_tiny()
-  return instead.tiny
 end
 
 obj {
@@ -110,7 +93,7 @@ room {
 Но похоже, что в пыли на полу написано что-то важное.]];
   n_to = 'foyer';
   before_Walk = function(s, w, wh)
-    if fn_compass_dir(w) ~= "n_to" and not w:has("light") then
+    if (mp:compass_dir(w) or nil) ~= "n_to" and not w:has("light") then
       _'message'.number = _'message'.number + (2)
       p("Слоняться в кромешной тьме -- не самая лучшая идея.")
       return
@@ -159,7 +142,7 @@ obj {
   ["before_Drop,PutOn"] = function(s, w, wh)
     if here() == _'cloakroom' then
       _'bar':attr("light")
-      if fn_event() == 'PutOn' and not s.scored then
+      if (mp.event) == 'PutOn' and not s.scored then
         s.scored = true
         score = score + (1)
       end

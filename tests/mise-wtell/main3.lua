@@ -4,33 +4,12 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_compass_dir(w)
-  local d = mp:compass_dir(w)
-  return d or nil
-end
-
-local function fn_event()
-  return mp.event
-end
-
-local function fn_call_before(s, ev)
-  s['before_' .. ev](s)
-end
-
 local function fn_arg_word(i)
   return mp.args[i] and mp.args[i].word or ''
 end
 
-local function fn_tiny()
-  return instead.tiny
-end
-
 local function fn_score_up()
   mp.score = mp.score + 1
-end
-
-local function fn_cur_score()
-  return mp.score
 end
 
 local function fn_BowOrArrow(o)
@@ -266,11 +245,11 @@ room {
   s_to = 'south_square';
   warnings_count = 0;
   before_Walk = function(s, w, wh)
-    if fn_compass_dir(w) == "s_to" then
+    if (mp:compass_dir(w) or nil) == "s_to" then
       s.warnings_count = 0
       _'pole'.has_been_saluted = false
     end
-    if fn_compass_dir(w) == "n_to" then
+    if (mp:compass_dir(w) or nil) == "n_to" then
       if _'pole'.has_been_saluted then
         p([[^"Хорошего дня".^]])
         return false
@@ -533,7 +512,7 @@ gameover {
   title = "Конец";
   dsc = function(s)
     pn('Вы испортили любимую народную легенду.')
-    p('Ваш счет: ', fn_cur_score(), ' из ', MAX_SCORE)
+    p('Ваш счет: ', (mp.score), ' из ', MAX_SCORE)
   end;
 }
 
@@ -542,6 +521,6 @@ gameover {
   title = "Конец";
   dsc = function(s)
     pn('Поздравляю, вы прошли игру!')
-    p('Ваш счет: ', fn_cur_score(), ' из ', MAX_SCORE)
+    p('Ваш счет: ', (mp.score), ' из ', MAX_SCORE)
   end;
 }
