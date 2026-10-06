@@ -121,6 +121,24 @@ FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
               "hint"}
 
 
+def field_base(key, val, ctx):
+    """Return the field name of a regular object-like key, else None.
+
+    Handlers (`before X`, `Any`/`Default`/`life_*`, event keys), blocks
+    and reserved keys are not fields. Shared by field typing and
+    bare-name validation so both follow one rule.
+    """
+    base, params = parse_key(key)
+    parts = [p.strip() for p in base.split(",")]
+    if (params is not None or isinstance(val, Block)
+            or base in FIELD_SKIP or base in ("Any", "Default")
+            or re.match(r"^(before|after|post)\s", base)
+            or any(p in ctx.event_names or p.startswith("life_")
+                   or p in ("Any", "Default") for p in parts)):
+        return None
+    return base
+
+
 def collect_block_fields(block, ctx, into):
     for i, (key, val) in enumerate(block.items):
         CURRENT_LINE[0] = block.line_at(i)
@@ -132,15 +150,8 @@ def collect_block_fields(block, ctx, into):
                     collect_block_fields(nv, ctx, fields)
                     ctx.fields[info[1]] = fields
             continue
-        if isinstance(val, Block):
-            continue
-        base, params = parse_key(key)
-        parts = [p.strip() for p in base.split(",")]
-        if (params is not None
-                or base in FIELD_SKIP or base in ("Any", "Default")
-                or re.match(r"^(before|after|post)\s", base)
-                or any(p in ctx.event_names or p.startswith("life_")
-                       or p in ("Any", "Default") for p in parts)):
+        base = field_base(key, val, ctx)
+        if base is None:
             continue
         t = literal_type(ctx, val, refs=True)
         if isinstance(val, Bare) and t == "str":
@@ -184,23 +195,14 @@ def check_bare_names(root, ctx):
     Same rule as object/class fields: a bare name must resolve to an
     object, event or enum value; strings have to be quoted.
     """
-    def check(key, val):
-        if isinstance(val, Bare) and literal_type(ctx, val, refs=True) == "str":
-            raise Error("unknown name %r in field %s (quote string "
-                        "values: [[...]]/\"...\")" % (val.s, key))
-
     def walk_fields(block):
         for i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(i)
-            base, params = parse_key(key)
-            parts = [p.strip() for p in base.split(",")]
-            if (params is not None or isinstance(val, Block)
-                    or base in FIELD_SKIP or base in ("Any", "Default")
-                    or re.match(r"^(before|after|post)\s", base)
-                    or any(p in ctx.event_names or p.startswith("life_")
-                           or p in ("Any", "Default") for p in parts)):
-                continue
-            check(base, val)
+            base = field_base(key, val, ctx)
+            if (base is not None and isinstance(val, Bare)
+                    and literal_type(ctx, val, refs=True) == "str"):
+                raise Error("unknown name %r in field %s (quote string "
+                            "values: [[...]]/\"...\")" % (val.s, base))
 
     for i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(i)

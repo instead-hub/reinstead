@@ -74,9 +74,7 @@ class Emitter:
             env[pn] = S.PARAM_TYPES.get(pn, "any")
         return env
 
-    def body(self, v, key, indent=""):
-        base, params = parse_key(key)
-        prm = params or FIELD_PARAMS.get(base, "s")
+    def make_body(self, v, prm, indent):
         uname = self.use_name(v)
         if uname:
             self.check_use(uname, prm)
@@ -85,25 +83,19 @@ class Emitter:
             body = reindent(v.s, indent + IND)
             return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
         if isinstance(v, Logic):
-            body = "\n".join(emit_logic(v.stmts, indent + IND, self.param_env(prm), ctx=self.ctx))
+            body = "\n".join(emit_logic(v.stmts, indent + IND,
+                                        self.param_env(prm), ctx=self.ctx))
             return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
         return self.value(v)
 
+    def body(self, v, key, indent=""):
+        base, params = parse_key(key)
+        return self.make_body(v, params or FIELD_PARAMS.get(base, "s"), indent)
+
     def handler(self, val, prm, indent):
-        uname = self.use_name(val)
-        if uname:
-            self.check_use(uname, prm)
-            return fn_name(uname)
-        if isinstance(val, Lua):
-            body = reindent(val.s, indent + IND)
-            return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
-        if isinstance(val, Logic):
-            body = "\n".join(emit_logic(val.stmts, indent + IND,
-                                        self.param_env(prm), ctx=self.ctx))
-            return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
         if isinstance(val, (Text, Bare)) and val.s.strip() == "pass":
             return "function() return false end"
-        return self.value(val)
+        return self.make_body(val, prm, indent)
 
     def on(self, block, indent, target=""):
         out = []
@@ -311,45 +303,16 @@ class Emitter:
             lines.append("%s = %s" % (mpname, self.handler(val, prm, "")))
         return "\n".join(lines)
 
-    def verb(self, block, ident, base):
+    def verb_fields(self, block, required):
+        """Shared `words`/`patterns` fields of verb and extend verb."""
+        label = "verb" if required else "extend"
         fields = []
-        tag = block.get("tag")
-        if tag is None:
-            fields.append("'#%s'" % ident)
-        elif not (isinstance(tag, Bool) and tag.s == "false"):
-            fields.append(self.value(tag))
         words = block.get("words")
-        if not isinstance(words, Text):
+        if words is None and required:
             raise Error("verb words must be a quoted string")
-        fields.append(lua_str(words.s))
-        pats = block.get("patterns")
-        if pats is not None:
-            if not isinstance(pats, list):
-                pats = [pats]
-            for p in pats:
-                fields.append(self.value(p))
-        for key, val in block.items:
-            base_key, _params = parse_key(key)
-            if base_key in ("on", "before", "after"):
-                raise Error("verb %s: %s is declared in 'event %s:' now"
-                            % (ident or "?", base_key, ident or "?"))
-        extra = []
-        if block.get("prio") is not None:
-            extra.append("prio = %s" % self.value(block.get("prio")))
-        if block.get("hint") is not None:
-            extra.append("hint = %s" % self.body(block.get("hint"), "hint"))
-        lines = ["%sVerb { %s%s }" % (base, ", ".join(fields),
-                                      (", " + ", ".join(extra)) if extra else "")]
-        return "\n".join(lines)
-
-    def verb_extend(self, block, ident, base):
-        if not ident:
-            raise Error("extend needs a verb tag")
-        fields = [lua_str(ident)]
-        words = block.get("words")
         if words is not None:
             if not isinstance(words, Text):
-                raise Error("extend words must be a quoted string")
+                raise Error("%s words must be a quoted string" % label)
             fields.append(lua_str(words.s))
         pats = block.get("patterns")
         if pats is not None:
@@ -357,14 +320,42 @@ class Emitter:
                 pats = [pats]
             for p in pats:
                 fields.append(self.value(p))
-        if len(fields) == 1:
-            raise Error("extend needs words or patterns")
+        return fields
+
+    def verb_extra(self, block):
         extra = []
         if block.get("prio") is not None:
             extra.append("prio = %s" % self.value(block.get("prio")))
         if block.get("hint") is not None:
             extra.append("hint = %s" % self.body(block.get("hint"), "hint"))
-        ctor = "VerbExtendWord" if words is not None else "VerbExtend"
+        return extra
+
+    def verb(self, block, ident, base):
+        fields = []
+        tag = block.get("tag")
+        if tag is None:
+            fields.append("'#%s'" % ident)
+        elif not (isinstance(tag, Bool) and tag.s == "false"):
+            fields.append(self.value(tag))
+        fields += self.verb_fields(block, required=True)
+        for key, val in block.items:
+            base_key, _params = parse_key(key)
+            if base_key in ("on", "before", "after"):
+                raise Error("verb %s: %s is declared in 'event %s:' now"
+                            % (ident or "?", base_key, ident or "?"))
+        extra = self.verb_extra(block)
+        return "%sVerb { %s%s }" % (base, ", ".join(fields),
+                                    (", " + ", ".join(extra)) if extra else "")
+
+    def verb_extend(self, block, ident, base):
+        if not ident:
+            raise Error("extend needs a verb tag")
+        fields = [lua_str(ident)] + self.verb_fields(block, required=False)
+        if len(fields) == 1:
+            raise Error("extend needs words or patterns")
+        extra = self.verb_extra(block)
+        ctor = "VerbExtendWord" if block.get("words") is not None \
+            else "VerbExtend"
         return "%s%s { %s%s }" % (base, ctor, ", ".join(fields),
                                   (", " + ", ".join(extra)) if extra else "")
 
@@ -585,14 +576,12 @@ class Emitter:
                 lines.append("%s.%s = %s" % (ref, base, self.body(val, key)))
         return "\n".join(lines)
 
+    def pragma(self, block, kw):
+        return ["%s '%s' (%s)" % (kw, key, self.value(val))
+                for key, val in block.items]
+
     def const(self, block):
-        out = []
-        for key, val in block.items:
-            out.append("const '%s' (%s)" % (key, self.value(val)))
-        return out
+        return self.pragma(block, "const")
 
     def glob(self, block):
-        out = []
-        for key, val in block.items:
-            out.append("global '%s' (%s)" % (key, self.value(val)))
-        return out
+        return self.pragma(block, "global")

@@ -1,12 +1,12 @@
 from .common import *
-from .condast import Leaf, narrow_cond, narrow_assume, parse_cond
+from .condast import Leaf, leaf_text, narrow_assume, narrow_cond, parse_cond
 from .typing import type_ok
 from .expr import transpile_exprlist, transpile_stmt, transpile_for
 
 
 def cond_emit(node, env, where, ctx):
     if isinstance(node, Leaf):
-        code, _ = transpile_exprlist(node.text, env, where, None, ctx=ctx)
+        code, _ = transpile_exprlist(leaf_text(node), env, where, None, ctx=ctx)
         out = dict(env)
         out.update(narrow_assume(node, env, False) or {})
         return code, out
