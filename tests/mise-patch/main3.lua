@@ -4,7 +4,7 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_helper(s, w)
+local function fn_helper()
   p([[helper]])
 end
 
@@ -31,7 +31,7 @@ Path = Class {
     if mp:check_inside(std.ref(s.walk_to)) then return end
     walk(s.walk_to)
   end;
-  before_Default = function(s, ev, w)
+  before_Default = function(s, ev, w, wh)
     if s.desc then p(s.desc) return end
     p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
   end;

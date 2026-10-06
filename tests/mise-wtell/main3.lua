@@ -39,7 +39,7 @@ Path = Class {
     if mp:check_inside(std.ref(s.walk_to)) then return end
     walk(s.walk_to)
   end;
-  before_Default = function(s, ev, w)
+  before_Default = function(s, ev, w, wh)
     if s.desc then p(s.desc) return end
     p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
   end;
@@ -57,7 +57,7 @@ _'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute",
 
 Prop = Class {
   before_Exam = function() return false end;
-  before_Default = function(s, ev, w)
+  before_Default = function(s, ev, w, wh)
     p('Вам нет нужды беспокоиться о ', s:noun('пр'), '.')
   end;
 }:attr 'scenery'
@@ -404,7 +404,7 @@ NPC {
     end
     p("Тихий светлый мальчик восьми лет, он быстро учится сельской работе.")
   end;
-  life_Give = function(s, w)
+  life_Give = function(s, w, wh)
     fn_score_up()
     move(w, s)
     p('"Спасибо, пап".')
@@ -427,7 +427,7 @@ NPC {
     end
     return false
   end;
-  before_Default = function(s, ev, w)
+  before_Default = function(s, ev, w, wh)
     if here() == _'marketplace' then
       p("Солдаты не позволят тебе этого.")
       return
@@ -451,7 +451,7 @@ obj {
   end;
   before_Drop = { "Вполне съедобное яблоко", "не стоит его выбрасывать." };
   before_Eat = "Хельга дала его для Уолтера...";
-  before_Default = function(s, ev, w)
+  before_Default = function(s, ev, w, wh)
     if where(s) == _'son' then
       if here() == _'marketplace' then
         p("Отсюда ты едва видишь его.")

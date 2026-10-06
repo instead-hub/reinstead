@@ -134,7 +134,8 @@ class Emitter:
                 else:
                     groups.append((pfx, [year]))
             for pfx, years in groups:
-                prm = params or ("s, ev, w" if years[0] in ("Any", "Default")
+                prm = params or ("s, ev, w, wh"
+                                 if years[0] in ("Any", "Default")
                                  else "s, w, wh")
                 src = self.handler(val, prm, indent)
                 if len(years) > 1 and not target:

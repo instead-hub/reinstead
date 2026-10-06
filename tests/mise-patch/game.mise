@@ -2,7 +2,7 @@ name: t
 lang: ru
 include: stdlib
 
-fn helper(s: obj, w: obj): |
+fn helper(): |
   say [[helper]]
 
 obj box:

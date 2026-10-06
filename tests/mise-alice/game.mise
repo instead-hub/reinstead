@@ -138,7 +138,7 @@ class Kitten:
     say('Алиса чмокнула ', s:noun('вн', 1), [[ в носик,
          и тот взглянул на нее сконфуженно, но довольно.]])
   life Attack: Разве можно напасть на такое крохотное и беззащитное создание!
-  on Show(s, w): |
+  on Show: |
     say(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun 'рд', '.')
   before Touch, Rub: |
     say(s:Noun(1), ' в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.')
@@ -186,7 +186,7 @@ impl Drawing_Room:
       say Таким путем вряд ли удастся спуститься с каминной полки!
       stop
     pass
-  before Default(s, ev, w, wh): |
+  before Default: |
     if where(player) ~= mantelpiece:
       pass
     if w and not inside(w, mantelpiece):
@@ -390,7 +390,7 @@ impl Kitten:
         с таким умным видом, что она почти готова поверить,
         будто он понимает каждое ее слово.]])
 
-  life Give, ThrowAt(s, w): |
+  life Give, ThrowAt: |
     if w ~= red_queen and w ~= worsted:
       if event() == ThrowAt:
         w:move Drawing_Room

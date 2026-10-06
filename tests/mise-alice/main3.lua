@@ -27,7 +27,7 @@ Path = Class {
     if mp:check_inside(std.ref(s.walk_to)) then return end
     walk(s.walk_to)
   end;
-  before_Default = function(s, ev, w)
+  before_Default = function(s, ev, w, wh)
     if s.desc then p(s.desc) return end
     p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
   end;
@@ -189,7 +189,7 @@ Kitten = Class {
 и тот взглянул на нее сконфуженно, но довольно.]])
   end;
   life_Attack = "Разве можно напасть на такое крохотное и беззащитное создание!";
-  Show = function(s, w)
+  Show = function(s, w, wh)
     p(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun('рд'), '.')
   end;
   ["before_Touch,Rub"] = function(s, w, wh)
@@ -481,7 +481,7 @@ _'mirror'.description = function(s)
   p([[Отсюда в зеркале можно разглядеть только потолок гостиной.
 Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]])
 end
-_'mirror'.before_Any = function(s, ev, w)
+_'mirror'.before_Any = function(s, ev, w, wh)
   if (mp.event) ~= 'Exam' and (mp.event) ~= 'Reflect' and (mp.event) ~= 'Search' and (mp.event) ~= 'ThrownAt' and where(me()) ~= _'mantelpiece' then
     p("Отсюда невозможно даже дотянуться до зеркала!")
     return
@@ -576,7 +576,7 @@ Kitten.life_Talk = function(s, w, wh)
 с таким умным видом, что она почти готова поверить,
 будто он понимает каждое ее слово.]])
 end;
-Kitten.life_Give = function(s, w)
+Kitten.life_Give = function(s, w, wh)
   if w ~= _'red_queen' and w ~= _'worsted' then
     if (mp.event) == 'ThrowAt' then
       move(w, _'Drawing_Room')
@@ -604,7 +604,7 @@ Kitten.life_Give = function(s, w)
   end
   p('.')
 end;
-Kitten.life_ThrowAt = function(s, w)
+Kitten.life_ThrowAt = function(s, w, wh)
   if w ~= _'red_queen' and w ~= _'worsted' then
     if (mp.event) == 'ThrowAt' then
       move(w, _'Drawing_Room')
