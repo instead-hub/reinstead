@@ -67,7 +67,7 @@ room bar:
   n_to: foyer
   on:
     before Walk: |
-      if compass_dir(w) ~= 'n_to' and not w:has light:
+      if compass_dir(w) ~= n_to and not w:has light:
         message.number += 2
         say Слоняться в кромешной тьме -- не самая лучшая идея.
         stop

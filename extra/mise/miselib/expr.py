@@ -328,8 +328,15 @@ class ExprEmit:
             op = self.next()[1]
             if op == "^":
                 self.err("^ is forbidden; compare objects with ==")
-            self.expected = ("event"
-                             if t == "event" and op in ("==", "~=") else None)
+            exp = None
+            if op in ("==", "~="):
+                if t in self.ctx.types:
+                    exp = t
+                elif t.endswith("?") and t[:-1] in self.ctx.types:
+                    exp = t[:-1]
+                elif t == "event":
+                    exp = "event"
+            self.expected = exp
             c2, _t2, _k2, _v2 = self.concat_expr()
             self.expected = None
             code = "%s %s %s" % (code, op, c2)

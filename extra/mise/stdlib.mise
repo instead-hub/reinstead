@@ -1,5 +1,7 @@
 type attr: ~, alive, animate, broken, burning, clothing, coded, concealed, container, cutscene, device, door, drinkable, edible, enterable, fed, female, fixed, gameover, light, lockable, locked, luminous, male, moved, multi, noparser, on, open, openable, read, ring, scenery, seen, static, supporter, switchable, talkable, transparent, tuned, visited, worn
 
+type direction: n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to
+
 fn here() -> obj: |lua
   return here()
 
@@ -21,8 +23,9 @@ fn attr(s: obj, a: attr): |lua
 fn inside(w: obj, x: obj) -> bool: |lua
   return w:inside(x)
 
-fn compass_dir(w: obj) -> str: |lua
-  return mp:compass_dir(w)
+fn compass_dir(w: obj) -> direction?: |lua
+  local d = mp:compass_dir(w)
+  return d or nil
 
 fn once_tag(s: obj, t: str) -> bool: |lua
   return s:once(t)

@@ -4,6 +4,11 @@
 require "fmt"
 require "parser/mp-ru"
 
+local function fn_compass_dir(w)
+  local d = mp:compass_dir(w)
+  return d or nil
+end
+
 local function fn_event()
   return mp.event
 end
@@ -101,7 +106,7 @@ room {
 Но похоже, что в пыли на полу написано что-то важное.]];
   n_to = 'foyer';
   before_Walk = function(s, w, wh)
-    if mp:compass_dir(w) ~= 'n_to' and not w:has("light") then
+    if fn_compass_dir(w) ~= "n_to" and not w:has("light") then
       _'message'.number = _'message'.number + (2)
       p("Слоняться в кромешной тьме -- не самая лучшая идея.")
       return
