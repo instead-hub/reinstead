@@ -1,1 +1,1 @@
-mise: error: expected num, got obj: _(s.xxx) in logic:10: s . xxx > 1
+mise: error: expected num, got obj: _(s.xxx) in logic:9: s . xxx > 1

@@ -65,21 +65,20 @@ room bar:
     расположенного к северу отсюда) совершенно пуст.
     Но похоже, что в пыли на полу написано что-то важное.]]
   n_to: foyer
-  on:
-    before Walk: |
-      if compass_dir(w) ~= n_to and not w:has light:
-        message.number += 2
-        say Слоняться в кромешной тьме -- не самая лучшая идея.
-        stop
+  before Walk: |
+    if compass_dir(w) ~= n_to and not w:has light:
+      message.number += 2
+      say Слоняться в кромешной тьме -- не самая лучшая идея.
+      stop
+    pass
+  before Default: |
+    if ev == Exit:
       pass
-    before Default: |
-      if ev == Exit:
-        pass
-      if not s:has light:
-        message.number += 1
-        say В непроглядной темноте это очень трудно...
-        stop
-      pass
+    if not s:has light:
+      message.number += 1
+      say В непроглядной темноте это очень трудно...
+      stop
+    pass
   with:
     obj message:
       words: надпись|пыль
@@ -103,24 +102,23 @@ obj cloak:
 немного промокший от дождя. Его чернота настолько глубока,
 что возникает ощущение, словно он втягивает в себя весь свет
 из окружающего мира.]]
-  on:
-    before Drop, PutOn: |
-      if here == cloakroom:
-        bar:attr light
-        if event == PutOn and not s.scored:
-          s.scored = true
-          score += 1
-        pass
-      else:
-        say Не самое подходящее место для того, чтобы оставлять здесь свою одежду.
-        stop
-    after Take: |
-      bar:attr ~light
+  before Drop, PutOn: |
+    if here == cloakroom:
+      bar:attr light
+      if event == PutOn and not s.scored:
+        s.scored = true
+        score += 1
       pass
-    after PutOn: |
-      if w ~= hook:
-        pass
-      say Ты повесил плащ на крючок.
+    else:
+      say Не самое подходящее место для того, чтобы оставлять здесь свою одежду.
+      stop
+  after Take: |
+    bar:attr ~light
+    pass
+  after PutOn: |
+    if w ~= hook:
+      pass
+    say Ты повесил плащ на крючок.
 
 ending badend:
   title: Вы проиграли

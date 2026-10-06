@@ -198,8 +198,8 @@ class      — класс (Class { ... }, см. ниже)
 | `attrs: worn, clothing` | атрибуты → `:attr '...'` |
 | `dict: { ["форма/п"] = "текст" }` | словарные формы → `:dict { ... }` |
 | `disabled: true` | `:disable()` |
-| `on:` | обработчики событий (см. ниже); префикс — в ключе (`before Walk:`, `after Pull, Transfer:`); событие без префикса — ошибка |
-| `Any:`/`Default:` | обычные события: `before Any:`, `after Default:`… (обработчик получает `s, ev, w`) |
+| `on X:` | метод события: `X = function(s, w, wh)`; `on Open, Close:` → `["Open,Close"]` (у `Any`/`Default` — `s, ev, w`) |
+| `before/after/post X:` | `before_X` / `after_X` / `post_X`; событие без фазы — ошибка |
 | `with:` | вложенные декларации (`obj:`/`obj имя:`, в т.ч. автоименованные) **или** список ссылок (`obj = {...}`) |
 | `found_in: room1, room2` | где появляется объект |
 | `n_to/e_to/...`, `in_to`, `out_to`, `u_to`, `d_to` | переходы (значение — комната, дверь или логика/функция) |
@@ -212,31 +212,32 @@ class      — класс (Class { ... }, см. ниже)
 
 ```
 obj камень:
-  on:
-    Take: Куда мне его.
-    after Put: |
-      say Ты положил камень.
-      stop
-    Enter, Climb: |
-      wear_item(s)
+  on Take: Куда мне его.
+  after Put: |
+    say Ты положил камень.
+    stop
+  on Enter, Climb: |
+    wear_item(s)
   before Pull, Transfer: |lua
     ...
   with:
     obj ядро: ...
 ```
 
+- фаза — первое слово ключа: `on` — **метод события** (основная фаза,
+  `Take = function(s, w, wh)`; у `Any`/`Default` — `s, ev, w`),
+  `before`/`after`/`post` — `before_X`/`after_X`/`post_X`;
 - ключ — имя события **точно как в движке** (`Take`, `Enter`, `SwitchOn`,
-  `Any`, `Default`); нижний регистр не допускается;
-  прямые ключи `before Turn, Tune:`, `after Play:` и т.п. работают и вне
-  блока `on:`;
-- несколько событий в одном ключе (`Enter, Climb:`) для объекта
+  `Any`, `Default`); нижний регистр не допускается; фаза обязательна
+  (`Take:` без фазы — ошибка), блока `on:` нет;
+- несколько событий в одном ключе (`on Enter, Climb:`) для объекта
   компилируются в один комбинированный ключ движка
-  `["before_Enter,Climb"] = ...` (как в оригинальных играх); для
+  `["Enter,Climb"] = ...` (как в оригинальных играх); для
   `pl.`/`game.`/`patch` — в отдельные поля;
 - значение — одна строка текста, `pass` (обработчик `return false`),
   блок `|` (чистая логика), `|lua` (Lua) или `use имя`
   (ссылка на именованный `fn`);
-- параметры можно задать явно: `Default(s, ev, w):`, `on(s, w):`.
+- параметры можно задать явно: `on Default(s, ev, w):`, `before Take(s, w):`.
 
 ## Логика (`|`)
 
@@ -328,8 +329,7 @@ fn move_to(s: obj, where: obj): |lua
   move(s, where)
 
 obj Кабель:
-  on:
-    Insert, Activate: use cable_connect
+  on Insert, Activate: use cable_connect
 ```
 
 - `fn имя(параметр: тип, ...) -> тип:` — блок `|` (проверяется) или
@@ -388,10 +388,10 @@ obj Кабель:
   `event() == Exam` (правый операнд проверяется по списку событий);
 - `str`-параметр ожидает именно строку; передача объекта (`_'имя'`) —
   ошибка;
-- параметры необязательны: в `on:` — `s, w, wh` (`Any`/`Default` —
+- параметры необязательны: в обработчиках — `s, w, wh` (`Any`/`Default` —
   `s, ev, w`), у обработчиков `verb` — `s, w, wh`, у полей объекта — из
   `FIELD_PARAMS` или `s`;
-- `use имя` работает в `on:`, в ключах с префиксом (`before Default:`),
+- `use имя` работает в обработчиках (`on Take:`, `before Default:`),
   в полях (`daemon: use x`), у глаголов (`on`/`before`/`after`) и в
   `talk:` (`do: use x`);
 - все `fn` эмитятся в начало файла (хойстинг), порядок объявления
@@ -504,7 +504,7 @@ Prop дерево:
 - `class Имя:` → `Имя = Class { ... }`; `class Имя(база):` →
   `Имя = Class({ ... }, база)` (база — Lua-идентификатор: `cutscene`,
   `room`, `dlg`, …);
-- классы поддерживают те же поля: `words`, `attrs`, `on`/`before`/`after`/
+- классы поддерживают те же поля: `words`, `attrs`, `on X`/`before`/`after`/
   `post`, `var`, `with`, произвольные обработчики;
 - **экземпляр класса** — декларация с именем класса в роли вида
   (`Prop дерево:`, `Sky небо:`); обрабатывается как `obj`;
@@ -556,24 +556,24 @@ setup:
 
 ```
 patch @compass:
-  on:
-    before Default(s, ev): |
-      if mp.event ~= 'Drive' and mp.event ~= 'Walk':
-        pass
+  before Default(s, ev): |
+    if mp.event ~= 'Drive' and mp.event ~= 'Walk':
+      pass
 
 patch box:
   before Take: |
     if s.score_value > 0:
       say [[уже брали]]
+  on Take: |
+    say [[берём]]
   after Drop: use on_drop
 
 patch game:
   hint_verbs: { "#Exam", "#Walk" }
 ```
 
-`patch объект:` назначает обработчики (`on`-блок, плоские `before`/`after`/
-`post X`; `Any`/`Default` — как обычные события; голое имя события в
-патче = `before_X`) и поля
+`patch объект:` назначает обработчики (`on X`, `before`/`after`/`post X`;
+`Any`/`Default` — как обычные события) и поля
 (`hint_verbs`, `x`, …) уже существующему объекту:
 `_'объект'.before_Take = ...`, `_'game'.hint_verbs = ...`.
 В обработчиках `s.field` типизируется по патчимому объекту/классу
@@ -750,9 +750,9 @@ talk Разговор_с_Мариной:
   перечисления (строки — в кавычках);
 - объекты в логике — только голым именем: `_'...'` и строки в
   `obj`-слоте — ошибки;
-- неизвестные имена/объекты/события/функции; событие в блоке `on:`
-  без `before/after/post`; `use` неизвестной или inline-функции; вызов
-  метода, не объявленного как `fn`.
+- неизвестные имена/объекты/события/функции; событие без фазы
+  (`on`/`before`/`after`/`post`) и блок `on:` в объекте; `use`
+  неизвестной или inline-функции; вызов метода, не объявленного как `fn`.
 
 **Функции**
 

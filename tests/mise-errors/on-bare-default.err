@@ -1,1 +1,1 @@
-mise: error: line 8: event Default needs a before/after/post prefix
+mise: error: line 7: event Default needs an on/before/after/post prefix

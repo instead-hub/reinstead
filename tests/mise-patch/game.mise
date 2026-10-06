@@ -14,7 +14,11 @@ patch box:
   before Take: |
     if s.score_value + 1 > 0:
       say [[патч]]
+  on Take: |
+    say [[метод]]
   after Drop: use helper
-  Wait: use helper
+  on Wait: use helper
+  on Open, Close: use helper
   after Any: use helper
-  Default: use helper
+  on Any: use helper
+  on Default: use helper

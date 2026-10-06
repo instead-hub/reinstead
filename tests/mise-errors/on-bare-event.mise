@@ -4,6 +4,5 @@ include: stdlib
 
 obj box:
   words: коробка
-  on:
-    Take: |
-      pass
+  Take: |
+    pass

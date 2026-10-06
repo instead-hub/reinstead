@@ -1,1 +1,1 @@
-mise: error: method 'nope' is not a fn (engine methods are not allowed in logic) in logic:9: box : nope ( )
+mise: error: method 'nope' is not a fn (engine methods are not allowed in logic) in logic:8: box : nope ( )

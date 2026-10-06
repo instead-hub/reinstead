@@ -59,21 +59,20 @@ room bar:
 of the foyer to the north, is completely empty. There seems to
 be some sort of message scrawled in the sawdust on the floor.]]
   n_to: foyer
-  on:
-    before Walk: |
-      if compass_dir(w) ~= n_to and not w:has light:
-        message.number += 2
-        say "Blundering around in the dark isn't a good idea!"
-        stop
+  before Walk: |
+    if compass_dir(w) ~= n_to and not w:has light:
+      message.number += 2
+      say "Blundering around in the dark isn't a good idea!"
+      stop
+    pass
+  before Default: |
+    if ev == Exit:
       pass
-    before Default: |
-      if ev == Exit:
-        pass
-      if not s:has light:
-        message.number += 1
-        say "In the dark? You could easily disturb something!"
-        stop
-      pass
+    if not s:has light:
+      message.number += 1
+      say "In the dark? You could easily disturb something!"
+      stop
+    pass
   with:
     obj message:
       words: message,floor,sawdust
@@ -94,20 +93,19 @@ obj cloak:
   description: [[A handsome cloak, of velvet trimmed with satin, and slightly
 spattered with raindrops. Its blackness is so deep that it
 almost seems to suck light from the room.]]
-  on:
-    before Drop, PutOn: |
-      if here == cloakroom:
-        bar:attr light
-        if event() == PutOn and not s.scored:
-          s.scored = true
-          score += 1
-        pass
-      else:
-        say "This isn't the best place to leave a smart cloak lying around."
-        stop
-    after Take: |
-      bar:attr ~light
+  before Drop, PutOn: |
+    if here == cloakroom:
+      bar:attr light
+      if event() == PutOn and not s.scored:
+        s.scored = true
+        score += 1
       pass
+    else:
+      say "This isn't the best place to leave a smart cloak lying around."
+      stop
+  after Take: |
+    bar:attr ~light
+    pass
 
 ending badend:
   title: You lost

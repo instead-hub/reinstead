@@ -76,10 +76,9 @@ room top_of_tree:
   title: На верхушке дерева
   dsc: На этой высоте цепляться за ствол уже не так удобно.
   d_to: clearing
-  on:
-    after Drop: |
-      w:move clearing
-      pass
+  after Drop: |
+    w:move clearing
+    pass
   with:
     obj branch:
       words: сук|ветка

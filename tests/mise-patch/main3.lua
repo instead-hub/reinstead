@@ -50,7 +50,13 @@ _'box'.before_Take = function(s, w, wh)
     p([[патч]])
   end
 end;
+_'box'.Take = function(s, w, wh)
+  p([[метод]])
+end;
 _'box'.after_Drop = fn_helper;
-_'box'.before_Wait = fn_helper;
+_'box'.Wait = fn_helper;
+_'box'.Open = fn_helper;
+_'box'.Close = fn_helper;
 _'box'.after_Any = fn_helper;
-_'box'.before_Default = fn_helper;
+_'box'.Any = fn_helper;
+_'box'.Default = fn_helper;

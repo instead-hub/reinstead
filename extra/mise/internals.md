@@ -162,7 +162,8 @@ transpile (main loop) обход корневых элементов → Emitter
 ## Эмиссия (`emit.py:Emitter`)
 
 - `value`/`body`/`handler`/`on` — значения, тела, обработчики
-  (в т.ч. составные ключи `before A, B`; префикс события обязателен,
+  (в т.ч. составные ключи `before A, B`; фаза обязательна: `on X` —
+  метод события (`X = function…`), `before/after/post X` — с префиксом;
   `Any`/`Default` — обычные события с параметрами `s, ev, w`;
   `CURRENT_LINE` — по строке ключа).
 - `obj`/`decl` — объекты и классы-экземпляры: `words`, `attrs`

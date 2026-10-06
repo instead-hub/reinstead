@@ -5,6 +5,5 @@ include: stdlib
 obj box:
   words: коробка
   xxx: light
-  on:
-    before Take: |
-      s:has s.xxx
+  before Take: |
+    s:has s.xxx

@@ -4,6 +4,5 @@ include: stdlib
 
 obj box:
   words: коробка
-  on:
-    before Take: |
-      frobnicate(box)
+  before Take: |
+    frobnicate(box)

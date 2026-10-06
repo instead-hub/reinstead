@@ -5,6 +5,5 @@ include: stdlib
 obj box:
   words: коробка
   flag: false
-  on:
-    before Take: |
-      s.flag = 1
+  before Take: |
+    s.flag = 1

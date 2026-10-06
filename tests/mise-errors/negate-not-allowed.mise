@@ -9,6 +9,5 @@ fn feel(w: obj, m: mood): |lua
 
 obj box:
   words: коробка
-  on:
-    before Take: |
-      feel(box, ~happy)
+  before Take: |
+    feel(box, ~happy)

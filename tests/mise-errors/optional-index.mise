@@ -4,7 +4,6 @@ include: stdlib
 
 obj box:
   words: коробка
-  on:
-    before Take: |
-      local x = seen 'box'
-      local v = x[1]
+  before Take: |
+    local x = seen 'box'
+    local v = x[1]

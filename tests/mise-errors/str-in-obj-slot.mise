@@ -7,6 +7,5 @@ obj box:
 
 obj other:
   words: ящик
-  on:
-    before Take: |
-      move(box, 'other')
+  before Take: |
+    move(box, 'other')

@@ -5,7 +5,6 @@ include: stdlib
 obj box:
   words: коробка
   xxx: none
-  on:
-    before Take: |
-      if s.xxx > 1:
-        pass
+  before Take: |
+    if s.xxx > 1:
+      pass

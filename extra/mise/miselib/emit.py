@@ -15,6 +15,11 @@ from .expr import fn_name, transpile_exprlist
 
 
 
+def _pfx(kw):
+    """Prefix for a handler keyword: `on` is the main-phase method."""
+    return "" if kw == "on" else kw + "_"
+
+
 class Emitter:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -104,23 +109,23 @@ class Emitter:
             base, params = parse_key(key)
             parts = [p.strip() for p in base.split(",")]
             inherited = None
-            m0 = re.match(r"^(before|after|post)\s+(.+)$", parts[0])
+            m0 = re.match(r"^(on|before|after|post)\s+(.+)$", parts[0])
             if m0:
-                inherited = m0.group(1) + "_"
+                inherited = _pfx(m0.group(1))
                 parts[0] = m0.group(2)
             names = []
             for part in parts:
                 pfx = inherited
-                m = re.match(r"^(before|after|post)\s+(.+)$", part)
+                m = re.match(r"^(on|before|after|post)\s+(.+)$", part)
                 if m:
-                    pfx = m.group(1) + "_"
+                    pfx = _pfx(m.group(1))
                     part = m.group(2)
                 year = EVENTS.get(part) or self.ctx.extra_events.get(part)
                 if not year:
                     raise Error("unknown event: " + part)
-                if not pfx:
-                    raise Error("event %s needs a before/after/post prefix"
-                                % part)
+                if pfx is None:
+                    raise Error("event %s needs an on/before/after/post "
+                                "prefix" % part)
                 names.append((year, pfx))
             groups = []
             for year, pfx in names:
@@ -205,24 +210,27 @@ class Emitter:
         texts = block.all("text")
         for _i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(_i)
-            if key in ("words", "on", "inside", "with", "attrs",
+            if key in ("words", "inside", "with", "attrs",
                        "disabled", "dict", "before", "after", "post"):
                 continue
             if key == "text" and len(texts) > 1:
                 continue
-            if re.match(r"^(before|after|post)\s+\S", key):
+            if re.match(r"^(on|before|after|post)\s+\S", key):
                 one = Block()
                 one.items = [(key, val)]
                 lines.extend(self.on(one, fi))
                 continue
-            fbase, _ = parse_key(key)
-            if fbase in ("Any", "Default"):
-                one = Block()
-                one.items = [(key, val)]
-                lines.extend(self.on(one, fi))
-                continue
-            if not parse_key(key)[1]:
-                for part in fbase.split(","):
+            fbase, params = parse_key(key)
+            if fbase == "on":
+                raise Error("on: must name an event (on Take:)")
+            parts = [p.strip() for p in fbase.split(",")]
+            if not re.match(r"^[a-z]+_", fbase):
+                for part in parts:
+                    if part in EVENTS or part in self.ctx.extra_events:
+                        raise Error("event %s needs an on/before/after/post "
+                                    "prefix" % part)
+            if not params:
+                for part in parts:
                     if part in REF_FIELDS:
                         check_ref_value(ident or "?", key, val,
                                         self.ctx.ids)
@@ -235,9 +243,6 @@ class Emitter:
                 lines.append('%s["%s"] = %s;' % (fi, fbase, rendered))
             else:
                 lines.append("%s%s = %s;" % (fi, fbase, rendered))
-        on = block.get("on")
-        if on:
-            lines.extend(self.on(on, fi))
         if len(texts) > 1:
             lines.append("%stext = {" % fi)
             for t in texts:
@@ -563,17 +568,17 @@ class Emitter:
             for i, (key, val) in enumerate(block.items):
                 CURRENT_LINE[0] = block.line_at(i)
                 base, _ = parse_key(key)
-                if base in ("on", "before", "after", "post") \
-                        and isinstance(val, Block):
-                    lines.extend(self.on(val, "", ref + "."))
-                elif re.match(r"^(before|after|post)\s+\S", key):
+                if base == "on":
+                    raise Error("on: must name an event (on Take:)")
+                if re.match(r"^(on|before|after|post)\s+\S", key):
                     one = Block()
                     one.items = [(key, val)]
                     lines.extend(self.on(one, "", ref + "."))
-                elif base in EVENTS or base in self.ctx.extra_events:
-                    one = Block()
-                    one.items = [("before " + key, val)]
-                    lines.extend(self.on(one, "", ref + "."))
+                elif not re.match(r"^[a-z]+_", base) and any(
+                        p.strip() in EVENTS or p.strip() in self.ctx.extra_events
+                        for p in base.split(",")):
+                    raise Error("event %s needs an on/before/after/post "
+                                "prefix" % base)
                 elif base == "dict":
                     if not isinstance(val, (Data, Raw)):
                         raise Error("patch %s.dict: must be a table literal "

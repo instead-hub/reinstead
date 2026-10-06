@@ -1,1 +1,1 @@
-mise: error: type mood does not allow '~' negation ('~happy') in logic:14: feel ( box , ~happy )
+mise: error: type mood does not allow '~' negation ('~happy') in logic:13: feel ( box , ~happy )
