@@ -1,0 +1,132 @@
+name: Плащ Тьмы
+lang: ru
+include: stdlib
+
+global:
+  score: 0
+
+patch game:
+  hint_verbs: { "#Exam", "#Walk", "#Take", "#Drop" }
+
+extend #Drop:
+  words: повес/ить
+  patterns:
+    - {noun}/вн,held на {noun}/вн,supporter : PutOn
+    - ~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse
+
+setup:
+  dsc: [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация.
+^^Торопливо пробираясь сквозь дождливую и холодную ноябрьскую ночь,
+Вы радостно заметили неподалеку ярко горящие огни Оперного театра.^
+Конечно, очень странно, что рядом не заметно ни одной живой души...
+но стоит ли ждать слишком много от простенькой демонстрационной игры?..^]]
+  start: |
+    move(player, foyer)
+    move(cloak, player)
+    cloak:attr('worn')
+
+room foyer:
+  words: фойе
+  title: Фойе Оперного Театра
+  dsc: [[Вы стоите в центре просторного холла,
+полного роскоши и декорированного красным и золотым.
+Массивные люстры ярко сияют под потолком.
+На север отсюда имеется выход на улицу,
+две другие двери ведут в южном и западном направлении.]]
+  s_to: bar
+  w_to: cloakroom
+  n_to: |
+    say Вы только пришли сюда. К тому же, погода снаружи заметно ухудшается.
+
+room cloakroom:
+  words: гардероб
+  title: Гардероб
+  dsc: [[Когда-то на стенах этой комнаты было множество крючков,
+    предназначенных для одежды, но сохранился только один.
+    Единственный выход отсюда -- восточная дверь.]]
+  e_to: foyer
+  with:
+    obj hook:
+      words: маленький бронзовый крючок,крючок|вешалка
+      attrs: scenery, supporter
+      description: |
+        say Всего лишь маленький бронзовый крючок для одежды,
+        if where cloak == s:
+          say с которого свисает черный бархатный плащ.
+        else:
+          say привинченный к стене.
+
+room bar:
+  words: буфет
+  title: Буфет
+  attrs: ~light
+  dsc: [[Театральный буфет (намного более скромный,
+    чем можно было предположить после роскоши фойе,
+    расположенного к северу отсюда) совершенно пуст.
+    Но похоже, что в пыли на полу написано что-то важное.]]
+  n_to: foyer
+  on:
+    before Walk: |
+      if compass_dir(w) ~= 'n_to' and not w:has light:
+        message.number += 2
+        say Слоняться в кромешной тьме -- не самая лучшая идея.
+        stop
+      pass
+    before Default: |
+      if ev == Exit:
+        pass
+      if not s:has light:
+        message.number += 1
+        say В непроглядной темноте это очень трудно...
+        stop
+      pass
+  with:
+    obj message:
+      words: надпись|пыль
+      attrs: scenery
+      number: 0
+      description: |
+        if s.number < 2:
+          say Начертанная в пыли надпись сообщает Вам, что...
+          walk goodend
+        else:
+          say [[Полустертую надпись разобрать очень трудно.
+С трудом можно различить такие слова...]]
+          walk badend
+
+obj cloak:
+  words: бархатный плащ,плащ
+  attrs: clothing
+  scored: false
+  description: [[
+Хороший плащ (из черного бархата с атласной прокладкой),
+немного промокший от дождя. Его чернота настолько глубока,
+что возникает ощущение, словно он втягивает в себя весь свет
+из окружающего мира.]]
+  on:
+    before Drop, PutOn: |
+      if here == cloakroom:
+        bar:attr light
+        if event == PutOn and not s.scored:
+          s.scored = true
+          score += 1
+        pass
+      else:
+        say Не самое подходящее место для того, чтобы оставлять здесь свою одежду.
+        stop
+    after Take: |
+      bar:attr('~light')
+      pass
+    after PutOn: |
+      if w ~= hook:
+        pass
+      say Ты повесил плащ на крючок.
+
+story badend:
+  title: Вы проиграли
+  dsc: false
+
+story goodend:
+  title: Вы выиграли
+  dsc: |
+    say('Ваш счет: ', score)
