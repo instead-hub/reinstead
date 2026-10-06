@@ -1,0 +1,10 @@
+name: t
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+  flag: false
+  on:
+    before Take: |
+      s.flag = 1

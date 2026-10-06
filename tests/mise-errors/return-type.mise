@@ -1,0 +1,6 @@
+name: t
+lang: ru
+include: stdlib
+
+fn f() -> num: |
+  return 'x'

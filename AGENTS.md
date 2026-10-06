@@ -14,6 +14,7 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 ## Tests (headless)
 
 - `./tests/run-parser-tests.sh` (needs a built `./reinstead`; override with `BIN=...`). Runs parser unit checks (`tests/parser-tests`) and golden diffs (`tests/match-dump/golden.txt` = `mp:match` snapshots, `golden-compl.txt` = `mp:compl`; `tests/noun-forms/golden.txt` = noun declension forms).
+- `./tests/run-mise-error-tests.sh` — negative transpiler tests: every `tests/mise-errors/*.mise` must fail with the exact stderr from the sibling `.err` (pins line numbers + messages). Regenerate a case's `.err` with `python3 extra/mise/mise.py <case>.mise`.
 - Single test game directly:
   `SDL_VIDEODRIVER=dummy ./reinstead -appdata "$(mktemp -d)" -noautosave "$PWD/tests/parser-tests"`
 - Golden regeneration is only for intentional parser behavior changes: run the dump game directly (it writes `out.txt` / `out-compl.txt` next to `tests/match-dump/main3.lua`), then copy them to `golden*.txt`. The noun forms golden is regenerated the same way (`tests/noun-forms/out.txt` → `golden.txt`). To validate a refactor, compare against a previous `mp.lua`: `git show <rev>:data/stead3/parser/mp.lua` swapped in, run the dump, `diff`.

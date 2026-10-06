@@ -1,0 +1,14 @@
+name: t
+lang: ru
+include: stdlib
+
+type mood: happy, sad
+
+fn feel(w: obj, m: mood): |lua
+  return
+
+obj box:
+  words: коробка
+  on:
+    before Take: |
+      feel(box, ~happy)

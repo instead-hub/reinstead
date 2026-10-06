@@ -1,0 +1,11 @@
+name: t
+lang: ru
+include: stdlib
+
+room hall:
+  words: зал
+  title: Зал
+
+setup:
+  hero:
+    custom: нетакого

@@ -1,0 +1,12 @@
+name: t
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+
+obj other:
+  words: ящик
+  on:
+    before Take: |
+      move(box, 'other')

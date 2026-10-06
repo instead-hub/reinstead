@@ -1,0 +1,13 @@
+name: t
+lang: ru
+include: stdlib
+
+fn get() -> any: |lua
+  return 1
+
+obj box:
+  words: коробка
+  on:
+    before Take: |
+      local n = get()
+      n + 1
