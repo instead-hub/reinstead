@@ -1,0 +1,119 @@
+name: Cloak of Darkness
+lang: en
+include: stdlib
+
+global:
+  score: 0
+
+patch game:
+  hint_verbs: { "#Exam", "#Walk", "#Take", "#Drop" }
+
+extend #Drop:
+  words: hang
+  patterns:
+    - {noun}/held on {noun}/supporter : PutOn
+
+setup:
+  dsc: [[^{$fmt b|Cloak of Darkness}^^Cloak of Darkness -- a simple demonstration of Interactive Fiction.
+^^Hurrying through the rainswept November night, you're glad to see the
+bright lights of the Opera House. It's surprising that there aren't more
+people about but, hey, what do you expect in a cheap demo game...?^]]
+  start: |
+    player:move foyer
+    cloak:move player
+    cloak:attr worn
+
+room foyer:
+  words: foyer
+  title: Foyer of the Opera House
+  dsc: [[You are standing in a spacious hall, splendidly decorated in red
+and gold, with glittering chandeliers overhead. The entrance from
+the street is to the north, and there are doorways south and west.]]
+  s_to: bar
+  w_to: cloakroom
+  n_to: |
+    say "You've only just arrived, and besides, the weather outside seems to be getting worse."
+
+room cloakroom:
+  words: cloakroom
+  title: Cloakroom
+  dsc: [[The walls of this small room were clearly once lined with hooks,
+though now only one remains. The exit is a door to the east.]]
+  e_to: foyer
+  with:
+    obj hook:
+      words: small brass hook,hook|peg
+      attrs: scenery, supporter
+      description: |
+        say "It's just a small brass hook, "
+        if where(cloak) == s:
+          say "with a cloak hanging on it."
+        else:
+          say "screwed to the wall."
+
+room bar:
+  words: bar
+  title: Foyer bar
+  attrs: ~light
+  dsc: [[The bar, much rougher than you'd have guessed after the opulence
+of the foyer to the north, is completely empty. There seems to
+be some sort of message scrawled in the sawdust on the floor.]]
+  n_to: foyer
+  on:
+    before Walk: |
+      if compass_dir(w) ~= n_to and not w:has light:
+        message.number += 2
+        say "Blundering around in the dark isn't a good idea!"
+        stop
+      pass
+    before Default: |
+      if ev == Exit:
+        pass
+      if not s:has light:
+        message.number += 1
+        say "In the dark? You could easily disturb something!"
+        stop
+      pass
+  with:
+    obj message:
+      words: message,floor,sawdust
+      attrs: scenery
+      number: 0
+      description: |
+        if s.number < 2:
+          say "The message, neatly marked in the sawdust, reads..."
+          walk goodend
+        else:
+          say "The message has been carelessly trampled, making it difficult to read. You can just distinguish the words..."
+          walk badend
+
+obj cloak:
+  words: velvet cloak,cloak
+  attrs: clothing
+  scored: false
+  description: [[A handsome cloak, of velvet trimmed with satin, and slightly
+spattered with raindrops. Its blackness is so deep that it
+almost seems to suck light from the room.]]
+  on:
+    before Drop, PutOn: |
+      if here == cloakroom:
+        bar:attr light
+        if event() == PutOn and not s.scored:
+          s.scored = true
+          score += 1
+        pass
+      else:
+        say "This isn't the best place to leave a smart cloak lying around."
+        stop
+    after Take: |
+      bar:attr ~light
+      pass
+
+ending badend:
+  title: You lost
+  dsc: false
+
+ending goodend:
+  title: You win
+  dsc: |
+    say('Score: ', score)

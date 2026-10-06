@@ -49,7 +49,13 @@ done
 
 # --- engine transcripts -------------------------------------------------
 prep_script() {
-	{ grep -qx 'транскрипт' "$1" || echo 'транскрипт'; cat "$1"; } > "$2"
+	_m=транскрипт
+	grep -qE '^lang:[[:space:]]*en' "$(dirname "$1")/game.mise" && _m=transcript
+	if grep -qx "$_m" "$1"; then
+		cat "$1" > "$2"
+	else
+		{ echo "$_m"; cat "$1"; } > "$2"
+	fi
 	tail -n 1 "$2" | grep -qx '!quit' || echo '!quit' >> "$2"
 }
 
@@ -100,6 +106,15 @@ if [ "$ENGINE" = 1 ]; then
 		alice)
 			alice_flt "$WORK/$name.orig" > "$WORK/$name.o"
 			alice_flt "$WORK/$name.new" > "$WORK/$name.n"
+			;;
+		cloak-en)
+			# the gameover finale answers the trailing empty input that
+			# noparser originally swallowed (mp-en quits one turn later)
+			flt() {
+				tail -n +2 "$1" | grep -vE '^> $|^<i>\(examine\)</i>$|^Use restart to restart game\.$|^$'
+			}
+			flt "$WORK/$name.orig" > "$WORK/$name.o"
+			flt "$WORK/$name.new" > "$WORK/$name.n"
 			;;
 		wtell)
 			# the expected delta is one extra score line at the finale:
