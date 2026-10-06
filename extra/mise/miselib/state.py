@@ -29,6 +29,7 @@ class Ctx:
         self.extra_events = {}
         self.inline = {}
         self.types = {}
+        self.enum_values = {}
         self.fields = {}
         self.current_class = None
         self.src_dir = src_dir

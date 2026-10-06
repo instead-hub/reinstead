@@ -109,6 +109,10 @@ def collect_types(root, ctx):
                     raise Error("extend type %s: bad value %r" % (name, x.s))
                 if x.s not in td["values"]:
                     td["values"].append(x.s)
+    ctx.enum_values = {}
+    for _tname, td in ctx.types.items():
+        for _v in td["values"]:
+            ctx.enum_values.setdefault(_v, set()).add(_tname)
     return ctx.types
 
 
@@ -118,7 +122,8 @@ FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
 
 
 def collect_block_fields(block, ctx, into):
-    for key, val in block.items:
+    for i, (key, val) in enumerate(block.items):
+        CURRENT_LINE[0] = block.line_at(i)
         if key in ("with", "inside") and isinstance(val, Block):
             for nk, nv in val.items:
                 k2, info = classify(nk)
@@ -129,12 +134,19 @@ def collect_block_fields(block, ctx, into):
             continue
         if isinstance(val, Block):
             continue
-        base, _params = parse_key(key)
-        if (base in FIELD_SKIP or base in ("Any", "Default")
-                or re.match(r"^(before|after|post)\s", base)):
+        base, params = parse_key(key)
+        parts = [p.strip() for p in base.split(",")]
+        if (params is not None
+                or base in FIELD_SKIP or base in ("Any", "Default")
+                or re.match(r"^(before|after|post)\s", base)
+                or any(p in ctx.event_names or p.startswith("life_")
+                       or p in ("Any", "Default") for p in parts)):
             continue
-        is_ref = (isinstance(val, Bare) and val.s in ctx.ids)
-        into[base] = (literal_type(ctx, val, refs=True), is_ref)
+        t = literal_type(ctx, val, refs=True)
+        if isinstance(val, Bare) and t == "str":
+            raise Error("unknown name %r in field %s (quote string "
+                        "values: [[...]]/\"...\")" % (val.s, base))
+        into[base] = (t, t == "obj" and isinstance(val, Bare))
 
 
 def collect_field_types(root, ctx):
@@ -281,7 +293,6 @@ def prescan(root, ctx):
     collect_types(root, ctx)
     ids = collect_ids(root)
     ctx.ids = set(ids)
-    collect_field_types(root, ctx)
     ctx.extra_events = {}
     for _i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(_i)
@@ -290,6 +301,7 @@ def prescan(root, ctx):
             if isinstance(val, Block):
                 ctx.extra_events[ident] = ident
     ctx.event_names = set(EVENTS) | set(ctx.extra_events.values())
+    collect_field_types(root, ctx)
     game_funcs, game_vars = collect_game_defs(root)
     ctx.fn_sigs = {}
     fn_names = set()

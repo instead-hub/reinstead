@@ -53,8 +53,17 @@ def literal_type(ctx, node, refs=False):
     if isinstance(node, Text):
         return "str"
     if isinstance(node, Bare):
-        if refs and node.s in ctx.ids:
-            return "obj"
+        if refs:
+            if node.s in ctx.ids:
+                return "obj"
+            if node.s in ctx.event_names:
+                return "event"
+            owners = ctx.enum_values.get(node.s)
+            if owners:
+                if len(owners) > 1:
+                    raise Error("ambiguous value %r (types: %s)"
+                                % (node.s, ", ".join(sorted(owners))))
+                return next(iter(owners))
         return "str"
     if isinstance(node, Data):
         return "tbl"
