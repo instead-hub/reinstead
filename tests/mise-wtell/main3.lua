@@ -4,10 +4,6 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_arg_word(i)
-  return mp.args[i] and mp.args[i].word or ''
-end
-
 local function fn_score_up()
   mp.score = mp.score + 1
 end

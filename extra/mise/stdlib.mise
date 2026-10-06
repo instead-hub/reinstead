@@ -178,8 +178,7 @@ fn pclr(): |lua
 fn ref(name: str) -> obj?: |lua
   return std.ref(name)
 
-fn arg_word(i: num) -> str: |lua
-  return mp.args[i] and mp.args[i].word or ''
+fn arg_word(i: num) -> str: `(mp.args[i] or {}).word or ''`
 
 fn tiny() -> bool: `instead.tiny`
 

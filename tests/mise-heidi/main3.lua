@@ -4,10 +4,6 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_arg_word(i)
-  return mp.args[i] and mp.args[i].word or ''
-end
-
 obj {
   nam = "none";
 }
