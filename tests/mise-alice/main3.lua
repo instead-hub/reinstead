@@ -93,30 +93,28 @@ room {
 и глубоким удобным креслом, в котором можно свернуться
 клубочком и немного подремать.]];
   ["before_Exit,Walk"] = function(s, w, wh)
-    if not (pl:where() ^ 'mantelpiece') then
+    if where(me()) ~= _'mantelpiece' then
       return false
     end
-    if mp:compass_dir(w) == 'd_to' or
-      mp:compass_dir(w) == 'out_to' or
-      w == s then
-      p "Таким путем вряд ли удастся спуститься с каминной полки!";
+    if fn_compass_dir(w) == "d_to" or fn_compass_dir(w) == "out_to" or w == s then
+      p("Таким путем вряд ли удастся спуститься с каминной полки!")
       return
     end
     return false
   end;
   ["before_Exam,Search,Enter,ThrowAt,ThrownAt,Reflect,Touch"] = function() return false end;
   before_Default = function(s, ev, w, wh)
-    if not (pl:where() ^ 'mantelpiece') then
+    if where(me()) ~= _'mantelpiece' then
       return false
     end
-    if w and not inside(w, 'mantelpiece') then
-      p "Отсюда трудно дотянуться до "
-      p (w:noun'рд', ".")
+    if w and not w:inside(_'mantelpiece') then
+      p('Отсюда трудно дотянуться до ')
+      p(w:noun('рд'), '.')
       return
     end
-    if wh and not inside(wh, 'mantelpiece') then
-      p "Отсюда трудно дотянуться до "
-      p (w:noun'рд', ".")
+    if wh and not wh:inside(_'mantelpiece') then
+      p('Отсюда трудно дотянуться до ')
+      p(w:noun('рд'), '.')
       return
     end
     return false
@@ -127,8 +125,7 @@ obj {
   -"Чёрная Королева,королева,чёрная/жр|ферзь";
   nam = "red_queen";
   dsc = function(s)
-    if _'white_kitten'.state == QUEEN_STATE or
-    _'black_kitten'.state == QUEEN_STATE then
+    if _'white_kitten'.state == QUEEN_STATE or _'black_kitten'.state == QUEEN_STATE then
       return
     end
     return false
@@ -144,9 +141,9 @@ obj {
     return false
   end;
   ["after_PutOn,Transfer,Insert"] = function(s, w, wh)
-    if w ^ 'chess_board' then
-      p [[В гордом одиночестве на шахматной доске, Черная Королева --
-           самодержавная повелительница 32 белых и 32 черных клеток.]]
+    if w == _'chess_board' then
+      p([[В гордом одиночестве на шахматной доске, Черная Королева --
+самодержавная повелительница 32 белых и 32 черных клеток.]])
       return
     end
     return false
@@ -158,7 +155,7 @@ obj {
   nam = "chess_board";
   found_in = 'Drawing_Room';
   init_dsc = function(s)
-    p "На полу лежит раскрытая шахматная доска.";
+    p("На полу лежит раскрытая шахматная доска.")
     mp:content(s)
   end;
   description = "На полу лежала раскрытая шахматная доска с недоигранной партией. Но ни одной фигурки на ней уже не осталось -- котята играют с ними в менее интеллектуальные игры.";
@@ -181,26 +178,26 @@ obj {
   founded = false;
   found_in = 'Drawing_Room';
   description = function(s)
-    p [[Красивый каминный коврик из какой-то далекой страны -- может быть, Индии или Аравии.]];
+    p([[Красивый каминный коврик из какой-то далекой страны -- может быть, Индии или Аравии.]])
   end;
   before_Take = "Но коврик слишком большой и тяжелый!";
   ["before_Push,Pull"] = "Но место каминного коврика -- рядом с камином!";
   before_LookUnder = function(s, w, wh)
-    if (pl:where() ^ 'mantelpiece') or (pl:where() ^ 'armchair') then
-      p "Отсюда вряд ли возможно дотянуться до коврика!";
+    if where(me()) == _'mantelpiece' or where(me()) == _'armchair' then
+      p("Отсюда вряд ли возможно дотянуться до коврика!")
       return
     end
-    if pl:where() == s then
-      p [[Алиса попыталась приподнять угол коврика, но потерпела неудачу.
-    Причиной оказалось то, что она стояла прямо на нем.
-    Мм-да, мир полон неожиданностей.]];
+    if where(me()) == s then
+      p([[Алиса попыталась приподнять угол коврика, но потерпела неудачу.
+Причиной оказалось то, что она стояла прямо на нем.
+Мм-да, мир полон неожиданностей.]])
       return
     end
     if not s.founded then
       s.founded = true
-      move('red_queen', pl)
-      p [[Алиса приподняла угол коврика -- и, заглянув под него,
-    обнаружила там Черную Королеву из шахматного набора!]];
+      move(_'red_queen', me())
+      p([[Алиса приподняла угол коврика -- и, заглянув под него,
+обнаружила там Черную Королеву из шахматного набора!]])
       return
     end
     return false
@@ -213,13 +210,13 @@ obj {
   found_in = 'Drawing_Room';
   moved = false;
   description = function(s)
-    p [[Большое глубокое кресло. Отличное место для котенка
-    или маленькой девочки, где можно устроиться поудобнее и подремать.
-    Сейчас оно стоит рядом с ]];
+    p([[Большое глубокое кресло. Отличное место для котенка
+или маленькой девочки, где можно устроиться поудобнее и подремать.
+Сейчас оно стоит рядом с ]])
     if s.moved then
-      p "камином."
+      p("камином.")
     else
-      p "окном."
+      p("окном.")
     end
     return false
   end;
@@ -255,8 +252,8 @@ obj {
   end;
   before_Transfer = "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]";
   ["before_Climb,Enter"] = function(s, w, wh)
-    move(pl, s)
-    p "Алиса забралась с ногами в мягкое удобное кресло.";
+    move(me(), s)
+    p("Алиса забралась с ногами в мягкое удобное кресло.")
   end;
   before_Take = "Но кресло слишком тяжелое для маленькой девочки!";
 }:attr 'static,concealed,supporter,enterable'
@@ -266,35 +263,34 @@ obj {
   nam = "mantelpiece";
   found_in = 'Drawing_Room';
   description = function(s)
-    p [[Она довольно высоко (гораздо выше, чем Алиса может достать),
-    но зато выглядит достаточно прочной и широкой,
-    чтобы на ней можно было стоять без риска.]];
-    return false;
+    p([[Она довольно высоко (гораздо выше, чем Алиса может достать),
+но зато выглядит достаточно прочной и широкой,
+чтобы на ней можно было стоять без риска.]])
+    return false
   end;
   ["before_Enter,Climb"] = function(s, w, wh)
-    if pl:where() == s then
-      p "Но Алиса уже на ней!";
+    if where(me()) == s then
+      p("Но Алиса уже на ней!")
       return
-    end;
-    if not (pl:where() ^ 'armchair') then
-      p "Каминная полка слишком высоко, чтобы до нее достать.";
+    end
+    if where(me()) ~= _'armchair' then
+      p("Каминная полка слишком высоко, чтобы до нее достать.")
       return
     end
     if not _'armchair'.moved then
-      p "Отсюда невозможно дотянуться до каминной полки!";
+      p("Отсюда невозможно дотянуться до каминной полки!")
       return
     end
     if #inv() > 0 then
-      p "Для этого руки должны быть свободны!";
+      p("Для этого руки должны быть свободны!")
       return
     end
-    move(pl, 'mantelpiece')
-    p "Алиса ловко вскарабкалась на каминную полку.";
+    move(me(), _'mantelpiece')
+    p("Алиса ловко вскарабкалась на каминную полку.")
   end;
   ["before_Receive,LetGo"] = function(s, w, wh)
-    if pl:where() ~= s and
-    (not (pl:where() ^ 'armchair') or not _'armchair'.moved) then
-      p "Полка слишком высоко, за пределами досягаемости."
+    if where(me()) ~= s and (where(me()) ~= _'armchair' or not _'armchair'.moved) then
+      p("Полка слишком высоко, за пределами досягаемости.")
       return
     end
     return false
@@ -306,26 +302,25 @@ obj {
   nam = "mirror";
   found_in = 'Drawing_Room';
   description = function(s)
-    if pl:where() ^ 'mantelpiece' then
-      p [[Невероятно -- но стеклянная поверхность зеркала
-           тает на глазах, подобно призрачному серебристому пару!]];
+    if where(me()) == _'mantelpiece' then
+      p([[Невероятно -- но стеклянная поверхность зеркала
+тает на глазах, подобно призрачному серебристому пару!]])
       return
     end
-    if pl:where() ^ 'armchair' then
-      p [[В зеркале отражается хорошо знакомая гостиная -- в ней
-           все такое же, как и по эту сторону, только наоборот.
-           Но почему-то Алиса уверена в том, что за краем зеркала,
-           куда никак невозможно заглянуть, лежит мир Зазеркалья --
-           и он совершенно не похож на привычный...]];
+    if where(me()) == _'armchair' then
+      p([[В зеркале отражается хорошо знакомая гостиная -- в ней
+все такое же, как и по эту сторону, только наоборот.
+Но почему-то Алиса уверена в том, что за краем зеркала,
+куда никак невозможно заглянуть, лежит мир Зазеркалья --
+и он совершенно не похож на привычный...]])
       return
     end
-    p [[Отсюда в зеркале можно разглядеть только потолок гостиной.
-       Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]];
+    p([[Отсюда в зеркале можно разглядеть только потолок гостиной.
+Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]])
   end;
   before_Any = function(s, ev, w)
-    if mp.event ~= 'Exam' and mp.event ~= 'Reflect' and mp.event ~= 'Search'
-    and mp.event ~= 'ThrownAt' and not (pl:where() ^ 'mantelpiece') then
-      p "Отсюда невозможно даже дотянуться до зеркала!";
+    if fn_event() ~= 'Exam' and fn_event() ~= 'Reflect' and fn_event() ~= 'Search' and fn_event() ~= 'ThrownAt' and where(me()) ~= _'mantelpiece' then
+      p("Отсюда невозможно даже дотянуться до зеркала!")
       return
     end
     return false
@@ -333,12 +328,10 @@ obj {
   ["before_Touch,Pull,Push"] = { "Рука проходит сквозь серебристый туман", "не встречая сопротивления!" };
   before_ThrownAt = "И заработать семь лет несчастий и бед?!";
   before_Enter = function(s, w, wh)
-    -- Добро пожаловать в Зазеркалье!
-    -- ! (а игра, увы, кончается ;)
-    p [[Рука Алисы без труда прошла через серебряный туман...
-         за ней последовало остальное тело...
-         и вот она уже по ту сторону зеркала!!!]];
-    walk 'theend'
+    p([[Рука Алисы без труда прошла через серебряный туман...
+за ней последовало остальное тело...
+и вот она уже по ту сторону зеркала!!!]])
+    walk(_'theend')
   end;
 }:attr 'static,concealed,enterable'
 
@@ -348,38 +341,37 @@ obj {
   found_in = 'Drawing_Room';
   sputan = false;
   dsc = function(s)
-    if s:where() ~= std.here() then
+    if where(s) ~= here() then
       return false
     end
-    if _'white_kitten'.state ~= WOOL_STATE and
-      _'black_kitten'.state ~= WOOL_STATE then
-        p "На полу лежит клубок шерсти.";
+    if _'white_kitten'.state ~= WOOL_STATE and _'black_kitten'.state ~= WOOL_STATE then
+      p("На полу лежит клубок шерсти.")
     end
   end;
   description = function(s)
     if s.sputan then
-      p [[Сейчас он спутан так, что почти не размотаешь.
-           Сколько времени Алиса потратила на то, чтобы намотать шерсть
-           аккуратным клубком -- и вот, теперь на него страшно взглянуть!]];
+      p([[Сейчас он спутан так, что почти не размотаешь.
+Сколько времени Алиса потратила на то, чтобы намотать шерсть
+аккуратным клубком -- и вот, теперь на него страшно взглянуть!]])
     else
-      p "Клубок очень хорошей голубой шерсти, готовый к вязанию.";
+      p("Клубок очень хорошей голубой шерсти, готовый к вязанию.")
     end
   end;
   before_Untangle = function(s, w, wh)
     if s.sputan then
       s.sputan = false
-      p [[Это оказалось не быстрым и не простым делом...
-       зато теперь клубок совсем как новый -- тугой и аккуратный!]]
+      p([[Это оказалось не быстрым и не простым делом...
+зато теперь клубок совсем как новый -- тугой и аккуратный!]])
     else
-      p "Но шерсть не спутана!";
+      p("Но шерсть не спутана!")
     end
   end;
   after_Take = function(s, w, wh)
     if _'white_kitten'.state == WOOL_STATE then
-      _'white_kitten'.state = CHAIR_STATE;
+      _'white_kitten'.state = CHAIR_STATE
     end
     if _'black_kitten'.state == WOOL_STATE then
-      _'black_kitten'.state = CHAIR_STATE;
+      _'black_kitten'.state = CHAIR_STATE
     end
     return false
   end;
@@ -610,7 +602,7 @@ VerbExtend { "#Exam", "{noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ �
 
 Verb { '#Untangle', "размот/ать,распут/ать", "{noun}/вн : Untangle" }
 mp.Untangle = function(s, w, wh)
-  p "Что, распутать ЭТО?!"
+  p("Что, распутать ЭТО?!")
 end
 
 Verb { '#Touch2', "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/", "{noun}/вн : Touch" }

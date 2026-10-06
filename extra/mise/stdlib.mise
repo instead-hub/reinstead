@@ -87,6 +87,9 @@ fn drop(w: obj): |lua
 fn content(w: obj): |lua
   mp:content(w)
 
+fn inv(): |lua
+  return inv()
+
 fn walkout(): |lua
   walkout()
 

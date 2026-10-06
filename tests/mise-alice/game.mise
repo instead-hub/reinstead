@@ -61,66 +61,54 @@ room Drawing_Room:
 с жарко пылающим камином, мягким ковриком перед ним,
 и глубоким удобным креслом, в котором можно свернуться
 клубочком и немного подремать.]]
-  before Exit, Walk: |lua
-    if not (pl:where() ^ 'mantelpiece') then
-      return false
-    end
-    if mp:compass_dir(w) == 'd_to' or
-      mp:compass_dir(w) == 'out_to' or
-      w == s then
-      p "Таким путем вряд ли удастся спуститься с каминной полки!";
-      return
-    end
-    return false
+  before Exit, Walk: |
+    if where(player) ~= mantelpiece:
+      pass
+    if compass_dir(w) == d_to or compass_dir(w) == out_to or w == s:
+      say Таким путем вряд ли удастся спуститься с каминной полки!
+      stop
+    pass
   before Exam, Search, Enter, ThrowAt, ThrownAt, Reflect, Touch: pass
-  before Default(s, ev, w, wh): |lua
-    if not (pl:where() ^ 'mantelpiece') then
-      return false
-    end
-    if w and not inside(w, 'mantelpiece') then
-      p "Отсюда трудно дотянуться до "
-      p (w:noun'рд', ".")
-      return
-    end
-    if wh and not inside(wh, 'mantelpiece') then
-      p "Отсюда трудно дотянуться до "
-      p (w:noun'рд', ".")
-      return
-    end
-    return false
+  before Default(s, ev, w, wh): |
+    if where(player) ~= mantelpiece:
+      pass
+    if w and not inside(w, mantelpiece):
+      say 'Отсюда трудно дотянуться до '
+      say(w:noun 'рд', '.')
+      stop
+    if wh and not inside(wh, mantelpiece):
+      say 'Отсюда трудно дотянуться до '
+      say(w:noun 'рд', '.')
+      stop
+    pass
 
 obj red_queen:
   words: Чёрная Королева,королева,чёрная/жр|ферзь
-  dsc: |lua
-    if _'white_kitten'.state == QUEEN_STATE or
-    _'black_kitten'.state == QUEEN_STATE then
-      return
-    end
-    return false
+  dsc: |
+    if white_kitten.state == QUEEN_STATE or black_kitten.state == QUEEN_STATE:
+      stop
+    pass
   description: Маленькая (но какая своенравная!) шахматная фигурка.
-  after Take: |lua
-    if _'white_kitten'.state == QUEEN_STATE then
-      _'white_kitten'.state = CHAIR_STATE
-    end
-    if _'black_kitten'.state == QUEEN_STATE then
-      _'black_kitten'.state = CHAIR_STATE
-    end
-    return false
-  after PutOn, Transfer, Insert: |lua
-    if w ^ 'chess_board' then
-      p [[В гордом одиночестве на шахматной доске, Черная Королева --
+  after Take: |
+    if white_kitten.state == QUEEN_STATE:
+      white_kitten.state = CHAIR_STATE
+    if black_kitten.state == QUEEN_STATE:
+      black_kitten.state = CHAIR_STATE
+    pass
+  after PutOn, Transfer, Insert: |
+    if w == chess_board:
+      say [[В гордом одиночестве на шахматной доске, Черная Королева --
            самодержавная повелительница 32 белых и 32 черных клеток.]]
-      return
-    end
-    return false
+      stop
+    pass
   attrs: ~animate
 
 obj chess_board:
   words: шахматная доска,доска
   found_in: Drawing_Room
-  init_dsc: |lua
-    p "На полу лежит раскрытая шахматная доска.";
-    mp:content(s)
+  init_dsc: |
+    say На полу лежит раскрытая шахматная доска.
+    content(s)
   description: [[На полу лежала раскрытая шахматная доска с недоигранной партией. Но ни одной фигурки на ней уже не осталось -- котята играют с ними в менее интеллектуальные игры.]]
   attrs: supporter
 
@@ -139,45 +127,41 @@ obj rug:
   words: каминный коврик,коврик|ковер
   founded: false
   found_in: Drawing_Room
-  description: |lua
-    p [[Красивый каминный коврик из какой-то далекой страны -- может быть, Индии или Аравии.]];
+  description: |
+    say [[Красивый каминный коврик из какой-то далекой страны -- может быть, Индии или Аравии.]]
   before Take: Но коврик слишком большой и тяжелый!
   before Push, Pull: Но место каминного коврика -- рядом с камином!
-  before LookUnder: |lua
-    if (pl:where() ^ 'mantelpiece') or (pl:where() ^ 'armchair') then
-      p "Отсюда вряд ли возможно дотянуться до коврика!";
-      return
-    end
-    if pl:where() == s then
-      p [[Алиса попыталась приподнять угол коврика, но потерпела неудачу.
+  before LookUnder: |
+    if where(player) == mantelpiece or where(player) == armchair:
+      say Отсюда вряд ли возможно дотянуться до коврика!
+      stop
+    if where(player) == s:
+      say [[Алиса попыталась приподнять угол коврика, но потерпела неудачу.
     Причиной оказалось то, что она стояла прямо на нем.
-    Мм-да, мир полон неожиданностей.]];
-      return
-    end
-    if not s.founded then
+    Мм-да, мир полон неожиданностей.]]
+      stop
+    if not s.founded:
       s.founded = true
-      move('red_queen', pl)
-      p [[Алиса приподняла угол коврика -- и, заглянув под него,
-    обнаружила там Черную Королеву из шахматного набора!]];
-      return
-    end
-    return false
+      red_queen:move player
+      say [[Алиса приподняла угол коврика -- и, заглянув под него,
+    обнаружила там Черную Королеву из шахматного набора!]]
+      stop
+    pass
   attrs: concealed, static, supporter, enterable
 
 obj armchair:
   words: кресло|стул
   found_in: Drawing_Room
   moved: false
-  description: |lua
-    p [[Большое глубокое кресло. Отличное место для котенка
+  description: |
+    say [[Большое глубокое кресло. Отличное место для котенка
     или маленькой девочки, где можно устроиться поудобнее и подремать.
-    Сейчас оно стоит рядом с ]];
-    if s.moved then
-      p "камином."
-    else
-      p "окном."
-    end
-    return false
+    Сейчас оно стоит рядом с ]]
+    if s.moved:
+      say камином.
+    else:
+      say окном.
+    pass
   before Push, Pull: |lua
     if not (pl:where() ^ 'Drawing_Room') then
       p ("Для начала необходимо покинуть ", pl:where():noun 'вн', ".")
@@ -208,121 +192,102 @@ obj armchair:
     s.moved = true
     p "Алиса придвинула кресло ближе к камину.";
   before Transfer: "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]"
-  before Climb, Enter: |lua
-    move(pl, s)
-    p "Алиса забралась с ногами в мягкое удобное кресло.";
+  before Climb, Enter: |
+    player:move s
+    say Алиса забралась с ногами в мягкое удобное кресло.
   before Take: Но кресло слишком тяжелое для маленькой девочки!
   attrs: static, concealed, supporter, enterable
 
 obj mantelpiece:
   words: каминная полка,полка
   found_in: Drawing_Room
-  description: |lua
-    p [[Она довольно высоко (гораздо выше, чем Алиса может достать),
+  description: |
+    say [[Она довольно высоко (гораздо выше, чем Алиса может достать),
     но зато выглядит достаточно прочной и широкой,
-    чтобы на ней можно было стоять без риска.]];
-    return false;
-  before Enter, Climb: |lua
-    if pl:where() == s then
-      p "Но Алиса уже на ней!";
-      return
-    end;
-    if not (pl:where() ^ 'armchair') then
-      p "Каминная полка слишком высоко, чтобы до нее достать.";
-      return
-    end
-    if not _'armchair'.moved then
-      p "Отсюда невозможно дотянуться до каминной полки!";
-      return
-    end
-    if #inv() > 0 then
-      p "Для этого руки должны быть свободны!";
-      return
-    end
-    move(pl, 'mantelpiece')
-    p "Алиса ловко вскарабкалась на каминную полку.";
-  before Receive, LetGo: |lua
-    if pl:where() ~= s and
-    (not (pl:where() ^ 'armchair') or not _'armchair'.moved) then
-      p "Полка слишком высоко, за пределами досягаемости."
-      return
-    end
-    return false
+    чтобы на ней можно было стоять без риска.]]
+    pass
+  before Enter, Climb: |
+    if where(player) == s:
+      say Но Алиса уже на ней!
+      stop
+    if where(player) ~= armchair:
+      say Каминная полка слишком высоко, чтобы до нее достать.
+      stop
+    if not armchair.moved:
+      say Отсюда невозможно дотянуться до каминной полки!
+      stop
+    if #inv() > 0:
+      say Для этого руки должны быть свободны!
+      stop
+    player:move mantelpiece
+    say Алиса ловко вскарабкалась на каминную полку.
+  before Receive, LetGo: |
+    if where(player) ~= s and (where(player) ~= armchair or not armchair.moved):
+      say Полка слишком высоко, за пределами досягаемости.
+      stop
+    pass
   attrs: concealed, supporter, enterable, static
 
 obj mirror:
   words: зеркало,стекло
   found_in: Drawing_Room
-  description: |lua
-    if pl:where() ^ 'mantelpiece' then
-      p [[Невероятно -- но стеклянная поверхность зеркала
-           тает на глазах, подобно призрачному серебристому пару!]];
-      return
-    end
-    if pl:where() ^ 'armchair' then
-      p [[В зеркале отражается хорошо знакомая гостиная -- в ней
+  description: |
+    if where(player) == mantelpiece:
+      say [[Невероятно -- но стеклянная поверхность зеркала
+           тает на глазах, подобно призрачному серебристому пару!]]
+      stop
+    if where(player) == armchair:
+      say [[В зеркале отражается хорошо знакомая гостиная -- в ней
            все такое же, как и по эту сторону, только наоборот.
            Но почему-то Алиса уверена в том, что за краем зеркала,
            куда никак невозможно заглянуть, лежит мир Зазеркалья --
-           и он совершенно не похож на привычный...]];
-      return
-    end
-    p [[Отсюда в зеркале можно разглядеть только потолок гостиной.
-       Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]];
-  before Any: |lua
-    if mp.event ~= 'Exam' and mp.event ~= 'Reflect' and mp.event ~= 'Search'
-    and mp.event ~= 'ThrownAt' and not (pl:where() ^ 'mantelpiece') then
-      p "Отсюда невозможно даже дотянуться до зеркала!";
-      return
-    end
-    return false
+           и он совершенно не похож на привычный...]]
+      stop
+    say [[Отсюда в зеркале можно разглядеть только потолок гостиной.
+       Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]]
+  before Any: |
+    if event() ~= Exam and event() ~= Reflect and event() ~= Search and event() ~= ThrownAt and where(player) ~= mantelpiece:
+      say Отсюда невозможно даже дотянуться до зеркала!
+      stop
+    pass
   before Touch, Pull, Push: Рука проходит сквозь серебристый туман, не встречая сопротивления!
   before ThrownAt: И заработать семь лет несчастий и бед?!
-  before Enter: |lua
-    -- Добро пожаловать в Зазеркалье!
-    -- ! (а игра, увы, кончается ;)
-    p [[Рука Алисы без труда прошла через серебряный туман...
+  before Enter: |
+    say [[Рука Алисы без труда прошла через серебряный туман...
          за ней последовало остальное тело...
-         и вот она уже по ту сторону зеркала!!!]];
-    walk 'theend'
+         и вот она уже по ту сторону зеркала!!!]]
+    walk theend
   attrs: static, concealed, enterable
 
 obj worsted:
   words: клубок шерсти,клубок|шерсть
   found_in: Drawing_Room
   sputan: false
-  dsc: |lua
-    if s:where() ~= std.here() then
-      return false
-    end
-    if _'white_kitten'.state ~= WOOL_STATE and
-      _'black_kitten'.state ~= WOOL_STATE then
-        p "На полу лежит клубок шерсти.";
-    end
-  description: |lua
-    if s.sputan then
-      p [[Сейчас он спутан так, что почти не размотаешь.
+  dsc: |
+    if where(s) ~= here:
+      pass
+    if white_kitten.state ~= WOOL_STATE and black_kitten.state ~= WOOL_STATE:
+      say На полу лежит клубок шерсти.
+  description: |
+    if s.sputan:
+      say [[Сейчас он спутан так, что почти не размотаешь.
            Сколько времени Алиса потратила на то, чтобы намотать шерсть
-           аккуратным клубком -- и вот, теперь на него страшно взглянуть!]];
-    else
-      p "Клубок очень хорошей голубой шерсти, готовый к вязанию.";
-    end
-  before Untangle: |lua
-    if s.sputan then
+           аккуратным клубком -- и вот, теперь на него страшно взглянуть!]]
+    else:
+      say Клубок очень хорошей голубой шерсти, готовый к вязанию.
+  before Untangle: |
+    if s.sputan:
       s.sputan = false
-      p [[Это оказалось не быстрым и не простым делом...
+      say [[Это оказалось не быстрым и не простым делом...
        зато теперь клубок совсем как новый -- тугой и аккуратный!]]
-    else
-      p "Но шерсть не спутана!";
-    end
-  after Take: |lua
-    if _'white_kitten'.state == WOOL_STATE then
-      _'white_kitten'.state = CHAIR_STATE;
-    end
-    if _'black_kitten'.state == WOOL_STATE then
-      _'black_kitten'.state = CHAIR_STATE;
-    end
-    return false
+    else:
+      say Но шерсть не спутана!
+  after Take: |
+    if white_kitten.state == WOOL_STATE:
+      white_kitten.state = CHAIR_STATE
+    if black_kitten.state == WOOL_STATE:
+      black_kitten.state = CHAIR_STATE
+    pass
 
 obj window:
   words: окно|рама
@@ -536,8 +501,8 @@ verb Untangle:
   words: размот/ать,распут/ать
   patterns:
     - {noun}/вн : Untangle
-  on: |lua
-    p "Что, распутать ЭТО?!"
+  on: |
+    say Что, распутать ЭТО?!
 
 verb Touch2:
   words: ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/

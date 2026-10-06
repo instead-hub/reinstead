@@ -363,22 +363,23 @@ obj Кабель:
 |---|---|---|
 | `here` | `() -> obj` | текущая комната |
 | `player` | `() -> obj` | игрок (`me()`) |
-| `has` | `(obj, str) -> bool` | `s:has` |
-| `hasnt` | `(obj, str) -> bool` | `s:hasnt` |
+| `has` | `(obj, attr) -> bool` | `s:has` |
+| `hasnt` | `(obj, attr) -> bool` | `s:hasnt` |
 | `move` | `(obj, obj)` | `move(s, where)` |
-| `attr` | `(obj, str)` | `s:attr` |
+| `attr` | `(obj, attr)` | `s:attr` |
 | `inside` | `(obj, obj) -> bool` | `w:inside(x)` |
 | `walk` | `(obj)` | `walk(where)` |
 | `walkin` | `(obj)` | `walkin(where)` |
-| `compass_dir` | `(obj) -> str` | `mp:compass_dir` |
+| `compass_dir` | `(obj) -> direction?` | `mp:compass_dir` |
 | `once_tag` | `(obj, str) -> bool` | `s:once(tag)` |
 | `once` | `(obj) -> bool` | `s:once()` |
 | `take` | `(obj)` | `take(w)` |
 | `drop` | `(obj)` | `drop(w)` |
 | `content` | `(obj)` | `mp:content(w)` |
+| `inv` | `() -> any` | `inv()` |
 | `walkout` | `()` | `walkout()` |
 | `visits` | `(obj) -> num` | `visits(w)` |
-| `event` | `() -> event` | `mp.event` |
+| `event` | `() -> event?` | `mp.event` |
 | `rnd` | `(...) -> num` | `rnd(...)` |
 | `xaction` | `(event, obj)` | `mp:xaction` |
 | `daemonStart` | `(obj)` | `DaemonStart(w)` |
@@ -388,7 +389,7 @@ obj Кабель:
 | `place` | `(obj)` | `place(w)` |
 | `isDaemon` | `(obj) -> bool` | `isDaemon(w)` |
 | `disabled` | `(obj) -> bool` | `disabled(w)` |
-| `seen` | `(obj) -> bool` | `seen(w)` |
+| `seen` | `(obj) -> obj?` | `seen(w)` |
 | `say` | `(str, ...)` | `p(...)` |
 | `line` | `(...)` | `pn(...)` |
 | `append` | `(str, ...)` | `pr(...)` |
