@@ -112,6 +112,50 @@ def fn_call(ctx, name, args):
         return "%s(%s)" % (payload[0], ", ".join(args))
     return "%s(%s)" % (fn_name(name), ", ".join(args))
 
+
+class Node:
+    __slots__ = ("code", "t", "val")
+
+    def __init__(self, code, t, val=None):
+        self.code = code
+        self.t = t
+        self.val = val
+
+
+class Lit(Node):
+    pass
+
+
+class Ref(Node):
+    """Variable, global, fn name or object reference."""
+    __slots__ = ("name", "obj")
+
+    def __init__(self, code, t, name, obj=False):
+        Node.__init__(self, code, t)
+        self.name = name
+        self.obj = obj
+
+
+class Field(Node):
+    """`base.field`; recv/fname are set only for typed owners."""
+    __slots__ = ("recv", "fname", "ref", "raw")
+
+    def __init__(self, code, t, recv=None, fname=None, ref=False, raw=None):
+        Node.__init__(self, code, t)
+        self.recv = recv
+        self.fname = fname
+        self.ref = ref
+        self.raw = raw
+
+
+class Index(Node):
+    pass
+
+
+class Call(Node):
+    pass
+
+
 class ExprEmit:
     def __init__(self, toks, env, where, ctx):
         self.toks = toks
@@ -154,10 +198,10 @@ class ExprEmit:
         types = []
         while True:
             self.expected = expected
-            c, t, _k, _v = self.expr()
+            node = self.expr()
             self.expected = None
-            codes.append(c)
-            types.append(t)
+            codes.append(node.code)
+            types.append(node.t)
             if not self.accept(","):
                 break
         return ", ".join(codes), types
@@ -215,10 +259,10 @@ class ExprEmit:
                 exp = (expected_list[n]
                        if expected_list and n < len(expected_list) else None)
                 self.expected = exp
-                c, t, _k, _v = self.expr()
+                node = self.expr()
                 self.expected = None
-                self.check(t, exp, c)
-                codes.append(c)
+                self.check(node.t, exp, node.code)
+                codes.append(node.code)
                 n += 1
                 if not self.accept(","):
                     break
@@ -240,7 +284,7 @@ class ExprEmit:
     def primary(self):
         kind, val = self.next()
         if kind == "num":
-            return val, "num", "lit", None
+            return Lit(val, "num")
         if kind == "str":
             if self.expected == "obj":
                 self.terr("strings are not objects; use a bare name (%r)"
@@ -253,28 +297,28 @@ class ExprEmit:
                                        self.strval(val))
                 if msg:
                     self.terr(msg)
-            return val, "str", "lit", self.strval(val)
+            return Lit(val, "str", val=self.strval(val))
         if kind == "op" and val == "...":
             self.err("... is not allowed in logic; use |lua for varargs")
         if kind == "name":
             if val in ("nil", "true", "false"):
-                return val, ("bool" if val != "nil" else "nil"), "lit", None
+                return Lit(val, ("bool" if val != "nil" else "nil"))
             if val in S.KEYWORDS:
                 if val == "function":
                     self.err("anonymous functions are not allowed (use |lua)")
                 self.err("unexpected keyword %r" % val)
             if val in self.env:
-                return val, self.env[val], "name", val
+                return Ref(val, self.env[val], val)
             if val in self.ctx.ids:
-                return "_'%s'" % val, "obj", "objref", val
+                return Ref("_'%s'" % val, "obj", val, obj=True)
             if val in self.ctx.fn_sigs:
-                return fn_name(val), "fn", "name", val
+                return Ref(fn_name(val), "fn", val)
             if val in self.ctx.funcs:
-                return val, "fn", "name", val
+                return Ref(val, "fn", val)
             if val in self.ctx.vars:
-                return val, self.ctx.global_types.get(val, "any"), "name", val
+                return Ref(val, self.ctx.global_types.get(val, "any"), val)
             if self.expected == "event" and val in self.ctx.event_names:
-                return "'%s'" % val, "event", "lit", val
+                return Lit("'%s'" % val, "event", val=val)
             if self.expected == "event":
                 self.err("unknown event %r" % val)
             if (self.expected in self.ctx.types
@@ -282,13 +326,13 @@ class ExprEmit:
                 msg = type_value_error(self.ctx, self.expected, val)
                 if msg:
                     self.terr(msg)
-                return lua_str(val), "str", "lit", val
+                return Lit(lua_str(val), "str", val=val)
             self.err("unknown name %r" % val)
         if kind == "op" and val == "(":
             self.expected = None
-            c, t, _k, _v = self.expr()
+            node = self.expr()
             self.expect(")")
-            return "(%s)" % c, t, "expr", None
+            return Node("(%s)" % node.code, node.t)
         if kind == "op" and val == "{":
             self.err("table constructors are not allowed in logic "
                      "(wrap it in fn)")
@@ -298,151 +342,141 @@ class ExprEmit:
         _k, v = self.peek()
         if v == "not":
             self.next()
-            c, _t, _k2, _v2 = self.unary()
-            return "not %s" % c, "bool", "expr", None
+            node = self.unary()
+            return Node("not %s" % node.code, "bool")
         if v == "-":
             self.next()
-            c, _t, _k2, _v2 = self.unary()
-            return "-%s" % c, "num", "expr", None
+            node = self.unary()
+            return Node("-%s" % node.code, "num")
         if v == "#":
             nk, nv = self.peek(1)
             if nk == "name" and ("#" + nv) in self.ctx.ids:
                 self.next()
                 self.next()
-                return self.postfix("_'#%s'" % nv, "obj", "objref", None)
+                return self.postfix(Ref("_'#%s'" % nv, "obj", "#" + nv,
+                                        obj=True))
             self.err("# is only for declared #tags; the DSL has no tables "
                      "(wrap the length in a fn)")
-        return self.postfix(*self.primary())
+        return self.postfix(self.primary())
 
     def or_expr(self):
-        code, t, k, v = self.and_expr()
+        node = self.and_expr()
         while self.peek()[1] == "or":
             self.next()
-            c2, _t2, _k2, _v2 = self.and_expr()
-            code = "%s or %s" % (code, c2)
-            t, k, v = "any", "expr", None
-        return code, t, k, v
+            rhs = self.and_expr()
+            node = Node("%s or %s" % (node.code, rhs.code), "any")
+        return node
 
     def and_expr(self):
-        code, t, k, v = self.cmp_expr()
+        node = self.cmp_expr()
         while self.peek()[1] == "and":
             self.next()
-            c2, _t2, _k2, _v2 = self.cmp_expr()
-            code = "%s and %s" % (code, c2)
-            t, k, v = "any", "expr", None
-        return code, t, k, v
+            rhs = self.cmp_expr()
+            node = Node("%s and %s" % (node.code, rhs.code), "any")
+        return node
 
     def cmp_expr(self):
-        code, t, k, v = self.concat_expr()
+        node = self.concat_expr()
         while self.peek()[1] in ("==", "~=", "<", ">", "<=", ">=", "^"):
             op = self.next()[1]
             if op == "^":
                 self.err("^ is forbidden; compare objects with ==")
             exp = None
             if op in ("==", "~="):
-                base_t = t[:-1] if t.endswith("?") else t
+                base_t = node.t[:-1] if node.t.endswith("?") else node.t
                 if base_t in self.ctx.types:
                     exp = base_t
                 elif base_t == "event":
                     exp = "event"
             self.expected = exp
-            c2, t2, _k2, _v2 = self.concat_expr()
+            rhs = self.concat_expr()
             self.expected = None
             if op in ("<", ">", "<=", ">="):
-                self.check(t, "num", code)
-                self.check(t2, "num", c2)
-            code = "%s %s %s" % (code, op, c2)
-            t, k, v = "bool", "expr", None
-        return code, t, k, v
+                self.check(node.t, "num", node.code)
+                self.check(rhs.t, "num", rhs.code)
+            node = Node("%s %s %s" % (node.code, op, rhs.code), "bool")
+        return node
 
     def concat_expr(self):
-        code, t, k, v = self.add_expr()
+        node = self.add_expr()
         while self.peek()[1] == "..":
             self.next()
-            c2, _t2, _k2, _v2 = self.add_expr()
-            code = "%s .. %s" % (code, c2)
-            t, k, v = "str", "expr", None
-        return code, t, k, v
+            rhs = self.add_expr()
+            node = Node("%s .. %s" % (node.code, rhs.code), "str")
+        return node
 
     def add_expr(self):
-        code, t, k, v = self.mul_expr()
+        node = self.mul_expr()
         while self.peek()[1] in ("+", "-"):
             op = self.next()[1]
-            c2, t2, _k2, _v2 = self.mul_expr()
-            self.check(t, "num", code)
-            self.check(t2, "num", c2)
-            code = "%s %s %s" % (code, op, c2)
-            t, k, v = "num", "expr", None
-        return code, t, k, v
+            rhs = self.mul_expr()
+            self.check(node.t, "num", node.code)
+            self.check(rhs.t, "num", rhs.code)
+            node = Node("%s %s %s" % (node.code, op, rhs.code), "num")
+        return node
 
     def mul_expr(self):
-        code, t, k, v = self.unary()
+        node = self.unary()
         while self.peek()[1] in ("*", "/", "%", "//"):
             op = self.next()[1]
-            c2, t2, _k2, _v2 = self.unary()
-            self.check(t, "num", code)
-            self.check(t2, "num", c2)
-            code = "%s %s %s" % (code, op, c2)
-            t, k, v = "num", "expr", None
-        return code, t, k, v
+            rhs = self.unary()
+            self.check(node.t, "num", node.code)
+            self.check(rhs.t, "num", rhs.code)
+            node = Node("%s %s %s" % (node.code, op, rhs.code), "num")
+        return node
 
     def expr(self):
         return self.or_expr()
 
-    def autocall(self, code, t, kind, val):
-        if (kind == "name" and val in self.ctx.fn_sigs
-                and not self.ctx.fn_sigs[val][0]):
-            code = fn_call(self.ctx, val, [])
-            t = self.ctx.fn_sigs[val][1]
-            kind = "call"
-            val = None
-        return code, t, kind, val
+    def autocall(self, node):
+        if (isinstance(node, Ref) and not node.obj
+                and node.name in self.ctx.fn_sigs
+                and not self.ctx.fn_sigs[node.name][0]):
+            node = Call(fn_call(self.ctx, node.name, []),
+                        self.ctx.fn_sigs[node.name][1])
+        return node
 
-    def postfix(self, code, t, kind, val):
+    def postfix(self, node):
         while True:
             k, v = self.peek()
             if not (k == "str" or (k == "op" and v == "(")):
-                code, t, kind, val = self.autocall(code, t, kind, val)
+                node = self.autocall(node)
             if k == "op" and v == ".":
                 self.next()
                 nk, nv = self.next()
                 if nk != "name":
                     self.err("expected field name")
-                if t == "str":
+                if node.t == "str":
                     self.terr("strings are not objects; use a bare name (%r)"
-                              % (val,))
-                if t == "obj?":
-                    self.check(t, "obj", code)
+                              % (node.val,))
+                if node.t == "obj?":
+                    self.check(node.t, "obj", node.code)
                 recv = None
-                if kind == "objref":
-                    recv = val
-                elif (kind == "name" and val == "s"
-                      and self.env.get("s") == "obj"
+                if isinstance(node, Ref) and node.obj:
+                    recv = node.name
+                elif (isinstance(node, Ref) and not node.obj
+                      and node.name == "s" and self.env.get("s") == "obj"
                       and self.ctx.current_owner):
                     recv = self.ctx.current_owner
-                raw = "%s.%s" % (code, nv)
+                raw = "%s.%s" % (node.code, nv)
                 info = (self.ctx.fields.get(recv, {}).get(nv)
                         if recv is not None else None)
                 t = info[0] if info else "any"
                 if info and info[1]:
-                    code = "_(%s)" % raw
-                    kind = "fieldref"
-                    val = (recv, nv, raw)
+                    node = Field("_(%s)" % raw, t, recv=recv, fname=nv,
+                                 ref=True, raw=raw)
                 else:
-                    code = raw
-                    kind = "field"
-                    val = (recv, nv) if info else None
+                    node = Field(raw, t,
+                                 recv=recv if info else None,
+                                 fname=nv if info else None)
             elif k == "op" and v == "[":
                 self.next()
-                if t == "obj?":
-                    self.check(t, "obj", code)
+                if node.t == "obj?":
+                    self.check(node.t, "obj", node.code)
                 self.expected = None
-                ic, _it, _ik, _iv = self.expr()
+                idx = self.expr()
                 self.expect("]")
-                code = "%s[%s]" % (code, ic)
-                kind = "field"
-                t = "any"
-                val = None
+                node = Index("%s[%s]" % (node.code, idx.code), "any")
             elif k == "op" and v == ":":
                 self.next()
                 nk, nv = self.next()
@@ -454,18 +488,15 @@ class ExprEmit:
                 plist, ret, variadic = self.ctx.fn_sigs[nv]
                 if not plist:
                     self.err("fn %s takes no receiver" % nv)
-                if t == "str":
+                if node.t == "str":
                     self.err("strings are not objects; use a bare name (%r)"
-                             % (val,))
-                self.check(t, plist[0][1], code)
+                             % (node.val,))
+                self.check(node.t, plist[0][1], node.code)
                 nk, nv2 = self.peek()
                 if (not variadic and len(plist) == 1
                         and not (nk == "str"
                                  or (nk == "op" and nv2 == "("))):
-                    code = fn_call(self.ctx, nv, [code])
-                    t = ret
-                    kind = "call"
-                    val = None
+                    node = Call(fn_call(self.ctx, nv, [node.code]), ret)
                     continue
                 if (not variadic and len(plist) == 2
                         and self.peek()[0] == "name"
@@ -493,64 +524,55 @@ class ExprEmit:
                     else:
                         self.err("unknown name %r" % nm)
                     self.check(at, pt, arg)
-                    code = fn_call(self.ctx, nv, [code, arg])
-                    t = ret
-                    kind = "call"
-                    val = None
+                    node = Call(fn_call(self.ctx, nv, [node.code, arg]), ret)
                     continue
                 codes, n = self.arglist([pt for _pn, pt in plist[1:]])
                 self.check_arity(nv, plist[1:], variadic, n)
-                code = fn_call(self.ctx, nv, [code] + codes)
-                t = ret
-                kind = "call"
-                val = None
-            elif (kind == "name"
+                node = Call(fn_call(self.ctx, nv, [node.code] + codes), ret)
+            elif (isinstance(node, Ref) and not node.obj
                   and ((k == "name" and v not in S.KEYWORDS)
                        or (k == "op" and v in ("#", "-"))
                        or k == "num")):
+                name = node.name
                 exp = None
                 rt = "any"
                 variadic = False
-                if val in self.ctx.fn_sigs:
-                    plist, rt, variadic = self.ctx.fn_sigs[val]
+                if name in self.ctx.fn_sigs:
+                    plist, rt, variadic = self.ctx.fn_sigs[name]
                     if not plist:
-                        self.err("fn %s takes no arguments" % val)
-                    self.check_arity(val, plist, variadic, 1)
+                        self.err("fn %s takes no arguments" % name)
+                    self.check_arity(name, plist, variadic, 1)
                     exp = plist[0][1]
                 save = self.i
                 self.expected = exp
                 if exp == "str" or variadic:
-                    c, t, _k2, _v2 = self.expr()
+                    arg = self.expr()
                 else:
-                    c, t, _k2, _v2 = self.unary()
-                    if not type_ok(self.ctx, t, exp):
+                    arg = self.unary()
+                    if not type_ok(self.ctx, arg.t, exp):
                         self.i = save
                         self.expected = exp
-                        c, t, _k2, _v2 = self.expr()
+                        arg = self.expr()
                 self.expected = None
-                self.check(t, exp, c)
-                code = fn_call(self.ctx, val, [c])
-                t = rt
-                kind = "call"
-                val = None
+                self.check(arg.t, exp, arg.code)
+                node = Call(fn_call(self.ctx, name, [arg.code]), rt)
             elif (k == "str" or (k == "op" and v == "(")):
-                if kind == "name":
-                    if val in self.ctx.fn_sigs:
-                        plist, rt, variadic = self.ctx.fn_sigs[val]
+                if isinstance(node, Ref) and not node.obj:
+                    name = node.name
+                    if name in self.ctx.fn_sigs:
+                        plist, rt, variadic = self.ctx.fn_sigs[name]
                         codes, n = self.arglist([pt for _pn, pt in plist])
-                        self.check_arity(val, plist, variadic, n)
-                        code = fn_call(self.ctx, val, codes)
+                        self.check_arity(name, plist, variadic, n)
+                        node = Call(fn_call(self.ctx, name, codes), rt)
                     else:
-                        codes, rt = self.call(val)
-                        code = "%s(%s)" % (code, ", ".join(codes))
-                    t = rt
-                    kind = "call"
-                    val = None
+                        codes, rt = self.call(name)
+                        node = Call("%s(%s)" % (node.code, ", ".join(codes)),
+                                    rt)
                 else:
                     self.err("call of field/expression is not allowed in "
                              "logic (wrap it in fn)")
             else:
-                return code, t, kind, val
+                return node
 
 def expr_cont(s):
     c = s[0]
@@ -637,11 +659,11 @@ def transpile_stmt(text, env, where, ctx):
             idx = 0
             while True:
                 p.expected = None
-                c, t, _k, _v = p.expr()
+                node = p.expr()
                 p.expected = None
-                codes.append(c)
+                codes.append(node.code)
                 if idx < len(types):
-                    types[idx] = t
+                    types[idx] = node.t
                 idx += 1
                 if not p.accept(","):
                     break
@@ -659,7 +681,7 @@ def transpile_stmt(text, env, where, ctx):
             p.err("unexpected %r" % p.peek()[1])
         return "break"
     p.expected = None
-    lhs, _lt, lk, lv = p.expr()
+    lhs = p.expr()
     op = None
     k1, v1 = p.peek()
     if k1 == "op" and v1 in ("=", "+=", "-="):
@@ -670,46 +692,46 @@ def transpile_stmt(text, env, where, ctx):
         p.next()
         op = v1 + "="
     if op is not None:
-        if lk == "fieldref" and isinstance(lv, tuple) and len(lv) == 3:
-            lhs = lv[2]
         codes = []
         types = []
         while True:
             p.expected = None
-            c, t, _k, _v = p.expr()
+            node = p.expr()
             p.expected = None
-            codes.append(c)
-            types.append(t)
+            codes.append(node.code)
+            types.append(node.t)
             if not p.accept(","):
                 break
         if p.peek()[0] != "eof":
             p.err("unexpected %r" % p.peek()[1])
-        if lk == "name" and lv in env and types:
-            old, new = env[lv], types[0]
+        if (isinstance(lhs, Ref) and not lhs.obj and lhs.name in env
+                and types):
+            old, new = env[lhs.name], types[0]
             if old == "any":
-                env[lv] = new
+                env[lhs.name] = new
             elif new != "any" and not type_ok(ctx, new, old):
                 raise LintError("%s: %s (%s) cannot take %s"
-                                % (where, lv, old, new))
-        if (lk in ("field", "fieldref") and isinstance(lv, tuple)
-                and lv[0] in ctx.fields
-                and lv[1] in ctx.fields[lv[0]] and types):
-            old = ctx.fields[lv[0]][lv[1]][0]
+                                % (where, lhs.name, old, new))
+        if (isinstance(lhs, Field) and lhs.recv in ctx.fields
+                and lhs.fname in ctx.fields[lhs.recv] and types):
+            old = ctx.fields[lhs.recv][lhs.fname][0]
             new = types[0]
             if old != "any" and new != "any" and not type_ok(ctx, new, old):
                 raise LintError("%s: %s.%s (%s) cannot take %s"
-                                % (where, lv[0], lv[1], old, new))
+                                % (where, lhs.recv, lhs.fname, old, new))
+        lhs_code = lhs.raw if (isinstance(lhs, Field) and lhs.ref) else lhs.code
         if op == "=":
-            return "%s = %s" % (lhs, ", ".join(codes))
+            return "%s = %s" % (lhs_code, ", ".join(codes))
         sign = "+" if op == "+=" else "-"
-        return "%s = %s %s (%s)" % (lhs, lhs, sign, ", ".join(codes))
+        return "%s = %s %s (%s)" % (lhs_code, lhs_code, sign, ", ".join(codes))
     if p.peek()[0] != "eof":
         p.err("unexpected %r" % p.peek()[1])
-    if lk == "name" and lv in ctx.fn_sigs:
-        p.err("fn %s must be called with ()" % lv)
-    if lk not in ("name", "field", "fieldref", "call"):
+    if isinstance(lhs, Ref) and not lhs.obj and lhs.name in ctx.fn_sigs:
+        p.err("fn %s must be called with ()" % lhs.name)
+    if not isinstance(lhs, (Call, Field, Index)) \
+            and not (isinstance(lhs, Ref) and not lhs.obj):
         p.err("unsupported statement")
-    return lhs
+    return lhs.code
 
 def transpile_for(header, env, where, ctx):
     if re.search(r"\bin\b", header):
