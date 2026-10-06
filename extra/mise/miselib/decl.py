@@ -47,6 +47,12 @@ def classify(key):
         if not m:
             raise Error("patch needs a bare target: %s" % key)
         return "patch", m.group(1)
+    m = re.match(r"^type\s+([a-z_]\w*)$", key)
+    if m:
+        return "type", m.group(1)
+    m = re.match(r"^extend\s+type\s+([a-z_]\w*)$", key)
+    if m:
+        return "extend_type", m.group(1)
     if re.match(r"^extend\b", key):
         m = re.match(r"^extend\s+#([^\W\d]\w*)$", key, re.UNICODE)
         if not m:
@@ -62,14 +68,55 @@ def classify(key):
     return "unknown", (kind, ident)
 
 
-def parse_fn_sig(key):
+def type_value_error(ctx, typ, value):
+    """Return an error message if value is not valid for enum type typ."""
+    import difflib
+    td = ctx.types.get(typ)
+    if td is None:
+        return None
+    vals, negate = td["values"], td["negate"]
+    neg = value.startswith("~")
+    base = value[1:] if neg else value
+    if value in vals:
+        return None
+    if neg:
+        if not negate:
+            return "type %s does not allow '~' negation (%r)" % (typ, value)
+        if base in vals:
+            return None
+    near = difflib.get_close_matches(base, sorted(vals), 1, 0.6)
+    hint = " (did you mean %r?)" % near[0] if near else ""
+    return "unknown %s %r%s" % (typ, value, hint)
+
+
+def type_ok(ctx, t, exp):
+    """May a value of type t be used where type exp is expected?"""
+    if exp in (None, "any") or t in ("any", exp):
+        return True
+    if exp.endswith("?"):
+        return t == "nil" or type_ok(ctx, t, exp[:-1])
+    if exp in ctx.types and t in ("str", exp):
+        return True
+    if t in ctx.types and exp == "str":
+        return True
+    return False
+
+
+def parse_fn_sig(key, types=None):
     m = re.match(r"^fn\s+([\w.+-]+)\s*(?:\(([^)]*)\))?\s*"
-                 r"(?:->\s*([A-Za-z_]\w*))?$", key)
+                 r"(?:->\s*([A-Za-z_]\w*\??))?$", key)
     if not m:
         raise Error("bad fn: " + key)
     name, params, ret = m.group(1), m.group(2), m.group(3) or "any"
-    if ret not in S.TYPES:
-        raise Error("fn %s: unknown return type %r" % (name, ret))
+    known = S.TYPES | (types or set()) | {"nil"}
+
+    def check_type(pt, what):
+        base = pt[:-1] if pt.endswith("?") else pt
+        if base not in known or pt == "nil?":
+            raise Error("fn %s: unknown type %r for %s"
+                        % (name, pt, what))
+
+    check_type(ret, "return")
     plist = []
     variadic = False
     if params is None:
@@ -90,8 +137,7 @@ def parse_fn_sig(key):
                 pn, pt = p, "any"
             if not re.fullmatch(r"[^\W\d]\w*", pn, re.UNICODE):
                 raise Error("fn %s: bad parameter %r" % (name, pn))
-            if pt not in S.TYPES:
-                raise Error("fn %s: unknown type %r for %s" % (name, pt, pn))
+            check_type(pt, pn)
             plist.append((pn, pt))
     return name, plist, ret, variadic
 

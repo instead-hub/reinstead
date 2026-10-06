@@ -25,7 +25,7 @@ def transpile(src, src_dir=""):
         kind, info = classify(key)
         if kind == "meta":
             header.append("--$%s:%s$" % (key.title(), val.s))
-        elif kind == "skip":
+        elif kind in ("skip", "type", "extend_type"):
             continue
         elif kind == "require":
             vals = val if isinstance(val, list) else [val]
@@ -41,7 +41,7 @@ def transpile(src, src_dir=""):
         elif kind == "class":
             body.append(em.cls(val, info[0], info[1]))
         elif kind == "fn":
-            name, plist, ret, variadic = parse_fn_sig(key)
+            name, plist, ret, variadic = parse_fn_sig(key, set(ctx.types))
             ctx.fns.add(name)
             if name in ctx.wrappers or name in ctx.adapters:
                 continue

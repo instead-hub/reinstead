@@ -4,7 +4,7 @@ from . import state as S
 from .common import *
 from .emitlogic import emit_logic
 from .decl import (REF_FIELDS, PRESETS, check_ref_value, decl_key,
-                   is_true, sym_text)
+                   is_true, sym_text, type_value_error)
 from .expr import fn_name, transpile_exprlist
 
 
@@ -189,6 +189,11 @@ class Emitter:
             elif isinstance(a, Text):
                 raise Error("%s.attrs: quotes are not allowed"
                             % (ident or "?"))
+        if attrs and "attr" in self.ctx.types:
+            for an in attrs:
+                msg = type_value_error(self.ctx, "attr", an)
+                if msg:
+                    raise Error("%s.attrs: %s" % (ident or "?", msg))
         obj_items = []
         nested = []
         texts = block.all("text")

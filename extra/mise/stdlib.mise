@@ -1,19 +1,21 @@
+type attr: ~, alive, animate, broken, burning, clothing, coded, concealed, container, cutscene, device, door, drinkable, edible, enterable, fed, female, fixed, gameover, light, lockable, locked, luminous, male, moved, multi, noparser, on, open, openable, read, ring, scenery, seen, static, supporter, switchable, talkable, transparent, tuned, visited, worn
+
 fn here() -> obj: |lua
   return here()
 
 fn player() -> obj: |lua
   return me()
 
-fn has(s: obj, a: str) -> bool: |lua
+fn has(s: obj, a: attr) -> bool: |lua
   return s:has(a)
 
-fn hasnt(s: obj, a: str) -> bool: |lua
+fn hasnt(s: obj, a: attr) -> bool: |lua
   return s:hasnt(a)
 
 fn move(s: obj, where: obj): |lua
   move(s, where)
 
-fn attr(s: obj, a: str): |lua
+fn attr(s: obj, a: attr): |lua
   s:attr(a)
 
 fn inside(w: obj, x: obj) -> bool: |lua
@@ -64,7 +66,7 @@ fn isDaemon(w: obj) -> bool: |lua
 fn disabled(w: obj) -> bool: |lua
   return disabled(w)
 
-fn seen(w: any) -> bool: |lua
+fn seen(w: any) -> obj?: |lua
   return seen(w)
 
 fn walk(where: obj): |lua

@@ -67,6 +67,47 @@ def scan_lua_defs(text, funcs, vars_):
     for m in re.finditer(r"^\s*([A-Za-z_]\w*)\s*=", text, re.M):
         vars_.add(m.group(1))
 
+def collect_types(root, ctx):
+    ctx.types = {}
+    for key, val in root.items:
+        kind, name = classify(key)
+        if kind == "type":
+            if name in ctx.types:
+                raise Error("duplicate type: " + name)
+            if isinstance(val, Block):
+                raise Error("type %s: no values" % name)
+            vals = []
+            negate = False
+            for x in (val if isinstance(val, list) else [val]):
+                if isinstance(x, Text):
+                    raise Error("type %s: quotes are not allowed" % name)
+                if not isinstance(x, Bare):
+                    raise Error("type %s: expected bare values" % name)
+                if x.s == "~" and not negate and not vals:
+                    negate = True
+                    continue
+                if not re.fullmatch(r"\S+", x.s, re.UNICODE):
+                    raise Error("type %s: bad value %r" % (name, x.s))
+                vals.append(x.s)
+            if not vals:
+                raise Error("type %s: no values" % name)
+            ctx.types[name] = {"values": vals, "negate": negate}
+        elif kind == "extend_type":
+            if name not in ctx.types:
+                raise Error("extend type: unknown type %r" % name)
+            if isinstance(val, Block):
+                raise Error("extend type %s: no values" % name)
+            td = ctx.types[name]
+            for x in (val if isinstance(val, list) else [val]):
+                if isinstance(x, Text) or not isinstance(x, Bare) or x.s == "~":
+                    raise Error("extend type %s: expected bare values" % name)
+                if not re.fullmatch(r"\S+", x.s, re.UNICODE):
+                    raise Error("extend type %s: bad value %r" % (name, x.s))
+                if x.s not in td["values"]:
+                    td["values"].append(x.s)
+    return ctx.types
+
+
 def collect_game_defs(root):
     funcs = set()
     vars_ = set()
@@ -166,6 +207,7 @@ def adapter_callee(text, plist):
 
 def prescan(root, ctx):
     ctx.fns = set()
+    collect_types(root, ctx)
     ids = collect_ids(root)
     ctx.ids = set(ids)
     ctx.extra_events = {}
@@ -189,7 +231,7 @@ def prescan(root, ctx):
     fn_names = set()
     for key, val in root.items:
         if classify(key)[0] == "fn":
-            name, plist, ret, variadic = parse_fn_sig(key)
+            name, plist, ret, variadic = parse_fn_sig(key, set(ctx.types))
             if name in ctx.fn_sigs:
                 raise Error("duplicate fn: " + name)
             ctx.fn_sigs[name] = (plist, ret, variadic)
@@ -228,6 +270,8 @@ def prescan(root, ctx):
                     ctx.global_types[k] = "bool"
                 elif isinstance(v, Text):
                     ctx.global_types[k] = "str"
+                elif isinstance(v, Nil):
+                    ctx.global_types[k] = "nil"
                 else:
                     ctx.global_types[k] = "any"
     ctx.vars = game_vars | const_names

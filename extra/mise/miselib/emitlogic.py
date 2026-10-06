@@ -1,5 +1,66 @@
 from .common import *
+from .decl import type_ok
 from .expr import transpile_exprlist, transpile_stmt, transpile_for
+
+
+def split_and(text):
+    parts, cur, depth, quote = [], [], 0, None
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if quote:
+            cur.append(c)
+            if c == quote:
+                quote = None
+            i += 1
+            continue
+        if c in "\"'":
+            quote = c
+            cur.append(c)
+            i += 1
+            continue
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        if depth == 0 and text.startswith(" and ", i):
+            parts.append("".join(cur).strip())
+            cur = []
+            i += 5
+            continue
+        cur.append(c)
+        i += 1
+    parts.append("".join(cur).strip())
+    return [p for p in parts if p]
+
+
+def cond_narrow(cond, env, negate=False):
+    c = cond.strip()
+    forms = ((r"([A-Za-z_]\w*)", False),
+             (r"([A-Za-z_]\w*)\s*~=\s*nil", False),
+             (r"([A-Za-z_]\w*)\s*==\s*nil", True),
+             (r"not\s+([A-Za-z_]\w*)", True))
+    for pat, want_nil in forms:
+        m = re.fullmatch(pat, c, re.UNICODE)
+        if not m:
+            continue
+        if negate:
+            want_nil = not want_nil
+        t = env.get(m.group(1))
+        if not t or not t.endswith("?"):
+            return {}
+        return {m.group(1): "nil" if want_nil else t[:-1]}
+    return {}
+
+
+def transpile_cond(cond, env, where, ctx):
+    codes = []
+    eenv = dict(env)
+    for part in split_and(cond):
+        code, _ = transpile_exprlist(part, eenv, where, None, ctx=ctx)
+        codes.append(code)
+        eenv.update(cond_narrow(part, eenv))
+    return " and ".join(codes), eenv
 
 
 def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
@@ -20,7 +81,7 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
                     raise LintError("%s: %r is an object name; return it "
                                     "without quotes" % (where,
                                     m.group(1) or m.group(2)))
-            if ret and ret != "any" and rtype not in ("any", ret):
+            if ret and ret != "any" and not type_ok(ctx, rtype, ret):
                 c = ("fn %s" % ret_name) if ret_name else "logic"
                 raise LintError("%s: return type is %s, expected %s"
                                 % (c, rtype, ret))
@@ -38,14 +99,17 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
         elif kind == "if":
             branches, else_body = st[1], st[2]
             for idx, (cond, body) in enumerate(branches):
-                code, _ = transpile_exprlist(cond, env, where, None, ctx=ctx)
+                code, eenv = transpile_cond(cond, env, where, ctx)
                 out.append("%s%s %s then" % (
                     indent, "if" if idx == 0 else "elseif", code))
-                out.extend(emit_logic(body, indent + IND, dict(env), ret,
+                out.extend(emit_logic(body, indent + IND, eenv, ret,
                                       ret_name, ctx=ctx))
             if else_body is not None:
+                eenv = dict(env)
+                if len(branches) == 1:
+                    eenv.update(cond_narrow(branches[0][0], env, negate=True))
                 out.append(indent + "else")
-                out.extend(emit_logic(else_body, indent + IND, dict(env),
+                out.extend(emit_logic(else_body, indent + IND, eenv,
                                       ret, ret_name, ctx=ctx))
             out.append(indent + "end")
     return out

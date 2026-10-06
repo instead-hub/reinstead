@@ -25,7 +25,8 @@ key       ::= <текст до ':' нулевого уровня>         (* в�
 (* ---------- файл ---------- *)
 file      ::= { top }
 top       ::= meta | lang | fmt | include | require | events
-            | vars | setup | patch | fn | class | verb | extend | talk
+            | vars | setup | patch | fn | class | verb | extend | custom_type
+            | talk
             | lua_section | decl | NEWLINE
 
 meta      ::= ("name" | "version" | "author" | "info") ":" BARE
@@ -48,7 +49,9 @@ kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
 param     ::= IDENT [ ":" type ] | "..."
-type      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
+type      ::= base [ "?" ]
+base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "nil" | IDENT
+(* IDENT — перечисление из type; "?" — optional: T или nil *)
 (* key события — EventName в движковом регистре (Walk, Enter, SwitchOn, ...);
    Any/Default — тоже события; before/after/post — префикс: "after Put",
    "before Turn, Tune". Спец-ключи: with/inside (вложенные
@@ -66,6 +69,12 @@ verb      ::= "verb" CLASS ":" block
 extend    ::= "extend" "#" IDENT ":" block
 (* поля extend: words, patterns, prio, hint;
    words: -> VerbExtendWord, только patterns: -> VerbExtend *)
+
+custom_type ::= ("type" IDENT | "extend" "type" IDENT) ":"
+                (name_list | list)
+(* значения — голые имена без пробелов; кавычки запрещены; пустой type —
+   ошибка; extend type с неизвестным именем — ошибка; ведущий элемент "~"
+   в type включает отрицания (~X проверяется как X) *)
 
 talk        ::= "talk" NAME ":" NEWLINE INDENT { talk_item } DEDENT
 talk_item   ::= "intro" ":" value

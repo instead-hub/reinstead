@@ -2,6 +2,7 @@ import re
 
 from . import state as S
 from .common import *
+from .decl import type_ok, type_value_error
 
 def lex_lua(text):
     toks = []
@@ -157,7 +158,7 @@ class ExprEmit:
             self.err(str(e))
 
     def check(self, t, exp, code):
-        if exp in (None, "any") or t in ("any", exp):
+        if type_ok(self.ctx, t, exp):
             return
         self.err("expected %s, got %s: %s" % (exp, t, code))
 
@@ -178,6 +179,11 @@ class ExprEmit:
         if exp == "event":
             if val not in self.ctx.event_names:
                 self.err("unknown event %r" % val)
+            return tok
+        if exp in self.ctx.types:
+            msg = type_value_error(self.ctx, exp, val)
+            if msg:
+                self.err(msg)
             return tok
         if exp == "num":
             self.err("expected num, got str")
@@ -231,12 +237,17 @@ class ExprEmit:
             if self.expected == "event":
                 self.err("event names are bare, not quoted (%r)"
                          % self.strval(val))
+            if self.expected in self.ctx.types:
+                msg = type_value_error(self.ctx, self.expected,
+                                       self.strval(val))
+                if msg:
+                    self.err(msg)
             return val, "str", "lit", self.strval(val)
         if kind == "op" and val == "...":
             self.err("... is not allowed in logic; use |lua for varargs")
         if kind == "name":
             if val in ("nil", "true", "false"):
-                return val, "bool" if val != "nil" else "any", "lit", None
+                return val, ("bool" if val != "nil" else "nil"), "lit", None
             if val in S.KEYWORDS:
                 if val == "function":
                     self.err("anonymous functions are not allowed (use |lua)")
@@ -255,6 +266,12 @@ class ExprEmit:
                 return "'%s'" % val, "event", "lit", val
             if self.expected == "event":
                 self.err("unknown event %r" % val)
+            if (self.expected in self.ctx.types
+                    and re.fullmatch(r"~?[A-Za-z_][\w-]*", val)):
+                msg = type_value_error(self.ctx, self.expected, val)
+                if msg:
+                    self.err(msg)
+                return lua_str(val), "str", "lit", val
             self.err("unknown name %r" % val)
         if kind == "op" and val == "(":
             self.expected = None
@@ -420,6 +437,11 @@ class ExprEmit:
                     pt = plist[1][1]
                     if pt == "str":
                         arg, at = lua_str(nm), "str"
+                    elif pt in self.ctx.types:
+                        msg = type_value_error(self.ctx, pt, nm)
+                        if msg:
+                            self.err(msg)
+                        arg, at = lua_str(nm), "str"
                     elif pt == "event" and nm in self.ctx.event_names:
                         arg, at = "'%s'" % nm, "event"
                     elif nm in self.env:
@@ -463,7 +485,7 @@ class ExprEmit:
                     c, t, _k2, _v2 = self.expr()
                 else:
                     c, t, _k2, _v2 = self.unary()
-                    if exp not in (None, "any") and t not in ("any", exp):
+                    if not type_ok(self.ctx, t, exp):
                         self.i = save
                         self.expected = exp
                         c, t, _k2, _v2 = self.expr()
@@ -533,7 +555,7 @@ def no_paren_call(text, env, where, ctx):
         raise
     check_arity(name, plist, variadic, len(types))
     for (pn, pt), t in zip(plist, types):
-        if pt != "any" and t not in ("any", pt):
+        if not type_ok(ctx, t, pt):
             raise LintError("fn %s: argument %s expects %s, got %s"
                             % (name, pn, pt, t))
     return fn_call(ctx, name, [code]), [ret]
