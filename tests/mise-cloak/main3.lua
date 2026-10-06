@@ -46,7 +46,7 @@ game.dsc = [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-д
 function start(load)
   move(me(), _'foyer')
   move(_'cloak', me())
-  _'cloak':attr('worn')
+  _'cloak':attr("worn")
 end
 function init()
 end
@@ -161,7 +161,7 @@ obj {
     end
   end;
   after_Take = function(s, w, wh)
-    _'bar':attr('~light')
+    _'bar':attr("~light")
     return false
   end;
   after_PutOn = function(s, w, wh)
@@ -172,13 +172,13 @@ obj {
   end;
 }:attr 'clothing'
 
-cutscene {
+gameover {
   nam = "badend";
   title = "Вы проиграли";
   dsc = false;
 }
 
-cutscene {
+gameover {
   nam = "goodend";
   title = "Вы выиграли";
   dsc = function(s)

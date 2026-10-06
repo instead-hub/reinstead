@@ -23,7 +23,7 @@ setup:
   start: |
     move(player, foyer)
     move(cloak, player)
-    cloak:attr('worn')
+    cloak:attr worn
 
 room foyer:
   words: фойе
@@ -115,18 +115,18 @@ obj cloak:
         say Не самое подходящее место для того, чтобы оставлять здесь свою одежду.
         stop
     after Take: |
-      bar:attr('~light')
+      bar:attr ~light
       pass
     after PutOn: |
       if w ~= hook:
         pass
       say Ты повесил плащ на крючок.
 
-story badend:
+ending badend:
   title: Вы проиграли
   dsc: false
 
-story goodend:
+ending goodend:
   title: Вы выиграли
   dsc: |
     say('Ваш счет: ', score)
