@@ -81,7 +81,7 @@ Arrow = Class {
 }
 
 NPC = Class {
-  ["life_Answer,Ask,AskTo,AskFor,Tell"] = function(s, w)
+  ["life_Answer,Ask,AskTo,AskFor,Tell"] = function(s)
     p('Введите просто "говорить с ', s:noun('тв'), '".')
   end;
 }:attr 'animate'
@@ -424,7 +424,7 @@ NPC {
     move(w, s)
     p('"Спасибо, пап".')
   end;
-  life_Talk = function(s, w)
+  life_Talk = function(s)
     if here() == _'marketplace' then
       p('"Стой спокойно, сынок, Господь нам поможет".')
     else
@@ -494,7 +494,7 @@ obj {
 }
 
 Verb { '#FireAt', "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить", "в {noun}/вн,scene : FireAt", "~ {noun}/вн,scene : FireAt", "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt", "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse", "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse" }
-mp.FireAt = function(w, wh)
+mp.FireAt = function(s, w, wh)
   if not w then
     p("Ты не хочешь просто стрелять куда зря.")
     return
@@ -506,7 +506,7 @@ mp.FireAt = function(w, wh)
 end
 
 Verb { '#Salute', "поклони/ться,честь", "{noun}/дт,scene : Salute" }
-mp.Salute = function(w)
+mp.Salute = function(s, w, wh)
   if w:has("animate") then
     if w:hint('мн') then
       p(w:Noun(), ' приветствуют тебя.')
@@ -525,7 +525,7 @@ end
 Verb { '#Salute2', "мах/ать,помах/ать,помаш/и,маш/и", "{noun}/дт,scene : Salute" }
 
 Verb { '#Untie', "развяз/ать,отвяз/ать,освобод/ить", "{noun}/вн,scene : Untie" }
-mp.Untie = function(w)
+mp.Untie = function(s, w, wh)
   p("Ты не можешь развязать это.")
 end
 

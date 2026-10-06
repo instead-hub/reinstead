@@ -44,7 +44,7 @@ class Arrow:
 
 class NPC:
   attrs: animate
-  life_Answer,Ask,AskTo,AskFor,Tell(s, w): |
+  life_Answer,Ask,AskTo,AskFor,Tell: |
     say('Введите просто "говорить с ', s:noun 'тв', '".')
 
 setup:
@@ -319,7 +319,7 @@ NPC son:
     score_up()
     w:move s
     say "Спасибо, пап".
-  life_Talk(s, w): |
+  life_Talk: |
     if here == marketplace:
       say "Стой спокойно, сынок, Господь нам поможет".
     else:
@@ -378,7 +378,7 @@ verb FireAt:
     - ~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt
     - ~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse
     - ~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse
-  on(w, wh): |
+  on: |
     if not w:
       say Ты не хочешь просто стрелять куда зря.
       stop
@@ -390,7 +390,7 @@ verb Salute:
   words: поклони/ться,честь
   patterns:
     - {noun}/дт,scene : Salute
-  on(w): |
+  on: |
     if w:has animate:
       if w:hint 'мн':
         say(w:Noun(), ' приветствуют тебя.')
@@ -411,7 +411,7 @@ verb Untie:
   words: развяз/ать,отвяз/ать,освобод/ить
   patterns:
     - {noun}/вн,scene : Untie
-  on(w): |
+  on: |
     say Ты не можешь развязать это.
 
 ending theend:
