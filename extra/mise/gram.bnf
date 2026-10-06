@@ -24,7 +24,7 @@ key       ::= <текст до ':' нулевого уровня>         (* в�
 
 (* ---------- файл ---------- *)
 file      ::= { top }
-top       ::= meta | lang | fmt | include | require | events
+top       ::= meta | lang | fmt | include | require | evdecl
             | vars | setup | patch | fn | class | verb | extend | custom_type
             | talk
             | lua_section | decl | NEWLINE
@@ -34,7 +34,9 @@ lang      ::= "lang" ":" ("ru" | "en")
 fmt       ::= "fmt" ":" name_list
 include   ::= "include" ":" name_list
 require   ::= "require" ":" name_list
-events    ::= "events" ":" name_list
+evdecl    ::= "event" EVENT ":" block
+(* поля evdecl: on (mp.Event — действие), before/after (mp.before_/after_Event);
+   имя регистрируется автоматически; EVENT — CamelCase *)
 name_list ::= NAME { "," NAME }
 
 vars      ::= ("const" | "global") ":" block
@@ -63,8 +65,8 @@ fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
 class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
 
 verb      ::= "verb" CLASS ":" block
-(* поля verb: tag, event, words, patterns (список "- ..."), prio, hint,
-   on/before/after *)
+(* поля verb: tag, words, patterns (список "- ..."), prio, hint;
+   действия/обработчики — только в evdecl ("event ...") *)
 
 extend    ::= "extend" "#" IDENT ":" block
 (* поля extend: words, patterns, prio, hint;

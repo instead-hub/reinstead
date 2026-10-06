@@ -273,6 +273,22 @@ class Emitter:
         lines.append(tail)
         return "\n".join(lines)
 
+    def event(self, name, block):
+        if not isinstance(block, Block):
+            raise Error("event %s must be a block" % name)
+        lines = []
+        for key, val in block.items:
+            base, params = parse_key(key)
+            if base not in ("on", "before", "after"):
+                raise Error("event %s: unknown field %r" % (name, key))
+            if not isinstance(val, (Lua, Logic, Text, Bare)):
+                raise Error("event %s.%s must be logic or lua" % (name, key))
+            mpname = {"on": "mp.", "before": "mp.before_",
+                      "after": "mp.after_"}[base] + name
+            prm = params or "s, w, wh"
+            lines.append("%s = %s" % (mpname, self.handler(val, prm, "")))
+        return "\n".join(lines)
+
     def verb(self, block, ident, base):
         fields = []
         tag = block.get("tag")
@@ -290,6 +306,11 @@ class Emitter:
                 pats = [pats]
             for p in pats:
                 fields.append(self.value(p))
+        for key, val in block.items:
+            base_key, _params = parse_key(key)
+            if base_key in ("on", "before", "after"):
+                raise Error("verb %s: %s is declared in 'event %s:' now"
+                            % (ident or "?", base_key, ident or "?"))
         extra = []
         if block.get("prio") is not None:
             extra.append("prio = %s" % self.value(block.get("prio")))
@@ -297,19 +318,6 @@ class Emitter:
             extra.append("hint = %s" % self.body(block.get("hint"), "hint"))
         lines = ["%sVerb { %s%s }" % (base, ", ".join(fields),
                                       (", " + ", ".join(extra)) if extra else "")]
-        ev_field = block.get("event")
-        ev = ev_field.s if isinstance(ev_field, Bare) else (ident or "?")
-        for key, val in block.items:
-            base_key, params = parse_key(key)
-            if base_key not in ("on", "before", "after"):
-                continue
-            if not isinstance(val, (Lua, Logic)):
-                continue
-            mpname = {"on": "mp.", "before": "mp.before_",
-                      "after": "mp.after_"}[base_key] + ev
-            prm = params or "s, w, wh"
-            lines.append("%s%s = %s"
-                         % (base, mpname, self.handler(val, prm, base)))
         return "\n".join(lines)
 
     def verb_extend(self, block, ident, base):

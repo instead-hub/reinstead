@@ -302,9 +302,8 @@ class ExprEmit:
                 self.next()
                 self.next()
                 return self.postfix("_'#%s'" % nv, "obj", "objref", None)
-            self.next()
-            c, _t, _k2, _v2 = self.unary()
-            return "#%s" % c, "num", "expr", None
+            self.err("# is only for declared #tags; the DSL has no tables "
+                     "(wrap the length in a fn)")
         return self.postfix(*self.primary())
 
     def or_expr(self):

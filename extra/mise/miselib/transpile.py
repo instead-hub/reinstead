@@ -31,11 +31,6 @@ def transpile(src, src_dir=""):
             vals = val if isinstance(val, list) else [val]
             for v in vals:
                 reqs.append(v.s if hasattr(v, "s") else str(v))
-        elif kind == "events":
-            vals = val if isinstance(val, list) else [val]
-            for v in vals:
-                name = v.s if hasattr(v, "s") else str(v)
-                ctx.extra_events[name] = name
         elif kind == "lua":
             body.append(val.s)
         elif kind == "class":
@@ -67,6 +62,10 @@ def transpile(src, src_dir=""):
             body.append("\n".join(em.const(val)))
         elif kind == "global":
             body.append("\n".join(em.glob(val)))
+        elif kind == "event_decl":
+            eb = em.event(info, val)
+            if eb:
+                body.append(eb)
         elif kind in ("decl", "verb", "extend", "talk"):
             body.append(em.decl(key, val, ""))
         else:

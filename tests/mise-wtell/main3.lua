@@ -493,7 +493,6 @@ obj {
   end;
 }
 
-Verb { '#FireAt', "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить", "в {noun}/вн,scene : FireAt", "~ {noun}/вн,scene : FireAt", "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt", "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse", "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse" }
 mp.FireAt = function(s, w, wh)
   if not w then
     p("Ты не хочешь просто стрелять куда зря.")
@@ -505,7 +504,8 @@ mp.FireAt = function(s, w, wh)
   return false
 end
 
-Verb { '#Salute', "поклони/ться,честь", "{noun}/дт,scene : Salute" }
+Verb { '#FireAt', "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить", "в {noun}/вн,scene : FireAt", "~ {noun}/вн,scene : FireAt", "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt", "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse", "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse" }
+
 mp.Salute = function(s, w, wh)
   if w:has("animate") then
     if w:hint('мн') then
@@ -522,12 +522,15 @@ mp.Salute = function(s, w, wh)
   end
 end
 
+Verb { '#Salute', "поклони/ться,честь", "{noun}/дт,scene : Salute" }
+
 Verb { '#Salute2', "мах/ать,помах/ать,помаш/и,маш/и", "{noun}/дт,scene : Salute" }
 
-Verb { '#Untie', "развяз/ать,отвяз/ать,освобод/ить", "{noun}/вн,scene : Untie" }
 mp.Untie = function(s, w, wh)
   p("Ты не можешь развязать это.")
 end
+
+Verb { '#Untie', "развяз/ать,отвяз/ать,освобод/ить", "{noun}/вн,scene : Untie" }
 
 gameover {
   nam = "theend";

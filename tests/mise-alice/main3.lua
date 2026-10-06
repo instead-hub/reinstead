@@ -25,6 +25,10 @@ local function fn_tiny()
   return instead.tiny
 end
 
+local function fn_inv_size()
+  return #inv()
+end
+
 Path = Class {
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(std.ref(s.walk_to)) then return end
@@ -45,7 +49,7 @@ const 'CHAIR_STATE' (3)
 _'game'.hint_verbs = { "#Exam", "#Walk", "#Push", "#Take", "#Drop", "#Search", "#Give", "#Touch" }
 
 game.dsc = [[^Маленькая интерактивная Информ-обучалка^
-	 (написанная Гаретом Ризом и переведенная Денисом Гаевым)^
+   (написанная Гаретом Ризом и переведенная Денисом Гаевым)^
 Перенесена на МЕТАПАРСЕР3 Петром Косых
 ^^Хотя за окном стоит холодный зимний день,
 за зеркалом над каминной полкой почему-то еще продолжается лето!^
@@ -58,27 +62,33 @@ function init()
   DaemonStart(_'black_kitten')
 end
 
-function mp:Reflect(w, wh)
-  if not (wh ^ 'mirror') then
-    p "Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!";
+mp.Reflect = function(s, w, wh)
+  if wh ~= _'mirror' then
+    p("Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!")
     return
   end
-
-  if (w ^ 'hearth') or (w ^ 'mirror') or
-    (not (pl:where() ^ 'mantelpiece') and not (pl:where() ^ 'armchair')) then
-    p "Но Алисе вряд ли удастся поднести это к зеркалу!";
+  if w == _'hearth' or w == _'mirror' or (where(me()) ~= _'mantelpiece' and where(me()) ~= _'armchair') then
+    p("Но Алисе вряд ли удастся поднести это к зеркалу!")
     return
   end
-
-  p "Отражение ";
-  if w == pl then  p "Алисы"
-  else w:noun 'рд' end
-  p " в зеркале выглядит ";
-  if pl:where() ^ 'mantelpiece' then p "слишком уж расплывчатым и размытым." return end
-  p "точь-в-точь как {#word/настоящий,#first}"
-  if w == pl then p "Алиса"
-  else p (w:noun()) end;
-  p " -- только левая и правая сторона поменялись местами!";
+  p('Отражение ')
+  if w == me() then
+    p("Алисы")
+  else
+    p(w:noun('рд'))
+  end
+  p(' в зеркале выглядит ')
+  if where(me()) == _'mantelpiece' then
+    p("слишком уж расплывчатым и размытым.")
+    return
+  end
+  p('точь-в-точь как {#word/настоящий,#first}')
+  if w == me() then
+    p("Алиса")
+  else
+    p(w:noun())
+  end
+  p('-- только левая и правая сторона поменялись местами!')
 end
 
 room {
@@ -284,7 +294,7 @@ obj {
       p("Отсюда невозможно дотянуться до каминной полки!")
       return
     end
-    if #inv() > 0 then
+    if fn_inv_size() > 0 then
       p("Для этого руки должны быть свободны!")
       return
     end
@@ -608,10 +618,11 @@ Kitten {
 
 VerbExtend { "#Exam", "{noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse" }
 
-Verb { '#Untangle', "размот/ать,распут/ать", "{noun}/вн : Untangle" }
 mp.Untangle = function(s, w, wh)
   p("Что, распутать ЭТО?!")
 end
+
+Verb { '#Untangle', "размот/ать,распут/ать", "{noun}/вн : Untangle" }
 
 Verb { '#Touch2', "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/", "{noun}/вн : Touch" }
 

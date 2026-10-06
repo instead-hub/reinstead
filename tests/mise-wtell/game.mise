@@ -370,14 +370,7 @@ obj apple:
       stop
     pass
 
-verb FireAt:
-  words: стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить
-  patterns:
-    - в {noun}/вн,scene : FireAt
-    - ~ {noun}/вн,scene : FireAt
-    - ~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt
-    - ~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse
-    - ~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse
+event FireAt:
   on: |
     if not w:
       say Ты не хочешь просто стрелять куда зря.
@@ -386,10 +379,16 @@ verb FireAt:
       say Немыслимо!
     pass
 
-verb Salute:
-  words: поклони/ться,честь
+verb FireAt:
+  words: стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить
   patterns:
-    - {noun}/дт,scene : Salute
+    - в {noun}/вн,scene : FireAt
+    - ~ {noun}/вн,scene : FireAt
+    - ~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt
+    - ~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse
+    - ~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse
+
+event Salute:
   on: |
     if w:has animate:
       if w:hint 'мн':
@@ -402,17 +401,24 @@ verb Salute:
       else:
         say(w:Noun(), ' не замечает этого.')
 
+verb Salute:
+  words: поклони/ться,честь
+  patterns:
+    - {noun}/дт,scene : Salute
+
 verb Salute2:
   words: мах/ать,помах/ать,помаш/и,маш/и
   patterns:
     - {noun}/дт,scene : Salute
 
+event Untie:
+  on: |
+    say Ты не можешь развязать это.
+
 verb Untie:
   words: развяз/ать,отвяз/ать,освобод/ить
   patterns:
     - {noun}/вн,scene : Untie
-  on: |
-    say Ты не можешь развязать это.
 
 ending theend:
   title: Конец

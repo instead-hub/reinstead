@@ -1,7 +1,6 @@
 name: СКВОЗЬ ЗЕРКАЛО
 lang: ru
 include: stdlib
-events: Reflect
 
 const:
   HELD_STATE: 0
@@ -12,9 +11,12 @@ const:
 patch game:
   hint_verbs: { "#Exam", "#Walk", "#Push", "#Take", "#Drop", "#Search", "#Give", "#Touch" }
 
+fn inv_size() -> num: |lua
+  return #inv()
+
 setup:
   dsc: [[^Маленькая интерактивная Информ-обучалка^
-	 (написанная Гаретом Ризом и переведенная Денисом Гаевым)^
+   (написанная Гаретом Ризом и переведенная Денисом Гаевым)^
 Перенесена на МЕТАПАРСЕР3 Петром Косых
 ^^Хотя за окном стоит холодный зимний день,
 за зеркалом над каминной полкой почему-то еще продолжается лето!^
@@ -27,29 +29,29 @@ setup:
     daemonStart white_kitten
     daemonStart black_kitten
 
-lua: |lua
-  function mp:Reflect(w, wh)
-    if not (wh ^ 'mirror') then
-      p "Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!";
-      return
-    end
-
-    if (w ^ 'hearth') or (w ^ 'mirror') or
-      (not (pl:where() ^ 'mantelpiece') and not (pl:where() ^ 'armchair')) then
-      p "Но Алисе вряд ли удастся поднести это к зеркалу!";
-      return
-    end
-
-    p "Отражение ";
-    if w == pl then  p "Алисы"
-    else w:noun 'рд' end
-    p " в зеркале выглядит ";
-    if pl:where() ^ 'mantelpiece' then p "слишком уж расплывчатым и размытым." return end
-    p "точь-в-точь как {#word/настоящий,#first}"
-    if w == pl then p "Алиса"
-    else p (w:noun()) end;
-    p " -- только левая и правая сторона поменялись местами!";
-  end
+event Reflect:
+  on: |
+    if wh ~= mirror:
+      say Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!
+      stop
+    if w == hearth or w == mirror or (where(player) ~= mantelpiece and where(player) ~= armchair):
+      say Но Алисе вряд ли удастся поднести это к зеркалу!
+      stop
+    say 'Отражение '
+    if w == player:
+      say Алисы
+    else:
+      say(w:noun 'рд')
+    say ' в зеркале выглядит '
+    if where(player) == mantelpiece:
+      say слишком уж расплывчатым и размытым.
+      stop
+    say 'точь-в-точь как {#word/настоящий,#first}'
+    if w == player:
+      say Алиса
+    else:
+      say(w:noun())
+    say '-- только левая и правая сторона поменялись местами!'
 
 room Drawing_Room:
   words: гостиная|снег|снежинки
@@ -213,7 +215,7 @@ obj mantelpiece:
     if not armchair.moved:
       say Отсюда невозможно дотянуться до каминной полки!
       stop
-    if #inv() > 0:
+    if inv_size() > 0:
       say Для этого руки должны быть свободны!
       stop
     player:move mantelpiece
@@ -481,12 +483,14 @@ extend #Exam:
     - ~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect
     - ~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse
 
+event Untangle:
+  on: |
+    say Что, распутать ЭТО?!
+
 verb Untangle:
   words: размот/ать,распут/ать
   patterns:
     - {noun}/вн : Untangle
-  on: |
-    say Что, распутать ЭТО?!
 
 verb Touch2:
   words: ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/

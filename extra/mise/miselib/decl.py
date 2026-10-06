@@ -25,7 +25,7 @@ SKIP_KEYS = ("lang", "fmt", "include")
 def classify(key):
     """Return (kind, info) for a top-level key.
 
-    kind: meta | skip | require | events | lua | setup | const | global |
+    kind: meta | skip | require | lua | setup | const | global |
     class | fn | patch | verb | extend | talk | decl | unknown.
     info: class -> (name, parent), decl -> (kind, ident), others -> ident.
     """
@@ -35,7 +35,7 @@ def classify(key):
         return "skip", None
     if "'" in key or '"' in key:
         raise Error("quotes are not allowed in declarations: %s" % key)
-    if key in ("require", "events", "lua", "setup", "const", "global"):
+    if key in ("require", "lua", "setup", "const", "global"):
         return key, None
     m = re.match(r"^class\s+([A-Z]\w*)\s*(?:\(([^)]*)\))?$", key)
     if m:
@@ -47,6 +47,9 @@ def classify(key):
         if not m:
             raise Error("patch needs a bare target: %s" % key)
         return "patch", m.group(1)
+    m = re.match(r"^event\s+([A-Z]\w*)$", key)
+    if m:
+        return "event_decl", m.group(1)
     m = re.match(r"^type\s+([a-z_]\w*)$", key)
     if m:
         return "type", m.group(1)

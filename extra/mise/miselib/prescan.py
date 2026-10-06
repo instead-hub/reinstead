@@ -223,18 +223,9 @@ def prescan(root, ctx):
     ctx.extra_events = {}
     for key, val in root.items:
         kind, ident = classify(key)
-        if kind == "verb" and ident and isinstance(val, Block):
-            tag = val.get("tag")
-            if not (isinstance(tag, Bool) and tag.s == "false"):
+        if kind == "event_decl":
+            if isinstance(val, Block):
                 ctx.extra_events[ident] = ident
-            event = val.get("event")
-            if isinstance(event, Bare):
-                ctx.extra_events[event.s] = event.s
-        elif key == "events":
-            vals = val if isinstance(val, list) else [val]
-            for v in vals:
-                name = v.s if hasattr(v, "s") else str(v)
-                ctx.extra_events[name] = name
     ctx.event_names = set(EVENTS) | set(ctx.extra_events.values())
     game_funcs, game_vars = collect_game_defs(root)
     ctx.fn_sigs = {}
