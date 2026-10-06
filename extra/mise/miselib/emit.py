@@ -157,33 +157,46 @@ class Emitter:
 
     def _obj(self, block, ident, base, ctor, preset, parent=None):
         fi = base + IND
-        if parent:
-            lines = ["%s%s({" % (base, ctor)]
-        else:
-            lines = ["%s%s {" % (base, ctor)]
+        lines = ["%s%s({" % (base, ctor) if parent
+                 else "%s%s {" % (base, ctor)]
+        self._obj_words(block, fi, lines)
+        self._obj_nam(block, ident, fi, lines)
+        attrs = self._obj_attrs(block, ident, preset)
+        texts = block.all("text")
+        self._obj_fields(block, ident, fi, lines, texts)
+        self._obj_texts(texts, fi, lines)
+        self._obj_nested(block, fi, lines)
+        lines.append(self._obj_tail(block, ident, base, parent, attrs))
+        return "\n".join(lines)
+
+    def _obj_words(self, block, fi, lines):
         words = block.get("words")
-        if words is not None:
-            CURRENT_LINE[0] = block.line("words") or block.line("word")
-            if isinstance(words, Text):
-                lines.append('%s-"%%s";' % fi % words.s)
-            elif isinstance(words, Raw):
-                lines.append("%s%s;" % (fi, words.s))
-            elif isinstance(words, list):
-                items = []
-                for it in words:
-                    if not isinstance(it, Text):
-                        raise Error("words list items must be strings")
-                    items.append(it.s.strip())
-                lines.append('%s-"%%s";' % fi % "|".join(items))
-            else:
-                raise Error("words must be a quoted string or list")
-        nam = block.get("nam")
-        if nam is not None:
+        if words is None:
+            return
+        CURRENT_LINE[0] = block.line("words") or block.line("word")
+        if isinstance(words, Text):
+            lines.append('%s-"%%s";' % fi % words.s)
+        elif isinstance(words, Raw):
+            lines.append("%s%s;" % (fi, words.s))
+        elif isinstance(words, list):
+            items = []
+            for it in words:
+                if not isinstance(it, Text):
+                    raise Error("words list items must be strings")
+                items.append(it.s.strip())
+            lines.append('%s-"%%s";' % fi % "|".join(items))
+        else:
+            raise Error("words must be a quoted string or list")
+
+    def _obj_nam(self, block, ident, fi, lines):
+        if block.get("nam") is not None:
             CURRENT_LINE[0] = block.line("nam")
             raise Error("nam: is not supported; the declaration name is the "
                         "object name")
         if ident:
             lines.append("%snam = %s;" % (fi, lua_str(ident)))
+
+    def _obj_attrs(self, block, ident, preset):
         attrs = list(preset)
         a = block.get("attrs")
         if a is not None:
@@ -205,9 +218,9 @@ class Emitter:
                 msg = type_value_error(self.ctx, "attr", an)
                 if msg:
                     raise Error("%s.attrs: %s" % (ident or "?", msg))
-        obj_items = []
-        nested = []
-        texts = block.all("text")
+        return attrs
+
+    def _obj_fields(self, block, ident, fi, lines, texts):
         for _i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(_i)
             if key in ("words", "inside", "with", "attrs",
@@ -243,11 +256,18 @@ class Emitter:
                 lines.append('%s["%s"] = %s;' % (fi, fbase, rendered))
             else:
                 lines.append("%s%s = %s;" % (fi, fbase, rendered))
-        if len(texts) > 1:
-            lines.append("%stext = {" % fi)
-            for t in texts:
-                lines.append("%s%s%s;" % (fi, IND, self.value(t)))
-            lines.append("%s};" % fi)
+
+    def _obj_texts(self, texts, fi, lines):
+        if len(texts) <= 1:
+            return
+        lines.append("%stext = {" % fi)
+        for t in texts:
+            lines.append("%s%s%s;" % (fi, IND, self.value(t)))
+        lines.append("%s};" % fi)
+
+    def _obj_nested(self, block, fi, lines):
+        obj_items = []
+        nested = []
         for key, val in block.items:
             if key in ("inside", "with"):
                 if isinstance(val, Block):
@@ -275,6 +295,8 @@ class Emitter:
                     lines.append("")
                 lines.extend(b.split("\n"))
             lines.append("%s};" % fi)
+
+    def _obj_tail(self, block, ident, base, parent, attrs):
         if parent:
             tail = "%s}, %s)" % (base, parent)
         else:
@@ -290,8 +312,7 @@ class Emitter:
             tail += ":dict %s" % self.value(d)
         if block.get("disabled"):
             tail += ":disable()"
-        lines.append(tail)
-        return "\n".join(lines)
+        return tail
 
     def event(self, name, block):
         if not isinstance(block, Block):
@@ -344,7 +365,7 @@ class Emitter:
         elif not (isinstance(tag, Bool) and tag.s == "false"):
             fields.append(self.value(tag))
         fields += self.verb_fields(block, required=True)
-        for key, val in block.items:
+        for key, _val in block.items:
             base_key, _params = parse_key(key)
             if base_key in ("on", "before", "after"):
                 raise Error("verb %s: %s is declared in 'event %s:' now"

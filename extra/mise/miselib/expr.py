@@ -181,7 +181,7 @@ class ExprEmit:
         return False
 
     def expect(self, val):
-        k, v = self.next()
+        _, v = self.next()
         if v != val:
             self.err("expected %r, got %r" % (val, v))
 
@@ -458,132 +458,139 @@ class ExprEmit:
             if not (k == "str" or (k == "op" and v == "(")):
                 node = self.autocall(node)
             if k == "op" and v == ".":
-                self.next()
-                nk, nv = self.next()
-                if nk != "name":
-                    self.err("expected field name")
-                if node.t == "str":
-                    self.terr("strings are not objects; use a bare name (%r)"
-                              % (node.val,))
-                if node.t == "obj?":
-                    self.check(node.t, "obj", node.code)
-                recv = None
-                if isinstance(node, Ref) and node.obj:
-                    recv = node.name
-                elif (isinstance(node, Ref) and not node.obj
-                      and node.name == "s" and self.env.get("s") == "obj"
-                      and self.ctx.current_owner):
-                    recv = self.ctx.current_owner
-                raw = "%s.%s" % (node.code, nv)
-                info = (self.ctx.fields.get(recv, {}).get(nv)
-                        if recv is not None else None)
-                t = info[0] if info else "any"
-                if info and info[1]:
-                    node = Field("_(%s)" % raw, t, recv=recv, fname=nv,
-                                 ref=True, raw=raw)
-                else:
-                    node = Field(raw, t,
-                                 recv=recv if info else None,
-                                 fname=nv if info else None)
+                node = self.postfix_dot(node)
             elif k == "op" and v == "[":
-                self.next()
-                if node.t == "obj?":
-                    self.check(node.t, "obj", node.code)
-                self.expected = None
-                idx = self.expr()
-                self.expect("]")
-                node = Index("%s[%s]" % (node.code, idx.code), "any")
+                node = self.postfix_index(node)
             elif k == "op" and v == ":":
-                self.next()
-                nk, nv = self.next()
-                if nk != "name":
-                    self.err("expected method name")
-                if nv not in self.ctx.fn_sigs:
-                    self.err("method %r is not a fn (engine methods are "
-                             "not allowed in logic)" % nv)
-                plist, ret, variadic = self.ctx.fn_sigs[nv]
-                if not plist:
-                    self.err("fn %s takes no receiver" % nv)
-                if node.t == "str":
-                    self.err("strings are not objects; use a bare name (%r)"
-                             % (node.val,))
-                self.check(node.t, plist[0][1], node.code)
-                nk, nv2 = self.peek()
-                if (not variadic and len(plist) == 1
-                        and not (nk == "str"
-                                 or (nk == "op" and nv2 == "("))):
-                    node = Call(fn_call(self.ctx, nv, [node.code]), ret)
-                    continue
-                if (not variadic and len(plist) == 2
-                        and self.peek()[0] == "name"
-                        and self.peek()[1] not in S.KEYWORDS
-                        and self.peek()[1] not in ("nil", "true", "false")):
-                    nm = self.next()[1]
-                    pt = plist[1][1]
-                    if pt == "str":
-                        arg = Lit(lua_str(nm), "str", nm)
-                    elif pt in self.ctx.types:
-                        msg = type_value_error(self.ctx, pt, nm)
-                        if msg:
-                            self.terr(msg)
-                        arg = Lit(lua_str(nm), "str", nm)
-                    elif pt == "event" and nm in self.ctx.event_names:
-                        arg = Lit("'%s'" % nm, "event", nm)
-                    else:
-                        arg = self.name_ref(nm, zero_call=True)
-                        if arg is None:
-                            self.err("unknown name %r" % nm)
-                    self.check(arg.t, pt, arg.code)
-                    node = Call(fn_call(self.ctx, nv,
-                                       [node.code, arg.code]), ret)
-                    continue
-                codes, n = self.arglist([pt for _pn, pt in plist[1:]])
-                self.check_arity(nv, plist[1:], variadic, n)
-                node = Call(fn_call(self.ctx, nv, [node.code] + codes), ret)
+                node = self.postfix_method(node)
             elif (isinstance(node, Ref) and not node.obj
                   and ((k == "name" and v not in S.KEYWORDS)
                        or (k == "op" and v in ("#", "-"))
                        or k == "num")):
-                name = node.name
-                exp = None
-                rt = "any"
-                variadic = False
-                if name in self.ctx.fn_sigs:
-                    plist, rt, variadic = self.ctx.fn_sigs[name]
-                    if not plist:
-                        self.err("fn %s takes no arguments" % name)
-                    self.check_arity(name, plist, variadic, 1)
-                    exp = plist[0][1]
-                save = self.i
-                self.expected = exp
-                if exp == "str" or variadic:
-                    arg = self.expr()
-                else:
-                    arg = self.unary()
-                    if not type_ok(self.ctx, arg.t, exp):
-                        self.i = save
-                        self.expected = exp
-                        arg = self.expr()
-                self.expected = None
-                self.check(arg.t, exp, arg.code)
-                node = Call(fn_call(self.ctx, name, [arg.code]), rt)
-            elif (k == "str" or (k == "op" and v == "(")):
-                if isinstance(node, Ref) and not node.obj:
-                    name = node.name
-                    if name in self.ctx.fn_sigs:
-                        plist, rt, variadic = self.ctx.fn_sigs[name]
-                        codes, n = self.arglist([pt for _pn, pt in plist])
-                        self.check_arity(name, plist, variadic, n)
-                        node = Call(fn_call(self.ctx, name, codes), rt)
-                    else:
-                        codes, rt = self.call(name)
-                        node = Call("%s(%s)" % (node.code, ", ".join(codes)),
-                                    rt)
-                else:
-                    self.err("call of field/expression is not allowed in "
-                             "logic (wrap it in fn)")
+                node = self.postfix_bare_call(node)
+            elif k == "str" or (k == "op" and v == "("):
+                node = self.postfix_arg_call(node)
             else:
                 return node
+
+    def postfix_dot(self, node):
+        self.next()
+        nk, nv = self.next()
+        if nk != "name":
+            self.err("expected field name")
+        if node.t == "str":
+            self.terr("strings are not objects; use a bare name (%r)"
+                      % (node.val,))
+        if node.t == "obj?":
+            self.check(node.t, "obj", node.code)
+        recv = None
+        if isinstance(node, Ref) and node.obj:
+            recv = node.name
+        elif (isinstance(node, Ref) and not node.obj
+              and node.name == "s" and self.env.get("s") == "obj"
+              and self.ctx.current_owner):
+            recv = self.ctx.current_owner
+        raw = "%s.%s" % (node.code, nv)
+        info = (self.ctx.fields.get(recv, {}).get(nv)
+                if recv is not None else None)
+        t = info[0] if info else "any"
+        if info and info[1]:
+            return Field("_(%s)" % raw, t, recv=recv, fname=nv,
+                         ref=True, raw=raw)
+        return Field(raw, t, recv=recv if info else None,
+                     fname=nv if info else None)
+
+    def postfix_index(self, node):
+        self.next()
+        if node.t == "obj?":
+            self.check(node.t, "obj", node.code)
+        self.expected = None
+        idx = self.expr()
+        self.expect("]")
+        return Index("%s[%s]" % (node.code, idx.code), "any")
+
+    def postfix_method(self, node):
+        self.next()
+        nk, nv = self.next()
+        if nk != "name":
+            self.err("expected method name")
+        if nv not in self.ctx.fn_sigs:
+            self.err("method %r is not a fn (engine methods are "
+                     "not allowed in logic)" % nv)
+        plist, ret, variadic = self.ctx.fn_sigs[nv]
+        if not plist:
+            self.err("fn %s takes no receiver" % nv)
+        if node.t == "str":
+            self.err("strings are not objects; use a bare name (%r)"
+                     % (node.val,))
+        self.check(node.t, plist[0][1], node.code)
+        nk, nv2 = self.peek()
+        if (not variadic and len(plist) == 1
+                and not (nk == "str"
+                         or (nk == "op" and nv2 == "("))):
+            return Call(fn_call(self.ctx, nv, [node.code]), ret)
+        if (not variadic and len(plist) == 2
+                and self.peek()[0] == "name"
+                and self.peek()[1] not in S.KEYWORDS
+                and self.peek()[1] not in ("nil", "true", "false")):
+            nm = self.next()[1]
+            pt = plist[1][1]
+            if pt == "str":
+                arg = Lit(lua_str(nm), "str", nm)
+            elif pt in self.ctx.types:
+                msg = type_value_error(self.ctx, pt, nm)
+                if msg:
+                    self.terr(msg)
+                arg = Lit(lua_str(nm), "str", nm)
+            elif pt == "event" and nm in self.ctx.event_names:
+                arg = Lit("'%s'" % nm, "event", nm)
+            else:
+                arg = self.name_ref(nm, zero_call=True)
+                if arg is None:
+                    self.err("unknown name %r" % nm)
+            self.check(arg.t, pt, arg.code)
+            return Call(fn_call(self.ctx, nv, [node.code, arg.code]), ret)
+        codes, n = self.arglist([pt for _pn, pt in plist[1:]])
+        self.check_arity(nv, plist[1:], variadic, n)
+        return Call(fn_call(self.ctx, nv, [node.code] + codes), ret)
+
+    def postfix_bare_call(self, node):
+        name = node.name
+        exp = None
+        rt = "any"
+        variadic = False
+        if name in self.ctx.fn_sigs:
+            plist, rt, variadic = self.ctx.fn_sigs[name]
+            if not plist:
+                self.err("fn %s takes no arguments" % name)
+            self.check_arity(name, plist, variadic, 1)
+            exp = plist[0][1]
+        save = self.i
+        self.expected = exp
+        if exp == "str" or variadic:
+            arg = self.expr()
+        else:
+            arg = self.unary()
+            if not type_ok(self.ctx, arg.t, exp):
+                self.i = save
+                self.expected = exp
+                arg = self.expr()
+        self.expected = None
+        self.check(arg.t, exp, arg.code)
+        return Call(fn_call(self.ctx, name, [arg.code]), rt)
+
+    def postfix_arg_call(self, node):
+        if isinstance(node, Ref) and not node.obj:
+            name = node.name
+            if name in self.ctx.fn_sigs:
+                plist, rt, variadic = self.ctx.fn_sigs[name]
+                codes, n = self.arglist([pt for _pn, pt in plist])
+                self.check_arity(name, plist, variadic, n)
+                return Call(fn_call(self.ctx, name, codes), rt)
+            codes, rt = self.call(name)
+            return Call("%s(%s)" % (node.code, ", ".join(codes)), rt)
+        self.err("call of field/expression is not allowed in "
+                 "logic (wrap it in fn)")
 
 def expr_cont(s):
     c = s[0]

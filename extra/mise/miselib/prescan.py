@@ -225,7 +225,7 @@ def collect_game_defs(root):
     vars_ = set()
 
     def walk(block):
-        for key, val in block.items:
+        for _key, val in block.items:
             if isinstance(val, Lua):
                 scan_lua_defs(val.s, funcs, vars_)
             elif isinstance(val, Block):

@@ -28,40 +28,37 @@ class Error(Exception):
             msg = "line %d: %s" % (line, msg)
         super().__init__(msg)
 
-class Text:
-    def __init__(self, s):
+class Val:
+    def __init__(self, s=""):
         self.s = s
 
-class Lua:
-    def __init__(self, s):
-        self.s = s
+class Text(Val):
+    pass
+
+class Lua(Val):
+    pass
 
 class Logic:
     def __init__(self, stmts):
         self.stmts = stmts
 
-class Bare:
-    def __init__(self, s):
-        self.s = s
-
-class Num:
-    def __init__(self, s):
-        self.s = s
-
-class Bool:
-    def __init__(self, s):
-        self.s = s
-
-class Nil:
+class Bare(Val):
     pass
 
-class Data:
-    def __init__(self, s):
-        self.s = s
+class Num(Val):
+    pass
 
-class Raw:
-    def __init__(self, s):
-        self.s = s
+class Bool(Val):
+    pass
+
+class Nil(Val):
+    pass
+
+class Data(Val):
+    pass
+
+class Raw(Val):
+    pass
 
 CURRENT_LINE = [None]
 
@@ -302,7 +299,7 @@ def read_long(lines, i, first, line_no):
     body = [content] if content else [""]
     i += 1
     while i < len(lines):
-        raw, ind = lines[i]
+        raw, _ind = lines[i]
         if close in raw:
             body.append(raw[:raw.index(close)])
             first_line = body[0]
