@@ -21,8 +21,8 @@ setup:
 Конечно, очень странно, что рядом не заметно ни одной живой души...
 но стоит ли ждать слишком много от простенькой демонстрационной игры?..^]]
   start: |
-    move(player, foyer)
-    move(cloak, player)
+    player:move foyer
+    cloak:move player
     cloak:attr worn
 
 room foyer:

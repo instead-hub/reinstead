@@ -93,16 +93,16 @@ fn walkout(): |lua
 fn visits(w: obj) -> num: |lua
   return visits(w)
 
-fn event() -> event: |lua
+fn event() -> event?: |lua
   return mp.event
 
-fn have(w: obj) -> bool: |lua
+fn have(w: obj) -> obj?: |lua
   return have(w)
 
 fn visited(w: obj) -> bool: |lua
   return visited(w)
 
-fn where(w: obj) -> obj: |lua
+fn where(w: obj) -> obj?: |lua
   return where(w)
 
 fn thedark(what: obj) -> bool: |lua
@@ -165,7 +165,7 @@ fn theme_name() -> str: |lua
 fn pclr(): |lua
   std.pclr()
 
-fn ref(name: str) -> obj: |lua
+fn ref(name: str) -> obj?: |lua
   return std.ref(name)
 
 fn arg_word(i: num) -> str: |lua

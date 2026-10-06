@@ -4,6 +4,11 @@
 require "fmt"
 require "parser/mp-ru"
 
+local function fn_compass_dir(w)
+  local d = mp:compass_dir(w)
+  return d or nil
+end
+
 local function fn_event()
   return mp.event
 end
