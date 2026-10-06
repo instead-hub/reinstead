@@ -393,7 +393,7 @@ obj {
 
 Kitten = Class {
   ini = function(s)
-    s.other_kitten = _(s.other_kitten)
+    s.other_kitten = std.ref(s.other_kitten)
   end;
   dsc = function(s)
     if s.state == QUEEN_STATE then
@@ -463,12 +463,12 @@ Kitten = Class {
   end;
   before_Take = function(s, w, wh)
     if have(s.other_kitten) then
-      p "Двух котят сразу Алисе ни за что не удержать!";
+      p("Двух котят сразу Алисе ни за что не удержать!")
       return
     end
-    s.state = HELD_STATE;
-    move(s, pl)
-    p ("Алиса взяла на руки ", s:noun'вн', ". Ну что за прелестное создание!")
+    s.state = HELD_STATE
+    move(s, me())
+    p('Алиса взяла на руки ', s:noun('вн'), '. Ну что за прелестное создание!')
   end;
   ["before_Touch,Rub"] = function(s, w, wh)
     p (s:Noun(1), " в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.")

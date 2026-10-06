@@ -302,8 +302,8 @@ obj window:
 
 class Kitten:
   attrs: animate
-  ini: |lua
-    s.other_kitten = _(s.other_kitten)
+  ini: |
+    s.other_kitten = ref(s.other_kitten)
   dsc: |lua
     if s.state == QUEEN_STATE then
       p("^", s:Noun(1), " играет с Черной Королевой.")
@@ -364,14 +364,13 @@ class Kitten:
       s.state = QUEEN_STATE
     end
     p "."
-  before Take: |lua
-    if have(s.other_kitten) then
-      p "Двух котят сразу Алисе ни за что не удержать!";
-      return
-    end
-    s.state = HELD_STATE;
-    move(s, pl)
-    p ("Алиса взяла на руки ", s:noun'вн', ". Ну что за прелестное создание!")
+  before Take: |
+    if have(s.other_kitten):
+      say Двух котят сразу Алисе ни за что не удержать!
+      stop
+    s.state = HELD_STATE
+    s:move player
+    say('Алиса взяла на руки ', s:noun 'вн', '. Ну что за прелестное создание!')
   before Touch, Rub: |lua
     p (s:Noun(1), " в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.")
   after Drop: |lua
