@@ -209,11 +209,6 @@ class ExprEmit:
         return codes, n
 
     def call(self, name):
-        if name in self.ctx.fn_sigs:
-            plist, ret, variadic = self.ctx.fn_sigs[name]
-            codes, n = self.arglist([pt for _pn, pt in plist])
-            self.check_arity(name, plist, variadic, n)
-            return codes, ret
         if name == "_":
             if self.peek()[0] == "str":
                 self.err("_'...' is not allowed; use a bare name, #tag "
@@ -234,9 +229,8 @@ class ExprEmit:
                 self.err("strings are not objects; use a bare name (%r)"
                          % self.strval(val))
             if self.expected == "event":
-                if self.strval(val) not in self.ctx.event_names:
-                    self.err("unknown event %r" % self.strval(val))
-                return val, "event", "lit", self.strval(val)
+                self.err("event names are bare, not quoted (%r)"
+                         % self.strval(val))
             return val, "str", "lit", self.strval(val)
         if kind == "op" and val == "...":
             self.err("... is not allowed in logic; use |lua for varargs")
@@ -481,8 +475,14 @@ class ExprEmit:
                 val = None
             elif (k == "str" or (k == "op" and v == "(")):
                 if kind == "name":
-                    codes, rt = self.call(val)
-                    code = "%s(%s)" % (code, ", ".join(codes))
+                    if val in self.ctx.fn_sigs:
+                        plist, rt, variadic = self.ctx.fn_sigs[val]
+                        codes, n = self.arglist([pt for _pn, pt in plist])
+                        self.check_arity(val, plist, variadic, n)
+                        code = fn_call(self.ctx, val, codes)
+                    else:
+                        codes, rt = self.call(val)
+                        code = "%s(%s)" % (code, ", ".join(codes))
                     t = rt
                     kind = "call"
                     val = None

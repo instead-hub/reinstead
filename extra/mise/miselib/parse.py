@@ -18,6 +18,8 @@ def parse_list(lines, i, indent):
         if not re.match(r"^-(\s|$)", text):
             break
         rest = text[1:].strip()
+        if rest.startswith(("'", '"')):
+            parse_error(i + 1, "quotes are not allowed in list items")
         if rest:
             items.append(parse_scalar(rest, i + 1, textmode=True))
             i += 1

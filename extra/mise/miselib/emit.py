@@ -178,10 +178,17 @@ class Emitter:
         a = block.get("attrs")
         if a is not None:
             if isinstance(a, list):
-                attrs += [x.s for x in a
-                          if isinstance(x, (Bare, Text))]
-            elif isinstance(a, (Bare, Text)):
+                for x in a:
+                    if isinstance(x, Text):
+                        raise Error("%s.attrs: quotes are not allowed"
+                                    % (ident or "?"))
+                    if isinstance(x, Bare):
+                        attrs.append(x.s)
+            elif isinstance(a, Bare):
                 attrs.append(a.s)
+            elif isinstance(a, Text):
+                raise Error("%s.attrs: quotes are not allowed"
+                            % (ident or "?"))
         obj_items = []
         nested = []
         texts = block.all("text")

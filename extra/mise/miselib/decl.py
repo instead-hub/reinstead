@@ -33,6 +33,8 @@ def classify(key):
         return "meta", None
     if key in SKIP_KEYS:
         return "skip", None
+    if "'" in key or '"' in key:
+        raise Error("quotes are not allowed in declarations: %s" % key)
     if key in ("require", "events", "lua", "setup", "const", "global"):
         return key, None
     m = re.match(r"^class\s+([A-Z]\w*)\s*(?:\(([^)]*)\))?$", key)
@@ -40,13 +42,20 @@ def classify(key):
         return "class", (m.group(1), m.group(2))
     if re.match(r"^fn\s+", key):
         return "fn", key
-    m = re.match(r"^patch\s+(.+)$", key)
-    if m:
-        return "patch", m.group(1).strip()
+    if re.match(r"^patch\b", key):
+        m = re.match(r"^patch\s+([@\w.+-]+)$", key)
+        if not m:
+            raise Error("patch needs a bare target: %s" % key)
+        return "patch", m.group(1)
+    if re.match(r"^extend\b", key):
+        m = re.match(r"^extend\s+#([^\W\d]\w*)$", key, re.UNICODE)
+        if not m:
+            raise Error("extend needs a bare #Tag: %s" % key)
+        return "extend", "#" + m.group(1)
     kind, ident = decl_key(key)
     if not kind:
         return "unknown", None
-    if kind in ("verb", "extend", "talk"):
+    if kind in ("verb", "talk"):
         return kind, ident
     if kind in PRESETS or re.fullmatch(r"[A-Z][\w]*", kind):
         return "decl", (kind, ident)
@@ -103,13 +112,10 @@ def check_ref_value(where, key, v):
 
 
 def decl_key(key):
-    m = re.match(
-        r'^([A-Za-z][A-Za-z0-9_]*)(?:\s+(?:"([^"]+)"|\'([^\']+)\'|([\w#.+-]+)))?$',
-        key)
+    m = re.match(r"^([A-Za-z][A-Za-z0-9_]*)(?:\s+([\w#.+-]+))?$", key)
     if not m:
         return None, None
-    ident = m.group(2) or m.group(3) or m.group(4)
-    return m.group(1), ident
+    return m.group(1), m.group(2)
 
 
 def sym_text(v):

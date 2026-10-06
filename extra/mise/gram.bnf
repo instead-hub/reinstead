@@ -13,8 +13,6 @@ DEDENT    ::= <уменьшение отступа>
 IDENT     ::= [A-Za-z_] { [A-Za-z0-9_] }
 CLASS     ::= [A-Z] { [A-Za-z0-9_] }                 (* имя класса *)
 NAME      ::= IDENT | "#" IDENT                     (* тег: #окно, #глаза_совы *)
-QNAME     ::= '"' { <символ кроме "> } '"'
-            | "'" { <символ кроме '> } "'"
 STRING    ::= '"' { <символ с escape \n \t \" \' \\> } '"'
             | "'" { <символ с escape \n \t \" \' \\> } "'"
 LONG      ::= "[[" ... "]]" | "[=[" ... "]=]" | "[==[" ... "]==]"
@@ -44,10 +42,9 @@ vars      ::= ("const" | "global") ":" block
 decl      ::= kind [ NAME ] ":" block
 kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
             | CLASS
-(* имена деклараций — только NAME (идентификатор/тег); кавычки допустимы
-   лишь у patch ("patch 'game':"); with/inside перечисляют
-   голые NAME; поля-ссылки (n_to/out_to/door_to/talk_to/found_in/...) —
-   голое NAME, строка-имя объекта — ошибка *)
+(* имена деклараций — только NAME (идентификатор/тег), кавычки запрещены;
+   with/inside перечисляют голые NAME; поля-ссылки (n_to/out_to/door_to/
+   talk_to/found_in/...) — голое NAME, строка-имя объекта — ошибка *)
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
 param     ::= IDENT [ ":" type ] | "..."
@@ -66,7 +63,7 @@ verb      ::= "verb" CLASS ":" block
 (* поля verb: tag, event, words, patterns (список "- ..."), prio, hint,
    on/before/after *)
 
-extend    ::= "extend" NAME ":" block
+extend    ::= "extend" "#" IDENT ":" block
 (* поля extend: words, patterns, prio, hint;
    words: -> VerbExtendWord, только patterns: -> VerbExtend *)
 
@@ -80,7 +77,8 @@ talk_field  ::= key ":" value
 
 setup     ::= "setup" ":" block
 (* поля setup: dsc, fmt, take, hero, on, game, init, start *)
-patch     ::= "patch" (NAME | QNAME) ":" block
+patch     ::= "patch" PNAME ":" block
+PNAME     ::= [@#.\w-]+                            (* цель patch; без кавычек *)
 
 lua_section ::= "lua" ":" "|lua" NEWLINE INDENT { lua_line } DEDENT
 
@@ -137,4 +135,5 @@ call_args ::= "(" [ expr_list ] ")"
    - event-параметр и сравнение принимают голое имя события
      (xaction(Wear, s), ev == Exam);
    - #тег — ссылка на объект; статическая _'…' в логике запрещена;
-   - |/|lua — блоки логики и Lua. *)
+   - |/|lua — блоки логики и Lua;
+   - кавычки в именах/тегах/событиях/attrs/элементах списков запрещены. *)
