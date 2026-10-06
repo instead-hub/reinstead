@@ -52,7 +52,8 @@ block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
 param     ::= IDENT [ ":" type ] | "..."
 type      ::= base [ "?" ]
-base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "nil" | IDENT
+base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl"
+            | "nil" | IDENT
 (* IDENT — перечисление из type; "?" — optional: T или nil *)
 (* key события — EventName в движковом регистре (Walk, Enter, SwitchOn, ...);
    Any/Default — тоже события; before/after/post — префикс: "after Put",
@@ -62,6 +63,7 @@ base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "nil" | IDENT
 
 fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
               [ "->" type ] ":" value
+(* value: блок |/|lua или inline-выражение в бэктиках (`#v`) *)
 class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
 
 verb      ::= "verb" CLASS ":" block

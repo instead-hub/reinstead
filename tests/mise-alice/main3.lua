@@ -25,10 +25,6 @@ local function fn_tiny()
   return instead.tiny
 end
 
-local function fn_inv_size()
-  return #inv()
-end
-
 Path = Class {
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(std.ref(s.walk_to)) then return end
@@ -294,7 +290,7 @@ obj {
       p("Отсюда невозможно дотянуться до каминной полки!")
       return
     end
-    if fn_inv_size() > 0 then
+    if (#(inv())) > 0 then
       p("Для этого руки должны быть свободны!")
       return
     end

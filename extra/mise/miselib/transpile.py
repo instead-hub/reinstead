@@ -38,7 +38,8 @@ def transpile(src, src_dir=""):
         elif kind == "fn":
             name, plist, ret, variadic = parse_fn_sig(key, set(ctx.types))
             ctx.fns.add(name)
-            if name in ctx.wrappers or name in ctx.adapters:
+            if (name in ctx.wrappers or name in ctx.adapters
+                    or name in ctx.exprs):
                 continue
             prm = ", ".join(pn for pn, _pt in plist)
             if variadic:

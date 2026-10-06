@@ -5,7 +5,7 @@ KEYWORDS = {
     "then", "else", "do", "local", "function", "end", "break", "repeat",
 }
 
-TYPES = {"obj", "str", "num", "bool", "any", "event"}
+TYPES = {"obj", "str", "num", "bool", "any", "event", "tbl"}
 
 PARAM_TYPES = {
     "s": "obj", "w": "obj", "wh": "obj", "ev": "event", "to": "any",
@@ -28,6 +28,7 @@ class Ctx:
         self.event_names = set()
         self.extra_events = {}
         self.wrappers = {}
+        self.exprs = {}
         self.types = {}
         self.adapters = {}
         self.src_dir = src_dir

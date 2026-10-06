@@ -11,9 +11,6 @@ const:
 patch game:
   hint_verbs: { "#Exam", "#Walk", "#Push", "#Take", "#Drop", "#Search", "#Give", "#Touch" }
 
-fn inv_size() -> num: |lua
-  return #inv()
-
 setup:
   dsc: [[^Маленькая интерактивная Информ-обучалка^
    (написанная Гаретом Ризом и переведенная Денисом Гаевым)^
@@ -215,7 +212,7 @@ obj mantelpiece:
     if not armchair.moved:
       say Отсюда невозможно дотянуться до каминной полки!
       stop
-    if inv_size() > 0:
+    if len(inv()) > 0:
       say Для этого руки должны быть свободны!
       stop
     player:move mantelpiece

@@ -103,6 +103,9 @@ def fn_call(ctx, name, args):
         if isinstance(a, tuple):
             return "%s:%s(%s)" % (args[0], a[1], ", ".join(args[1:]))
         return "%s(%s)" % (a, ", ".join(args))
+    if name in ctx.exprs:
+        plist, tmpl = ctx.exprs[name]
+        return "(%s)" % _wrap_params(tmpl, plist, args)
     if name in ctx.wrappers:
         plist, template = ctx.wrappers[name]
         return _wrap_params(template, plist, args)
@@ -672,7 +675,7 @@ def transpile_for(header, env, where, ctx):
             if not re.fullmatch(r"[^\W\d]\w*", v, re.UNICODE):
                 raise LintError("bad loop variable %r in %s" % (v, where))
         code, _ = transpile_exprlist(iterable, env, where, None, ctx)
-        return ("for %s in %s" % (", ".join(vars_), code),
+        return ("%s in %s" % (", ".join(vars_), code),
                 {v: "any" for v in vars_})
     parts = split_list(header)
     m = re.match(r"^([^\W\d]\w*)\s*=\s*(.*)$", parts[0], re.UNICODE)
@@ -688,7 +691,7 @@ def transpile_for(header, env, where, ctx):
             raise LintError("%s: for bound must be num, got %s"
                             % (where, ct[0]))
         codes.append(c)
-    return ("for %s = %s" % (m.group(1), ", ".join(codes)),
+    return ("%s = %s" % (m.group(1), ", ".join(codes)),
             {m.group(1): "num"})
 
 def expr_like(s, env, ctx):

@@ -237,6 +237,20 @@ def prescan(root, ctx):
                 raise Error("duplicate fn: " + name)
             ctx.fn_sigs[name] = (plist, ret, variadic)
             fn_names.add(name)
+            if isinstance(val, Raw):
+                if variadic:
+                    raise Error("fn %s: expression body cannot be variadic"
+                                % name)
+                e = val.s.strip()
+                if not e or ";" in e or "..." in e or "fn_" in e:
+                    raise Error("fn %s: bad expression body" % name)
+                if any(len(re.findall(r"(?<![\w.])%s(?![\w])"
+                                      % re.escape(pn), e)) > 1
+                       for pn, _pt in plist):
+                    raise Error("fn %s: expression body uses a parameter "
+                                "more than once" % name)
+                ctx.exprs[name] = (plist, e)
+                continue
             if variadic and isinstance(val, Lua):
                 callee = adapter_callee(val.s, plist)
                 if callee:

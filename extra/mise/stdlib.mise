@@ -87,8 +87,16 @@ fn drop(w: obj): |lua
 fn content(w: obj): |lua
   mp:content(w)
 
-fn inv(): |lua
+fn inv() -> tbl: |lua
   return inv()
+
+fn len(v: tbl) -> num: `#v`
+
+fn pairs(t: tbl): |lua
+  return pairs(t)
+
+fn ipairs(t: tbl): |lua
+  return ipairs(t)
 
 fn walkout(): |lua
   walkout()
