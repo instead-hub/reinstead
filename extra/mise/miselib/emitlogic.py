@@ -1,85 +1,31 @@
 from .common import *
+from .condast import Leaf, narrow_cond, narrow_assume, parse_cond
 from .typing import type_ok
 from .expr import transpile_exprlist, transpile_stmt, transpile_for
 
 
-def split_top(text, word):
-    parts, cur, depth, quote = [], [], 0, None
-    tok = " %s " % word
-    i = 0
-    while i < len(text):
-        c = text[i]
-        if quote:
-            cur.append(c)
-            if c == quote:
-                quote = None
-            i += 1
-            continue
-        if c in "\"'":
-            quote = c
-            cur.append(c)
-            i += 1
-            continue
-        if c in "([{":
-            depth += 1
-        elif c in ")]}":
-            depth -= 1
-        if depth == 0 and text.startswith(tok, i):
-            parts.append("".join(cur).strip())
-            cur = []
-            i += len(tok)
-            continue
-        cur.append(c)
-        i += 1
-    parts.append("".join(cur).strip())
-    return [p for p in parts if p]
-
-
-def split_and(text):
-    return split_top(text, "and")
-
-
-def split_or(text):
-    return split_top(text, "or")
-
-
-def cond_narrow(cond, env, negate=False):
-    c = cond.strip()
-    forms = ((r"([A-Za-z_]\w*)", False),
-             (r"([A-Za-z_]\w*)\s*~=\s*nil", False),
-             (r"([A-Za-z_]\w*)\s*==\s*nil", True),
-             (r"not\s+([A-Za-z_]\w*)", True))
-    for pat, want_nil in forms:
-        m = re.fullmatch(pat, c, re.UNICODE)
-        if not m:
-            continue
-        if negate:
-            want_nil = not want_nil
-        t = env.get(m.group(1))
-        if not t or not t.endswith("?"):
-            return {}
-        return {m.group(1): "nil" if want_nil else t[:-1]}
-    return {}
+def cond_emit(node, env, where, ctx):
+    if isinstance(node, Leaf):
+        code, _ = transpile_exprlist(node.text, env, where, None, ctx=ctx)
+        out = dict(env)
+        out.update(narrow_assume(node, env, False) or {})
+        return code, out
+    if node.op == "and":
+        codes, cur = [], dict(env)
+        for part in node.parts:
+            code, cur = cond_emit(part, cur, where, ctx)
+            codes.append(code)
+        return " and ".join(codes), cur
+    codes, cur = [], dict(env)
+    for part in node.parts:
+        code, _ = cond_emit(part, dict(cur), where, ctx)
+        codes.append(code)
+        cur.update(narrow_assume(part, cur, True) or {})
+    return " or ".join(codes), dict(env)
 
 
 def transpile_cond(cond, env, where, ctx):
-    codes = []
-    eenv = dict(env)
-    for part in split_and(cond):
-        ors = split_or(part)
-        if len(ors) == 1:
-            code, _ = transpile_exprlist(part, eenv, where, None, ctx=ctx)
-            codes.append(code)
-        else:
-            oenv = dict(eenv)
-            ocodes = []
-            for op in ors:
-                code, _ = transpile_exprlist(op, oenv, where, None, ctx=ctx)
-                ocodes.append(code)
-                oenv.update(cond_narrow(op, oenv, negate=True))
-            codes.append(" or ".join(ocodes))
-        eenv.update(cond_narrow(part, eenv))
-    return " and ".join(codes), eenv
+    return cond_emit(parse_cond(cond), dict(env), where, ctx)
 
 
 def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
@@ -126,7 +72,7 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
             if else_body is not None:
                 eenv = dict(env)
                 if len(branches) == 1:
-                    eenv.update(cond_narrow(branches[0][0], env, negate=True))
+                    eenv.update(narrow_cond(branches[0][0], env, negate=True))
                 out.append(indent + "else")
                 out.extend(emit_logic(else_body, indent + IND, eenv,
                                       ret, ret_name, ctx=ctx))
