@@ -14,15 +14,15 @@ def collect_ids(root):
             CURRENT_LINE[0] = block.line_at(i)
             kind, info = classify(key)
             if kind == "decl":
-                ident = info[1]
+                ident, ikind = info[1], info[0]
             elif kind == "talk":
-                ident = info
+                ident, ikind = info, kind
             else:
                 continue
             if not ident:
                 continue
             if ident not in ids:
-                ids[ident] = kind
+                ids[ident] = ikind
             elif not ident.startswith("#"):
                 raise Error("duplicate declaration: " + ident)
             for pkey in ("with",):
@@ -118,7 +118,7 @@ def collect_types(root, ctx):
 
 FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
               "dict", "nam", "text", "patterns", "pattern", "tag", "prio",
-              "hint"}
+              "hint", "behavior"}
 
 
 def field_base(key, val, ctx):
@@ -139,7 +139,29 @@ def field_base(key, val, ctx):
     return base
 
 
+def attach_behaviors(block, ctx, into):
+    """Merge attached behaviors' fields first (own keys override)."""
+    val = block.get("behavior")
+    if val is None:
+        return
+    CURRENT_LINE[0] = block.line("behavior") or CURRENT_LINE[0]
+    seen = {}
+    for v in (val if isinstance(val, list) else [val]):
+        CURRENT_LINE[0] = block.line("behavior") or CURRENT_LINE[0]
+        name = v.s if hasattr(v, "s") else str(v)
+        bdef = ctx.behavior_defs.get(name)
+        if bdef is None:
+            raise Error("unknown behavior: " + name)
+        for k, _bv in bdef.items:
+            if k in seen:
+                raise Error("behavior key conflict: %s (%s and %s)"
+                            % (k, seen[k], name))
+            seen[k] = name
+        collect_block_fields(bdef, ctx, into)
+
+
 def collect_block_fields(block, ctx, into):
+    attach_behaviors(block, ctx, into)
     for i, (key, val) in enumerate(block.items):
         CURRENT_LINE[0] = block.line_at(i)
         if key in ("with", "inside") and isinstance(val, Block):
@@ -163,10 +185,25 @@ def collect_block_fields(block, ctx, into):
 def collect_field_types(root, ctx):
     ctx.fields = {}
     class_defs = {}
-    for key, val in root.items:
+    behavior_defs = {}
+    for i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(i)
         kind, info = classify(key)
         if kind == "class" and isinstance(val, Block):
             class_defs[info[0]] = (info[1], val)
+        elif kind == "behavior" and isinstance(val, Block):
+            if info in behavior_defs:
+                raise Error("duplicate behavior: " + info)
+            if any(re.match(r"^behavior\b", k2) for k2, _ in val.items):
+                raise Error("behavior %s cannot include behavior" % info)
+            behavior_defs[info] = val
+    ctx.behavior_defs = behavior_defs
+    ctx.class_parents = {n: info[0] for n, info in class_defs.items()}
+    ctx.classes = set(class_defs)
+    for name, blk in behavior_defs.items():
+        fields = {}
+        collect_block_fields(blk, ctx, fields)
+        ctx.fields[name] = fields
     done = set()
 
     def resolve(name):
@@ -198,6 +235,12 @@ def check_bare_names(root, ctx):
     def walk_fields(block):
         for i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(i)
+            if key == "behavior":
+                for v in (val if isinstance(val, list) else [val]):
+                    name = v.s if hasattr(v, "s") else str(v)
+                    if name not in ctx.behavior_defs:
+                        raise Error("unknown behavior: " + name)
+                continue
             base = field_base(key, val, ctx)
             if (base is not None and isinstance(val, Bare)
                     and literal_type(ctx, val, refs=True) == "str"):
@@ -209,7 +252,9 @@ def check_bare_names(root, ctx):
         if not isinstance(val, Block):
             continue
         kind, _info = classify(key)
-        if kind == "impl":
+        if kind == "behavior":
+            walk_fields(val)
+        elif kind == "impl":
             walk_fields(val)
         elif kind == "setup":
             for j, (skey, sval) in enumerate(val.items):
@@ -335,6 +380,7 @@ def prescan(root, ctx):
     collect_types(root, ctx)
     ids = collect_ids(root)
     ctx.ids = set(ids)
+    ctx.id_kind = ids
     ctx.extra_events = {}
     for _i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(_i)
@@ -351,7 +397,8 @@ def prescan(root, ctx):
     for _i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(_i)
         if classify(key)[0] == "fn":
-            name, plist, ret, variadic = parse_fn_sig(key, set(ctx.types))
+            name, plist, ret, variadic = parse_fn_sig(
+                key, set(ctx.types) | ctx.classes)
             if name in ctx.fn_sigs:
                 raise Error("duplicate fn: " + name)
             ctx.fn_sigs[name] = (plist, ret, variadic)

@@ -25,7 +25,8 @@ key       ::= <текст до ':' нулевого уровня>         (* в�
 (* ---------- файл ---------- *)
 file      ::= { top }
 top       ::= meta | lang | fmt | include | require | evdecl
-            | vars | setup | impl | fn | class | verb | extend | custom_type
+            | vars | setup | impl | fn | class | behavior | verb | extend
+            | custom_type
             | talk
             | lua_section | decl | NEWLINE
 
@@ -54,7 +55,7 @@ param     ::= IDENT [ ":" type ] | "..."
 type      ::= base [ "?" ]
 base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl"
             | "nil" | IDENT
-(* IDENT — перечисление из type; "?" — optional: T или nil *)
+(* IDENT — перечисление из type или имя класса; "?" — optional: T или nil *)
 (* обработчики — "<фаза> <Event>", Event в движковом регистре (Walk, Enter,
    SwitchOn, ...; Any/Default — тоже события); фаза обязательна:
    on — метод события (X = function...), before/after/post/life — префикс
@@ -68,6 +69,8 @@ fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
               [ "->" type ] ":" value
 (* value: блок |/|lua или inline-выражение в бэктиках (`#v`) *)
 class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
+behavior  ::= "behavior" CLASS ":" block
+(* набор полей/обработчиков; привязка `behavior: A, B` в obj/class/impl *)
 
 verb      ::= "verb" CLASS ":" block
 (* поля verb: tag, words, patterns (список "- ..."), prio, hint;

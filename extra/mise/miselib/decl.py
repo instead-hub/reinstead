@@ -41,6 +41,11 @@ def classify(key):
     m = re.match(r"^class\s+([A-Z]\w*)\s*(?:\(([^)]*)\))?$", key)
     if m:
         return "class", (m.group(1), m.group(2))
+    if re.match(r"^behavior\b", key):
+        m = re.match(r"^behavior\s+([A-Z]\w*)$", key)
+        if not m:
+            raise Error("behavior needs a name: " + key)
+        return "behavior", m.group(1)
     if re.match(r"^fn\s+", key):
         return "fn", key
     if re.match(r"^impl\b", key):

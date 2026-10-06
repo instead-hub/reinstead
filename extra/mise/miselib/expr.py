@@ -421,6 +421,13 @@ class ExprEmit:
     def expr(self):
         return self.or_expr()
 
+    def owner_ref(self, node):
+        """`s` bound to obj or a class type (owner-typed field access)."""
+        if not (isinstance(node, Ref) and not node.obj and node.name == "s"):
+            return False
+        st = self.env.get("s")
+        return st == "obj" or st in self.ctx.classes
+
     def name_ref(self, name, zero_call=False, funcs=False):
         """Shared bare-name fallback: env, object, fn, game func, global.
 
@@ -486,9 +493,7 @@ class ExprEmit:
         recv = None
         if isinstance(node, Ref) and node.obj:
             recv = node.name
-        elif (isinstance(node, Ref) and not node.obj
-              and node.name == "s" and self.env.get("s") == "obj"
-              and self.ctx.current_owner):
+        elif self.owner_ref(node) and self.ctx.current_owner:
             recv = self.ctx.current_owner
         raw = "%s.%s" % (node.code, nv)
         info = (self.ctx.fields.get(recv, {}).get(nv)

@@ -5,7 +5,7 @@ from .common import *
 from .emitlogic import emit_logic
 from .decl import (REF_FIELDS, PRESETS, check_ref_value, decl_key,
                    is_true, sym_text)
-from .typing import type_value_error
+from .typing import class_le, type_value_error
 from .expr import fn_name, transpile_exprlist
 
 
@@ -48,6 +48,13 @@ class Emitter:
             return
         plist, _ret, variadic = self.ctx.fn_sigs[name]
         n = len(self.param_env(prm))
+        pt = plist[0][1] if plist else None
+        if pt in self.ctx.classes:
+            owner = self.ctx.current_owner
+            kind = self.ctx.id_kind.get(owner, owner)
+            if not kind or not class_le(self.ctx, kind, pt):
+                raise Error("fn %s expects %s, not %s"
+                            % (name, pt, kind or owner or "?"))
         if not variadic and len(plist) > n:
             raise Error("fn %s takes %d parameter(s), event provides %d"
                         % (name, len(plist), n))
@@ -156,7 +163,38 @@ class Emitter:
         finally:
             self.ctx.current_owner = prev
 
+    def expand_behaviors(self, block):
+        """Merge attached behaviors' keys (own keys win)."""
+        val = block.get("behavior")
+        if val is None:
+            return block
+        CURRENT_LINE[0] = block.line("behavior") or CURRENT_LINE[0]
+        own = {k for k, _ in block.items if k != "behavior"}
+        merged = Block()
+        seen = {}
+        for v in (val if isinstance(val, list) else [val]):
+            name = v.s if hasattr(v, "s") else str(v)
+            bdef = self.ctx.behavior_defs.get(name)
+            if bdef is None:
+                raise Error("unknown behavior: " + name)
+            for i, (k, bv) in enumerate(bdef.items):
+                if k in seen:
+                    raise Error("behavior key conflict: %s (%s and %s)"
+                                % (k, seen[k], name))
+                seen[k] = name
+                if k in own:
+                    continue
+                merged.items.append((k, bv))
+                merged.lines.append(bdef.line_at(i))
+        for i, (k, bv) in enumerate(block.items):
+            if k == "behavior":
+                continue
+            merged.items.append((k, bv))
+            merged.lines.append(block.line_at(i))
+        return merged
+
     def _obj(self, block, ident, base, ctor, preset, parent=None):
+        block = self.expand_behaviors(block)
         fi = base + IND
         lines = ["%s%s({" % (base, ctor) if parent
                  else "%s%s {" % (base, ctor)]
@@ -577,6 +615,7 @@ class Emitter:
         return lines
 
     def impl(self, target, block):
+        block = self.expand_behaviors(block)
         t = target.strip()
         if (t.startswith("'") and t.endswith("'")) or (
                 t.startswith('"') and t.endswith('"')):

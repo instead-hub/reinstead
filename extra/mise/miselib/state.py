@@ -30,6 +30,9 @@ class Ctx:
         self.inline = {}
         self.types = {}
         self.enum_values = {}
+        self.classes = set()
+        self.class_parents = {}
+        self.id_kind = {}
         self.fields = {}
         self.current_owner = None
         self.src_dir = src_dir

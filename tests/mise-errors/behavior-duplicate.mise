@@ -1,0 +1,11 @@
+name: t
+lang: ru
+include: stdlib
+
+behavior A:
+  before Talk: |
+    say [[a]]
+
+behavior A:
+  before Talk: |
+    say [[b]]

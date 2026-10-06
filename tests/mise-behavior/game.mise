@@ -1,0 +1,30 @@
+name: t
+lang: ru
+include: stdlib
+
+behavior Talkative:
+  heard: false
+  before Talk: |
+    s.heard = true
+    say [[поговорили]]
+
+behavior Flying:
+  before Climb: |
+    say [[взлетел]]
+
+class Bird:
+  attrs: animate
+  behavior: Flying
+
+Bird eagle:
+  words: орёл
+
+obj parrot:
+  words: попугай
+  behavior: Talkative
+
+obj crow:
+  words: ворона
+  behavior: Talkative
+  before Talk: |
+    say [[кар]]

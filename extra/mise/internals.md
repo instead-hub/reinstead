@@ -65,10 +65,13 @@ transpile (main loop) обход корневых элементов → Emitter
 
 1. `collect_types` — `type`/`extend_type` → `ctx.types` (значения и
    `~`-отрицание).
-2. `collect_ids` — декларации и теги, включая вложенные `with`.
+2. `collect_ids` — декларации и теги, включая вложенные `with`;
+   `ctx.id_kind` (имя → вид/класс).
 3. `collect_field_types` — `ctx.fields`; `collect_block_fields` рекурсивно
    по `with`; у классов поля наследуются; тип поля — `literal_type`
    (`typing.py`), у голого имени-объекта — `obj` + флаг `is_ref`;
+   `behavior_defs` — именованные наборы, `attach_behaviors` вливает их
+   поля в цель до собственных;
    затем `check_bare_names` сверяет голые значения тем же правилом в
    `impl`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
 4. Регистрация `event_decl` в `extra_events`.
@@ -76,7 +79,8 @@ transpile (main loop) обход корневых элементов → Emitter
    `|lua` и подключаемых Lua-файлах (чтобы `fn` и `use` не конфликтовали
    с игровым кодом).
 6. Цикл по `fn`:
-   - `parse_fn_sig(key, set(ctx.types))` — сигнатура (типы, `T?`, `...`);
+   - `parse_fn_sig(key, set(ctx.types) | ctx.classes)` — сигнатура
+     (типы, классы, `T?`, `...`);
    - inline-эвристики: `Raw`-тело → expr; вариадическое Lua-тело и
      `adapter_callee` → call/meth; одиночный вызов (`wrapper_template`) →
      wrap. Повторное использование параметра, `...`, `fn_` и `use`
@@ -161,6 +165,8 @@ transpile (main loop) обход корневых элементов → Emitter
 
 ## Эмиссия (`emit.py:Emitter`)
 
+- `expand_behaviors` — ключи привязанных `behavior` вливаются до
+  собственных ключей (свои перекрывают); конфликт двух behaviors — ошибка.
 - `value`/`body`/`handler`/`on` — значения, тела, обработчики
   (в т.ч. составные ключи `before A, B`; фаза обязательна: `on X` —
   метод события (`X = function…`), `before/after/post/life X` — с префиксом;

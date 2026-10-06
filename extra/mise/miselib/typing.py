@@ -17,6 +17,21 @@ def type_ok(ctx, t, exp):
         return True
     if t in ctx.types and exp == "str":
         return True
+    if exp in ctx.classes:
+        return t == "obj" or t in ctx.classes
+    if exp == "obj" and t in ctx.classes:
+        return True
+    return False
+
+
+def class_le(ctx, t, exp):
+    """Is class t the class exp or a descendant of it?"""
+    seen = set()
+    while t and t not in seen:
+        if t == exp:
+            return True
+        seen.add(t)
+        t = ctx.class_parents.get(t)
     return False
 
 

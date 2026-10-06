@@ -27,7 +27,7 @@ def transpile(src, src_dir=""):
         kind, info = classify(key)
         if kind == "meta":
             header.append("--$%s:%s$" % (key.title(), val.s))
-        elif kind in ("skip", "type", "extend_type"):
+        elif kind in ("skip", "type", "extend_type", "behavior"):
             continue
         elif kind == "require":
             vals = val if isinstance(val, list) else [val]
@@ -38,7 +38,8 @@ def transpile(src, src_dir=""):
         elif kind == "class":
             body.append(em.cls(val, info[0], info[1]))
         elif kind == "fn":
-            name, plist, ret, variadic = parse_fn_sig(key, set(ctx.types))
+            name, plist, ret, variadic = parse_fn_sig(
+                key, set(ctx.types) | ctx.classes)
             ctx.fns.add(name)
             if name in ctx.inline:
                 continue
@@ -48,9 +49,16 @@ def transpile(src, src_dir=""):
             if isinstance(val, Lua):
                 hb = reindent(val.s, IND)
             elif isinstance(val, Logic):
-                hb = "\n".join(emit_logic(val.stmts, IND,
-                                          em.param_env(prm, name), ret, name,
-                                          ctx=ctx))
+                owner = plist[0][1] if plist else None
+                prev = ctx.current_owner
+                if owner in ctx.classes:
+                    ctx.current_owner = owner
+                try:
+                    hb = "\n".join(emit_logic(val.stmts, IND,
+                                              em.param_env(prm, name), ret,
+                                              name, ctx=ctx))
+                finally:
+                    ctx.current_owner = prev
             else:
                 raise Error("fn %s must be a | block"
                             % name)

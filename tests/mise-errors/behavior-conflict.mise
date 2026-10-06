@@ -1,0 +1,15 @@
+name: t
+lang: ru
+include: stdlib
+
+behavior A:
+  before Talk: |
+    say [[a]]
+
+behavior B:
+  before Talk: |
+    say [[b]]
+
+obj box:
+  words: коробка
+  behavior: A, B

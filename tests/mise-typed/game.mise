@@ -1,0 +1,17 @@
+name: t
+lang: ru
+include: stdlib
+
+class Box:
+  attrs: container
+  weight: 0
+
+fn on_take(s: Box): |
+  if s.weight + 1 > 0:
+    say [[тяжёлый]]
+
+Box crate:
+  words: ящик
+
+impl crate:
+  before Take: use on_take
