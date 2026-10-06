@@ -55,9 +55,10 @@ type      ::= base [ "?" ]
 base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl"
             | "nil" | IDENT
 (* IDENT — перечисление из type; "?" — optional: T или nil *)
-(* key события — EventName в движковом регистре (Walk, Enter, SwitchOn, ...);
-   Any/Default — тоже события; before/after/post — префикс: "after Put",
-   "before Turn, Tune". Спец-ключи: with/inside (вложенные
+(* key события — EventName в движковом регистре (Walk, Enter, SwitchOn, ...;
+   Any/Default — тоже события); обязателен префикс before/after/post
+   ("after Put", "before Turn, Tune"), без префикса — ошибка.
+   Спец-ключи: with/inside (вложенные
    декларации или список ссылок), words/word, attrs, dict, disabled,
    on/before/after/post, found_in, переходы (n_to, out_to, ...), тексты *)
 

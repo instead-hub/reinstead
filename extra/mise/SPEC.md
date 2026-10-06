@@ -198,8 +198,8 @@ class      — класс (Class { ... }, см. ниже)
 | `attrs: worn, clothing` | атрибуты → `:attr '...'` |
 | `dict: { ["форма/п"] = "текст" }` | словарные формы → `:dict { ... }` |
 | `disabled: true` | `:disable()` |
-| `on:` | обработчики событий (см. ниже); префикс — в ключе (`before Walk:`, `after Pull, Transfer:`) |
-| `Any:`, `Default:` | `before_Any` / `before_Default` |
+| `on:` | обработчики событий (см. ниже); префикс — в ключе (`before Walk:`, `after Pull, Transfer:`); событие без префикса — ошибка |
+| `Any:`/`Default:` | обычные события: `before Any:`, `after Default:`… (обработчик получает `s, ev, w`) |
 | `with:` | вложенные декларации (`obj:`/`obj имя:`, в т.ч. автоименованные) **или** список ссылок (`obj = {...}`) |
 | `found_in: room1, room2` | где появляется объект |
 | `n_to/e_to/...`, `in_to`, `out_to`, `u_to`, `d_to` | переходы (значение — комната, дверь или логика/функция) |
@@ -489,12 +489,12 @@ Door калитка:
 ```
 class Prop:
   attrs: scenery
-  Default(s, ev): |
+  before Default(s, ev): |
     say Тебе нет дела.
 
 class Title(cutscene):
   attrs: noprompt
-  Default(s, ev): |
+  before Default(s, ev): |
     ...
 
 Prop дерево:
@@ -557,7 +557,7 @@ setup:
 ```
 patch @compass:
   on:
-    Default(s, ev): |
+    before Default(s, ev): |
       if mp.event ~= 'Drive' and mp.event ~= 'Walk':
         pass
 
@@ -572,7 +572,8 @@ patch game:
 ```
 
 `patch объект:` назначает обработчики (`on`-блок, плоские `before`/`after`/
-`post X`, `Any`/`Default`, голое имя события = `before_X`) и поля
+`post X`; `Any`/`Default` — как обычные события; голое имя события в
+патче = `before_X`) и поля
 (`hint_verbs`, `x`, …) уже существующему объекту:
 `_'объект'.before_Take = ...`, `_'game'.hint_verbs = ...`.
 В обработчиках `s.field` типизируется по патчимому объекту/классу
@@ -749,8 +750,9 @@ talk Разговор_с_Мариной:
   перечисления (строки — в кавычках);
 - объекты в логике — только голым именем: `_'...'` и строки в
   `obj`-слоте — ошибки;
-- неизвестные имена/объекты/события/функции; `use` неизвестной или
-  inline-функции; вызов метода, не объявленного как `fn`.
+- неизвестные имена/объекты/события/функции; событие в блоке `on:`
+  без `before/after/post`; `use` неизвестной или inline-функции; вызов
+  метода, не объявленного как `fn`.
 
 **Функции**
 

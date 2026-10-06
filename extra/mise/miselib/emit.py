@@ -99,7 +99,8 @@ class Emitter:
 
     def on(self, block, indent, target=""):
         out = []
-        for key, val in block.items:
+        for i, (key, val) in enumerate(block.items):
+            CURRENT_LINE[0] = block.line_at(i) or CURRENT_LINE[0]
             base, params = parse_key(key)
             parts = [p.strip() for p in base.split(",")]
             inherited = None
@@ -109,18 +110,18 @@ class Emitter:
                 parts[0] = m0.group(2)
             names = []
             for part in parts:
-                pfx = inherited or "before_"
+                pfx = inherited
                 m = re.match(r"^(before|after|post)\s+(.+)$", part)
                 if m:
                     pfx = m.group(1) + "_"
                     part = m.group(2)
-                if part in ("Any", "Default"):
-                    names.append((part, "before_"))
-                else:
-                    year = EVENTS.get(part) or self.ctx.extra_events.get(part)
-                    if not year:
-                        raise Error("unknown event: " + part)
-                    names.append((year, pfx))
+                year = EVENTS.get(part) or self.ctx.extra_events.get(part)
+                if not year:
+                    raise Error("unknown event: " + part)
+                if not pfx:
+                    raise Error("event %s needs a before/after/post prefix"
+                                % part)
+                names.append((year, pfx))
             groups = []
             for year, pfx in names:
                 if groups and groups[-1][0] == pfx:
@@ -569,10 +570,9 @@ class Emitter:
                     one = Block()
                     one.items = [(key, val)]
                     lines.extend(self.on(one, "", ref + "."))
-                elif base in ("Any", "Default") or base in EVENTS or (
-                        base in self.ctx.extra_events):
+                elif base in EVENTS or base in self.ctx.extra_events:
                     one = Block()
-                    one.items = [(key, val)]
+                    one.items = [("before " + key, val)]
                     lines.extend(self.on(one, "", ref + "."))
                 elif base == "dict":
                     if not isinstance(val, (Data, Raw)):
