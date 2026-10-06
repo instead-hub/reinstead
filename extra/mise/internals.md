@@ -172,7 +172,9 @@ transpile (main loop) обход корневых элементов → Emitter
 - `verb` — только `Verb {...}`: `tag/words/patterns/prio/hint`;
   `on`/`before`/`after` внутри `verb` — ошибка (действия в `event`).
 - `event` — `on:` → `mp.Имя`, `before`/`after` → `mp.before_/after_Имя`.
-- `patch` — обработчики/поля существующего объекта; `dict:` особый.
+- `patch` — обработчики/поля существующего объекта; плоские
+  `before/after/post X` как у объекта; owner-контекст, если цель есть в
+  `ctx.fields` (тогда `s.field` типизируется); `dict:` особый.
 - `setup` — `dsc`, `hero`, `init`, `start`, `game`, `take`, `fmt`.
 - `const`/`glob`, `talk`, `verb_extend`.
 

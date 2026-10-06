@@ -554,26 +554,40 @@ class Emitter:
                 t.startswith('"') and t.endswith('"')):
             t = t[1:-1]
         ref = "_'%s'" % t
-        lines = []
-        for key, val in block.items:
-            base, _ = parse_key(key)
-            if base in ("on", "before", "after", "post") and isinstance(val, Block):
-                lines.extend(self.on(val, "", ref + "."))
-            elif base in ("Any", "Default") or base in EVENTS or (
-                    base in self.ctx.extra_events):
-                one = Block()
-                one.items = [(key, val)]
-                lines.extend(self.on(one, "", ref + "."))
-            elif base == "dict":
-                if not isinstance(val, (Data, Raw)):
-                    raise Error("patch %s.dict: must be a table literal "
-                                "{ ... }" % t)
-                lines.append("%s:dict %s" % (ref, self.value(val)))
-            elif key.startswith("var "):
-                name = parse_key(key[4:])[0]
-                lines.append("%s.%s = %s" % (ref, name, self.body(val, name)))
-            else:
-                lines.append("%s.%s = %s" % (ref, base, self.body(val, key)))
+        prev = self.ctx.current_owner
+        if t in self.ctx.fields:
+            self.ctx.current_owner = t
+        try:
+            lines = []
+            for i, (key, val) in enumerate(block.items):
+                CURRENT_LINE[0] = block.line_at(i)
+                base, _ = parse_key(key)
+                if base in ("on", "before", "after", "post") \
+                        and isinstance(val, Block):
+                    lines.extend(self.on(val, "", ref + "."))
+                elif re.match(r"^(before|after|post)\s+\S", key):
+                    one = Block()
+                    one.items = [(key, val)]
+                    lines.extend(self.on(one, "", ref + "."))
+                elif base in ("Any", "Default") or base in EVENTS or (
+                        base in self.ctx.extra_events):
+                    one = Block()
+                    one.items = [(key, val)]
+                    lines.extend(self.on(one, "", ref + "."))
+                elif base == "dict":
+                    if not isinstance(val, (Data, Raw)):
+                        raise Error("patch %s.dict: must be a table literal "
+                                    "{ ... }" % t)
+                    lines.append("%s:dict %s" % (ref, self.value(val)))
+                elif key.startswith("var "):
+                    name = parse_key(key[4:])[0]
+                    lines.append("%s.%s = %s"
+                                 % (ref, name, self.body(val, name)))
+                else:
+                    lines.append("%s.%s = %s"
+                                 % (ref, base, self.body(val, key)))
+        finally:
+            self.ctx.current_owner = prev
         return "\n".join(lines)
 
     def pragma(self, block, kw):
