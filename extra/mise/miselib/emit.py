@@ -451,7 +451,12 @@ class Emitter:
         return "\n".join(lines)
 
     def cls(self, block, name, parent):
-        body = self.obj(block, None, "", "Class", [], parent)
+        prev = self.ctx.current_class
+        self.ctx.current_class = name
+        try:
+            body = self.obj(block, None, "", "Class", [], parent)
+        finally:
+            self.ctx.current_class = prev
         return "%s = %s" % (name, body)
 
     def decl(self, key, block, base):

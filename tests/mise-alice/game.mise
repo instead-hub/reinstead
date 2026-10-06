@@ -166,12 +166,12 @@ obj armchair:
     if have white_kitten or have black_kitten:
       say Только не с котенком в руках!
       stop
-    local k
+    local k = none
     if white_kitten.state == CHAIR_STATE:
       k = white_kitten
     elseif black_kitten.state == CHAIR_STATE:
       k = black_kitten
-    if k:
+    if k ~= none:
       say [[Начав двигать кресло, Алиса обнаружила, что ]]
       say(k:noun(1))
       say [[ находится прямо на его пути. Хорошо, что она заметила это
@@ -294,8 +294,7 @@ obj window:
 
 class Kitten:
   attrs: animate
-  ini: |
-    s.other_kitten = ref(s.other_kitten)
+  other_kitten: none
   dsc: |
     if s.state == QUEEN_STATE:
       say('^', s:Noun(1), ' играет с Черной Королевой.')

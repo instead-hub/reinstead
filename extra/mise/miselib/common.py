@@ -268,6 +268,10 @@ def dedent_rest(text):
 class LintError(Error):
     pass
 
+
+class TypeCheckError(LintError):
+    pass
+
 def read_long(lines, i, first, line_no):
     opener = re.match(r"^\[(=*)\[", first)
     close = "]" + opener.group(1) + "]"

@@ -113,7 +113,7 @@ FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
               "hint"}
 
 
-def field_value_type(val):
+def field_value_type(ctx, val):
     if isinstance(val, list):
         return "tbl"
     if isinstance(val, Num):
@@ -122,22 +122,29 @@ def field_value_type(val):
         return "bool"
     if isinstance(val, Nil):
         return "nil"
-    if isinstance(val, (Text, Bare)):
+    if isinstance(val, Text):
         return "str"
+    if isinstance(val, Bare):
+        return "obj" if val.s in ctx.ids else "str"
     if isinstance(val, Data):
         return "tbl"
+    if isinstance(val, Raw) and re.fullmatch(r"_'[^']+'", val.s.strip()):
+        return "obj"
     return "any"
 
 
-def collect_block_fields(block, ctx, into):
+def collect_block_fields(block, ctx, into, refs):
     for key, val in block.items:
         if key in ("with", "inside") and isinstance(val, Block):
             for nk, nv in val.items:
                 k2, info = classify(nk)
                 if k2 == "decl" and info[1] and isinstance(nv, Block):
                     fields = dict(ctx.field_types.get(info[0], {}))
+                    sub = set(ctx.ref_fields.get(info[0], ()))
+                    collect_block_fields(nv, ctx, fields, sub)
                     ctx.field_types[info[1]] = fields
-                    collect_block_fields(nv, ctx, fields)
+                    if sub:
+                        ctx.ref_fields[info[1]] = sub
             continue
         if isinstance(val, Block):
             continue
@@ -145,11 +152,16 @@ def collect_block_fields(block, ctx, into):
         if (base in FIELD_SKIP or base in ("Any", "Default")
                 or re.match(r"^(before|after|post)\s", base)):
             continue
-        into[base] = field_value_type(val)
+        t = field_value_type(ctx, val)
+        into[base] = t
+        if (t == "obj" and isinstance(val, Bare)
+                and val.s in ctx.ids):
+            refs.add(base)
 
 
 def collect_field_types(root, ctx):
     ctx.field_types = {}
+    ctx.ref_fields = {}
     class_defs = {}
     for key, val in root.items:
         kind, info = classify(key)
@@ -163,8 +175,11 @@ def collect_field_types(root, ctx):
         done.add(name)
         parent, blk = class_defs[name]
         fields = resolve(parent) if parent else {}
-        collect_block_fields(blk, ctx, fields)
+        refs = set(ctx.ref_fields.get(parent, ())) if parent else set()
+        collect_block_fields(blk, ctx, fields, refs)
         ctx.field_types[name] = fields
+        if refs:
+            ctx.ref_fields[name] = refs
         return fields
 
     for name in class_defs:
@@ -173,8 +188,11 @@ def collect_field_types(root, ctx):
         kind, info = classify(key)
         if kind == "decl" and info[1] and isinstance(val, Block):
             fields = dict(ctx.field_types.get(info[0], {}))
+            refs = set(ctx.ref_fields.get(info[0], ()))
+            collect_block_fields(val, ctx, fields, refs)
             ctx.field_types[info[1]] = fields
-            collect_block_fields(val, ctx, fields)
+            if refs:
+                ctx.ref_fields[info[1]] = refs
 
 
 def collect_game_defs(root):
@@ -287,9 +305,9 @@ def adapter_callee(text, plist):
 def prescan(root, ctx):
     ctx.fns = set()
     collect_types(root, ctx)
-    collect_field_types(root, ctx)
     ids = collect_ids(root)
     ctx.ids = set(ids)
+    collect_field_types(root, ctx)
     ctx.extra_events = {}
     for key, val in root.items:
         kind, ident = classify(key)

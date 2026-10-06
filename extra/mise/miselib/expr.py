@@ -144,6 +144,10 @@ class ExprEmit:
         raise LintError("%s in %s: %s" % (
             msg, self.where, " ".join(t[1] for t in self.toks[:-1])))
 
+    def terr(self, msg):
+        raise TypeCheckError("%s in %s: %s" % (
+            msg, self.where, " ".join(t[1] for t in self.toks[:-1])))
+
     def exprlist(self, expected=None):
         codes = []
         types = []
@@ -161,12 +165,12 @@ class ExprEmit:
         try:
             check_arity(name, plist, variadic, n)
         except LintError as e:
-            self.err(str(e))
+            self.terr(str(e))
 
     def check(self, t, exp, code):
         if type_ok(self.ctx, t, exp):
             return
-        self.err("expected %s, got %s: %s" % (exp, t, code))
+        self.terr("expected %s, got %s: %s" % (exp, t, code))
 
     def strval(self, tok):
         if tok.startswith("["):
@@ -181,20 +185,20 @@ class ExprEmit:
         if exp == "obj":
             if val in self.ctx.ids:
                 return "_'%s'" % val
-            self.err("unknown object %r (expected obj)" % val)
+            self.terr("unknown object %r (expected obj)" % val)
         if exp == "event":
             if val not in self.ctx.event_names:
-                self.err("unknown event %r" % val)
+                self.terr("unknown event %r" % val)
             return tok
         if exp in self.ctx.types:
             msg = type_value_error(self.ctx, exp, val)
             if msg:
-                self.err(msg)
+                self.terr(msg)
             return tok
         if exp == "num":
-            self.err("expected num, got str")
+            self.terr("expected num, got str")
         if exp == "bool":
-            self.err("expected bool, got str")
+            self.terr("expected bool, got str")
         return tok
 
     def arglist(self, expected_list):
@@ -238,8 +242,8 @@ class ExprEmit:
             return val, "num", "lit", None
         if kind == "str":
             if self.expected == "obj":
-                self.err("strings are not objects; use a bare name (%r)"
-                         % self.strval(val))
+                self.terr("strings are not objects; use a bare name (%r)"
+                          % self.strval(val))
             if self.expected == "event":
                 self.err("event names are bare, not quoted (%r)"
                          % self.strval(val))
@@ -247,7 +251,7 @@ class ExprEmit:
                 msg = type_value_error(self.ctx, self.expected,
                                        self.strval(val))
                 if msg:
-                    self.err(msg)
+                    self.terr(msg)
             return val, "str", "lit", self.strval(val)
         if kind == "op" and val == "...":
             self.err("... is not allowed in logic; use |lua for varargs")
@@ -276,7 +280,7 @@ class ExprEmit:
                     and re.fullmatch(r"~?[A-Za-z_][\w-]*", val)):
                 msg = type_value_error(self.ctx, self.expected, val)
                 if msg:
-                    self.err(msg)
+                    self.terr(msg)
                 return lua_str(val), "str", "lit", val
             self.err("unknown name %r" % val)
         if kind == "op" and val == "(":
@@ -401,17 +405,27 @@ class ExprEmit:
                 if nk != "name":
                     self.err("expected field name")
                 if t == "str":
-                    self.err("strings are not objects; use a bare name (%r)"
-                             % (val,))
-                recv = val if kind == "objref" else None
-                code = "%s.%s" % (code, nv)
-                kind = "field"
+                    self.terr("strings are not objects; use a bare name (%r)"
+                              % (val,))
+                recv = None
+                if kind == "objref":
+                    recv = val
+                elif (kind == "name" and val == "s"
+                      and self.env.get("s") == "obj"
+                      and self.ctx.current_class):
+                    recv = self.ctx.current_class
+                raw = "%s.%s" % (code, nv)
                 known = (recv is not None
-                         and recv in self.ctx.field_types)
-                t = (self.ctx.field_types[recv].get(nv, "any")
-                     if known else "any")
-                val = (recv, nv) if (known and nv in
-                                     self.ctx.field_types[recv]) else None
+                         and nv in self.ctx.field_types.get(recv, {}))
+                t = self.ctx.field_types[recv][nv] if known else "any"
+                if known and nv in self.ctx.ref_fields.get(recv, ()):
+                    code = "_(%s)" % raw
+                    kind = "fieldref"
+                    val = (recv, nv, raw)
+                else:
+                    code = raw
+                    kind = "field"
+                    val = (recv, nv) if known else None
             elif k == "op" and v == "[":
                 self.next()
                 self.expected = None
@@ -456,7 +470,7 @@ class ExprEmit:
                     elif pt in self.ctx.types:
                         msg = type_value_error(self.ctx, pt, nm)
                         if msg:
-                            self.err(msg)
+                            self.terr(msg)
                         arg, at = lua_str(nm), "str"
                     elif pt == "event" and nm in self.ctx.event_names:
                         arg, at = "'%s'" % nm, "event"
@@ -565,15 +579,17 @@ def no_paren_call(text, env, where, ctx):
     try:
         code, types = transpile_exprlist(
             rest, env, where, plist[0][1] if plist else None, ctx)
-    except LintError:
+    except LintError as e:
+        if isinstance(e, TypeCheckError):
+            raise
         if plist and plist[0][1] == "str":
             return fn_call(ctx, name, [lua_str(rest)]), ["str"]
         raise
     check_arity(name, plist, variadic, len(types))
     for (pn, pt), t in zip(plist, types):
         if not type_ok(ctx, t, pt):
-            raise LintError("fn %s: argument %s expects %s, got %s"
-                            % (name, pn, pt, t))
+            raise TypeCheckError("fn %s: argument %s expects %s, got %s"
+                                 % (name, pn, pt, t))
     return fn_call(ctx, name, [code]), [ret]
 
 def transpile_exprlist(text, env, where, expected=None, ctx=None):
@@ -646,6 +662,8 @@ def transpile_stmt(text, env, where, ctx):
         p.next()
         op = v1 + "="
     if op is not None:
+        if lk == "fieldref" and isinstance(lv, tuple) and len(lv) == 3:
+            lhs = lv[2]
         codes = []
         types = []
         while True:
@@ -665,7 +683,7 @@ def transpile_stmt(text, env, where, ctx):
             elif new != "any" and not type_ok(ctx, new, old):
                 raise LintError("%s: %s (%s) cannot take %s"
                                 % (where, lv, old, new))
-        if (lk == "field" and isinstance(lv, tuple)
+        if (lk in ("field", "fieldref") and isinstance(lv, tuple)
                 and lv[0] in ctx.field_types
                 and lv[1] in ctx.field_types[lv[0]] and types):
             old = ctx.field_types[lv[0]][lv[1]]
@@ -681,7 +699,7 @@ def transpile_stmt(text, env, where, ctx):
         p.err("unexpected %r" % p.peek()[1])
     if lk == "name" and lv in ctx.fn_sigs:
         p.err("fn %s must be called with ()" % lv)
-    if lk not in ("name", "field", "call"):
+    if lk not in ("name", "field", "fieldref", "call"):
         p.err("unsupported statement")
     return lhs
 

@@ -94,7 +94,7 @@ def type_value_error(ctx, typ, value):
 
 def type_ok(ctx, t, exp):
     """May a value of type t be used where type exp is expected?"""
-    if exp in (None, "any") or t in ("any", exp):
+    if exp in (None, "any") or t == exp:
         return True
     if exp.endswith("?"):
         return t == "nil" or type_ok(ctx, t, exp[:-1])

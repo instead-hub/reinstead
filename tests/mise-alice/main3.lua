@@ -238,13 +238,13 @@ obj {
       p("Только не с котенком в руках!")
       return
     end
-    local k
+    local k = _'none'
     if _'white_kitten'.state == CHAIR_STATE then
       k = _'white_kitten'
     elseif _'black_kitten'.state == CHAIR_STATE then
       k = _'black_kitten'
     end
-    if k then
+    if k ~= _'none' then
       p([[Начав двигать кресло, Алиса обнаружила, что ]])
       p(k:noun(1))
       p([[ находится прямо на его пути. Хорошо, что она заметила это
@@ -401,9 +401,7 @@ obj {
 }:attr 'scenery'
 
 Kitten = Class {
-  ini = function(s)
-    s.other_kitten = std.ref(s.other_kitten)
-  end;
+  other_kitten = 'none';
   dsc = function(s)
     if s.state == QUEEN_STATE then
       p('^', s:Noun(1), ' играет с Черной Королевой.')
@@ -413,8 +411,8 @@ Kitten = Class {
       if s.seen then
         return
       end
-      if s.other_kitten.state == CHAIR_STATE then
-        s.other_kitten.seen = true
+      if _(s.other_kitten).state == CHAIR_STATE then
+        _(s.other_kitten).seen = true
         p([[^Пара котят резвятся друг с другом на коврике рядом с креслом.]])
         return
       end
@@ -427,7 +425,7 @@ Kitten = Class {
   description = function(s)
     p([[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
 и намного симпатичней ей, чем непослушный и непоседливый ]])
-    p(s.other_kitten:noun(), '.')
+    p(_(s.other_kitten):noun(), '.')
   end;
   ["life_Ask,Answer,Tell,Talk"] = function(s)
     p(s:Noun(1), [[, шевеля усами, смотрит на Алису
@@ -471,7 +469,7 @@ Kitten = Class {
     p('.')
   end;
   before_Take = function(s, w, wh)
-    if have(s.other_kitten) then
+    if have(_(s.other_kitten)) then
       p("Двух котят сразу Алисе ни за что не удержать!")
       return
     end
@@ -551,7 +549,7 @@ Kitten = Class {
       end
       return
     elseif s.state == CHAIR_STATE then
-      if s.other_kitten.state == CHAIR_STATE and rnd(2) == 1 then
+      if _(s.other_kitten).state == CHAIR_STATE and rnd(2) == 1 then
         local n = rnd(5)
         if n == 1 then
           p(' преследует ')
@@ -564,7 +562,7 @@ Kitten = Class {
         elseif n == 5 then
           p(' ткнул ')
         end
-        pr(s.other_kitten:noun('вн'))
+        pr(_(s.other_kitten):noun('вн'))
         if n == 2 then
           p(' и они вместе покатились по полу.')
         elseif n == 4 then

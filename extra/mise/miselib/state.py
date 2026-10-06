@@ -31,5 +31,7 @@ class Ctx:
         self.exprs = {}
         self.types = {}
         self.field_types = {}
+        self.ref_fields = {}
+        self.current_class = None
         self.adapters = {}
         self.src_dir = src_dir
