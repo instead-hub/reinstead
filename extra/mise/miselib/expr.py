@@ -346,8 +346,11 @@ class ExprEmit:
                 elif base_t == "event":
                     exp = "event"
             self.expected = exp
-            c2, _t2, _k2, _v2 = self.concat_expr()
+            c2, t2, _k2, _v2 = self.concat_expr()
             self.expected = None
+            if op in ("<", ">", "<=", ">="):
+                self.check(t, "num", code)
+                self.check(t2, "num", c2)
             code = "%s %s %s" % (code, op, c2)
             t, k, v = "bool", "expr", None
         return code, t, k, v
