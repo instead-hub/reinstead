@@ -10,10 +10,10 @@ obj box:
   title: Коробка
   score_value: 0
 
-patch box:
+impl box:
   before Take: |
     if s.score_value + 1 > 0:
-      say [[патч]]
+      say [[взяли]]
   on Take: |
     say [[метод]]
   after Drop: use helper

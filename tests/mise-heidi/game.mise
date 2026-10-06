@@ -2,7 +2,7 @@ name: Хейди
 lang: ru
 include: stdlib
 
-patch game:
+impl game:
   hint_verbs: { "#Exam", "#Walk", "#Take", "#Drop" }
 
 setup:

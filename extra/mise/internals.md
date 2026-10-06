@@ -70,7 +70,7 @@ transpile (main loop) обход корневых элементов → Emitter
    по `with`; у классов поля наследуются; тип поля — `literal_type`
    (`typing.py`), у голого имени-объекта — `obj` + флаг `is_ref`;
    затем `check_bare_names` сверяет голые значения тем же правилом в
-   `patch`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
+   `impl`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
 4. Регистрация `event_decl` в `extra_events`.
 5. `collect_game_defs`/`scan_required` — поиск функций/переменных в
    `|lua` и подключаемых Lua-файлах (чтобы `fn` и `use` не конфликтовали
@@ -114,7 +114,7 @@ transpile (main loop) обход корневых элементов → Emitter
 - `literal_type(ctx, node, refs=False)` — AST-литерал → тип; при
   `refs=True` голое имя резолвится как объект (`ctx.ids`), событие
    (`ctx.event_names`) или значение перечисления (`ctx.enum_values`);
-   нерезолвнутое голое имя в поле (`obj`/класс, `patch`, `setup`,
+   нерезолвнутое голое имя в поле (`obj`/класс, `impl`, `setup`,
    `const`/`global`) — ошибка (строки — `Text`).
 
 `obj`-значения: явное `_'имя'` (бэкtick) резолвится при загрузке;
@@ -175,7 +175,7 @@ transpile (main loop) обход корневых элементов → Emitter
 - `verb` — только `Verb {...}`: `tag/words/patterns/prio/hint`;
   `on`/`before`/`after` внутри `verb` — ошибка (действия в `event`).
 - `event` — `on:` → `mp.Имя`, `before`/`after` → `mp.before_/after_Имя`.
-- `patch` — обработчики/поля существующего объекта; плоские
+- `impl` — обработчики/поля существующего объекта; плоские
   `before/after/post X` как у объекта; owner-контекст, если цель есть в
   `ctx.fields` (тогда `s.field` типизируется); `dict:` особый.
 - `setup` — `dsc`, `hero`, `init`, `start`, `game`, `take`, `fmt`.
@@ -185,7 +185,7 @@ transpile (main loop) обход корневых элементов → Emitter
 
 `header` (meta), `type`/`extend_type` пропускаются, `require` → префикс
 `require`, `lua` → как есть, `class`/`fn` (тела `fn` собираются и
-вставляются перед остальным; inline пропускаются), `patch`/`setup`/
+вставляются перед остальным; inline пропускаются), `impl`/`setup`/
 `const`/`global`/`event_decl`/`decl`/`verb`/`extend`/`talk` → эмиттеры.
 В конце — `require "parser/mp-<lang>"` и `require` из `require:`.
 

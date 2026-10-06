@@ -56,8 +56,8 @@ def transpile(src, src_dir=""):
                             % name)
             fn_body.append("local function %s(%s)\n%s\nend"
                            % (fn_name(name), prm, hb))
-        elif kind == "patch":
-            body.append(em.patch(info, val))
+        elif kind == "impl":
+            body.append(em.impl(info, val))
         elif kind == "setup":
             body.append("\n".join(em.setup(val)))
         elif kind == "const":

@@ -190,7 +190,7 @@ def collect_field_types(root, ctx):
 
 
 def check_bare_names(root, ctx):
-    """Validate bare field values in patch/setup/hero/const/global.
+    """Validate bare field values in impl/setup/hero/const/global.
 
     Same rule as object/class fields: a bare name must resolve to an
     object, event or enum value; strings have to be quoted.
@@ -209,7 +209,7 @@ def check_bare_names(root, ctx):
         if not isinstance(val, Block):
             continue
         kind, _info = classify(key)
-        if kind == "patch":
+        if kind == "impl":
             walk_fields(val)
         elif kind == "setup":
             for j, (skey, sval) in enumerate(val.items):

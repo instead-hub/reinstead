@@ -47,7 +47,7 @@ obj {
 
 _'box'.before_Take = function(s, w, wh)
   if s.score_value + 1 > 0 then
-    p([[патч]])
+    p([[взяли]])
   end
 end;
 _'box'.Take = function(s, w, wh)

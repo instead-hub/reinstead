@@ -22,7 +22,7 @@ fn BowOrArrow(o: obj?) -> bool: |
   say Это не похоже на оружие, не правда ли?^
   return false
 
-patch game:
+impl game:
   hint_verbs: { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" }
 
 class Prop:

@@ -27,7 +27,7 @@ def classify(key):
     """Return (kind, info) for a top-level key.
 
     kind: meta | skip | require | lua | setup | const | global |
-    class | fn | patch | verb | extend | talk | decl | unknown.
+    class | fn | impl | verb | extend | talk | decl | unknown.
     info: class -> (name, parent), decl -> (kind, ident), others -> ident.
     """
     if key in META_KEYS:
@@ -43,11 +43,11 @@ def classify(key):
         return "class", (m.group(1), m.group(2))
     if re.match(r"^fn\s+", key):
         return "fn", key
-    if re.match(r"^patch\b", key):
-        m = re.match(r"^patch\s+([@\w.+-]+)$", key)
+    if re.match(r"^impl\b", key):
+        m = re.match(r"^impl\s+([@\w.+-]+)$", key)
         if not m:
-            raise Error("patch needs a bare target: %s" % key)
-        return "patch", m.group(1)
+            raise Error("impl needs a bare target: %s" % key)
+        return "impl", m.group(1)
     m = re.match(r"^event\s+([A-Z]\w*)$", key)
     if m:
         return "event_decl", m.group(1)

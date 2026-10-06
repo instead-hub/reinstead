@@ -5,6 +5,6 @@ include: stdlib
 obj box:
   words: коробка
 
-patch box:
-  before Nosuch: |
+impl box:
+  Take: |
     pass

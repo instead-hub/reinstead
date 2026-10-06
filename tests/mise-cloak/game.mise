@@ -5,7 +5,7 @@ include: stdlib
 global:
   score: 0
 
-patch game:
+impl game:
   hint_verbs: { "#Exam", "#Walk", "#Take", "#Drop" }
 
 extend #Drop:

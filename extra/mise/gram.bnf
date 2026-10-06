@@ -25,7 +25,7 @@ key       ::= <текст до ':' нулевого уровня>         (* в�
 (* ---------- файл ---------- *)
 file      ::= { top }
 top       ::= meta | lang | fmt | include | require | evdecl
-            | vars | setup | patch | fn | class | verb | extend | custom_type
+            | vars | setup | impl | fn | class | verb | extend | custom_type
             | talk
             | lua_section | decl | NEWLINE
 
@@ -92,8 +92,8 @@ talk_field  ::= key ":" value
 
 setup     ::= "setup" ":" block
 (* поля setup: dsc, fmt, take, hero, on, game, init, start *)
-patch     ::= "patch" PNAME ":" block
-PNAME     ::= [@#.\w-]+                            (* цель patch; без кавычек *)
+impl     ::= "impl" PNAME ":" block
+PNAME     ::= [@#.\w-]+                            (* цель impl; без кавычек *)
 
 lua_section ::= "lua" ":" "|lua" NEWLINE INDENT { lua_line } DEDENT
 

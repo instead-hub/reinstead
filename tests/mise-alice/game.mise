@@ -8,7 +8,7 @@ const:
   WOOL_STATE: 2
   CHAIR_STATE: 3
 
-patch game:
+impl game:
   hint_verbs: { "#Exam", "#Walk", "#Push", "#Take", "#Drop", "#Search", "#Give", "#Touch" }
 
 setup:

@@ -554,7 +554,7 @@ class Emitter:
         lines.append("end")
         return lines
 
-    def patch(self, target, block):
+    def impl(self, target, block):
         t = target.strip()
         if (t.startswith("'") and t.endswith("'")) or (
                 t.startswith('"') and t.endswith('"')):
@@ -581,7 +581,7 @@ class Emitter:
                                 "prefix" % base)
                 elif base == "dict":
                     if not isinstance(val, (Data, Raw)):
-                        raise Error("patch %s.dict: must be a table literal "
+                        raise Error("impl %s.dict: must be a table literal "
                                     "{ ... }" % t)
                     lines.append("%s:dict %s" % (ref, self.value(val)))
                 elif key.startswith("var "):

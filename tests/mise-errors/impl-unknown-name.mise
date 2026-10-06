@@ -5,5 +5,5 @@ include: stdlib
 obj box:
   words: коробка
 
-patch box:
+impl box:
   custom: нетакого
