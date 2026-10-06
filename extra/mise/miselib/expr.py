@@ -307,16 +307,9 @@ class ExprEmit:
                 if val == "function":
                     self.err("anonymous functions are not allowed (use |lua)")
                 self.err("unexpected keyword %r" % val)
-            if val in self.env:
-                return Ref(val, self.env[val], val)
-            if val in self.ctx.ids:
-                return Ref("_'%s'" % val, "obj", val, obj=True)
-            if val in self.ctx.fn_sigs:
-                return Ref(fn_name(val), "fn", val)
-            if val in self.ctx.funcs:
-                return Ref(val, "fn", val)
-            if val in self.ctx.vars:
-                return Ref(val, self.ctx.global_types.get(val, "any"), val)
+            node = self.name_ref(val, funcs=True)
+            if node is not None:
+                return node
             if self.expected == "event" and val in self.ctx.event_names:
                 return Lit("'%s'" % val, "event", val=val)
             if self.expected == "event":
@@ -428,6 +421,29 @@ class ExprEmit:
     def expr(self):
         return self.or_expr()
 
+    def name_ref(self, name, zero_call=False, funcs=False):
+        """Shared bare-name fallback: env, object, fn, game func, global.
+
+        `zero_call` (method tail args) turns a no-arg fn into a call and
+        leaves fns with parameters unresolved; `funcs` (primary) also
+        resolves game `|lua` functions to their plain name.
+        """
+        if name in self.env:
+            return Ref(name, self.env[name], name)
+        if name in self.ctx.ids:
+            return Ref("_'%s'" % name, "obj", name, obj=True)
+        if name in self.ctx.fn_sigs:
+            plist, ret, _v = self.ctx.fn_sigs[name]
+            if not zero_call:
+                return Ref(fn_name(name), "fn", name)
+            if not plist:
+                return Call(fn_call(self.ctx, name, []), ret)
+        if funcs and name in self.ctx.funcs:
+            return Ref(name, "fn", name)
+        if name in self.ctx.vars:
+            return Ref(name, self.ctx.global_types.get(name, "any"), name)
+        return None
+
     def autocall(self, node):
         if (isinstance(node, Ref) and not node.obj
                 and node.name in self.ctx.fn_sigs
@@ -505,26 +521,21 @@ class ExprEmit:
                     nm = self.next()[1]
                     pt = plist[1][1]
                     if pt == "str":
-                        arg, at = lua_str(nm), "str"
+                        arg = Lit(lua_str(nm), "str", nm)
                     elif pt in self.ctx.types:
                         msg = type_value_error(self.ctx, pt, nm)
                         if msg:
                             self.terr(msg)
-                        arg, at = lua_str(nm), "str"
+                        arg = Lit(lua_str(nm), "str", nm)
                     elif pt == "event" and nm in self.ctx.event_names:
-                        arg, at = "'%s'" % nm, "event"
-                    elif nm in self.env:
-                        arg, at = nm, self.env[nm]
-                    elif nm in self.ctx.ids:
-                        arg, at = "_'%s'" % nm, "obj"
-                    elif nm in self.ctx.fn_sigs and not self.ctx.fn_sigs[nm][0]:
-                        arg, at = fn_call(self.ctx, nm, []), self.ctx.fn_sigs[nm][1]
-                    elif nm in self.ctx.vars:
-                        arg, at = nm, self.ctx.global_types.get(nm, "any")
+                        arg = Lit("'%s'" % nm, "event", nm)
                     else:
-                        self.err("unknown name %r" % nm)
-                    self.check(at, pt, arg)
-                    node = Call(fn_call(self.ctx, nv, [node.code, arg]), ret)
+                        arg = self.name_ref(nm, zero_call=True)
+                        if arg is None:
+                            self.err("unknown name %r" % nm)
+                    self.check(arg.t, pt, arg.code)
+                    node = Call(fn_call(self.ctx, nv,
+                                       [node.code, arg.code]), ret)
                     continue
                 codes, n = self.arglist([pt for _pn, pt in plist[1:]])
                 self.check_arity(nv, plist[1:], variadic, n)
