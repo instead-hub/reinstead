@@ -178,6 +178,46 @@ def collect_field_types(root, ctx):
             ctx.fields[info[1]] = fields
 
 
+def check_bare_names(root, ctx):
+    """Validate bare field values in patch/setup/hero/const/global.
+
+    Same rule as object/class fields: a bare name must resolve to an
+    object, event or enum value; strings have to be quoted.
+    """
+    def check(key, val):
+        if isinstance(val, Bare) and literal_type(ctx, val, refs=True) == "str":
+            raise Error("unknown name %r in field %s (quote string "
+                        "values: [[...]]/\"...\")" % (val.s, key))
+
+    def walk_fields(block):
+        for i, (key, val) in enumerate(block.items):
+            CURRENT_LINE[0] = block.line_at(i)
+            base, params = parse_key(key)
+            parts = [p.strip() for p in base.split(",")]
+            if (params is not None or isinstance(val, Block)
+                    or base in FIELD_SKIP or base in ("Any", "Default")
+                    or re.match(r"^(before|after|post)\s", base)
+                    or any(p in ctx.event_names or p.startswith("life_")
+                           or p in ("Any", "Default") for p in parts)):
+                continue
+            check(base, val)
+
+    for i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(i)
+        if not isinstance(val, Block):
+            continue
+        kind, _info = classify(key)
+        if kind == "patch":
+            walk_fields(val)
+        elif kind == "setup":
+            for j, (skey, sval) in enumerate(val.items):
+                CURRENT_LINE[0] = val.line_at(j)
+                if skey in ("hero", "game") and isinstance(sval, Block):
+                    walk_fields(sval)
+        elif kind in ("const", "global"):
+            walk_fields(val)
+
+
 def collect_game_defs(root):
     funcs = set()
     vars_ = set()
@@ -302,6 +342,7 @@ def prescan(root, ctx):
                 ctx.extra_events[ident] = ident
     ctx.event_names = set(EVENTS) | set(ctx.extra_events.values())
     collect_field_types(root, ctx)
+    check_bare_names(root, ctx)
     game_funcs, game_vars = collect_game_defs(root)
     ctx.fn_sigs = {}
     fn_names = set()

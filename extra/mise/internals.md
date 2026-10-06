@@ -68,7 +68,9 @@ transpile (main loop) обход корневых элементов → Emitter
 2. `collect_ids` — декларации и теги, включая вложенные `with`.
 3. `collect_field_types` — `ctx.fields`; `collect_block_fields` рекурсивно
    по `with`; у классов поля наследуются; тип поля — `literal_type`
-   (`typing.py`), у голого имени-объекта — `obj` + флаг `is_ref`.
+   (`typing.py`), у голого имени-объекта — `obj` + флаг `is_ref`;
+   затем `check_bare_names` сверяет голые значения тем же правилом в
+   `patch`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
 4. Регистрация `event_decl` в `extra_events`.
 5. `collect_game_defs`/`scan_required` — поиск функций/переменных в
    `|lua` и подключаемых Lua-файлах (чтобы `fn` и `use` не конфликтовали
@@ -111,9 +113,9 @@ transpile (main loop) обход корневых элементов → Emitter
   `~`-отрицание при `negate`, подсказки `difflib`).
 - `literal_type(ctx, node, refs=False)` — AST-литерал → тип; при
   `refs=True` голое имя резолвится как объект (`ctx.ids`), событие
-  (`ctx.event_names`) или значение перечисления (`ctx.enum_values`);
-  нерезолвнутое голое имя в поле объекта/класса — ошибка (строки —
-  `Text`).
+   (`ctx.event_names`) или значение перечисления (`ctx.enum_values`);
+   нерезолвнутое голое имя в поле (`obj`/класс, `patch`, `setup`,
+   `const`/`global`) — ошибка (строки — `Text`).
 
 `obj`-значения: явное `_'имя'` (бэкtick) резолвится при загрузке;
 поле-ссылка (`other_kitten: none`) хранит строку-имя, а **чтения**
