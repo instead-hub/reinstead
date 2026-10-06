@@ -200,7 +200,7 @@ class Emitter:
         texts = block.all("text")
         for key, val in block.items:
             if key in ("words", "on", "inside", "with", "attrs",
-                       "disabled", "before", "after", "post"):
+                       "disabled", "dict", "before", "after", "post"):
                 continue
             if key == "text" and len(texts) > 1:
                 continue
@@ -269,6 +269,12 @@ class Emitter:
             tail = "%s}" % base
         if attrs:
             tail += ":attr '%s'" % ",".join(attrs)
+        d = block.get("dict")
+        if d is not None:
+            if not isinstance(d, (Data, Raw)):
+                raise Error("%s.dict: must be a table literal { ... }"
+                            % (ident or "?"))
+            tail += ":dict %s" % self.value(d)
         if block.get("disabled"):
             tail += ":disable()"
         lines.append(tail)
@@ -547,6 +553,11 @@ class Emitter:
                 one = Block()
                 one.items = [(key, val)]
                 lines.extend(self.on(one, "", ref + "."))
+            elif base == "dict":
+                if not isinstance(val, (Data, Raw)):
+                    raise Error("patch %s.dict: must be a table literal "
+                                "{ ... }" % t)
+                lines.append("%s:dict %s" % (ref, self.value(val)))
             elif key.startswith("var "):
                 name = parse_key(key[4:])[0]
                 lines.append("%s.%s = %s" % (ref, name, self.body(val, name)))

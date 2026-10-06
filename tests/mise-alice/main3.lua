@@ -25,6 +25,10 @@ local function fn_tiny()
   return instead.tiny
 end
 
+obj {
+  nam = "none";
+}
+
 Path = Class {
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(std.ref(s.walk_to)) then return end
@@ -172,11 +176,7 @@ obj {
   nam = "hearth";
   found_in = 'Drawing_Room';
   description = "За бронзовой каминной решеткой весело потрескивает огонь.";
-}:attr 'scenery'
-
-_'hearth':dict {
-  ["огонь/вн"] = "огонь"
-}
+}:attr 'scenery':dict { ["огонь/вн"] = "огонь" }
 
 obj {
   -"каминный коврик,коврик|ковер";

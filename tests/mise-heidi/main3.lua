@@ -25,6 +25,10 @@ local function fn_tiny()
   return instead.tiny
 end
 
+obj {
+  nam = "none";
+}
+
 Path = Class {
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(std.ref(s.walk_to)) then return end

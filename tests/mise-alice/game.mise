@@ -116,11 +116,7 @@ obj hearth:
   found_in: Drawing_Room
   description: За бронзовой каминной решеткой весело потрескивает огонь.
   attrs: scenery
-
-lua: |lua
-  _'hearth':dict {
-    ["огонь/вн"] = "огонь"
-  }
+  dict: { ["огонь/вн"] = "огонь" }
 
 obj rug:
   words: каминный коврик,коврик|ковер

@@ -1,3 +1,5 @@
+obj none:
+
 type attr: ~, alive, animate, broken, burning, clothing, coded, concealed, container, cutscene, device, door, drinkable, edible, enterable, fed, female, fixed, gameover, light, lockable, locked, luminous, male, moved, multi, noparser, on, open, openable, read, ring, scenery, seen, static, supporter, switchable, talkable, transparent, tuned, visited, worn
 
 type direction: n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to

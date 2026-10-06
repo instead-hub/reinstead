@@ -41,6 +41,10 @@ local function fn_BowOrArrow(o)
   return false
 end
 
+obj {
+  nam = "none";
+}
+
 Path = Class {
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(std.ref(s.walk_to)) then return end
@@ -372,15 +376,7 @@ NPC {
       walk(_'theend')
     end
   end;
-}
-
-_'governor':dict {
-  ["Гесслер/вн"] = "Геслера";
-  ["Гесслер/рд"] = "Геслера";
-  ["Гесслер/дт"] = "Гесслеру";
-  ["Гесслер/тв"] = "Гесслером";
-  ["Гесслер/пр"] = "Геслере";
-}
+}:dict { ["Гесслер/вн"] = "Геслера", ["Гесслер/рд"] = "Геслера", ["Гесслер/дт"] = "Гесслеру", ["Гесслер/тв"] = "Гесслером", ["Гесслер/пр"] = "Геслере" }
 
 obj {
   -"лук";

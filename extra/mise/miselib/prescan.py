@@ -109,7 +109,8 @@ def collect_types(root, ctx):
 
 
 FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
-              "nam", "text", "patterns", "pattern", "tag", "prio", "hint"}
+              "dict", "nam", "text", "patterns", "pattern", "tag", "prio",
+              "hint"}
 
 
 def field_value_type(val):
