@@ -4,6 +4,7 @@ import re
 from .common import *
 from .parse import parse_source
 from .decl import classify, parse_fn_sig
+from .typing import literal_type
 
 def collect_ids(root):
     ids = {}
@@ -113,38 +114,15 @@ FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
               "hint"}
 
 
-def field_value_type(ctx, val):
-    if isinstance(val, list):
-        return "tbl"
-    if isinstance(val, Num):
-        return "num"
-    if isinstance(val, Bool):
-        return "bool"
-    if isinstance(val, Nil):
-        return "nil"
-    if isinstance(val, Text):
-        return "str"
-    if isinstance(val, Bare):
-        return "obj" if val.s in ctx.ids else "str"
-    if isinstance(val, Data):
-        return "tbl"
-    if isinstance(val, Raw) and re.fullmatch(r"_'[^']+'", val.s.strip()):
-        return "obj"
-    return "any"
-
-
-def collect_block_fields(block, ctx, into, refs):
+def collect_block_fields(block, ctx, into):
     for key, val in block.items:
         if key in ("with", "inside") and isinstance(val, Block):
             for nk, nv in val.items:
                 k2, info = classify(nk)
                 if k2 == "decl" and info[1] and isinstance(nv, Block):
-                    fields = dict(ctx.field_types.get(info[0], {}))
-                    sub = set(ctx.ref_fields.get(info[0], ()))
-                    collect_block_fields(nv, ctx, fields, sub)
-                    ctx.field_types[info[1]] = fields
-                    if sub:
-                        ctx.ref_fields[info[1]] = sub
+                    fields = dict(ctx.fields.get(info[0], {}))
+                    collect_block_fields(nv, ctx, fields)
+                    ctx.fields[info[1]] = fields
             continue
         if isinstance(val, Block):
             continue
@@ -152,16 +130,12 @@ def collect_block_fields(block, ctx, into, refs):
         if (base in FIELD_SKIP or base in ("Any", "Default")
                 or re.match(r"^(before|after|post)\s", base)):
             continue
-        t = field_value_type(ctx, val)
-        into[base] = t
-        if (t == "obj" and isinstance(val, Bare)
-                and val.s in ctx.ids):
-            refs.add(base)
+        is_ref = (isinstance(val, Bare) and val.s in ctx.ids)
+        into[base] = (literal_type(ctx, val, refs=True), is_ref)
 
 
 def collect_field_types(root, ctx):
-    ctx.field_types = {}
-    ctx.ref_fields = {}
+    ctx.fields = {}
     class_defs = {}
     for key, val in root.items:
         kind, info = classify(key)
@@ -171,15 +145,12 @@ def collect_field_types(root, ctx):
 
     def resolve(name):
         if name in done or name not in class_defs:
-            return dict(ctx.field_types.get(name, {}))
+            return dict(ctx.fields.get(name, {}))
         done.add(name)
         parent, blk = class_defs[name]
         fields = resolve(parent) if parent else {}
-        refs = set(ctx.ref_fields.get(parent, ())) if parent else set()
-        collect_block_fields(blk, ctx, fields, refs)
-        ctx.field_types[name] = fields
-        if refs:
-            ctx.ref_fields[name] = refs
+        collect_block_fields(blk, ctx, fields)
+        ctx.fields[name] = fields
         return fields
 
     for name in class_defs:
@@ -187,12 +158,9 @@ def collect_field_types(root, ctx):
     for key, val in root.items:
         kind, info = classify(key)
         if kind == "decl" and info[1] and isinstance(val, Block):
-            fields = dict(ctx.field_types.get(info[0], {}))
-            refs = set(ctx.ref_fields.get(info[0], ()))
-            collect_block_fields(val, ctx, fields, refs)
-            ctx.field_types[info[1]] = fields
-            if refs:
-                ctx.ref_fields[info[1]] = refs
+            fields = dict(ctx.fields.get(info[0], {}))
+            collect_block_fields(val, ctx, fields)
+            ctx.fields[info[1]] = fields
 
 
 def collect_game_defs(root):
@@ -337,13 +305,16 @@ def prescan(root, ctx):
                        for pn, _pt in plist):
                     raise Error("fn %s: expression body uses a parameter "
                                 "more than once" % name)
-                ctx.exprs[name] = (plist, e)
+                ctx.inline[name] = ("expr", (plist, e))
                 continue
             if variadic and isinstance(val, Lua):
                 callee = adapter_callee(val.s, plist)
                 if callee:
-                    ctx.adapters[name] = callee
-            if not variadic and isinstance(val, Lua):
+                    if isinstance(callee, tuple):
+                        ctx.inline[name] = ("meth", (callee[1],))
+                    else:
+                        ctx.inline[name] = ("call", (callee,))
+            elif not variadic and isinstance(val, Lua):
                 t = wrapper_template(val.s)
                 if t and "fn_" in t:
                     t = None
@@ -353,7 +324,7 @@ def prescan(root, ctx):
                         for pn, _pt in plist):
                     t = None
                 if t:
-                    ctx.wrappers[name] = (plist, t)
+                    ctx.inline[name] = ("wrap", (plist, t))
     for key, val in root.items:
         if classify(key)[0] == "require":
             vals = val if isinstance(val, list) else [val]
@@ -367,16 +338,7 @@ def prescan(root, ctx):
         if classify(key)[0] in ("const", "global") and isinstance(val, Block):
             for k, v in val.items:
                 const_names.add(k)
-                if isinstance(v, Num):
-                    ctx.global_types[k] = "num"
-                elif isinstance(v, Bool):
-                    ctx.global_types[k] = "bool"
-                elif isinstance(v, Text):
-                    ctx.global_types[k] = "str"
-                elif isinstance(v, Nil):
-                    ctx.global_types[k] = "nil"
-                else:
-                    ctx.global_types[k] = "any"
+                ctx.global_types[k] = literal_type(ctx, v)
     ctx.vars = game_vars | const_names
     ctx.funcs = fn_names | game_funcs | {"_"}
     ctx.fns = fn_names
@@ -397,6 +359,7 @@ def prescan(root, ctx):
 
     walk_use(root)
     for n in use_refs:
-        ctx.wrappers.pop(n, None)
-        ctx.adapters.pop(n, None)
+        desc = ctx.inline.get(n)
+        if desc and desc[0] != "expr":
+            del ctx.inline[n]
     check_refs(root, ids)

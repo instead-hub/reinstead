@@ -27,11 +27,8 @@ class Ctx:
         self.global_types = {}
         self.event_names = set()
         self.extra_events = {}
-        self.wrappers = {}
-        self.exprs = {}
+        self.inline = {}
         self.types = {}
-        self.field_types = {}
-        self.ref_fields = {}
+        self.fields = {}
         self.current_class = None
-        self.adapters = {}
         self.src_dir = src_dir

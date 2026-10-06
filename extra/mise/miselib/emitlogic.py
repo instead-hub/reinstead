@@ -1,5 +1,5 @@
 from .common import *
-from .decl import type_ok
+from .typing import type_ok
 from .expr import transpile_exprlist, transpile_stmt, transpile_for
 
 

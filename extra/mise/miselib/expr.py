@@ -2,7 +2,7 @@ import re
 
 from . import state as S
 from .common import *
-from .decl import type_ok, type_value_error
+from .typing import type_ok, type_value_error
 
 def lex_lua(text):
     toks = []
@@ -98,17 +98,18 @@ def _wrap_params(template, plist, args):
 
 
 def fn_call(ctx, name, args):
-    if name in ctx.adapters:
-        a = ctx.adapters[name]
-        if isinstance(a, tuple):
-            return "%s:%s(%s)" % (args[0], a[1], ", ".join(args[1:]))
-        return "%s(%s)" % (a, ", ".join(args))
-    if name in ctx.exprs:
-        plist, tmpl = ctx.exprs[name]
-        return "(%s)" % _wrap_params(tmpl, plist, args)
-    if name in ctx.wrappers:
-        plist, template = ctx.wrappers[name]
-        return _wrap_params(template, plist, args)
+    desc = ctx.inline.get(name)
+    if desc:
+        kind, payload = desc
+        if kind == "wrap":
+            plist, tmpl = payload
+            return _wrap_params(tmpl, plist, args)
+        if kind == "expr":
+            plist, tmpl = payload
+            return "(%s)" % _wrap_params(tmpl, plist, args)
+        if kind == "meth":
+            return "%s:%s(%s)" % (args[0], payload[0], ", ".join(args[1:]))
+        return "%s(%s)" % (payload[0], ", ".join(args))
     return "%s(%s)" % (fn_name(name), ", ".join(args))
 
 class ExprEmit:
@@ -415,17 +416,17 @@ class ExprEmit:
                       and self.ctx.current_class):
                     recv = self.ctx.current_class
                 raw = "%s.%s" % (code, nv)
-                known = (recv is not None
-                         and nv in self.ctx.field_types.get(recv, {}))
-                t = self.ctx.field_types[recv][nv] if known else "any"
-                if known and nv in self.ctx.ref_fields.get(recv, ()):
+                info = (self.ctx.fields.get(recv, {}).get(nv)
+                        if recv is not None else None)
+                t = info[0] if info else "any"
+                if info and info[1]:
                     code = "_(%s)" % raw
                     kind = "fieldref"
                     val = (recv, nv, raw)
                 else:
                     code = raw
                     kind = "field"
-                    val = (recv, nv) if known else None
+                    val = (recv, nv) if info else None
             elif k == "op" and v == "[":
                 self.next()
                 self.expected = None
@@ -684,9 +685,9 @@ def transpile_stmt(text, env, where, ctx):
                 raise LintError("%s: %s (%s) cannot take %s"
                                 % (where, lv, old, new))
         if (lk in ("field", "fieldref") and isinstance(lv, tuple)
-                and lv[0] in ctx.field_types
-                and lv[1] in ctx.field_types[lv[0]] and types):
-            old = ctx.field_types[lv[0]][lv[1]]
+                and lv[0] in ctx.fields
+                and lv[1] in ctx.fields[lv[0]] and types):
+            old = ctx.fields[lv[0]][lv[1]][0]
             new = types[0]
             if old != "any" and new != "any" and not type_ok(ctx, new, old):
                 raise LintError("%s: %s.%s (%s) cannot take %s"

@@ -4,7 +4,8 @@ from . import state as S
 from .common import *
 from .emitlogic import emit_logic
 from .decl import (REF_FIELDS, PRESETS, check_ref_value, decl_key,
-                   is_true, sym_text, type_value_error)
+                   is_true, sym_text)
+from .typing import type_value_error
 from .expr import fn_name, transpile_exprlist
 
 
@@ -53,8 +54,7 @@ class Emitter:
                 name = m.group(1)
                 if name not in self.ctx.fns:
                     raise Error("unknown fn in use: " + name)
-                if (name in self.ctx.wrappers or name in self.ctx.adapters
-                        or name in self.ctx.exprs):
+                if name in self.ctx.inline:
                     raise Error("inline fn %s cannot be used with use"
                                 % name)
                 return name
