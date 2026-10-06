@@ -411,6 +411,8 @@ class ExprEmit:
                 if t == "str":
                     self.terr("strings are not objects; use a bare name (%r)"
                               % (val,))
+                if t == "obj?":
+                    self.check(t, "obj", code)
                 recv = None
                 if kind == "objref":
                     recv = val
@@ -432,6 +434,8 @@ class ExprEmit:
                     val = (recv, nv) if info else None
             elif k == "op" and v == "[":
                 self.next()
+                if t == "obj?":
+                    self.check(t, "obj", code)
                 self.expected = None
                 ic, _it, _ik, _iv = self.expr()
                 self.expect("]")

@@ -3,8 +3,9 @@ from .typing import type_ok
 from .expr import transpile_exprlist, transpile_stmt, transpile_for
 
 
-def split_and(text):
+def split_top(text, word):
     parts, cur, depth, quote = [], [], 0, None
+    tok = " %s " % word
     i = 0
     while i < len(text):
         c = text[i]
@@ -23,15 +24,23 @@ def split_and(text):
             depth += 1
         elif c in ")]}":
             depth -= 1
-        if depth == 0 and text.startswith(" and ", i):
+        if depth == 0 and text.startswith(tok, i):
             parts.append("".join(cur).strip())
             cur = []
-            i += 5
+            i += len(tok)
             continue
         cur.append(c)
         i += 1
     parts.append("".join(cur).strip())
     return [p for p in parts if p]
+
+
+def split_and(text):
+    return split_top(text, "and")
+
+
+def split_or(text):
+    return split_top(text, "or")
 
 
 def cond_narrow(cond, env, negate=False):
@@ -57,8 +66,18 @@ def transpile_cond(cond, env, where, ctx):
     codes = []
     eenv = dict(env)
     for part in split_and(cond):
-        code, _ = transpile_exprlist(part, eenv, where, None, ctx=ctx)
-        codes.append(code)
+        ors = split_or(part)
+        if len(ors) == 1:
+            code, _ = transpile_exprlist(part, eenv, where, None, ctx=ctx)
+            codes.append(code)
+        else:
+            oenv = dict(eenv)
+            ocodes = []
+            for op in ors:
+                code, _ = transpile_exprlist(op, oenv, where, None, ctx=ctx)
+                ocodes.append(code)
+                oenv.update(cond_narrow(op, oenv, negate=True))
+            codes.append(" or ".join(ocodes))
         eenv.update(cond_narrow(part, eenv))
     return " and ".join(codes), eenv
 
