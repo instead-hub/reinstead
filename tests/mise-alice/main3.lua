@@ -221,34 +221,37 @@ obj {
     return false
   end;
   ["before_Push,Pull"] = function(s, w, wh)
-    if not (pl:where() ^ 'Drawing_Room') then
-      p ("Для начала необходимо покинуть ", pl:where():noun 'вн', ".")
-      return
+    local loc = where(me())
+    if loc then
+      if loc ~= _'Drawing_Room' then
+        p('Для начала необходимо покинуть ', loc:noun('вн'), '.')
+        return
+      end
     end
-    if have 'white_kitten' or have 'black_kitten' then
-      p "Только не с котенком в руках!";
+    if have(_'white_kitten') or have(_'black_kitten') then
+      p("Только не с котенком в руках!")
       return
     end
     local k
     if _'white_kitten'.state == CHAIR_STATE then
-      k = 'white_kitten'
+      k = _'white_kitten'
     elseif _'black_kitten'.state == CHAIR_STATE then
-      k = 'black_kitten'
+      k = _'black_kitten'
     end
     if k then
-      p [[Начав двигать кресло, Алиса обнаружила, что ]]
-      p (_(k):noun(1))
-      p [[ находится прямо на его пути. Хорошо, что она заметила это
-        вовремя -- а то могла бы просто раздавить бедное создание!]];
+      p([[Начав двигать кресло, Алиса обнаружила, что ]])
+      p(k:noun(1))
+      p([[ находится прямо на его пути. Хорошо, что она заметила это
+вовремя -- а то могла бы просто раздавить бедное создание!]])
       return
     end
     if s.moved then
       s.moved = false
-      p "Алиса отодвинула кресло дальше от камина.";
+      p("Алиса отодвинула кресло дальше от камина.")
       return
     end
     s.moved = true
-    p "Алиса придвинула кресло ближе к камину.";
+    p("Алиса придвинула кресло ближе к камину.")
   end;
   before_Transfer = "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]";
   ["before_Climb,Enter"] = function(s, w, wh)
@@ -397,69 +400,69 @@ Kitten = Class {
   end;
   dsc = function(s)
     if s.state == QUEEN_STATE then
-      p("^", s:Noun(1), " играет с Черной Королевой.")
+      p('^', s:Noun(1), ' играет с Черной Королевой.')
     elseif s.state == WOOL_STATE then
-      p("^", s:Noun(1), " играет с клубком шерсти.")
+      p('^', s:Noun(1), ' играет с клубком шерсти.')
     elseif s.state == CHAIR_STATE then
       if s.seen then
         return
       end
       if s.other_kitten.state == CHAIR_STATE then
         s.other_kitten.seen = true
-        p "^Пара котят резвятся друг с другом на коврике рядом с креслом.";
+        p([[^Пара котят резвятся друг с другом на коврике рядом с креслом.]])
         return
       end
-      p(s:Noun(1), " резвится на коврике рядом с креслом.")
+      p(s:Noun(1), ' резвится на коврике рядом с креслом.')
       return
     else
       return
     end
   end;
   description = function(s)
-    p [[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
-         и намного симпатичней ей, чем непослушный и непоседливый ]]
-    p (s.other_kitten:noun(), ".")
+    p([[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
+и намного симпатичней ей, чем непослушный и непоседливый ]])
+    p(s.other_kitten:noun(), '.')
   end;
   ["life_Ask,Answer,Tell,Talk"] = function(s)
     p(s:Noun(1), [[, шевеля усами, смотрит на Алису
-        с таким умным видом, что она почти готова поверить,
-        будто он понимает каждое ее слово.]]);
+с таким умным видом, что она почти готова поверить,
+будто он понимает каждое ее слово.]])
   end;
   life_Kiss = function(s)
-    p ("Алиса чмокнула ", s:noun('вн',1), [[ в носик,
-         и тот взглянул на нее сконфуженно, но довольно.]])
+    p('Алиса чмокнула ', s:noun('вн', 1), [[ в носик,
+и тот взглянул на нее сконфуженно, но довольно.]])
   end;
   life_Attack = "Разве можно напасть на такое крохотное и беззащитное создание!";
   Show = function(s, w)
-    p (s:Noun(1),", протянув лапку, опасливо дотронулся до ", w:noun'рд', ".")
+    p(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun('рд'), '.')
   end;
   ["life_Give,ThrowAt"] = function(s, w)
-    if not (w ^ 'red_queen') and not (w ^ 'worsted') then
-      if mp.event == 'ThrowAt' then
-        move(w, 'Drawing_Room')
-        p ("Алиса бросила ", w:noun 'вн', " на пол, и ", s:noun(1))
+    if w ~= _'red_queen' and w ~= _'worsted' then
+      if fn_event() == 'ThrowAt' then
+        move(w, _'Drawing_Room')
+        p('Алиса бросила ', w:noun('вн'), ' на пол, и ', s:noun(1))
       else
-        p (s:Noun(1))
+        p(s:Noun(1))
       end
-      p (" рассматривает ", w:noun'вн', " с озадаченным видом.")
+      p(' рассматривает ', w:noun('вн'), ' с озадаченным видом.')
       return
     end
-    p ("Алиса бросила ", w:noun'вн', " на пол. Немедленно ")
-    pr (s:noun(1))
+    p('Алиса бросила ', w:noun('вн'), ' на пол. Немедленно ')
+    pr(s:noun(1))
     if have(s) then
-      p ", выскользнув из ее рук,"
+      p(', выскользнув из ее рук,')
     end
-    move (w, 'Drawing_Room')
-    move (s, 'Drawing_Room')
-    pr (" бросился за ", w:noun'тв')
-    if w ^ 'worsted' then
+    move(w, _'Drawing_Room')
+    move(s, _'Drawing_Room')
+    pr(' бросился за ', w:noun('тв'))
+    if w == _'worsted' then
       _'worsted'.sputan = true
       s.state = WOOL_STATE
-      pr ", мгновенно превратив его в дикую путаницу";
+      pr(', мгновенно превратив его в дикую путаницу')
     else
       s.state = QUEEN_STATE
     end
-    p "."
+    p('.')
   end;
   before_Take = function(s, w, wh)
     if have(s.other_kitten) then
@@ -471,108 +474,113 @@ Kitten = Class {
     p('Алиса взяла на руки ', s:noun('вн'), '. Ну что за прелестное создание!')
   end;
   ["before_Touch,Rub"] = function(s, w, wh)
-    p (s:Noun(1), " в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.")
+    p(s:Noun(1), ' в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.')
   end;
   after_Drop = function(s, w, wh)
-    s.state = CHAIR_STATE;
-    move(s, 'Drawing_Room')
-    p (s:Noun(1), ", выскользнув из рук Алисы, убежал прочь.")
+    s.state = CHAIR_STATE
+    move(s, _'Drawing_Room')
+    p(s:Noun(1), ', выскользнув из рук Алисы, убежал прочь.')
   end;
   ["after_Transfer,PutOn,Insert"] = function(s, w, wh)
-    s.state = CHAIR_STATE;
-    pr (s:Noun(1), ", спрыгнув с ", parent(s):noun'рд')
-    move(s, 'Drawing_Room')
-    p", ловко приземлился на полу и убежал прочь.";
+    s.state = CHAIR_STATE
+    local p = where(s)
+    if p then
+      pr(s:Noun(1), ', спрыгнув с ', p:noun('рд'))
+    end
+    move(s, _'Drawing_Room')
+    p(', ловко приземлился на полу и убежал прочь.')
   end;
   daemon = function(s)
     s.seen = false
-    s.this_kittens_turn = not s.this_kittens_turn;
-    if not s.this_kittens_turn or rnd(3) == 2 then return end
-    p (s:Noun(1))
+    s.this_kittens_turn = not s.this_kittens_turn
+    if not s.this_kittens_turn or rnd(3) == 2 then
+      return
+    end
+    p(s:Noun(1))
     if s.state == HELD_STATE then
       local n = rnd(5)
       if n == 1 then
-        p " жалобно мяукнул.";
+        p(' жалобно мяукнул.')
       elseif n == 2 then
-        p " тихо мурлыкнул.";
+        p(' тихо мурлыкнул.')
       elseif n == 3 then
-        p " удовлетворенно промурлыкал что-то.";
+        p(' удовлетворенно промурлыкал что-то.')
       elseif n == 4 then
-        p " потерся ушками о руку Алисы.";
+        p(' потерся ушками о руку Алисы.')
       elseif n == 5 then
-        move(s, 'Drawing_Room')
-        s.state = CHAIR_STATE;
-        p " спрыгнул на пол, ловко выскользнув из Алисиных рук.";
+        move(s, _'Drawing_Room')
+        s.state = CHAIR_STATE
+        p(' спрыгнул на пол, ловко выскользнув из Алисиных рук.')
       end
       return
     elseif s.state == QUEEN_STATE then
       local n = rnd(5)
       if n == 1 then
-        p " ткнул Черную Королеву лапкой.";
+        p(' ткнул Черную Королеву лапкой.')
       elseif n == 2 then
-        p " оставив на время игру, сидит с подчеркнуто невинным видом.";
+        p(' оставив на время игру, сидит с подчеркнуто невинным видом.')
       elseif n == 3 then
-        p " катает бедную Королеву туда-сюда по полу.";
+        p(' катает бедную Королеву туда-сюда по полу.')
       elseif n == 4 then
-        p " кончил умываться и осматривается по сторонам.";
+        p(' кончил умываться и осматривается по сторонам.')
       elseif n == 5 then
-        p [[ взял Черную Королеву, укусил, и начал яростно трясти,
-             чтобы убедиться, что с ней покончено.]];
+        p([[ взял Черную Королеву, укусил, и начал яростно трясти,
+чтобы убедиться, что с ней покончено.]])
       end
       return
     elseif s.state == WOOL_STATE then
       _'worsted'.sputan = true
       local n = rnd(5)
       if n == 1 then
-        p " ткнул клубок шерсти лапкой.";
+        p(' ткнул клубок шерсти лапкой.')
       elseif n == 2 then
-        p " покатил клубок по полу, преследуя его по пятам.";
+        p(' покатил клубок по полу, преследуя его по пятам.')
       elseif n == 3 then
-        p " сцепился с клубком в жестокой схватке.";
+        p(' сцепился с клубком в жестокой схватке.')
       elseif n == 4 then
-        p [[ прыгнул на клубок сверху,
-              и окончательно запутался в мешанине шерстяных нитей.]];
+        p([[ прыгнул на клубок сверху,
+и окончательно запутался в мешанине шерстяных нитей.]])
       elseif n == 5 then
-        p " прервав игру, чешет себя за ушами.";
+        p(' прервав игру, чешет себя за ушами.')
       end
       return
     elseif s.state == CHAIR_STATE then
       if s.other_kitten.state == CHAIR_STATE and rnd(2) == 1 then
-        local n = rnd(5);
+        local n = rnd(5)
         if n == 1 then
-          p " преследует ";
+          p(' преследует ')
         elseif n == 2 then
-          p " прыгнул на "
+          p(' прыгнул на ')
         elseif n == 3 then
-          p " умывает лапкой ";
+          p(' умывает лапкой ')
         elseif n == 4 then
-          p " обежал вокруг ";
+          p(' обежал вокруг ')
         elseif n == 5 then
-          p " ткнул ";
+          p(' ткнул ')
         end
-        pr (s.other_kitten:noun'вн')
+        pr(s.other_kitten:noun('вн'))
         if n == 2 then
-          p " и они вместе покатились по полу.";
+          p(' и они вместе покатились по полу.')
         elseif n == 4 then
-          p " и бросился за ним.";
+          p(' и бросился за ним.')
         elseif n == 5 then
-          p " лапкой.";
+          p(' лапкой.')
         else
-          p "."
+          p('.')
         end
         return
       end
       local n = rnd(5)
       if n == 1 then
-        p " гоняет по полу комок пыли."
+        p(' гоняет по полу комок пыли.')
       elseif n == 2 then
-        p " катается по полу."
+        p(' катается по полу.')
       elseif n == 3 then
-        p " сидит и тщательно вылизывает свой хвост."
+        p(' сидит и тщательно вылизывает свой хвост.')
       elseif n == 4 then
-        p " трется головой о ножки кресла."
+        p(' трется головой о ножки кресла.')
       elseif n == 5 then
-        p " гоняется за своим хвостом."
+        p(' гоняется за своим хвостом.')
       end
     end
   end;

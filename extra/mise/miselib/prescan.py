@@ -188,7 +188,12 @@ def wrapper_template(text):
 
 
 def adapter_callee(text, plist):
-    """Return callee if body forwards exactly (params..., ...) to it."""
+    """Return callee if body forwards exactly (params..., ...) to it.
+
+    Method form (recv:meth(...)) is allowed when recv is the first
+    parameter; then ("method", meth) is returned and calls emit
+    args[0]:meth(args[1:]).
+    """
     b = text.strip()
     if not b or "\n" in b:
         return None
@@ -200,7 +205,12 @@ def adapter_callee(text, plist):
         return None
     callee, raw = m.group(1), m.group(2)
     got = [a.strip() for a in raw.split(",") if a.strip()]
-    if got != [pn for pn, _pt in plist] + ["..."]:
+    pnames = [pn for pn, _pt in plist]
+    if ":" in callee:
+        recv, meth = callee.split(":", 1)
+        if pnames and recv == pnames[0] and got == pnames[1:] + ["..."]:
+            return None if "fn_" in meth else ("method", meth)
+    if got != pnames + ["..."]:
         return None
     return None if "fn_" in callee else callee
 

@@ -111,11 +111,11 @@ fn where(w: obj) -> obj?: |lua
 fn thedark(what: obj) -> bool: |lua
   return mp:thedark(what)
 
-fn noun(s: obj, c: str) -> str: |lua
-  return s:noun(c)
+fn noun(s: obj, ...) -> str: |lua
+  return s:noun(...)
 
-fn Noun(s: obj) -> str: |lua
-  return s:Noun()
+fn Noun(s: obj, ...) -> str: |lua
+  return s:Noun(...)
 
 fn it(s: obj) -> str: |lua
   return s:It()

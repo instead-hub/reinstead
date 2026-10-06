@@ -162,35 +162,32 @@ obj armchair:
     else:
       say окном.
     pass
-  before Push, Pull: |lua
-    if not (pl:where() ^ 'Drawing_Room') then
-      p ("Для начала необходимо покинуть ", pl:where():noun 'вн', ".")
-      return
-    end
-    if have 'white_kitten' or have 'black_kitten' then
-      p "Только не с котенком в руках!";
-      return
-    end
+  before Push, Pull: |
+    local loc = where(player)
+    if loc:
+      if loc ~= Drawing_Room:
+        say('Для начала необходимо покинуть ', loc:noun 'вн', '.')
+        stop
+    if have white_kitten or have black_kitten:
+      say Только не с котенком в руках!
+      stop
     local k
-    if _'white_kitten'.state == CHAIR_STATE then
-      k = 'white_kitten'
-    elseif _'black_kitten'.state == CHAIR_STATE then
-      k = 'black_kitten'
-    end
-    if k then
-      p [[Начав двигать кресло, Алиса обнаружила, что ]]
-      p (_(k):noun(1))
-      p [[ находится прямо на его пути. Хорошо, что она заметила это
-        вовремя -- а то могла бы просто раздавить бедное создание!]];
-      return
-    end
-    if s.moved then
+    if white_kitten.state == CHAIR_STATE:
+      k = white_kitten
+    elseif black_kitten.state == CHAIR_STATE:
+      k = black_kitten
+    if k:
+      say [[Начав двигать кресло, Алиса обнаружила, что ]]
+      say(k:noun(1))
+      say [[ находится прямо на его пути. Хорошо, что она заметила это
+        вовремя -- а то могла бы просто раздавить бедное создание!]]
+      stop
+    if s.moved:
       s.moved = false
-      p "Алиса отодвинула кресло дальше от камина.";
-      return
-    end
+      say Алиса отодвинула кресло дальше от камина.
+      stop
     s.moved = true
-    p "Алиса придвинула кресло ближе к камину.";
+    say Алиса придвинула кресло ближе к камину.
   before Transfer: "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]"
   before Climb, Enter: |
     player:move s
@@ -304,66 +301,59 @@ class Kitten:
   attrs: animate
   ini: |
     s.other_kitten = ref(s.other_kitten)
-  dsc: |lua
-    if s.state == QUEEN_STATE then
-      p("^", s:Noun(1), " играет с Черной Королевой.")
-    elseif s.state == WOOL_STATE then
-      p("^", s:Noun(1), " играет с клубком шерсти.")
-    elseif s.state == CHAIR_STATE then
-      if s.seen then
-        return
-      end
-      if s.other_kitten.state == CHAIR_STATE then
+  dsc: |
+    if s.state == QUEEN_STATE:
+      say('^', s:Noun(1), ' играет с Черной Королевой.')
+    elseif s.state == WOOL_STATE:
+      say('^', s:Noun(1), ' играет с клубком шерсти.')
+    elseif s.state == CHAIR_STATE:
+      if s.seen:
+        stop
+      if s.other_kitten.state == CHAIR_STATE:
         s.other_kitten.seen = true
-        p "^Пара котят резвятся друг с другом на коврике рядом с креслом.";
-        return
-      end
-      p(s:Noun(1), " резвится на коврике рядом с креслом.")
-      return
-    else
-      return
-    end
-  description: |lua
-    p [[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
+        say [[^Пара котят резвятся друг с другом на коврике рядом с креслом.]]
+        stop
+      say(s:Noun(1), ' резвится на коврике рядом с креслом.')
+      stop
+    else:
+      stop
+  description: |
+    say [[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
          и намного симпатичней ей, чем непослушный и непоседливый ]]
-    p (s.other_kitten:noun(), ".")
-  life_Ask,Answer,Tell,Talk: |lua
-    p(s:Noun(1), [[, шевеля усами, смотрит на Алису
+    say(s.other_kitten:noun(), '.')
+  life_Ask,Answer,Tell,Talk: |
+    say(s:Noun(1), [[, шевеля усами, смотрит на Алису
         с таким умным видом, что она почти готова поверить,
-        будто он понимает каждое ее слово.]]);
-  life_Kiss: |lua
-    p ("Алиса чмокнула ", s:noun('вн',1), [[ в носик,
+        будто он понимает каждое ее слово.]])
+  life_Kiss: |
+    say('Алиса чмокнула ', s:noun('вн', 1), [[ в носик,
          и тот взглянул на нее сконфуженно, но довольно.]])
   life_Attack: Разве можно напасть на такое крохотное и беззащитное создание!
-  Show(s, w): |lua
-    p (s:Noun(1),", протянув лапку, опасливо дотронулся до ", w:noun'рд', ".")
-  life_Give,ThrowAt(s, w): |lua
-    if not (w ^ 'red_queen') and not (w ^ 'worsted') then
-      if mp.event == 'ThrowAt' then
-        move(w, 'Drawing_Room')
-        p ("Алиса бросила ", w:noun 'вн', " на пол, и ", s:noun(1))
-      else
-        p (s:Noun(1))
-      end
-      p (" рассматривает ", w:noun'вн', " с озадаченным видом.")
-      return
-    end
-    p ("Алиса бросила ", w:noun'вн', " на пол. Немедленно ")
-    pr (s:noun(1))
-    if have(s) then
-      p ", выскользнув из ее рук,"
-    end
-    move (w, 'Drawing_Room')
-    move (s, 'Drawing_Room')
-    pr (" бросился за ", w:noun'тв')
-    if w ^ 'worsted' then
-      _'worsted'.sputan = true
+  Show(s, w): |
+    say(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun 'рд', '.')
+  life_Give,ThrowAt(s, w): |
+    if w ~= red_queen and w ~= worsted:
+      if event() == ThrowAt:
+        w:move Drawing_Room
+        say('Алиса бросила ', w:noun 'вн', ' на пол, и ', s:noun(1))
+      else:
+        say(s:Noun(1))
+      say(' рассматривает ', w:noun 'вн', ' с озадаченным видом.')
+      stop
+    say('Алиса бросила ', w:noun 'вн', ' на пол. Немедленно ')
+    append(s:noun(1))
+    if have(s):
+      say ', выскользнув из ее рук,'
+    w:move Drawing_Room
+    s:move Drawing_Room
+    append(' бросился за ', w:noun 'тв')
+    if w == worsted:
+      worsted.sputan = true
       s.state = WOOL_STATE
-      pr ", мгновенно превратив его в дикую путаницу";
-    else
+      append ', мгновенно превратив его в дикую путаницу'
+    else:
       s.state = QUEEN_STATE
-    end
-    p "."
+    say '.'
   before Take: |
     if have(s.other_kitten):
       say Двух котят сразу Алисе ни за что не удержать!
@@ -371,108 +361,103 @@ class Kitten:
     s.state = HELD_STATE
     s:move player
     say('Алиса взяла на руки ', s:noun 'вн', '. Ну что за прелестное создание!')
-  before Touch, Rub: |lua
-    p (s:Noun(1), " в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.")
-  after Drop: |lua
-    s.state = CHAIR_STATE;
-    move(s, 'Drawing_Room')
-    p (s:Noun(1), ", выскользнув из рук Алисы, убежал прочь.")
-  after Transfer, PutOn, Insert: |lua
-    s.state = CHAIR_STATE;
-    pr (s:Noun(1), ", спрыгнув с ", parent(s):noun'рд')
-    move(s, 'Drawing_Room')
-    p", ловко приземлился на полу и убежал прочь.";
-  daemon: |lua
+  before Touch, Rub: |
+    say(s:Noun(1), ' в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.')
+  after Drop: |
+    s.state = CHAIR_STATE
+    s:move Drawing_Room
+    say(s:Noun(1), ', выскользнув из рук Алисы, убежал прочь.')
+  after Transfer, PutOn, Insert: |
+    s.state = CHAIR_STATE
+    local p = where(s)
+    if p:
+      append(s:Noun(1), ', спрыгнув с ', p:noun 'рд')
+    s:move Drawing_Room
+    say ', ловко приземлился на полу и убежал прочь.'
+  daemon: |
     s.seen = false
-    s.this_kittens_turn = not s.this_kittens_turn;
-    if not s.this_kittens_turn or rnd(3) == 2 then return end
-    p (s:Noun(1))
-    if s.state == HELD_STATE then
+    s.this_kittens_turn = not s.this_kittens_turn
+    if not s.this_kittens_turn or rnd(3) == 2:
+      stop
+    say(s:Noun(1))
+    if s.state == HELD_STATE:
       local n = rnd(5)
-      if n == 1 then
-        p " жалобно мяукнул.";
-      elseif n == 2 then
-        p " тихо мурлыкнул.";
-      elseif n == 3 then
-        p " удовлетворенно промурлыкал что-то.";
-      elseif n == 4 then
-        p " потерся ушками о руку Алисы.";
-      elseif n == 5 then
-        move(s, 'Drawing_Room')
-        s.state = CHAIR_STATE;
-        p " спрыгнул на пол, ловко выскользнув из Алисиных рук.";
-      end
-      return
-    elseif s.state == QUEEN_STATE then
+      if n == 1:
+        say ' жалобно мяукнул.'
+      elseif n == 2:
+        say ' тихо мурлыкнул.'
+      elseif n == 3:
+        say ' удовлетворенно промурлыкал что-то.'
+      elseif n == 4:
+        say ' потерся ушками о руку Алисы.'
+      elseif n == 5:
+        s:move Drawing_Room
+        s.state = CHAIR_STATE
+        say ' спрыгнул на пол, ловко выскользнув из Алисиных рук.'
+      stop
+    elseif s.state == QUEEN_STATE:
       local n = rnd(5)
-      if n == 1 then
-        p " ткнул Черную Королеву лапкой.";
-      elseif n == 2 then
-        p " оставив на время игру, сидит с подчеркнуто невинным видом.";
-      elseif n == 3 then
-        p " катает бедную Королеву туда-сюда по полу.";
-      elseif n == 4 then
-        p " кончил умываться и осматривается по сторонам.";
-      elseif n == 5 then
-        p [[ взял Черную Королеву, укусил, и начал яростно трясти,
-             чтобы убедиться, что с ней покончено.]];
-      end
-      return
-    elseif s.state == WOOL_STATE then
-      _'worsted'.sputan = true
+      if n == 1:
+        say ' ткнул Черную Королеву лапкой.'
+      elseif n == 2:
+        say ' оставив на время игру, сидит с подчеркнуто невинным видом.'
+      elseif n == 3:
+        say ' катает бедную Королеву туда-сюда по полу.'
+      elseif n == 4:
+        say ' кончил умываться и осматривается по сторонам.'
+      elseif n == 5:
+        say [[ взял Черную Королеву, укусил, и начал яростно трясти,
+             чтобы убедиться, что с ней покончено.]]
+      stop
+    elseif s.state == WOOL_STATE:
+      worsted.sputan = true
       local n = rnd(5)
-      if n == 1 then
-        p " ткнул клубок шерсти лапкой.";
-      elseif n == 2 then
-        p " покатил клубок по полу, преследуя его по пятам.";
-      elseif n == 3 then
-        p " сцепился с клубком в жестокой схватке.";
-      elseif n == 4 then
-        p [[ прыгнул на клубок сверху,
-              и окончательно запутался в мешанине шерстяных нитей.]];
-      elseif n == 5 then
-        p " прервав игру, чешет себя за ушами.";
-      end
-      return
-    elseif s.state == CHAIR_STATE then
-      if s.other_kitten.state == CHAIR_STATE and rnd(2) == 1 then
-        local n = rnd(5);
-        if n == 1 then
-          p " преследует ";
-        elseif n == 2 then
-          p " прыгнул на "
-        elseif n == 3 then
-          p " умывает лапкой ";
-        elseif n == 4 then
-          p " обежал вокруг ";
-        elseif n == 5 then
-          p " ткнул ";
-        end
-        pr (s.other_kitten:noun'вн')
-        if n == 2 then
-          p " и они вместе покатились по полу.";
-        elseif n == 4 then
-          p " и бросился за ним.";
-        elseif n == 5 then
-          p " лапкой.";
-        else
-          p "."
-        end
-        return
-      end
+      if n == 1:
+        say ' ткнул клубок шерсти лапкой.'
+      elseif n == 2:
+        say ' покатил клубок по полу, преследуя его по пятам.'
+      elseif n == 3:
+        say ' сцепился с клубком в жестокой схватке.'
+      elseif n == 4:
+        say [[ прыгнул на клубок сверху,
+              и окончательно запутался в мешанине шерстяных нитей.]]
+      elseif n == 5:
+        say ' прервав игру, чешет себя за ушами.'
+      stop
+    elseif s.state == CHAIR_STATE:
+      if s.other_kitten.state == CHAIR_STATE and rnd(2) == 1:
+        local n = rnd(5)
+        if n == 1:
+          say ' преследует '
+        elseif n == 2:
+          say ' прыгнул на '
+        elseif n == 3:
+          say ' умывает лапкой '
+        elseif n == 4:
+          say ' обежал вокруг '
+        elseif n == 5:
+          say ' ткнул '
+        append(s.other_kitten:noun 'вн')
+        if n == 2:
+          say ' и они вместе покатились по полу.'
+        elseif n == 4:
+          say ' и бросился за ним.'
+        elseif n == 5:
+          say ' лапкой.'
+        else:
+          say '.'
+        stop
       local n = rnd(5)
-      if n == 1 then
-        p " гоняет по полу комок пыли."
-      elseif n == 2 then
-        p " катается по полу."
-      elseif n == 3 then
-        p " сидит и тщательно вылизывает свой хвост."
-      elseif n == 4 then
-        p " трется головой о ножки кресла."
-      elseif n == 5 then
-        p " гоняется за своим хвостом."
-      end
-    end
+      if n == 1:
+        say ' гоняет по полу комок пыли.'
+      elseif n == 2:
+        say ' катается по полу.'
+      elseif n == 3:
+        say ' сидит и тщательно вылизывает свой хвост.'
+      elseif n == 4:
+        say ' трется головой о ножки кресла.'
+      elseif n == 5:
+        say ' гоняется за своим хвостом.' 
 
 Kitten white_kitten:
   state: `CHAIR_STATE`
