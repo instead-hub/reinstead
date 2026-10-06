@@ -57,8 +57,9 @@ base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl"
 (* IDENT — перечисление из type; "?" — optional: T или nil *)
 (* обработчики — "<фаза> <Event>", Event в движковом регистре (Walk, Enter,
    SwitchOn, ...; Any/Default — тоже события); фаза обязательна:
-   on — метод события (X = function...), before/after/post — префикс
-   ("after Put", "before Turn, Tune"); без фазы — ошибка.
+   on — метод события (X = function...), before/after/post/life — префикс
+   ("after Put", "before Turn, Tune", "life Give, Show"); без фазы —
+   ошибка, и comma-ключ в impl требует фазы.
    Спец-ключи: with/inside (вложенные
    декларации или список ссылок), words/word, attrs, dict, disabled,
    found_in, переходы (n_to, out_to, ...), тексты *)

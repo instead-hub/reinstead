@@ -132,7 +132,7 @@ def field_base(key, val, ctx):
     parts = [p.strip() for p in base.split(",")]
     if (params is not None or isinstance(val, Block)
             or base in FIELD_SKIP or base in ("Any", "Default")
-            or re.match(r"^(on|before|after|post)\s", base)
+            or re.match(r"^(on|life|before|after|post)\s", base)
             or any(p in ctx.event_names or p.startswith("life_")
                    or p in ("Any", "Default") for p in parts)):
         return None

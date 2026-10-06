@@ -163,7 +163,7 @@ transpile (main loop) обход корневых элементов → Emitter
 
 - `value`/`body`/`handler`/`on` — значения, тела, обработчики
   (в т.ч. составные ключи `before A, B`; фаза обязательна: `on X` —
-  метод события (`X = function…`), `before/after/post X` — с префиксом;
+  метод события (`X = function…`), `before/after/post/life X` — с префиксом;
   `Any`/`Default` — обычные события с параметрами `s, ev, w`;
   `CURRENT_LINE` — по строке ключа).
 - `obj`/`decl` — объекты и классы-экземпляры: `words`, `attrs`
@@ -176,7 +176,7 @@ transpile (main loop) обход корневых элементов → Emitter
   `on`/`before`/`after` внутри `verb` — ошибка (действия в `event`).
 - `event` — `on:` → `mp.Имя`, `before`/`after` → `mp.before_/after_Имя`.
 - `impl` — обработчики/поля существующего объекта; плоские
-  `before/after/post X` как у объекта; owner-контекст, если цель есть в
+  `before/after/post/life X` как у объекта; owner-контекст, если цель есть в
   `ctx.fields` (тогда `s.field` типизируется); `dict:` особый.
 - `setup` — `dsc`, `hero`, `init`, `start`, `game`, `take`, `fmt`.
 - `const`/`glob`, `talk`, `verb_extend`.

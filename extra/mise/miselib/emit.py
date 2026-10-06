@@ -109,14 +109,14 @@ class Emitter:
             base, params = parse_key(key)
             parts = [p.strip() for p in base.split(",")]
             inherited = None
-            m0 = re.match(r"^(on|before|after|post)\s+(.+)$", parts[0])
+            m0 = re.match(r"^(on|life|before|after|post)\s+(.+)$", parts[0])
             if m0:
                 inherited = _pfx(m0.group(1))
                 parts[0] = m0.group(2)
             names = []
             for part in parts:
                 pfx = inherited
-                m = re.match(r"^(on|before|after|post)\s+(.+)$", part)
+                m = re.match(r"^(on|life|before|after|post)\s+(.+)$", part)
                 if m:
                     pfx = _pfx(m.group(1))
                     part = m.group(2)
@@ -124,7 +124,7 @@ class Emitter:
                 if not year:
                     raise Error("unknown event: " + part)
                 if pfx is None:
-                    raise Error("event %s needs an on/before/after/post "
+                    raise Error("event %s needs an on/life/before/after/post "
                                 "prefix" % part)
                 names.append((year, pfx))
             groups = []
@@ -215,7 +215,7 @@ class Emitter:
                 continue
             if key == "text" and len(texts) > 1:
                 continue
-            if re.match(r"^(on|before|after|post)\s+\S", key):
+            if re.match(r"^(on|life|before|after|post)\s+\S", key):
                 one = Block()
                 one.items = [(key, val)]
                 lines.extend(self.on(one, fi))
@@ -227,8 +227,8 @@ class Emitter:
             if not re.match(r"^[a-z]+_", fbase):
                 for part in parts:
                     if part in EVENTS or part in self.ctx.extra_events:
-                        raise Error("event %s needs an on/before/after/post "
-                                    "prefix" % part)
+                        raise Error("event %s needs an on/life/before/after/"
+                                    "post prefix" % part)
             if not params:
                 for part in parts:
                     if part in REF_FIELDS:
@@ -559,7 +559,12 @@ class Emitter:
         if (t.startswith("'") and t.endswith("'")) or (
                 t.startswith('"') and t.endswith('"')):
             t = t[1:-1]
-        ref = "_'%s'" % t
+        # objects/instances/modules are looked up by name; a class
+        # (`Kitten`) is a plain global variable
+        if t in self.ctx.fields and t not in self.ctx.ids:
+            ref = t
+        else:
+            ref = "_'%s'" % t
         prev = self.ctx.current_owner
         if t in self.ctx.fields:
             self.ctx.current_owner = t
@@ -570,14 +575,14 @@ class Emitter:
                 base, _ = parse_key(key)
                 if base == "on":
                     raise Error("on: must name an event (on Take:)")
-                if re.match(r"^(on|before|after|post)\s+\S", key):
+                if re.match(r"^(on|life|before|after|post)\s+\S", key):
                     one = Block()
                     one.items = [(key, val)]
                     lines.extend(self.on(one, "", ref + "."))
                 elif not re.match(r"^[a-z]+_", base) and any(
                         p.strip() in EVENTS or p.strip() in self.ctx.extra_events
                         for p in base.split(",")):
-                    raise Error("event %s needs an on/before/after/post "
+                    raise Error("event %s needs an on/life/before/after/post "
                                 "prefix" % base)
                 elif base == "dict":
                     if not isinstance(val, (Data, Raw)):
@@ -589,6 +594,9 @@ class Emitter:
                     lines.append("%s.%s = %s"
                                  % (ref, name, self.body(val, name)))
                 else:
+                    if "," in base:
+                        raise Error("comma key needs a phase "
+                                    "(on/life/before/after/post)")
                     lines.append("%s.%s = %s"
                                  % (ref, base, self.body(val, key)))
         finally:
