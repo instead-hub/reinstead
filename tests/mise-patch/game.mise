@@ -1,0 +1,17 @@
+name: t
+lang: ru
+include: stdlib
+
+fn helper(s: obj, w: obj): |
+  say [[helper]]
+
+obj box:
+  words: коробка
+  title: Коробка
+  score_value: 0
+
+patch box:
+  before Take: |
+    if s.score_value + 1 > 0:
+      say [[патч]]
+  after Drop: use helper
