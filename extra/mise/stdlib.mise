@@ -166,11 +166,11 @@ fn inroom(w: obj) -> obj: |lua
 fn thedark(what: obj) -> bool: |lua
   return mp:thedark(what)
 
-fn noun(s: obj, ...) -> str: |lua
-  return s:noun(...)
+fn noun(s: obj, n: str|num?, nn: num?) -> str: |lua
+  return s:noun(n, nn)
 
-fn Noun(s: obj, ...) -> str: |lua
-  return s:Noun(...)
+fn Noun(s: obj, n: str|num?, nn: num?) -> str: |lua
+  return s:Noun(n, nn)
 
 fn it(s: obj) -> str: |lua
   return s:It()

@@ -6,7 +6,7 @@ from .emitlogic import emit_logic
 from .decl import (PRESETS, check_ref_value, decl_key,
                    is_true, sym_text)
 from .typing import class_le, type_value_error
-from .expr import fn_name, transpile_exprlist
+from .expr import fn_name, min_args, transpile_exprlist
 
 
 
@@ -55,9 +55,13 @@ class Emitter:
             if not kind or not class_le(self.ctx, kind, pt):
                 raise Error("fn %s expects %s, not %s"
                             % (name, pt, kind or owner or "?"))
-        if not variadic and len(plist) > n:
-            raise Error("fn %s takes %d parameter(s), event provides %d"
-                        % (name, len(plist), n))
+        mn = min_args(plist)
+        if n < mn:
+            if mn == len(plist):
+                raise Error("fn %s takes %d parameter(s), event provides %d"
+                            % (name, len(plist), n))
+            raise Error("fn %s takes at least %d parameter(s), event "
+                        "provides %d" % (name, mn, n))
 
     def use_name(self, v):
         if isinstance(v, (Text, Bare)):

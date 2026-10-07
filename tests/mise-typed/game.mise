@@ -6,9 +6,23 @@ class Box:
   attrs: container
   weight: 0
 
+fn label(w: obj, n: str|num?, nn: num?) -> str: |
+  if n and nn:
+    return w:noun(n, nn)
+  if n:
+    return w:noun(n)
+  return w:noun()
+
+fn label2(w: obj, n: num?|str) -> str: |
+  return w:noun(n)
+
 fn on_take(s: Box): |
   if s.weight + 1 > 0:
     say [[тяжёлый]]
+  say(label(s))
+  say(label(s, 'им'))
+  say(label2(s, 2))
+  label(s, 1, 2)
 
 Box crate:
   words: ящик

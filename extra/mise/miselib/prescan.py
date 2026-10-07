@@ -392,12 +392,14 @@ def wrapper_template(text):
     return None
 
 
-def adapter_callee(text, plist):
-    """Return callee if body forwards exactly (params..., ...) to it.
+def adapter_callee(text, plist, full=False):
+    """Return callee if body forwards parameters to it.
 
-    Method form (recv:meth(...)) is allowed when recv is the first
-    parameter; then ("method", meth) is returned and calls emit
-    args[0]:meth(args[1:]).
+    Body must be a single call with `(params..., ...)`; with `full=True`
+    the plain `(params...)` form is accepted too (fns with optional
+    trailing parameters). Method form (recv:meth(...)) is allowed when
+    recv is the first parameter; then ("method", meth) is returned and
+    calls emit args[0]:meth(args[1:]).
     """
     b = text.strip()
     if not b or "\n" in b:
@@ -411,13 +413,17 @@ def adapter_callee(text, plist):
     callee, raw = m.group(1), m.group(2)
     got = [a.strip() for a in raw.split(",") if a.strip()]
     pnames = [pn for pn, _pt in plist]
+    tails = [pnames + ["..."]]
+    if full:
+        tails.append(pnames)
     if ":" in callee:
         recv, meth = callee.split(":", 1)
-        if pnames and recv == pnames[0] and got == pnames[1:] + ["..."]:
+        if (pnames and recv == pnames[0]
+                and any(got == t[1:] for t in tails)):
             return None if "fn_" in meth else ("method", meth)
-    if got != pnames + ["..."]:
-        return None
-    return None if "fn_" in callee else callee
+    if got in tails:
+        return None if "fn_" in callee else callee
+    return None
 
 
 def _register_refs(root, ctx):
@@ -448,6 +454,7 @@ def _register_events(root, ctx):
 
 
 def _inline_fn(ctx, name, val, plist, variadic):
+    has_optional = any(pt == "nil" or pt.endswith("?") for _pn, pt in plist)
     if isinstance(val, Raw):
         if variadic:
             raise Error("fn %s: expression body cannot be variadic" % name)
@@ -458,12 +465,27 @@ def _inline_fn(ctx, name, val, plist, variadic):
                for pn, _pt in plist):
             raise Error("fn %s: expression body uses a parameter "
                         "more than once" % name)
+        if has_optional:
+            for pn, pt in plist:
+                if ((pt == "nil" or pt.endswith("?"))
+                        and re.search(r"(?<![\w.])%s(?![\w])"
+                                      % re.escape(pn), e)):
+                    raise Error("fn %s: expression body cannot use optional "
+                                "parameter %s" % (name, pn))
         ctx.inline[name] = ("expr", (plist, e))
         return
     if not isinstance(val, Lua):
         return
     if variadic:
         callee = adapter_callee(val.s, plist)
+        if callee:
+            if isinstance(callee, tuple):
+                ctx.inline[name] = ("meth", (callee[1],))
+            else:
+                ctx.inline[name] = ("call", (callee,))
+        return
+    if has_optional:
+        callee = adapter_callee(val.s, plist, full=True)
         if callee:
             if isinstance(callee, tuple):
                 ctx.inline[name] = ("meth", (callee[1],))

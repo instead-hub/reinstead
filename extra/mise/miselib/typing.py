@@ -7,6 +7,32 @@ def base(t):
     return t[:-1] if t and t.endswith("?") else t
 
 
+def split_union(text):
+    """Split a `|` list at top-level parentheses."""
+    parts, cur, depth = [], [], 0
+    for c in text:
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+        if c == "|" and depth == 0:
+            parts.append("".join(cur).strip())
+            cur = []
+        else:
+            cur.append(c)
+    if cur or parts:
+        parts.append("".join(cur).strip())
+    return [p for p in parts if p]
+
+
+def union_parts(t):
+    """Alternatives of a canonical top-level union, else None."""
+    if not t:
+        return None
+    parts = split_union(base(t))
+    return parts if len(parts) > 1 else None
+
+
 def split_types(text):
     """Split a comma list at top-level parentheses."""
     parts, cur, depth = [], [], 0
@@ -46,6 +72,24 @@ def canon_type(known, text):
     opt = text.endswith("?")
     if opt:
         text = text[:-1].strip()
+    alts = split_union(text)
+    if len(alts) > 1:
+        out = []
+        for a in alts:
+            c = canon_type(known, a)
+            if c is None:
+                return None
+            if c.endswith("?"):
+                opt = True
+                c = c[:-1]
+            if c == "nil":
+                opt = True
+                continue
+            if c not in out:
+                out.append(c)
+        if not out:
+            return None
+        return "|".join(sorted(out)) + ("?" if opt else "")
     parts = _fn_split(text)
     if parts is not None:
         inner, rest = parts[0].strip(), parts[1].strip()
@@ -78,13 +122,22 @@ def canon_type(known, text):
 
 def type_error(known, text):
     """Return an error message for a bad type annotation, else None."""
-    if canon_type(known, text) is None:
-        if text.strip().endswith("?") and text.strip()[:-1] == "nil":
-            return "unknown type %r" % text
-        if "fn(" in text or "(" in text or "->" in text:
-            return "bad type %r" % text
+    if canon_type(known, text) is not None:
+        return None
+    t = text.strip()
+    if t.endswith("?"):
+        t = t[:-1].strip()
+    alts = split_union(t)
+    if len(alts) > 1:
+        for a in alts:
+            msg = type_error(known, a)
+            if msg:
+                return msg
+    if t == "nil":
         return "unknown type %r" % text
-    return None
+    if "fn(" in text or "(" in text or "->" in text:
+        return "bad type %r" % text
+    return "unknown type %r" % text
 
 
 def canon_fn_sig(plist, ret, variadic=False):
@@ -115,6 +168,14 @@ def type_ok(ctx, t, exp):
         return True
     if exp.endswith("?"):
         return t == "nil" or type_ok(ctx, t, exp[:-1])
+    alts = union_parts(exp)
+    if alts is not None:
+        return any(type_ok(ctx, t, alt) for alt in alts)
+    alts = union_parts(t)
+    if alts is not None:
+        if t.endswith("?") and not type_ok(ctx, "nil", exp):
+            return False
+        return all(type_ok(ctx, alt, exp) for alt in alts)
     if exp in ctx.types and t in ("str", exp):
         return True
     if t in ctx.types and exp == "str":

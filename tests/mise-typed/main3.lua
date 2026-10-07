@@ -4,10 +4,28 @@
 require "fmt"
 require "parser/mp-ru"
 
+local function fn_label(w, n, nn)
+  if n and nn then
+    return w:noun(n, nn)
+  end
+  if n then
+    return w:noun(n)
+  end
+  return w:noun()
+end
+
+local function fn_label2(w, n)
+  return w:noun(n)
+end
+
 local function fn_on_take(s)
   if s.weight + 1 > 0 then
     p([[тяжёлый]])
   end
+  p(fn_label(s))
+  p(fn_label(s, 'им'))
+  p(fn_label2(s, 2))
+  fn_label(s, 1, 2)
 end
 
 obj {

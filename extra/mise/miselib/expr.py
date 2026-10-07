@@ -3,7 +3,7 @@ import re
 from . import state as S
 from .common import *
 from .typing import (base, canon_fn_sig, canon_type, fn_type_parts, type_error,
-                     type_ok, type_value_error)
+                     type_ok, type_value_error, union_parts)
 
 def lex_lua(text):
     toks = []
@@ -66,14 +66,25 @@ def lex_lua(text):
     toks.append(("eof", ""))
     return toks
 
+def min_args(plist):
+    """Number of required leading parameters (optional ones are trailing)."""
+    return sum(1 for _pn, pt in plist
+               if not (pt == "nil" or pt.endswith("?")))
+
+
 def check_arity(name, plist, variadic, n):
+    mn = min_args(plist)
     if variadic:
-        if n < len(plist):
+        if n < mn:
             raise LintError("fn %s expects at least %d argument(s), got %d"
+                            % (name, mn, n))
+    elif mn == len(plist):
+        if n != len(plist):
+            raise LintError("fn %s expects %d argument(s), got %d"
                             % (name, len(plist), n))
-    elif n != len(plist):
-        raise LintError("fn %s expects %d argument(s), got %d"
-                        % (name, len(plist), n))
+    elif not mn <= n <= len(plist):
+        raise LintError("fn %s expects %d..%d argument(s), got %d"
+                        % (name, mn, len(plist), n))
 
 
 def fn_name(name):
@@ -250,6 +261,19 @@ class ExprEmit:
 
     def str_arg(self, tok, exp):
         val = self.strval(tok)
+        alts = union_parts(exp) if exp else None
+        if alts is not None:
+            if "str" in alts or "any" in alts:
+                return tok
+            for alt in alts:
+                if alt in self.ctx.types:
+                    if not type_value_error(self.ctx, alt, val):
+                        return tok
+                elif alt == "event" and val in self.ctx.event_names:
+                    return tok
+                elif alt == "obj" and val in self.ctx.ids:
+                    return "_'%s'" % val
+            self.terr("expected %s, got str %r" % (exp, val))
         if exp == "obj":
             if val in self.ctx.ids:
                 return "_'%s'" % val

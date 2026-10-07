@@ -56,12 +56,15 @@ kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
    объявляются через refs: и сверяются с объявленными объектами *)
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
-param     ::= IDENT [ ":" type ] | "..."
-type      ::= atom [ "?" ]
+param     ::= IDENT [ ":" type ] | "..."   (* хвостовой T?-параметр можно
+                                              не передавать при вызове *)
+type      ::= atom [ "?" ] { "|" atom [ "?" ] }
 atom      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl"
             | "fn" "(" [ type { "," type } ] ")" [ "->" type ]
             | "nil" | IDENT
 (* IDENT — перечисление из type или имя класса; "?" — optional: T или nil;
+   "|" — union: значение подходит под любую альтернативу (str|num);
+   канонизация — сортировка альтернатив и один хвостовой "?";
    fn(...) -> T — подпись колбэка (имена параметров необязательны) *)
 (* обработчики — "<фаза> <Event>", Event в движковом регистре (Walk, Enter,
    SwitchOn, ...; Any/Default — тоже события); фаза обязательна:

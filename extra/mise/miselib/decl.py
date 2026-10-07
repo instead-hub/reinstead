@@ -132,6 +132,13 @@ def parse_fn_sig(key, types=None):
                 raise Error("fn %s: bad parameter %r" % (name, pn))
             check_type(pt, pn)
             plist.append((pn, canon_type(known, pt)))
+    seen_optional = False
+    for pn, pt in plist:
+        if pt == "nil" or pt.endswith("?"):
+            seen_optional = True
+        elif seen_optional:
+            raise Error("fn %s: required parameter %s after optional"
+                        % (name, pn))
     check_type(ret, "return")
     if ret != "any":
         ret = canon_type(known, ret)
