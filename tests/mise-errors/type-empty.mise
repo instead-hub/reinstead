@@ -1,0 +1,5 @@
+name: t
+lang: ru
+include: stdlib
+
+type mood:

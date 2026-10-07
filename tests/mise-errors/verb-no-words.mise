@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+verb Kick:
+  patterns:
+    - пнуть : Kick

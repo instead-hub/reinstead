@@ -1,0 +1,8 @@
+name: t
+lang: ru
+include: stdlib
+
+extend #Kick:
+  patterns:
+    - пнуть : Kick
+  before Kick: pass

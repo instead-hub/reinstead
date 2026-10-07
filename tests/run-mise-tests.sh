@@ -142,6 +142,32 @@ if [ "$ENGINE" = 1 ]; then
 			head -40 "$WORK/$name.diff" >&2
 		fi
 	done
+
+	# Games without an original run against a committed golden transcript.
+	for g in "$ROOT"/tests/mise-*/game.mise; do
+		[ -f "$g" ] || continue
+		dir=$(dirname "$g")
+		name=$(basename "$dir")
+		base=${name#mise-}
+		[ -f "$dir/transcript.golden" ] || continue
+		[ -d "$ROOT/extra/metaparser-instead/games/$base" ] && continue
+		[ -f "$dir/autoscript" ] || continue
+		script="$WORK/$name.script"
+		prep_script "$dir/autoscript" "$script"
+		if ! run_game "$dir" "$script" "$WORK/$name.new"; then
+			fail "$name: run"
+			continue
+		fi
+		rm -f "$dir/dict.mrd"
+		tail -n +2 "$WORK/$name.new" > "$WORK/$name.n"
+		if diff -u "$dir/transcript.golden" "$WORK/$name.n" \
+				> "$WORK/$name.diff"; then
+			pass "$name: transcript (golden)"
+		else
+			fail "$name: transcript golden differs"
+			head -40 "$WORK/$name.diff" >&2
+		fi
+	done
 fi
 
 echo "== mise: ok=$ok failed=$bad =="

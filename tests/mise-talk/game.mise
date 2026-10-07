@@ -1,0 +1,56 @@
+name: talk
+lang: ru
+include: stdlib
+
+global:
+  met: false
+  q1: 0
+
+setup:
+  start: |
+    player:move hall
+
+room hall:
+  words: зал
+  dsc: [[Большой зал.]]
+
+obj guide:
+  words: гид,проводник
+  dsc: [[Суровый гид.]]
+  found_in: hall
+  talk_to: разговор_с_гидом
+
+talk разговор_с_гидом:
+  intro: [[-- Здравствуйте, путник.]]
+  option:
+    when: not met
+    ask: Что тут случилось?
+    reply: -- Обвал в шахте.
+    option:
+      ask: Кто виноват?
+      reply: -- Никто.
+      do: |
+        q1 += 1
+    option:
+      hidden: true
+      ask: Секретный вариант
+      reply: -- Тс-с-с.
+      do: |
+        q1 += 10
+    option:
+      only: true
+      ask: Только один раз
+      goto: финал
+  option:
+    always: true
+    say: Я скоро вернусь.
+    do: |
+      met = true
+      walkout()
+  label финал:
+    say: -- Продолжение следует.
+    option:
+      ask: Спасибо.
+      do: |
+        met = true
+        walkout()

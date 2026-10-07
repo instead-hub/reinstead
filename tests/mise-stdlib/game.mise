@@ -1,0 +1,64 @@
+name: stdlib
+lang: ru
+include: stdlib
+
+room hall:
+  words: зал
+  dsc: [[Зал.]]
+
+obj box:
+  words: ящик
+  attrs: container,open
+
+fn probe(w: obj, t: tbl, ev: event): |
+  hasnt(w, open)
+  once_tag(w, 'tag')
+  once(w)
+  subaction(ev)
+  subaction(ev, w, w)
+  daemonStart(w)
+  daemonStop(w)
+  enable(w)
+  disable(w)
+  isDaemon(w)
+  getDaemons()
+  disabled(w)
+  walkin(hall)
+  take(w)
+  drop(w)
+  pairs(t)
+  ipairs(t)
+  walkout()
+  visits(w)
+  xevent()
+  visited(w)
+  access(w)
+  offerslight(w)
+  visible_scope(hall)
+  inroom(w)
+  thedark(w)
+  multi_alias(w)
+  gram(w)
+  walkback()
+  remove(w)
+  push(w)
+  check_held(w)
+  check_live(w)
+  check_touch()
+  check_worn(w)
+  clear()
+  cls_prompt()
+  need_scene(w, true)
+  player_moved()
+  lifeon(w)
+  lifeoff(w)
+  call_before(w, ev)
+  runmethods('obj', 'take')
+  runorval(w, 'inv')
+  theme_name()
+  pclr()
+  ref('box')
+  arg_word(1)
+  tiny()
+  music('x')
+  rnd(1)

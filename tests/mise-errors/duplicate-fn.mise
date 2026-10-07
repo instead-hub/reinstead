@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+fn f(x: num): pass
+
+fn f(x: num): pass

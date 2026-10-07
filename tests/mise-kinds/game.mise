@@ -1,0 +1,79 @@
+name: kinds
+lang: ru
+include: stdlib
+
+type mood:
+  - calm, angry
+
+extend type mood:
+  - tired
+
+extend refs:
+  - home_to
+
+setup:
+  fmt: verbose
+  take: statue
+  game:
+    hint_verbs: { "#Look" }
+  hero:
+    words: ты
+  start: |
+    player:move hall
+
+story intro:
+  dsc: [[Пролог.]]
+  after Enter: |
+    say [[История началась.]]
+
+scenery sky:
+  words: небо
+  dsc: [[Небо в облаках.]]
+
+room hall:
+  words: зал
+  dsc: [[Большой зал.]]
+  dict: { "зал" }
+  inside: sky
+  on Enter: |
+    say [[Вы вошли.]]
+  on Walk: |
+    say [[Вы идёте.]]
+  on Look: |
+    say [[Вы осматриваетесь.]]
+  post Look: |
+    say [[Уже осмотрелись.]]
+  life Give, Show: |
+    say [[Жизнь кипит.]]
+  after Turn: |
+    say [[Повернулись.]]
+  s_to: garden
+
+door gate:
+  words: ворота
+  d_to: hall
+  n_to: garden
+
+room garden:
+  words: сад
+  dsc: [[Тихий сад.]]
+  home_to: hall
+
+obj statue:
+  words: статуя
+  attrs: scenery
+  mood: calm
+
+obj relic:
+  words: реликвия
+  mood: tired
+  disabled: true
+
+verb Probe:
+  tag: #Probe
+  words: пробовать
+  prio: 10
+  hint: |
+    say [[Подсказка.]]
+  patterns:
+    - {noun}/вн : Probe

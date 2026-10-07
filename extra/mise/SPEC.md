@@ -935,7 +935,15 @@ talk Разговор_с_Мариной:
 - `tests/mise-wtell/game.mise` — классы, события, `dict`, `setup.init`
   (один `lua:` — настройки движка);
 - `tests/mise-alice/game.mise` — классы с демонами (`rnd`), поля-ссылки
-  с `_(...)`, `extend #Exam`.
+  с `_(...)`, `extend #Exam`;
+- `tests/mise-talk/game.mise` — `talk:` (intro/option/reply/do/when/
+  goto/always/hidden/only/label) с golden-транскриптом движка;
+- `tests/mise-kinds/game.mise` — пресеты `door`/`story`/`scenery`,
+  фазы `on/life/before/after/post`, `type`/`extend type`/`extend refs`,
+  `inside`/`dict`/`disabled`, поля `setup` (hero/game/take/fmt), `verb`
+  (tag/prio/hint);
+- `tests/mise-stdlib/game.mise` — вызов каждой функции stdlib.
 
 Все игры гоняются `tests/run-mise-tests.sh` (сверка Lua и, с
-`--engine`, транскриптов оригинал/конверсия).
+`--engine`, транскриптов оригинал/конверсия; игры без оригинала — с
+`transcript.golden`).

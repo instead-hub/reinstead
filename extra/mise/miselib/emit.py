@@ -410,7 +410,7 @@ class Emitter:
         fields += self.verb_fields(block, required=True)
         for key, _val in block.items:
             base_key, _params = parse_key(key)
-            if base_key in ("on", "before", "after"):
+            if re.match(r"^(on|before|after)(\s|$)", base_key):
                 raise Error("verb %s: %s is declared in 'event %s:' now"
                             % (ident or "?", base_key, ident or "?"))
         extra = self.verb_extra(block)
@@ -423,6 +423,11 @@ class Emitter:
         fields = [lua_str(ident)] + self.verb_fields(block, required=False)
         if len(fields) == 1:
             raise Error("extend needs words or patterns")
+        for key, _val in block.items:
+            base_key, _params = parse_key(key)
+            if re.match(r"^(on|before|after)(\s|$)", base_key):
+                raise Error("extend %s: %s is declared in 'event %s:' now"
+                            % (ident, base_key, ident.lstrip("#")))
         extra = self.verb_extra(block)
         ctor = "VerbExtendWord" if block.get("words") is not None \
             else "VerbExtend"

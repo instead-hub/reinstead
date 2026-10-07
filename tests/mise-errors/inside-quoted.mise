@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+room r:
+  words: r
+  inside: "room"
