@@ -22,3 +22,9 @@ obj box:
       say(pick(s))
     default:
       say [[не видно]]
+
+extend type event: Gaze
+
+impl box:
+  on Gaze: |
+    say [[смотрят]]

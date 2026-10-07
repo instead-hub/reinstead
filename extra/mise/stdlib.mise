@@ -4,6 +4,8 @@ type attr: ~, alive, animate, broken, burning, clothing, coded, concealed, conta
 
 type direction: n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to
 
+type event: Walk, Enter, Exit, Exam, Search, LookUnder, Consult, Open, Close, Unlock, Lock, Inv, Take, Drop, PutOn, Insert, Remove, ThrowAt, Wear, Disrobe, SwitchOn, SwitchOff, Eat, Taste, Drink, Push, PushDir, Pull, Transfer, Turn, Wait, Rub, Sing, Touch, Give, Show, Burn, Wake, WakeOther, Kiss, Think, Smell, Listen, Dig, Cut, Tear, Tie, Blow, Attack, Sleep, Swim, Fill, Jump, JumpOver, WaveHands, Wave, Climb, GetOff, Buy, Talk, Tell, Ask, AskFor, Answer, Yes, No, Next, Look, Receive, ThrownAt, LetGo, LetIn, Any, Default
+
 fn here() -> obj: |lua
   return here()
 

@@ -60,3 +60,7 @@ obj {
     end
   end;
 }
+
+_'box'.Gaze = function(s, w, wh)
+  p([[смотрят]])
+end;

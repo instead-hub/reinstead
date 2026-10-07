@@ -394,13 +394,13 @@ def adapter_callee(text, plist):
 
 
 def _register_events(root, ctx):
-    ctx.extra_events = {}
+    names = set(ctx.types.get("event", {}).get("values", []))
     for _i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(_i)
         kind, ident = classify(key)
         if kind == "event_decl" and isinstance(val, Block):
-            ctx.extra_events[ident] = ident
-    ctx.event_names = set(EVENTS) | set(ctx.extra_events.values())
+            names.add(ident)
+    ctx.event_names = names
 
 
 def _inline_fn(ctx, name, val, plist, variadic):

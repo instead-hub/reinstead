@@ -127,13 +127,12 @@ class Emitter:
                 if m:
                     pfx = _pfx(m.group(1))
                     part = m.group(2)
-                year = EVENTS.get(part) or self.ctx.extra_events.get(part)
-                if not year:
+                if part not in self.ctx.event_names:
                     raise Error("unknown event: " + part)
                 if pfx is None:
                     raise Error("event %s needs an on/life/before/after/post "
                                 "prefix" % part)
-                names.append((year, pfx))
+                names.append((part, pfx))
             groups = []
             for year, pfx in names:
                 if groups and groups[-1][0] == pfx:
@@ -278,7 +277,7 @@ class Emitter:
             parts = [p.strip() for p in fbase.split(",")]
             if not re.match(r"^[a-z]+_", fbase):
                 for part in parts:
-                    if part in EVENTS or part in self.ctx.extra_events:
+                    if part in self.ctx.event_names:
                         raise Error("event %s needs an on/life/before/after/"
                                     "post prefix" % part)
             if not params:
@@ -641,7 +640,7 @@ class Emitter:
                     one.items = [(key, val)]
                     lines.extend(self.on(one, "", ref + "."))
                 elif not re.match(r"^[a-z]+_", base) and any(
-                        p.strip() in EVENTS or p.strip() in self.ctx.extra_events
+                        p.strip() in self.ctx.event_names
                         for p in base.split(",")):
                     raise Error("event %s needs an on/life/before/after/post "
                                 "prefix" % base)

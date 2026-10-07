@@ -48,7 +48,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | `funcs` | вызываемые имена: `fns` + игровые Lua-функции + `_` |
 | `fns`, `fn_sigs` | объявленные `fn`: имена и `(plist, ret, variadic)` |
 | `global_types` | типы `const:`/`global:` (выводятся `literal_type`) |
-| `event_names`, `extra_events` | стандартные + объявленные события |
+| `event_names` | значения `type event` (stdlib) + `event X:` |
 | `inline` | inline-функции: `name -> (kind, payload)` (см. ниже) |
 | `types` | типы-перечисления: `name -> {values, negate}` |
 | `fields` | `obj/класс -> {поле: (тип, is_ref)}` |
@@ -74,7 +74,7 @@ transpile (main loop) обход корневых элементов → Emitter
    поля в цель до собственных;
    затем `check_bare_names` сверяет голые значения тем же правилом в
    `impl`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
-4. Регистрация `event_decl` в `extra_events`.
+4. `event_names` — значения типа `event` (stdlib) + `event X:`.
 5. `collect_game_defs`/`scan_required` — поиск функций/переменных в
    `|lua` и подключаемых Lua-файлах (чтобы `fn` и `use` не конфликтовали
    с игровым кодом).

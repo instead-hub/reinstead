@@ -27,7 +27,6 @@ class Ctx:
         self.fn_sigs = {}
         self.global_types = {}
         self.event_names = set()
-        self.extra_events = {}
         self.inline = {}
         self.types = {}
         self.enum_values = {}

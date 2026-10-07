@@ -3,18 +3,6 @@ import textwrap
 
 IND = "  "
 
-EVENTS = {}
-for _e in (
-    "Walk Enter Exit Exam Search LookUnder Consult Open Close Unlock Lock Inv "
-    "Take Drop PutOn Insert Remove ThrowAt Wear Disrobe SwitchOn SwitchOff Eat "
-    "Taste Drink Push PushDir Pull Transfer Turn Wait Rub Sing Touch Give Show Burn "
-    "Wake WakeOther Kiss Think Smell Listen Dig Cut Tear Tie Blow Attack Sleep "
-    "Swim Fill Jump JumpOver WaveHands Wave Climb GetOff Buy Talk Tell Ask "
-    "AskFor Answer Yes No Next Look Receive ThrownAt LetGo LetIn "
-    "Any Default"
-).split():
-    EVENTS[_e] = _e
-
 FIELD_PARAMS = {
     "daemon": "s", "description": "s", "dsc": "s", "title": "s", "inv": "s",
     "inside_dsc": "s", "init_dsc": "s", "dark_dsc": "s", "cant_go": "s, to",
