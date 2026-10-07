@@ -680,11 +680,23 @@ event Reflect:
 
 event Say:
   before: Сообщить, что предмет пуст.
+
+event Any:
+  on: |
+    when ev == Exam and w:has scenery:
+      say осмотр декорации
+    when ev == Wear:
+      say надели
 ```
 
 - `event Имя:` регистрирует событие; имя — CamelCase;
 - `on:` — реализация действия (`mp.Имя = function(s, w, wh) ...`);
 - `before`/`after` — `mp.before_Имя` / `mp.after_Имя`;
+- `event Any:` / `event Default:` — глобальные правила (`mp.Any` /
+  `mp.Default` и `mp.before_Any`/`mp.after_Any`): один блок на все
+  события; параметры по умолчанию `s, ev, w, wh`, ветвление — через
+  `when ev == …:` (ср. объектные `Any:`/`Default:`, которые
+  срабатывают у конкретного объекта);
 - пустое объявление просто регистрирует имя события (для `verb`,
   `before`/`after`-ключей и т.п.); объявляйте событие до/независимо
   от `verb` — `verb` теперь только слова и паттерны.

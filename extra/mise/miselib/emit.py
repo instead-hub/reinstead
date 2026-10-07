@@ -364,7 +364,8 @@ class Emitter:
                 raise Error("event %s.%s must be logic or lua" % (name, key))
             mpname = {"on": "mp.", "before": "mp.before_",
                       "after": "mp.after_"}[base] + name
-            prm = params or "s, w, wh"
+            prm = params or ("s, ev, w, wh" if name in ("Any", "Default")
+                             else "s, w, wh")
             lines.append("%s = %s" % (mpname, self.handler(val, prm, "")))
         return "\n".join(lines)
 

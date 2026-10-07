@@ -186,7 +186,8 @@ transpile (main loop) обход корневых элементов → Emitter
   обработчиках.
 - `verb` — только `Verb {...}`: `tag/words/patterns/prio/hint`;
   `on`/`before`/`after` внутри `verb` — ошибка (действия в `event`).
-- `event` — `on:` → `mp.Имя`, `before`/`after` → `mp.before_/after_Имя`.
+- `event` — `on:` → `mp.Имя`, `before`/`after` → `mp.before_/after_Имя`;
+  у `Any`/`Default` параметры по умолчанию `s, ev, w, wh`.
 - `impl` — обработчики/поля существующего объекта; плоские
   `before/after/post/life X` как у объекта; owner-контекст, если цель есть в
   `ctx.fields` (тогда `s.field` типизируется); `dict:` особый.

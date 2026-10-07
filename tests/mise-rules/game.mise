@@ -1,0 +1,17 @@
+name: t
+lang: ru
+include: stdlib
+
+event Any:
+  before: |
+    when ev == Walk and w:has door:
+      say [[дверь]]
+  on: |
+    when ev == Exam and w:has scenery:
+      say [[осмотр декорации]]
+    when ev == Wear:
+      say [[надели]]
+
+event Default:
+  on: |
+    say [[нет обработчика]]
