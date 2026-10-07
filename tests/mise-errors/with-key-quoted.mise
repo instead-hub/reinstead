@@ -1,0 +1,10 @@
+name: t
+lang: ru
+include: stdlib
+
+obj key:
+  words: ключ
+
+obj casket:
+  words: шкатулка
+  with_key: "key"

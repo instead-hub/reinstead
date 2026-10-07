@@ -2,6 +2,8 @@ name: t
 lang: ru
 include: stdlib
 
+extend type attr: seen
+
 class Tree:
   attrs: scenery
 

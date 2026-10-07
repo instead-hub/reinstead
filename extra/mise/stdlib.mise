@@ -1,12 +1,10 @@
 obj none:
 
 type attr:
-  - ~, alive, animate, broken, burning, clothing, coded, concealed,
-  - container, cutscene, device, door, drinkable, edible, enterable,
-  - fed, female, fixed, gameover, light, lockable, locked, luminous,
-  - male, moved, multi, noparser, on, open, openable, read, ring,
-  - scenery, seen, static, supporter, switchable, talkable,
-  - transparent, tuned, visited, worn
+  - ~, animate, clothing, concealed, container, cutscene, door,
+  - edible, enterable, gameover, light, lockable, locked, luminous,
+  - moved, multi, on, open, openable, scenery, static, supporter,
+  - switchable, transparent, visited, worn
 
 type direction: n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to
 
@@ -15,8 +13,9 @@ type case: им, рд, дт, вн, тв, пр, зв
 type gram: ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
 
 refs:
-  - d_to, door_to, e_to, found_in, in_to, n_to, ne_to, next_to, nw_to, out_to
-  - prev_to, s_to, se_to, sw_to, talk_to, u_to, w_to, walk_to
+  - d_to, door_to, e_to, found_in, from, in_to, n_to, ne_to, next_to,
+  - nw_to, out_to, prev_to, s_to, scope, se_to, sw_to, talk_to, to, u_to,
+  - w_to, walk_to, with_key
 
 type event:
   - Answer, Any, Ask, AskFor, Attack, Blow, Burn, Buy, Climb, Close,

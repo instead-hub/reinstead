@@ -80,6 +80,47 @@ room {
   after_Turn = function(s, w, wh)
     p([[Повернулись.]])
   end;
+  compass_look = function(s, to)
+    if to then
+      return false
+    end
+  end;
+  scope = function(s, w)
+    return false
+  end;
+  enter = function(s, w)
+    w:noun_hint()
+  end;
+  exit = function(s, w)
+    return false
+  end;
+  onenter = function(s, w)
+    w:noun_hint()
+  end;
+  onexit = function(s, w)
+    return false
+  end;
+  each_turn = function(s)
+    return false
+  end;
+  found_in = function(s)
+    return false
+  end;
+  door_to = function(s)
+    return false
+  end;
+  when_open = function(s)
+    return false
+  end;
+  when_closed = function(s)
+    return false
+  end;
+  when_on = function(s)
+    return false
+  end;
+  when_off = function(s)
+    return false
+  end;
   s_to = 'garden';
   obj = {
     'sky';
@@ -93,11 +134,19 @@ door {
   n_to = 'garden';
 }
 
+Door {
+  -"калитка";
+  nam = "gate2";
+  from = 'hall';
+  to = 'garden';
+}
+
 room {
   -"сад";
   nam = "garden";
   dsc = "Тихий сад.";
   home_to = 'hall';
+  scope = { 'statue', 'relic' };
 }
 
 obj {
@@ -111,6 +160,17 @@ obj {
   nam = "relic";
   mood = "tired";
 }:disable()
+
+obj {
+  -"ключ";
+  nam = "key";
+}
+
+obj {
+  -"шкатулка";
+  nam = "casket";
+  with_key = 'key';
+}:attr 'lockable,locked'
 
 Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 10, hint = function(s)
   p([[Подсказка.]])

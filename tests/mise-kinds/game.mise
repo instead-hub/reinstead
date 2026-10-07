@@ -47,6 +47,33 @@ room hall:
     say [[Жизнь кипит.]]
   after Turn: |
     say [[Повернулись.]]
+  compass_look: |
+    if to:
+      pass
+  scope: |
+    pass
+  enter: |
+    w:noun()
+  exit: |
+    pass
+  onenter: |
+    w:noun()
+  onexit: |
+    pass
+  each_turn: |
+    pass
+  found_in: |
+    pass
+  door_to: |
+    pass
+  when_open: |
+    pass
+  when_closed: |
+    pass
+  when_on: |
+    pass
+  when_off: |
+    pass
   s_to: garden
 
 door gate:
@@ -54,10 +81,16 @@ door gate:
   d_to: hall
   n_to: garden
 
+Door gate2:
+  words: калитка
+  from: hall
+  to: garden
+
 room garden:
   words: сад
   dsc: [[Тихий сад.]]
   home_to: hall
+  scope: statue, relic
 
 obj statue:
   words: статуя
@@ -68,6 +101,14 @@ obj relic:
   words: реликвия
   mood: tired
   disabled: true
+
+obj key:
+  words: ключ
+
+obj casket:
+  words: шкатулка
+  attrs: lockable, locked
+  with_key: key
 
 verb Probe:
   tag: #Probe

@@ -6,7 +6,10 @@ IND = "  "
 FIELD_PARAMS = {
     "daemon": "s", "description": "s", "dsc": "s", "title": "s", "inv": "s",
     "inside_dsc": "s", "init_dsc": "s", "dark_dsc": "s", "cant_go": "s, to",
-    "onenter": "s, f", "onexit": "s, f",
+    "compass_look": "s, to",
+    "onenter": "s, w", "onexit": "s, w", "enter": "s, w", "exit": "s, w",
+    "each_turn": "s", "found_in": "s", "door_to": "s", "scope": "s, w",
+    "when_open": "s", "when_closed": "s", "when_on": "s", "when_off": "s",
 }
 
 class Error(Exception):
