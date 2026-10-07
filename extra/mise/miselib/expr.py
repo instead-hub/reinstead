@@ -393,20 +393,10 @@ class ExprEmit:
         return self.postfix(self.primary())
 
     def or_expr(self):
-        node = self.and_expr()
-        while self.peek()[1] == "or":
-            self.next()
-            rhs = self.and_expr()
-            node = Node("%s or %s" % (node.code, rhs.code), "any")
-        return node
+        return self.bin_expr(self.and_expr, ("or",), "any")
 
     def and_expr(self):
-        node = self.cmp_expr()
-        while self.peek()[1] == "and":
-            self.next()
-            rhs = self.cmp_expr()
-            node = Node("%s and %s" % (node.code, rhs.code), "any")
-        return node
+        return self.bin_expr(self.cmp_expr, ("and",), "any")
 
     def cmp_expr(self):
         node = self.concat_expr()
@@ -430,33 +420,26 @@ class ExprEmit:
             node = Node("%s %s %s" % (node.code, op, rhs.code), "bool")
         return node
 
-    def concat_expr(self):
-        node = self.add_expr()
-        while self.peek()[1] == "..":
-            self.next()
-            rhs = self.add_expr()
-            node = Node("%s .. %s" % (node.code, rhs.code), "str")
+    def bin_expr(self, sub, ops, t, check_num=False):
+        node = sub()
+        while self.peek()[1] in ops:
+            op = self.next()[1]
+            rhs = sub()
+            if check_num:
+                self.check(node.t, "num", node.code)
+                self.check(rhs.t, "num", rhs.code)
+            node = Node("%s %s %s" % (node.code, op, rhs.code), t)
         return node
+
+    def concat_expr(self):
+        return self.bin_expr(self.add_expr, ("..",), "str")
 
     def add_expr(self):
-        node = self.mul_expr()
-        while self.peek()[1] in ("+", "-"):
-            op = self.next()[1]
-            rhs = self.mul_expr()
-            self.check(node.t, "num", node.code)
-            self.check(rhs.t, "num", rhs.code)
-            node = Node("%s %s %s" % (node.code, op, rhs.code), "num")
-        return node
+        return self.bin_expr(self.mul_expr, ("+", "-"), "num", check_num=True)
 
     def mul_expr(self):
-        node = self.unary()
-        while self.peek()[1] in ("*", "/", "%", "//"):
-            op = self.next()[1]
-            rhs = self.unary()
-            self.check(node.t, "num", node.code)
-            self.check(rhs.t, "num", rhs.code)
-            node = Node("%s %s %s" % (node.code, op, rhs.code), "num")
-        return node
+        return self.bin_expr(self.unary, ("*", "/", "%", "//"), "num",
+                             check_num=True)
 
     def expr(self):
         return self.or_expr()
@@ -706,6 +689,85 @@ def transpile_exprlist(text, env, where, expected=None, ctx=None):
         p.check(types[0], expected, code)
     return code, types
 
+def _stmt_local(p, env):
+    p.next()
+    names = []
+    while True:
+        nk, nv = p.next()
+        if nk != "name":
+            p.err("expected local name")
+        names.append(nv)
+        if not p.accept(","):
+            break
+    types = ["any"] * len(names)
+    if p.accept("="):
+        codes = []
+        idx = 0
+        while True:
+            p.expected = None
+            node = p.expr()
+            p.expected = None
+            codes.append(node.code)
+            if idx < len(types):
+                types[idx] = node.t
+            idx += 1
+            if not p.accept(","):
+                break
+        code = "local %s = %s" % (", ".join(names), ", ".join(codes))
+    else:
+        code = "local " + ", ".join(names)
+    if p.peek()[0] != "eof":
+        p.err("unexpected %r" % p.peek()[1])
+    for n, t in zip(names, types):
+        env[n] = "any" if t == "nil" else t
+    return code
+
+
+def _stmt_op(p):
+    k1, v1 = p.peek()
+    if k1 == "op" and v1 in ("=", "+=", "-="):
+        return p.next()[1]
+    if k1 == "op" and v1 in ("+", "-") and p.peek(1)[1] == "=":
+        p.next()
+        p.next()
+        return v1 + "="
+    return None
+
+
+def _stmt_assign(p, lhs, op, env, where, ctx):
+    codes = []
+    types = []
+    while True:
+        p.expected = None
+        node = p.expr()
+        p.expected = None
+        codes.append(node.code)
+        types.append(node.t)
+        if not p.accept(","):
+            break
+    if p.peek()[0] != "eof":
+        p.err("unexpected %r" % p.peek()[1])
+    if isinstance(lhs, Ref) and not lhs.obj and lhs.name in env and types:
+        old, new = env[lhs.name], types[0]
+        if old == "any":
+            env[lhs.name] = new
+        elif new != "any" and not type_ok(ctx, new, old):
+            raise LintError("%s: %s (%s) cannot take %s"
+                            % (where, lhs.name, old, new))
+    if (isinstance(lhs, Field) and lhs.recv in ctx.fields
+            and lhs.fname in ctx.fields[lhs.recv] and types):
+        old = ctx.fields[lhs.recv][lhs.fname][0]
+        new = types[0]
+        if old != "any" and new != "any" and not type_ok(ctx, new, old):
+            raise LintError("%s: %s.%s (%s) cannot take %s"
+                            % (where, lhs.recv, lhs.fname, old, new))
+    lhs_code = lhs.raw if (isinstance(lhs, Field) and lhs.ref) else lhs.code
+    if op == "=":
+        return "%s = %s" % (lhs_code, ", ".join(codes))
+    sign = "+" if op == "+=" else "-"
+    return "%s = %s %s (%s)" % (lhs_code, lhs_code, sign, ", ".join(codes))
+
+
 def transpile_stmt(text, env, where, ctx):
     s = text.strip()
     if s in ctx.fn_sigs and not ctx.fn_sigs[s][0]:
@@ -716,37 +778,7 @@ def transpile_stmt(text, env, where, ctx):
     p = ExprEmit(lex_lua(text), env, where, ctx)
     kind, val = p.peek()
     if kind == "name" and val == "local":
-        p.next()
-        names = []
-        while True:
-            nk, nv = p.next()
-            if nk != "name":
-                p.err("expected local name")
-            names.append(nv)
-            if not p.accept(","):
-                break
-        types = ["any"] * len(names)
-        if p.accept("="):
-            codes = []
-            idx = 0
-            while True:
-                p.expected = None
-                node = p.expr()
-                p.expected = None
-                codes.append(node.code)
-                if idx < len(types):
-                    types[idx] = node.t
-                idx += 1
-                if not p.accept(","):
-                    break
-            code = "local %s = %s" % (", ".join(names), ", ".join(codes))
-        else:
-            code = "local " + ", ".join(names)
-        if p.peek()[0] != "eof":
-            p.err("unexpected %r" % p.peek()[1])
-        for n, t in zip(names, types):
-            env[n] = "any" if t == "nil" else t
-        return code
+        return _stmt_local(p, env)
     if kind == "name" and val == "break":
         p.next()
         if p.peek()[0] != "eof":
@@ -754,48 +786,9 @@ def transpile_stmt(text, env, where, ctx):
         return "break"
     p.expected = None
     lhs = p.expr()
-    op = None
-    k1, v1 = p.peek()
-    if k1 == "op" and v1 in ("=", "+=", "-="):
-        op = p.next()[1]
-    elif (k1 == "op" and v1 in ("+", "-")
-          and p.peek(1)[1] == "="):
-        p.next()
-        p.next()
-        op = v1 + "="
+    op = _stmt_op(p)
     if op is not None:
-        codes = []
-        types = []
-        while True:
-            p.expected = None
-            node = p.expr()
-            p.expected = None
-            codes.append(node.code)
-            types.append(node.t)
-            if not p.accept(","):
-                break
-        if p.peek()[0] != "eof":
-            p.err("unexpected %r" % p.peek()[1])
-        if (isinstance(lhs, Ref) and not lhs.obj and lhs.name in env
-                and types):
-            old, new = env[lhs.name], types[0]
-            if old == "any":
-                env[lhs.name] = new
-            elif new != "any" and not type_ok(ctx, new, old):
-                raise LintError("%s: %s (%s) cannot take %s"
-                                % (where, lhs.name, old, new))
-        if (isinstance(lhs, Field) and lhs.recv in ctx.fields
-                and lhs.fname in ctx.fields[lhs.recv] and types):
-            old = ctx.fields[lhs.recv][lhs.fname][0]
-            new = types[0]
-            if old != "any" and new != "any" and not type_ok(ctx, new, old):
-                raise LintError("%s: %s.%s (%s) cannot take %s"
-                                % (where, lhs.recv, lhs.fname, old, new))
-        lhs_code = lhs.raw if (isinstance(lhs, Field) and lhs.ref) else lhs.code
-        if op == "=":
-            return "%s = %s" % (lhs_code, ", ".join(codes))
-        sign = "+" if op == "+=" else "-"
-        return "%s = %s %s (%s)" % (lhs_code, lhs_code, sign, ", ".join(codes))
+        return _stmt_assign(p, lhs, op, env, where, ctx)
     if p.peek()[0] != "eof":
         p.err("unexpected %r" % p.peek()[1])
     if isinstance(lhs, Ref) and not lhs.obj and lhs.name in ctx.fn_sigs:

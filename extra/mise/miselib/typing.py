@@ -25,25 +25,30 @@ def split_types(text):
     return [p for p in parts if p]
 
 
+def _fn_split(t):
+    """Split `fn(inner)rest`; returns (inner, rest) or None."""
+    if not t.startswith("fn("):
+        return None
+    depth = 0
+    for i in range(2, len(t)):
+        if t[i] == "(":
+            depth += 1
+        elif t[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return t[3:i], t[i + 1:]
+    return None
+
+
 def canon_type(known, text):
     """Return the canonical form of a type or None: `fn(obj)->bool`."""
     text = text.strip()
     opt = text.endswith("?")
     if opt:
         text = text[:-1].strip()
-    if text.startswith("fn("):
-        depth, end = 0, None
-        for i in range(2, len(text)):
-            if text[i] == "(":
-                depth += 1
-            elif text[i] == ")":
-                depth -= 1
-                if depth == 0:
-                    end = i
-                    break
-        if end is None:
-            return None
-        inner, rest = text[3:end].strip(), text[end + 1:].strip()
+    parts = _fn_split(text)
+    if parts is not None:
+        inner, rest = parts[0].strip(), parts[1].strip()
         ps = []
         for part in split_types(inner):
             pn, _, pt = part.partition(":")
@@ -95,21 +100,10 @@ def canon_fn_sig(plist, ret, variadic=False):
 
 def fn_type_parts(t):
     """Canonical `fn(...)->T` -> (params, ret|None), else None."""
-    t = base(t)
-    if not t.startswith("fn("):
+    parts = _fn_split(base(t) or "")
+    if parts is None:
         return None
-    depth, end = 0, None
-    for i in range(2, len(t)):
-        if t[i] == "(":
-            depth += 1
-        elif t[i] == ")":
-            depth -= 1
-            if depth == 0:
-                end = i
-                break
-    if end is None:
-        return None
-    inner, rest = t[3:end], t[end + 1:]
+    inner, rest = parts
     if rest and not rest.startswith("->"):
         return None
     return split_types(inner), (rest[2:] or None if rest else None)
