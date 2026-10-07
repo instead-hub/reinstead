@@ -107,7 +107,7 @@ def _new_type(ctx, name, val):
     for x in _type_atoms(val):
         if isinstance(x, Text):
             raise Error("type %s: quotes are not allowed" % name)
-        if not isinstance(x, Bare):
+        if not isinstance(x, (Bare, Num)):
             raise Error("type %s: expected bare values" % name)
         if x.s == "~" and not negate and not vals:
             negate = True
@@ -127,7 +127,8 @@ def _extend_type(ctx, name, val):
         raise Error("extend type %s: no values" % name)
     td = ctx.types[name]
     for x in _type_atoms(val):
-        if isinstance(x, Text) or not isinstance(x, Bare) or x.s == "~":
+        if (isinstance(x, Text) or not isinstance(x, (Bare, Num))
+                or x.s == "~"):
             raise Error("extend type %s: expected bare values" % name)
         if not re.fullmatch(r"\S+", x.s, re.UNICODE):
             raise Error("extend type %s: bad value %r" % (name, x.s))

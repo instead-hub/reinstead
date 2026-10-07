@@ -7,13 +7,20 @@ def base(t):
     return t[:-1] if t and t.endswith("?") else t
 
 
+def tbl_inner(t):
+    """Inner type of canonical `tbl[T]`; `""` for `tbl[]`, None otherwise."""
+    if t and t.startswith("tbl[") and t.endswith("]"):
+        return t[4:-1]
+    return None
+
+
 def split_union(text):
-    """Split a `|` list at top-level parentheses."""
+    """Split a `|` list at top-level parentheses/brackets."""
     parts, cur, depth = [], [], 0
     for c in text:
-        if c == "(":
+        if c in "([":
             depth += 1
-        elif c == ")":
+        elif c in ")]":
             depth -= 1
         if c == "|" and depth == 0:
             parts.append("".join(cur).strip())
@@ -34,12 +41,12 @@ def union_parts(t):
 
 
 def split_types(text):
-    """Split a comma list at top-level parentheses."""
+    """Split a comma list at top-level parentheses/brackets."""
     parts, cur, depth = [], [], 0
     for c in text:
-        if c == "(":
+        if c in "([":
             depth += 1
-        elif c == ")":
+        elif c in ")]":
             depth -= 1
         if c == "," and depth == 0:
             parts.append("".join(cur).strip())
@@ -90,6 +97,16 @@ def canon_type(known, text):
         if not out:
             return None
         return "|".join(sorted(out)) + ("?" if opt else "")
+    if text.startswith("tbl[") and text.endswith("]"):
+        inner = text[4:].strip()[:-1].strip()
+        if not inner:
+            return "tbl[]" + ("?" if opt else "")
+        c = canon_type(known, inner)
+        if c is None:
+            return None
+        if c == "any":
+            return "tbl" + ("?" if opt else "")
+        return "tbl[%s]" % c + ("?" if opt else "")
     parts = _fn_split(text)
     if parts is not None:
         inner, rest = parts[0].strip(), parts[1].strip()
@@ -135,7 +152,14 @@ def type_error(known, text):
                 return msg
     if t == "nil":
         return "unknown type %r" % text
-    if "fn(" in text or "(" in text or "->" in text:
+    if t.startswith("tbl[") and t.endswith("]"):
+        inner = t[4:].strip()[:-1].strip()
+        if inner:
+            msg = type_error(known, inner)
+            if msg:
+                return msg
+        return "bad type %r" % text
+    if "(" in text or "[" in text or "]" in text or "->" in text:
         return "bad type %r" % text
     return "unknown type %r" % text
 
@@ -176,6 +200,18 @@ def type_ok(ctx, t, exp):
     alts = union_parts(exp)
     if alts is not None:
         return any(type_ok(ctx, t, alt) for alt in alts)
+    if exp == "tbl":
+        return t == "tbl" or tbl_inner(t) is not None
+    inner_exp = tbl_inner(exp)
+    if inner_exp is not None:
+        inner_t = tbl_inner(t)
+        if inner_t is None:
+            return False
+        if inner_t == "":
+            return True
+        if inner_exp == "":
+            return False
+        return type_ok(ctx, inner_t, inner_exp)
     if exp in ctx.types and t in ("str", exp):
         return True
     if t in ctx.types and exp == "str":

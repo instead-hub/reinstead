@@ -24,7 +24,16 @@ fn on_take(s: Box): |
   say(label(s, вн))
   say(s:noun(вн))
   say(s:noun('рд,2'))
-  say(s:noun 'вн,мн')
+  say(s:noun 'им')
+  say(s:noun({ вн, 2 }))
+  say(s:noun({ пр, мн }))
+  say(s:noun({ 'тв', 2 }))
+  say(s:noun({}))
+  say(s:Noun({ рд, 2 }, 1))
+  local h = { вн, мн }
+  say(s:noun(h))
+  local w = inv()[1]
+  w:noun()
   say(label2(s, 2))
   label(s, 1, 2)
 

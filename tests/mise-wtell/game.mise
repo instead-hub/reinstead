@@ -29,7 +29,7 @@ class Prop:
   attrs: scenery
   before Exam: pass
   before Default: |
-    say('Вам нет нужды беспокоиться о ', s:noun 'пр', '.')
+    say('Вам нет нужды беспокоиться о ', s:noun({ пр }), '.')
 
 class Furniture:
   attrs: static, supporter
@@ -44,7 +44,7 @@ class Arrow:
 class NPC:
   attrs: animate
   life_Answer,Ask,AskTo,AskFor,Tell: |
-    say('Введите просто "говорить с ', s:noun 'тв', '".')
+    say('Введите просто "говорить с ', s:noun({ 'тв' }), '".')
 
 setup:
   dsc: [[^Пример простой игры на Inform

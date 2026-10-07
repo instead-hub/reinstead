@@ -58,7 +58,7 @@ _'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute",
 Prop = Class {
   before_Exam = function() return false end;
   before_Default = function(s, ev, w, wh)
-    p('Вам нет нужды беспокоиться о ', s:noun('пр'), '.')
+    p('Вам нет нужды беспокоиться о ', s:noun_hint(({ "пр" })), '.')
   end;
 }:attr 'scenery'
 
@@ -75,7 +75,7 @@ Arrow = Class {
 
 NPC = Class {
   ["life_Answer,Ask,AskTo,AskFor,Tell"] = function(s)
-    p('Введите просто "говорить с ', s:noun('тв'), '".')
+    p('Введите просто "говорить с ', s:noun_hint(({ 'тв' })), '".')
   end;
 }:attr 'animate'
 
@@ -343,15 +343,15 @@ Verb { '#FireAt', "стреля/ть,стрельн/уть,целить/ся,з�
 mp.Salute = function(s, w, wh)
   if w:has("animate") then
     if w:hint('мн') then
-      p(w:Noun(), ' приветствуют тебя.')
+      p(w:Noun_hint(), ' приветствуют тебя.')
     else
-      p(w:Noun(), ' приветствует тебя.')
+      p(w:Noun_hint(), ' приветствует тебя.')
     end
   else
     if w:hint('мн') then
-      p(w:Noun(), ' не замечают этого.')
+      p(w:Noun_hint(), ' не замечают этого.')
     else
-      p(w:Noun(), ' не замечает этого.')
+      p(w:Noun_hint(), ' не замечает этого.')
     end
   end
 end

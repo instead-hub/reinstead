@@ -62,3 +62,7 @@ fn probe(w: obj, t: tbl, ev: event): |
   tiny()
   music('x')
   rnd(1)
+  local xs = inv()
+  len(xs)
+  local daemons = getDaemons()
+  len(daemons)

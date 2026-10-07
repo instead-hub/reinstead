@@ -2,8 +2,8 @@ import re
 
 from . import state as S
 from .common import *
-from .typing import (base, canon_fn_sig, canon_type, fn_type_parts, type_error,
-                     type_ok, type_value_error, union_parts)
+from .typing import (base, canon_fn_sig, canon_type, fn_type_parts, tbl_inner,
+                     type_error, type_ok, type_value_error, union_parts)
 
 def lex_lua(text):
     toks = []
@@ -382,9 +382,52 @@ class ExprEmit:
             self.expect(")")
             return Node("(%s)" % node.code, node.t)
         if kind == "op" and val == "{":
-            self.err("table constructors are not allowed in logic "
-                     "(wrap it in fn)")
+            return self.list_literal()
         self.err("unexpected %r" % val)
+
+    def list_literal(self):
+        """`{ e1, ... }` -> Lua table, type `tbl[elem types]`."""
+        elem = None
+        exp = base(self.expected) if self.expected else None
+        if exp:
+            for a in (union_parts(exp) or [exp]):
+                inner = tbl_inner(a)
+                if inner is not None:
+                    elem = inner
+                    break
+                if a == "tbl":
+                    elem = "any"
+                    break
+        codes, types = [], []
+        if not self.accept("}"):
+            while True:
+                self.expected = elem if elem else None
+                node = self.expr()
+                self.expected = None
+                if (elem and node.t == "num"
+                        and re.fullmatch(r"\d+(\.\d+)?", node.code or "")):
+                    for a in (union_parts(elem) or [elem]):
+                        td = self.ctx.types.get(a)
+                        if td is not None and node.code in td["values"]:
+                            node.t = a
+                            break
+                if elem and elem != "any":
+                    self.check(node.t, elem, node.code)
+                codes.append(node.code)
+                if node.t not in types:
+                    types.append(node.t)
+                if not self.accept(","):
+                    break
+            self.expect("}")
+        if types:
+            t = "tbl[%s]" % "|".join(sorted(types))
+        elif elem and elem != "any":
+            t = "tbl[%s]" % elem
+        elif elem == "any":
+            t = "tbl"
+        else:
+            t = "tbl[]"
+        return Node("({ %s })" % ", ".join(codes) if codes else "({})", t)
 
     def unary(self):
         _k, v = self.peek()
@@ -564,10 +607,15 @@ class ExprEmit:
         self.next()
         if node.t == "obj?":
             self.check(node.t, "obj", node.code)
+        bt = base(node.t) if node.t else None
+        if node.t and node.t.endswith("?"):
+            self.check(node.t, bt, node.code)
         self.expected = None
         idx = self.expr()
         self.expect("]")
-        return Index("%s[%s]" % (node.code, idx.code), "any")
+        ti = tbl_inner(bt) if bt else None
+        t = ti if ti else "any"
+        return Index("%s[%s]" % (node.code, idx.code), t)
 
     def postfix_method(self, node):
         self.next()

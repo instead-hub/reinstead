@@ -6,16 +6,16 @@ require "parser/mp-ru"
 
 local function fn_label(w, n, nn)
   if n and nn then
-    return w:noun(n, nn)
+    return w:noun_hint(n, nn)
   end
   if n then
-    return w:noun(n)
+    return w:noun_hint(n)
   end
-  return w:noun()
+  return w:noun_hint()
 end
 
 local function fn_label2(w, n)
-  return w:noun(n)
+  return w:noun_hint(n)
 end
 
 local function fn_on_take(s)
@@ -25,9 +25,18 @@ local function fn_on_take(s)
   p(fn_label(s))
   p(fn_label(s, 'им'))
   p(fn_label(s, "вн"))
-  p(s:noun("вн"))
-  p(s:noun('рд,2'))
-  p(s:noun('вн,мн'))
+  p(s:noun_hint("вн"))
+  p(s:noun_hint('рд,2'))
+  p(s:noun_hint('им'))
+  p(s:noun_hint(({ "вн", 2 })))
+  p(s:noun_hint(({ "пр", "мн" })))
+  p(s:noun_hint(({ 'тв', 2 })))
+  p(s:noun_hint(({})))
+  p(s:Noun_hint(({ "рд", 2 }), 1))
+  local h = ({ "вн", "мн" })
+  p(s:noun_hint(h))
+  local w = inv()[1]
+  w:noun_hint()
   p(fn_label2(s, 2))
   fn_label(s, 1, 2)
 end

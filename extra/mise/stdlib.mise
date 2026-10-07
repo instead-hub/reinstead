@@ -12,6 +12,8 @@ type direction: n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, 
 
 type case: им, рд, дт, вн, тв, пр
 
+type gram: ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
+
 refs:
   - d_to, door_to, e_to, found_in, in_to, n_to, ne_to, next_to, nw_to, out_to
   - prev_to, s_to, se_to, sw_to, talk_to, u_to, w_to, walk_to
@@ -91,7 +93,7 @@ fn place(w: obj): |lua
 fn isDaemon(w: obj) -> bool: |lua
   return isDaemon(w)
 
-fn getDaemons() -> tbl: |lua
+fn getDaemons() -> tbl[obj]: |lua
   return getDaemons()
 
 fn disabled(w: obj) -> bool: |lua
@@ -123,7 +125,7 @@ fn drop(w: obj): |lua
 fn content(w: obj): |lua
   mp:content(w)
 
-fn inv() -> tbl: |lua
+fn inv() -> tbl[obj]: |lua
   return inv()
 
 fn len(v: tbl) -> num: `#v`
@@ -168,11 +170,11 @@ fn inroom(w: obj) -> obj: |lua
 fn thedark(what: obj) -> bool: |lua
   return mp:thedark(what)
 
-fn noun(s: obj, n: case|str|num?, nn: num?) -> str: |lua
-  return s:noun(n, nn)
+fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str: |lua
+  return s:noun_hint(n, nn)
 
-fn Noun(s: obj, n: case|str|num?, nn: num?) -> str: |lua
-  return s:Noun(n, nn)
+fn Noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str: |lua
+  return s:Noun_hint(n, nn)
 
 fn it(s: obj) -> str: |lua
   return s:It()

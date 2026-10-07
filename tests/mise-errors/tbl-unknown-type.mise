@@ -1,0 +1,6 @@
+name: t
+lang: ru
+include: stdlib
+
+fn g(x: tbl[nope]): |
+  pass

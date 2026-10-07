@@ -1,1 +1,1 @@
-mise: error: expected case|num|str?, got obj: _'box' in logic:9: s : noun ( box )
+mise: error: expected case|num|tbl[case|gram]?, got obj: _'box' in logic:9: s : noun ( box )

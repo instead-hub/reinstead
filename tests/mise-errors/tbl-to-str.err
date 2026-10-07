@@ -1,0 +1,1 @@
+mise: error: expected str, got tbl[case]: ({ "вн" }) in logic:9: say ( { вн } )

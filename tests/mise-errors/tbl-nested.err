@@ -1,0 +1,1 @@
+mise: error: expected case|gram, got tbl[case]: ({ "вн" }) in logic:9: say ( s : noun ( { { вн } } ) )

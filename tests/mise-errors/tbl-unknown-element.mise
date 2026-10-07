@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+
+fn f(s: obj): |
+  say(s:noun({ рдд }))

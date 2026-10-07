@@ -56,6 +56,10 @@ local function fn_probe(w, t, ev)
   (instead.tiny)
   snd.music('x')
   rnd(1)
+  local xs = inv()
+  (#xs)
+  local daemons = getDaemons()
+  (#daemons)
 end
 
 obj {
