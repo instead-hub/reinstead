@@ -75,7 +75,8 @@ transpile (main loop) обход корневых элементов → Emitter
    `impl` (объект/класс/`game`/`@…`);
    затем `check_bare_names` сверяет голые значения тем же правилом в
    `impl`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
-4. `event_names` — значения типа `event` (stdlib) + `event X:`.
+4. `ctx.ref_fields` — `refs:`/`extend refs:`; `event_names` —
+   значения типа `event` (stdlib) + `event X:`.
 5. `collect_game_defs`/`scan_required` — поиск функций/переменных в
    `|lua` и подключаемых Lua-файлах (чтобы `fn` и `use` не конфликтовали
    с игровым кодом).
@@ -90,7 +91,7 @@ transpile (main loop) обход корневых элементов → Emitter
 8. `walk_use` — имена из `use ...` выкидываются из `inline`, кроме
    `expr` (expr-функцию нельзя использовать как обработчик).
 9. `check_refs` — `with`/`inside`/`found_in` сверяются с `ctx.ids`;
-   прочие поля-ссылки (`REF_FIELDS`: `n_to`, `door_to`, …) проверяет
+   прочие поля-ссылки (`ctx.ref_fields` из `refs:`) проверяет
    `Emitter.obj` через `check_ref_value(..., ctx.ids)`.
 
 ## Inline-функции

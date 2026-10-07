@@ -27,6 +27,7 @@ class Ctx:
         self.fn_sigs = {}
         self.global_types = {}
         self.event_names = set()
+        self.ref_fields = set()
         self.inline = {}
         self.types = {}
         self.enum_values = {}

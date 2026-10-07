@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+extend refs: custom_to
+
+obj box:
+  words: коробка
+  custom_to: nosuch, box

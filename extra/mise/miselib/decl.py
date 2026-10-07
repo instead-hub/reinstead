@@ -4,12 +4,6 @@ from . import state as S
 from .common import *
 from .typing import canon_type, split_types, type_error
 
-REF_FIELDS = {
-    "n_to", "s_to", "e_to", "w_to", "nw_to", "ne_to", "sw_to", "se_to",
-    "in_to", "out_to", "u_to", "d_to", "door_to", "walk_to", "next_to",
-    "prev_to", "found_in", "talk_to",
-}
-
 PRESETS = {
     "obj": ("obj", []),
     "scenery": ("obj", ["scenery"]),
@@ -26,7 +20,7 @@ SKIP_KEYS = ("lang", "fmt", "include")
 def classify(key):
     """Return (kind, info) for a top-level key.
 
-    kind: meta | skip | require | lua | setup | const | global |
+    kind: meta | skip | require | lua | setup | const | global | refs |
     class | fn | impl | verb | extend | talk | decl | unknown.
     info: class -> (name, parent), decl -> (kind, ident), others -> ident.
     """
@@ -38,6 +32,10 @@ def classify(key):
         raise Error("quotes are not allowed in declarations: %s" % key)
     if key in ("require", "lua", "setup", "const", "global"):
         return key, None
+    if key == "refs":
+        return "refs", None
+    if key == "extend refs":
+        return "extend_refs", None
     m = re.match(r"^class\s+([A-Z]\w*)\s*(?:\(([^)]*)\))?$", key)
     if m:
         return "class", (m.group(1), m.group(2))

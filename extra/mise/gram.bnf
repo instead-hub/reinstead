@@ -25,8 +25,8 @@ key       ::= <текст до ':' нулевого уровня>         (* в�
 (* ---------- файл ---------- *)
 file      ::= { top }
 top       ::= meta | lang | fmt | include | require | evdecl
-            | vars | setup | impl | fn | class | mixin | verb | extend
-            | custom_type
+            | vars | setup | impl | fn | class | mixin | refs | verb
+            | extend | custom_type
             | talk
             | lua_section | decl | NEWLINE
 
@@ -73,6 +73,8 @@ fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
 class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
 mixin  ::= "mixin" CLASS ":" block
 (* набор полей/обработчиков; привязка `mixin: A, B` в obj/class/impl *)
+refs      ::= ("refs" | "extend" "refs") ":" (name_list | list)
+(* поля-ссылки: значения сверяются с объявленными объектами *)
 
 verb      ::= "verb" CLASS ":" block
 (* поля verb: tag, words, patterns (список "- ..."), prio, hint;

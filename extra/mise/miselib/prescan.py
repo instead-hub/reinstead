@@ -420,6 +420,23 @@ def adapter_callee(text, plist):
     return None if "fn_" in callee else callee
 
 
+def _register_refs(root, ctx):
+    ctx.ref_fields = set()
+    for _i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(_i)
+        kind, _info = classify(key)
+        if kind not in ("refs", "extend_refs"):
+            continue
+        if isinstance(val, Block):
+            raise Error("refs: expected a list of names")
+        for x in _type_atoms(val):
+            if isinstance(x, Text) or not isinstance(x, Bare) or x.s == "~":
+                raise Error("refs: expected bare names")
+            if not re.fullmatch(r"\S+", x.s, re.UNICODE):
+                raise Error("refs: bad name %r" % x.s)
+            ctx.ref_fields.add(x.s)
+
+
 def _register_events(root, ctx):
     names = set(ctx.types.get("event", {}).get("values", []))
     for _i, (key, val) in enumerate(root.items):
@@ -526,6 +543,7 @@ def prescan(root, ctx):
     ids = collect_ids(root)
     ctx.ids = set(ids)
     ctx.id_kind = ids
+    _register_refs(root, ctx)
     _register_events(root, ctx)
     collect_field_types(root, ctx)
     check_bare_names(root, ctx)

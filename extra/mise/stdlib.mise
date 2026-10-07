@@ -10,6 +10,10 @@ type attr:
 
 type direction: n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to
 
+refs:
+  - d_to, door_to, e_to, found_in, in_to, n_to, ne_to, next_to, nw_to, out_to
+  - prev_to, s_to, se_to, sw_to, talk_to, u_to, w_to, walk_to
+
 type event:
   - Answer, Any, Ask, AskFor, Attack, Blow, Burn, Buy, Climb, Close,
   - Consult, Cut, Default, Dig, Disrobe, Drink, Drop, Eat, Enter, Exam,

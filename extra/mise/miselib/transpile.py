@@ -11,7 +11,8 @@ from .emitlogic import emit_logic
 from .expr import fn_name
 
 
-_SKIP_KINDS = ("skip", "type", "extend_type", "mixin")
+_SKIP_KINDS = ("skip", "type", "extend_type", "mixin",
+               "refs", "extend_refs")
 
 
 def _as_list(v):

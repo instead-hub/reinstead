@@ -3,7 +3,7 @@ import re
 from . import state as S
 from .common import *
 from .emitlogic import emit_logic
-from .decl import (REF_FIELDS, PRESETS, check_ref_value, decl_key,
+from .decl import (PRESETS, check_ref_value, decl_key,
                    is_true, sym_text)
 from .typing import class_le, type_value_error
 from .expr import fn_name, transpile_exprlist
@@ -282,7 +282,7 @@ class Emitter:
                                     "post prefix" % part)
             if not params:
                 for part in parts:
-                    if part in REF_FIELDS:
+                    if part in self.ctx.ref_fields:
                         check_ref_value(ident or "?", key, val,
                                         self.ctx.ids)
                         break
