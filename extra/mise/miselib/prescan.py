@@ -138,7 +138,7 @@ def collect_types(root, ctx):
 
 FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
               "dict", "nam", "text", "patterns", "pattern", "tag", "prio",
-              "hint", "mixins"}
+              "hint", "mixin"}
 
 
 def field_base(key, val, ctx):
@@ -161,13 +161,13 @@ def field_base(key, val, ctx):
 
 def attach_mixins(block, ctx, into):
     """Merge attached mixins' fields first (own keys override)."""
-    val = block.get("mixins")
+    val = block.get("mixin")
     if val is None:
         return
-    CURRENT_LINE[0] = block.line("mixins") or CURRENT_LINE[0]
+    CURRENT_LINE[0] = block.line("mixin") or CURRENT_LINE[0]
     seen = {}
     for v in (val if isinstance(val, list) else [val]):
-        CURRENT_LINE[0] = block.line("mixins") or CURRENT_LINE[0]
+        CURRENT_LINE[0] = block.line("mixin") or CURRENT_LINE[0]
         name = v.s if hasattr(v, "s") else str(v)
         bdef = ctx.mixin_defs.get(name)
         if bdef is None:
@@ -253,7 +253,7 @@ def check_bare_names(root, ctx):
     def walk_fields(block):
         for i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(i)
-            if key == "mixins":
+            if key == "mixin":
                 for v in (val if isinstance(val, list) else [val]):
                     name = v.s if hasattr(v, "s") else str(v)
                     if name not in ctx.mixin_defs:

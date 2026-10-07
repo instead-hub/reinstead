@@ -14,17 +14,17 @@ mixin Flying:
 
 class Bird:
   attrs: animate
-  mixins: Flying
+  mixin: Flying
 
 Bird eagle:
   words: орёл
 
 obj parrot:
   words: попугай
-  mixins: Talkative
+  mixin: Talkative
 
 obj crow:
   words: ворона
-  mixins: Talkative
+  mixin: Talkative
   before Talk: |
     say [[кар]]

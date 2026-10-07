@@ -164,11 +164,11 @@ class Emitter:
 
     def expand_mixins(self, block):
         """Merge attached mixins' keys (own keys win)."""
-        val = block.get("mixins")
+        val = block.get("mixin")
         if val is None:
             return block
-        CURRENT_LINE[0] = block.line("mixins") or CURRENT_LINE[0]
-        own = {k for k, _ in block.items if k != "mixins"}
+        CURRENT_LINE[0] = block.line("mixin") or CURRENT_LINE[0]
+        own = {k for k, _ in block.items if k != "mixin"}
         merged = Block()
         seen = {}
         for v in (val if isinstance(val, list) else [val]):
@@ -186,7 +186,7 @@ class Emitter:
                 merged.items.append((k, bv))
                 merged.lines.append(bdef.line_at(i))
         for i, (k, bv) in enumerate(block.items):
-            if k == "mixins":
+            if k == "mixin":
                 continue
             merged.items.append((k, bv))
             merged.lines.append(block.line_at(i))

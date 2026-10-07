@@ -12,4 +12,4 @@ mixin B:
 
 obj box:
   words: коробка
-  mixins: A, B
+  mixin: A, B
