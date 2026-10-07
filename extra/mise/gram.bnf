@@ -86,7 +86,8 @@ custom_type ::= ("type" IDENT | "extend" "type" IDENT) ":"
                 (name_list | list)
 (* значения — голые имена без пробелов; кавычки запрещены; пустой type —
    ошибка; extend type с неизвестным именем — ошибка; ведущий элемент "~"
-   в type включает отрицания (~X проверяется как X); в stdlib так
+   в type включает отрицания (~X проверяется как X); длинный список —
+   `-`-строки, в элементе списка тоже можно через запятую; в stdlib так
    объявлены attr/direction/event (значения event — имена событий) *)
 
 talk        ::= "talk" NAME ":" NEWLINE INDENT { talk_item } DEDENT

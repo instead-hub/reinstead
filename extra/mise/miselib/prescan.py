@@ -83,13 +83,28 @@ def scan_lua_defs(text, funcs, vars_):
     for m in re.finditer(r"^\s*([A-Za-z_]\w*)\s*=", text, re.M):
         vars_.add(m.group(1))
 
+def _type_atoms(val):
+    """Bare value strings of a type: inline scalars or `-` list items."""
+    if not isinstance(val, list):
+        yield val
+        return
+    for x in val:
+        if isinstance(x, Text):
+            for part in x.s.split(","):
+                part = part.strip()
+                if part:
+                    yield Bare(part)
+        else:
+            yield x
+
+
 def _new_type(ctx, name, val):
     if name in ctx.types:
         raise Error("duplicate type: " + name)
     if isinstance(val, Block):
         raise Error("type %s: no values" % name)
     vals, negate = [], False
-    for x in (val if isinstance(val, list) else [val]):
+    for x in _type_atoms(val):
         if isinstance(x, Text):
             raise Error("type %s: quotes are not allowed" % name)
         if not isinstance(x, Bare):
@@ -111,7 +126,7 @@ def _extend_type(ctx, name, val):
     if isinstance(val, Block):
         raise Error("extend type %s: no values" % name)
     td = ctx.types[name]
-    for x in (val if isinstance(val, list) else [val]):
+    for x in _type_atoms(val):
         if isinstance(x, Text) or not isinstance(x, Bare) or x.s == "~":
             raise Error("extend type %s: expected bare values" % name)
         if not re.fullmatch(r"\S+", x.s, re.UNICODE):
