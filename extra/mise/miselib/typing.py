@@ -166,16 +166,16 @@ def type_ok(ctx, t, exp):
     """May a value of type t be used where type exp is expected?"""
     if exp in (None, "any") or t == exp:
         return True
-    if exp.endswith("?"):
-        return t == "nil" or type_ok(ctx, t, exp[:-1])
-    alts = union_parts(exp)
-    if alts is not None:
-        return any(type_ok(ctx, t, alt) for alt in alts)
     alts = union_parts(t)
     if alts is not None:
         if t.endswith("?") and not type_ok(ctx, "nil", exp):
             return False
         return all(type_ok(ctx, alt, exp) for alt in alts)
+    if exp.endswith("?"):
+        return t == "nil" or type_ok(ctx, t, exp[:-1])
+    alts = union_parts(exp)
+    if alts is not None:
+        return any(type_ok(ctx, t, alt) for alt in alts)
     if exp in ctx.types and t in ("str", exp):
         return True
     if t in ctx.types and exp == "str":

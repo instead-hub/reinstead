@@ -21,6 +21,10 @@ fn on_take(s: Box): |
     say [[тяжёлый]]
   say(label(s))
   say(label(s, 'им'))
+  say(label(s, вн))
+  say(s:noun(вн))
+  say(s:noun('рд,2'))
+  say(s:noun 'вн,мн')
   say(label2(s, 2))
   label(s, 1, 2)
 

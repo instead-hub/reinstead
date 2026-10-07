@@ -24,6 +24,10 @@ local function fn_on_take(s)
   end
   p(fn_label(s))
   p(fn_label(s, 'им'))
+  p(fn_label(s, "вн"))
+  p(s:noun("вн"))
+  p(s:noun('рд,2'))
+  p(s:noun('вн,мн'))
   p(fn_label2(s, 2))
   fn_label(s, 1, 2)
 end
