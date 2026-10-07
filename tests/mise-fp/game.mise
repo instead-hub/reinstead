@@ -1,0 +1,19 @@
+name: t
+lang: ru
+include: stdlib
+
+class Tree:
+  attrs: scenery
+
+fn mark(w: obj): |
+  w:attr seen
+
+Tree tree:
+  words: дерево
+
+impl tree:
+  before Take: |
+    for_plural(s, &mark)
+    trace(s, &mark)
+    if s:isa Tree:
+      say [[дерево]]

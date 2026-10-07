@@ -5,7 +5,7 @@ KEYWORDS = {
     "then", "else", "do", "local", "function", "end", "break", "repeat",
 }
 
-TYPES = {"obj", "str", "num", "bool", "any", "event", "tbl"}
+TYPES = {"obj", "str", "num", "bool", "any", "event", "tbl", "fn"}
 
 PARAM_TYPES = {
     "s": "obj", "w": "obj", "wh": "obj", "ev": "event", "to": "any",

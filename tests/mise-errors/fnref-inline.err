@@ -1,0 +1,1 @@
+mise: error: inline fn once cannot be used as a value in logic:6: for_plural ( s , & once )

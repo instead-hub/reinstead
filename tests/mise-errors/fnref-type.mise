@@ -1,0 +1,11 @@
+name: t
+lang: ru
+include: stdlib
+
+fn mark(w: obj): |
+  say [[x]]
+
+obj box:
+  words: коробка
+  on Take: |
+    say(&mark)

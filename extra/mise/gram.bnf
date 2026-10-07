@@ -54,7 +54,7 @@ field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
 param     ::= IDENT [ ":" type ] | "..."
 type      ::= base [ "?" ]
 base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl"
-            | "nil" | IDENT
+            | "fn" | "nil" | IDENT
 (* IDENT — перечисление из type или имя класса; "?" — optional: T или nil *)
 (* обработчики — "<фаза> <Event>", Event в движковом регистре (Walk, Enter,
    SwitchOn, ...; Any/Default — тоже события); фаза обязательна:
@@ -135,7 +135,8 @@ lvalue    ::= IDENT { "." IDENT | "[" expr "]" }
 (* ---------- выражения ---------- *)
 expr_list ::= expr { "," expr }
 expr      ::= <подмножество Lua: литералы, имена, поля, индексы, вызовы,
-               унарные not/-/#, бинарные or/and/==/~/</>/../+/-/*/... >
+               унарные not/-/#/& (&имя — fn-значение), бинарные
+               or/and/==/~/</>/../+/-/*/... >
 call      ::= IDENT call_args
             | IDENT ":" IDENT call_args      (* obj:fn arg -> fn(obj, arg) *)
 call_args ::= "(" [ expr_list ] ")"

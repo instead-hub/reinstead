@@ -55,7 +55,7 @@ def lex_lua(text):
             toks.append(("name", m.group(0)))
             i += m.end()
             continue
-        m = re.match(r"\.\.\.|\.\.|==|~=|<=|>=|\+=|-=|::|//|[+\-*/%^#<>=(){}\[\],;:.]",
+        m = re.match(r"\.\.\.|\.\.|==|~=|<=|>=|\+=|-=|::|//|[+\-*/%^#<>=(){}\[\],;:.&]",
                      text[i:])
         if m:
             toks.append(("op", m.group(0)))
@@ -350,6 +350,18 @@ class ExprEmit:
                                         obj=True))
             self.err("# is only for declared #tags; the DSL has no tables "
                      "(wrap the length in a fn)")
+        if v == "&":
+            self.next()
+            nk, nv = self.next()
+            if nk != "name":
+                self.err("expected fn name after &")
+            if nv in self.ctx.inline:
+                self.err("inline fn %s cannot be used as a value" % nv)
+            if nv in self.ctx.fn_sigs:
+                return Node(fn_name(nv), "fn")
+            if nv in self.ctx.funcs:
+                return Node(nv, "fn")
+            self.err("unknown fn %r in &-reference" % nv)
         return self.postfix(self.primary())
 
     def or_expr(self):
