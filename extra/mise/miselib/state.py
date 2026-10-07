@@ -3,6 +3,7 @@ import re
 KEYWORDS = {
     "return", "not", "and", "or", "if", "elseif", "while", "until", "in",
     "then", "else", "do", "local", "function", "end", "break", "repeat",
+    "when", "default",
 }
 
 TYPES = {"obj", "str", "num", "bool", "any", "event", "tbl", "fn"}

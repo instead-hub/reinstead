@@ -1,0 +1,24 @@
+name: t
+lang: ru
+include: stdlib
+
+class Tree:
+  attrs: scenery
+
+fn pick(s: obj) -> str: |
+  when s:isa Tree:
+    return [[дерево]]
+  when s:has scenery:
+    return [[декорация]]
+  default:
+    return [[прочее]]
+
+obj box:
+  words: коробка
+  on Take: |
+    local o = seen 'box'
+    when o:
+      o:attr seen
+      say(pick(s))
+    default:
+      say [[не видно]]

@@ -37,7 +37,7 @@ transpile (main loop) обход корневых элементов → Emitter
 `parse_source` → `parse_block` (отступы; `key: value`, `-`-списки,
 `|`-блоки, `{...}`) → `pipe_value` для `|`/`|lua` и
 `parse_logic` для тел `|`: `return`/`pass`/`stop`, `if/elseif/else`,
-`for`, прочие `stmt`.
+`when/default` (сахар в тот же `if`-AST), `for`, прочие `stmt`.
 
 ## Состояние (`state.py:Ctx`)
 

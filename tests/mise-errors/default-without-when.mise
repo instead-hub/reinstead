@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+fn f(s: obj): |
+  default:
+    say [[x]]

@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+fn f(s: obj): |
+  if s:has scenery:
+    say [[a]]
+  when s:has container:
+    say [[b]]
