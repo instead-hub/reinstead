@@ -1,0 +1,1 @@
+mise: error: fn is_lit: callback returns bool, expected num in logic:14: run2 ( & is_lit )

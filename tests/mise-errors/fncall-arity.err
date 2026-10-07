@@ -1,0 +1,1 @@
+mise: error: fn two: callback takes 2 parameter(s), expected 1 in logic:11: for_plural ( s , & two )

@@ -1,1 +1,1 @@
-mise: error: expected str, got fn: fn_mark in logic:11: say ( & mark )
+mise: error: expected str, got fn(obj): fn_mark in logic:11: say ( & mark )

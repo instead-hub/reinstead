@@ -1,0 +1,14 @@
+name: t
+lang: ru
+include: stdlib
+
+fn is_lit(w: obj) -> bool: |
+  return true
+
+fn run2(f: fn(w: obj) -> num): |
+  pass
+
+obj box:
+  words: коробка
+  on Take: |
+    run2(&is_lit)

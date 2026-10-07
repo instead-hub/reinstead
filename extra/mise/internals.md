@@ -115,6 +115,9 @@ transpile (main loop) обход корневых элементов → Emitter
   ожидания; `T?` принимает `T` и `nil`; перечисления совместимы с `str`.
 - `type_value_error` — проверка значений перечислений (`values`,
   `~`-отрицание при `negate`, подсказки `difflib`).
+- `canon_type`/`type_error` — канонизация и валидация аннотаций
+  (в т.ч. `fn(...) -> T`); `canon_fn_sig` — подпись объявленной `fn`,
+  `fn_type_parts` — разбор подписи для проверок и вызовов значений.
 - `literal_type(ctx, node, refs=False)` — AST-литерал → тип; при
   `refs=True` голое имя резолвится как объект (`ctx.ids`), событие
    (`ctx.event_names`) или значение перечисления (`ctx.enum_values`);

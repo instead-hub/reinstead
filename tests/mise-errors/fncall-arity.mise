@@ -1,0 +1,11 @@
+name: t
+lang: ru
+include: stdlib
+
+fn two(w: obj, x: obj): |
+  pass
+
+obj box:
+  words: коробка
+  on Take: |
+    for_plural(s, &two)

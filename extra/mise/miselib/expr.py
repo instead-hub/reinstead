@@ -2,7 +2,8 @@ import re
 
 from . import state as S
 from .common import *
-from .typing import type_ok, type_value_error
+from .typing import (base, canon_fn_sig, fn_type_parts, type_ok,
+                     type_value_error)
 
 def lex_lua(text):
     toks = []
@@ -217,6 +218,28 @@ class ExprEmit:
             return
         self.terr("expected %s, got %s: %s" % (exp, t, code))
 
+    def check_fn_ref(self, name, actual, expected):
+        """Check a `&name` signature against an expected fn type."""
+        expected = base(expected) or ""
+        if expected == "fn" or actual == "fn":
+            return
+        act, exp = fn_type_parts(actual), fn_type_parts(expected)
+        if act is None or exp is None:
+            return
+        aps, aret = act
+        eps, eret = exp
+        n = len([p for p in aps if p != "..."])
+        if n > len(eps):
+            self.terr("fn %s: callback takes %d parameter(s), expected %d"
+                      % (name, n, len(eps)))
+        for i, ap in enumerate(aps[:len(eps)]):
+            if not type_ok(self.ctx, eps[i], ap):
+                self.terr("fn %s: callback parameter %d is %s, but %s is "
+                          "passed" % (name, i + 1, ap, eps[i]))
+        if eret is not None and not type_ok(self.ctx, aret or "any", eret):
+            self.terr("fn %s: callback returns %s, expected %s"
+                      % (name, aret or "any", eret))
+
     def strval(self, tok):
         if tok.startswith("["):
             m = re.match(r"\[(=*)\[", tok)
@@ -358,10 +381,15 @@ class ExprEmit:
             if nv in self.ctx.inline:
                 self.err("inline fn %s cannot be used as a value" % nv)
             if nv in self.ctx.fn_sigs:
-                return Node(fn_name(nv), "fn")
-            if nv in self.ctx.funcs:
-                return Node(nv, "fn")
-            self.err("unknown fn %r in &-reference" % nv)
+                plist, ret, variadic = self.ctx.fn_sigs[nv]
+                sig, code = canon_fn_sig(plist, ret, variadic), fn_name(nv)
+            elif nv in self.ctx.funcs:
+                sig, code = "fn", nv
+            else:
+                self.err("unknown fn %r in &-reference" % nv)
+            if self.expected:
+                self.check_fn_ref(nv, sig, self.expected)
+            return Node(code, sig)
         return self.postfix(self.primary())
 
     def or_expr(self):
@@ -599,6 +627,15 @@ class ExprEmit:
     def postfix_arg_call(self, node):
         if isinstance(node, Ref) and not node.obj:
             name = node.name
+            ft = fn_type_parts(node.t) if node.t else None
+            if ft is not None:
+                params, ret = ft
+                codes, n = self.arglist(params)
+                if n != len(params):
+                    self.err("fn %s expects %d argument(s), got %d"
+                             % (name, len(params), n))
+                return Call("%s(%s)" % (node.code, ", ".join(codes)),
+                            ret or "any")
             if name in self.ctx.fn_sigs:
                 plist, rt, variadic = self.ctx.fn_sigs[name]
                 codes, n = self.arglist([pt for _pn, pt in plist])

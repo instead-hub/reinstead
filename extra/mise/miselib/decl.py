@@ -2,7 +2,7 @@ import re
 
 from . import state as S
 from .common import *
-from .typing import base
+from .typing import canon_type, split_types, type_error
 
 REF_FIELDS = {
     "n_to", "s_to", "e_to", "w_to", "nw_to", "ne_to", "sw_to", "se_to",
@@ -78,25 +78,46 @@ def classify(key):
 
 
 def parse_fn_sig(key, types=None):
-    m = re.match(r"^fn\s+([\w.+-]+)\s*(?:\(([^)]*)\))?\s*"
-                 r"(?:->\s*([A-Za-z_]\w*\??))?$", key)
+    m = re.match(r"^fn\s+([\w.+-]+)\s*", key)
     if not m:
         raise Error("bad fn: " + key)
-    name, params, ret = m.group(1), m.group(2), m.group(3) or "any"
+    name = m.group(1)
+    rest = key[m.end():].strip()
+    params = None
+    if rest.startswith("("):
+        depth, end = 0, None
+        for i, c in enumerate(rest):
+            if c == "(":
+                depth += 1
+            elif c == ")":
+                depth -= 1
+                if depth == 0:
+                    end = i
+                    break
+        if end is None:
+            raise Error("bad fn: " + key)
+        params = rest[1:end]
+        rest = rest[end + 1:].strip()
+    ret = "any"
+    if rest:
+        if not rest.startswith("->"):
+            raise Error("bad fn: " + key)
+        ret = rest[2:].strip()
+        if not ret:
+            raise Error("bad fn: " + key)
     known = S.TYPES | (types or set()) | {"nil"}
 
     def check_type(pt, what):
-        if base(pt) not in known or pt == "nil?":
-            raise Error("fn %s: unknown type %r for %s"
-                        % (name, pt, what))
+        msg = type_error(known, pt)
+        if msg:
+            raise Error("fn %s: %s for %s" % (name, msg, what))
 
-    check_type(ret, "return")
     plist = []
     variadic = False
     if params is None:
         plist = [("s", "obj"), ("w", "obj"), ("wh", "obj")]
     elif params.strip():
-        parts = [p.strip() for p in params.split(",") if p.strip()]
+        parts = split_types(params)
         for idx, p in enumerate(parts):
             if p == "...":
                 if idx != len(parts) - 1:
@@ -112,7 +133,10 @@ def parse_fn_sig(key, types=None):
             if not re.fullmatch(r"[^\W\d]\w*", pn, re.UNICODE):
                 raise Error("fn %s: bad parameter %r" % (name, pn))
             check_type(pt, pn)
-            plist.append((pn, pt))
+            plist.append((pn, canon_type(known, pt)))
+    check_type(ret, "return")
+    if ret != "any":
+        ret = canon_type(known, ret)
     return name, plist, ret, variadic
 
 

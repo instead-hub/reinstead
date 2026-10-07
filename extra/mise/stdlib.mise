@@ -75,10 +75,10 @@ fn getDaemons() -> tbl: |lua
 fn disabled(w: obj) -> bool: |lua
   return disabled(w)
 
-fn for_plural(s: obj, f: fn): |lua
+fn for_plural(s: obj, f: fn(w: obj)): |lua
   s:for_plural(f)
 
-fn trace(s: obj, f: fn): |lua
+fn trace(s: obj, f: fn(w: obj)): |lua
   return mp:trace(s, f)
 
 fn isa(s: obj, cls: str) -> bool: `(((function(o) local m = getmetatable(s) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G[cls])))`

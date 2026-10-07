@@ -52,10 +52,12 @@ kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
 param     ::= IDENT [ ":" type ] | "..."
-type      ::= base [ "?" ]
-base      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl"
-            | "fn" | "nil" | IDENT
-(* IDENT — перечисление из type или имя класса; "?" — optional: T или nil *)
+type      ::= atom [ "?" ]
+atom      ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl"
+            | "fn" "(" [ type { "," type } ] ")" [ "->" type ]
+            | "nil" | IDENT
+(* IDENT — перечисление из type или имя класса; "?" — optional: T или nil;
+   fn(...) -> T — подпись колбэка (имена параметров необязательны) *)
 (* обработчики — "<фаза> <Event>", Event в движковом регистре (Walk, Enter,
    SwitchOn, ...; Any/Default — тоже события); фаза обязательна:
    on — метод события (X = function...), before/after/post/life — префикс

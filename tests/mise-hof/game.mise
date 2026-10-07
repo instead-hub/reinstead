@@ -1,0 +1,22 @@
+name: t
+lang: ru
+include: stdlib
+
+class Tree:
+  attrs: scenery
+
+fn is_lit(w: obj) -> bool: |
+  return w:has light
+
+fn mark(w: obj): |
+  w:attr seen
+
+fn run(f: fn(w: obj) -> bool) -> bool: |
+  return f(box)
+
+obj box:
+  words: коробка
+  on Take: |
+    if run(&is_lit):
+      say [[светло]]
+    for_plural(s, &mark)

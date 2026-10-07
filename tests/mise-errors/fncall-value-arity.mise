@@ -1,0 +1,6 @@
+name: t
+lang: ru
+include: stdlib
+
+fn use(f: fn(w: obj) -> bool) -> bool: |
+  return f()
