@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+fn f(t: tbl): |
+  for _, w: Nope in ipairs(t):
+    pass

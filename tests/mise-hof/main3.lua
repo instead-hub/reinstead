@@ -16,6 +16,20 @@ local function fn_run(f)
   return f(_'box')
 end
 
+local function fn_each(t, f)
+  for _, w in ipairs(t) do
+    f(w)
+  end
+end
+
+local function fn_total(n)
+  local r = 0
+  for i = 1, n do
+    r = r + (i)
+  end
+  return r
+end
+
 obj {
   nam = "none";
 }
@@ -57,5 +71,9 @@ obj {
       p([[светло]])
     end
     s:for_plural(fn_mark)
+    fn_each(inv(), fn_mark)
+    if fn_total(3) > 0 then
+      return false
+    end
   end;
 }

@@ -157,7 +157,7 @@ transpile (main loop) обход корневых элементов → Emitter
   пробрасываются.
 - `transpile_exprlist`, `transpile_stmt` (`local`, присваивания и
   стабильность типов, `+=`/`-=`, разворачивание lhs для полей-ссылок),
-  `transpile_for`.
+  `transpile_for` (аннотации переменных цикла — `for _, w: obj in …`).
 
 ## Логика (`emitlogic.py`)
 

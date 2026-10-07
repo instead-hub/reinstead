@@ -133,8 +133,8 @@ if        ::= "if" expr ":" INDENT { logic_line } DEDENT
               { "when" expr ":" INDENT { logic_line } DEDENT }
               [ "default" ":" INDENT { logic_line } DEDENT ]
 for       ::= "for" for_header ":" INDENT { logic_line } DEDENT
-for_header::= IDENT "=" expr "," expr [ "," expr ]     (* числовой *)
-            | IDENT { "," IDENT } "in" expr            (* generic *)
+for_header::= IDENT [ ":" type ] "=" expr "," expr [ "," expr ] (* числовой *)
+            | IDENT [ ":" type ] { "," IDENT [ ":" type ] } "in" expr (* generic *)
 local     ::= "local" IDENT { "," IDENT } [ "=" expr_list ]
 break     ::= "break"
 stmt      ::= lvalue ( "=" | "+=" | "-=" ) expr_list    (* присваивание *)

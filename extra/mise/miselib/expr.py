@@ -2,8 +2,8 @@ import re
 
 from . import state as S
 from .common import *
-from .typing import (base, canon_fn_sig, fn_type_parts, type_ok,
-                     type_value_error)
+from .typing import (base, canon_fn_sig, canon_type, fn_type_parts, type_error,
+                     type_ok, type_value_error)
 
 def lex_lua(text):
     toks = []
@@ -806,21 +806,45 @@ def transpile_stmt(text, env, where, ctx):
         p.err("unsupported statement")
     return lhs.code
 
+def _loop_var(spec, where, ctx):
+    """`name` or `name: T` -> (name, canonical type or None)."""
+    name, sep, pt = spec.partition(":")
+    name = name.strip()
+    if not re.fullmatch(r"[^\W\d]\w*", name, re.UNICODE):
+        raise LintError("bad loop variable %r in %s" % (spec.strip(), where))
+    if not sep:
+        return name, None
+    pt = pt.strip()
+    known = S.TYPES | set(ctx.types) | ctx.classes | {"nil"}
+    msg = type_error(known, pt)
+    if msg:
+        raise LintError("%s: for %s: %s" % (where, name, msg))
+    return name, canon_type(known, pt)
+
+
 def transpile_for(header, env, where, ctx):
     if re.search(r"\bin\b", header):
         names, iterable = re.split(r"\bin\b", header, 1)
-        vars_ = [v.strip() for v in names.split(",") if v.strip()]
-        for v in vars_:
-            if not re.fullmatch(r"[^\W\d]\w*", v, re.UNICODE):
-                raise LintError("bad loop variable %r in %s" % (v, where))
+        vars_ = {}
+        for spec in names.split(","):
+            if not spec.strip():
+                continue
+            name, pt = _loop_var(spec, where, ctx)
+            vars_[name] = pt or "any"
         code, _ = transpile_exprlist(iterable, env, where, None, ctx)
-        return ("%s in %s" % (", ".join(vars_), code),
-                {v: "any" for v in vars_})
+        return ("%s in %s" % (", ".join(vars_), code), vars_)
     parts = split_list(header)
-    m = re.match(r"^([^\W\d]\w*)\s*=\s*(.*)$", parts[0], re.UNICODE)
+    m = re.match(r"^([^\W\d]\w*)\s*(?::\s*([^=]+?))?\s*=\s*(.*)$",
+                 parts[0], re.UNICODE)
     if not m:
         raise LintError("bad for header in %s: %s" % (where, header))
-    start, st = transpile_exprlist(m.group(2), env, where, None, ctx)
+    name, pt, start_expr = m.group(1), m.group(2), m.group(3)
+    if pt is not None:
+        _, pt = _loop_var("%s: %s" % (name, pt), where, ctx)
+        if not type_ok(ctx, "num", pt):
+            raise LintError("%s: for variable %s: expected num, got %s"
+                            % (where, name, pt))
+    start, st = transpile_exprlist(start_expr, env, where, None, ctx)
     if st and st[0] not in ("num", "any"):
         raise LintError("%s: for bound must be num, got %s" % (where, st[0]))
     codes = [start]
@@ -830,8 +854,7 @@ def transpile_for(header, env, where, ctx):
             raise LintError("%s: for bound must be num, got %s"
                             % (where, ct[0]))
         codes.append(c)
-    return ("%s = %s" % (m.group(1), ", ".join(codes)),
-            {m.group(1): "num"})
+    return ("%s = %s" % (name, ", ".join(codes)), {name: "num"})
 
 def expr_like(s, env, ctx):
     c = s[0]

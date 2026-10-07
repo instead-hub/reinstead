@@ -275,7 +275,8 @@ fn here() -> obj: |lua
 | `x = expr`, `x += expr`, `x -= expr` | присваивание |
 | `if cond:` / `elseif cond:` / `else:` | `if ... then ... end` |
 | `when cond:` / `when cond:` / `default:` | то же (`if/elseif/else`) |
-| `for header:` | `for ... do ... end` (числовые границы — `num`) |
+| `for header:` | `for ... do ... end` (границы — `num`; переменные можно
+аннотировать: `for _, w: obj in ipairs(t):`) |
 | `local a, b = ...` | локальные переменные |
 | `break` | выход из цикла |
 | вызов `f(...)` (fn) или присваивание | оператор |

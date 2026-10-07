@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+fn f(n: num): |
+  for i: obj = 1, n:
+    pass

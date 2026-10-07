@@ -14,9 +14,22 @@ fn mark(w: obj): |
 fn run(f: fn(w: obj) -> bool) -> bool: |
   return f(box)
 
+fn each(t: tbl, f: fn(w: obj)): |
+  for _, w: obj in ipairs(t):
+    f(w)
+
+fn total(n: num) -> num: |
+  local r = 0
+  for i: num = 1, n:
+    r += i
+  return r
+
 obj box:
   words: коробка
   on Take: |
     if run(&is_lit):
       say [[светло]]
     for_plural(s, &mark)
+    each(inv(), &mark)
+    if total(3) > 0:
+      pass
