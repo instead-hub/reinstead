@@ -63,4 +63,12 @@ obj {
 
 _'box'.Gaze = function(s, w, wh)
   p([[смотрят]])
+  local style = "light"
+  if style == "light" then
+    return false
+  end
+  local e = 'Exam'
+  if e == 'Wear' then
+    p([[одежда]])
+  end
 end;

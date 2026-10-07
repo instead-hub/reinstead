@@ -28,3 +28,9 @@ extend type event: Gaze
 impl box:
   on Gaze: |
     say [[смотрят]]
+    local style = light
+    if style == light:
+      pass
+    local e = Exam
+    if e == Wear:
+      say [[одежда]]

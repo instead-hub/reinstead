@@ -1,0 +1,1 @@
+mise: error: ambiguous value 'x' (types: a, b) in logic:9: local v = x

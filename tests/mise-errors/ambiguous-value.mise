@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+type a: x, y
+type b: x, z
+
+fn f(): |
+  local v = x

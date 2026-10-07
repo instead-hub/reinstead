@@ -343,6 +343,14 @@ class ExprEmit:
                 if msg:
                     self.terr(msg)
                 return Lit(lua_str(val), "str", val=val)
+            if val in self.ctx.event_names:
+                return Lit("'%s'" % val, "event", val=val)
+            owners = self.ctx.enum_values.get(val)
+            if owners:
+                if len(owners) > 1:
+                    self.terr("ambiguous value %r (types: %s)"
+                              % (val, ", ".join(sorted(owners))))
+                return Lit(lua_str(val), next(iter(owners)), val=val)
             self.err("unknown name %r" % val)
         if kind == "op" and val == "(":
             self.expected = None

@@ -155,6 +155,17 @@ FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
               "dict", "nam", "text", "patterns", "pattern", "tag", "prio",
               "hint", "mixin"}
 
+ENGINE_TARGETS = {"game", "player", "pl", "mp", "std", "main"}
+
+
+def _check_impl_target(target, ctx):
+    """A declared object/class, or an engine module (`game`, `@compass`)."""
+    if target in ctx.ids or target in ctx.classes:
+        return
+    if target.startswith("@") or "." in target or target in ENGINE_TARGETS:
+        return
+    raise Error("unknown impl target: " + target)
+
 
 def field_base(key, val, ctx):
     """Return the field name of a regular object-like key, else None.
@@ -288,6 +299,7 @@ def check_bare_names(root, ctx):
         if kind == "mixin":
             walk_fields(val)
         elif kind == "impl":
+            _check_impl_target(_info, ctx)
             walk_fields(val)
         elif kind == "setup":
             for j, (skey, sval) in enumerate(val.items):

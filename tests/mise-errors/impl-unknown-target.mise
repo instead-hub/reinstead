@@ -1,0 +1,6 @@
+name: t
+lang: ru
+include: stdlib
+
+impl nosuch:
+  hint_verbs: { "#Exam" }
