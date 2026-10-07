@@ -1,1 +1,1 @@
-mise: error: line 10: hall.title: expected str | bool | fn(s: obj), got num
+mise: error: line 10: hall.title: expected str | bool | fn(s: obj) -> str, got num

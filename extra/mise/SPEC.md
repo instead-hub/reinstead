@@ -226,6 +226,7 @@ refs       — поля-ссылки (см. «Типы полей»)
 | `compass_look` | обработчик `(s, to)` (направление) |
 | `scope` | список объектов или обработчик `(s, w)` |
 | `enter`/`exit`, `onenter`/`onexit` | обработчики STEAD3 `(s, w)` (откуда/куда) |
+| `default_Event`, `capacity`, `help`, `disp`, `gfx`, `word`/`raw_word` | простые свойства (типы — в `props:`) |
 | `text:` | страницы cutscene (несколько `text:` → список) |
 
 `scope` задаётся списком объектов (`scope: ключ, лампа` — голые имена,
@@ -484,16 +485,24 @@ obj Кабель:
 ```
 props:
   scope: tbl[ref] | fn(s: obj, w: tbl[ref])
-  n_to: ref | fn(s: obj)
-  dsc: str | bool | fn(s: obj)
+  n_to: ref | fn(s: obj) -> ref
+  dsc: str | bool | fn(s: obj) -> str
+  default_Event: event | fn(s: obj) -> event
+  capacity: num | fn(s: obj) -> num
+  gfx: str | tbl | fn(s: obj) -> str
+  word: str | fn(s: obj) -> str
 ```
 
 - `ref` — голое имя объявленного объекта (`n_to: зал`); `tbl[ref]` —
   список таких имён (`scope: лампа, ключ`); `fn(...)` — обработчик
   (имена параметров дают типы в теле `|`, эмитится `function(s, ...)`);
-  `str`/`bool`/`num` — значения как есть.
+  `str`/`bool`/`num`/`tbl`/`event` — значения как есть.
+- `fn(...) -> T` — возврат тела проверяется (`return` должен давать `T`;
+  `ref` в теле читается как `obj`); `return`/`stop` без значения, `false`
+  и `nil` — «нет значения» и допустимы всегда.
 - Ошибка, если значение не подходит ни одной альтернативе (`scope: 3`,
-  `n_to: 3`, `daemon: [[x]]`).
+  `n_to: 3`, `daemon: [[x]]`, `capacity: | return 'x'`) или `use`-функция
+  возвращает не тот тип.
 - `ref` — тип только для значений полей (в логике ссылки уже `obj`);
   `props` расширяются играми обычным блоком (дубликаты — ошибка).
 

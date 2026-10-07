@@ -143,6 +143,9 @@ Door {
   nam = "gate2";
   from = 'hall';
   to = 'garden';
+  door_to = function(s)
+    return _'hall'
+  end;
 }
 
 room {
@@ -151,6 +154,7 @@ room {
   dsc = "Тихий сад.";
   home_to = 'hall';
   scope = { 'statue', 'relic' };
+  default_Event = "Exam";
 }
 
 obj {
@@ -166,6 +170,12 @@ obj {
   mood = "tired";
   daemon = fn_tick;
   when_open = "Открыто.";
+  help = "Подсказка.";
+  disp = "Реликвия.";
+  gfx = "relic.png";
+  word = function(s)
+    return 'реликвия'
+  end;
 }:disable()
 
 obj {
@@ -177,6 +187,7 @@ obj {
   -"шкатулка";
   nam = "casket";
   with_key = 'key';
+  capacity = 2;
 }:attr 'lockable,locked'
 
 Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 10, hint = function(s)

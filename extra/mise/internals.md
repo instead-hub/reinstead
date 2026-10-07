@@ -121,8 +121,10 @@ transpile (main loop) обход корневых элементов → Emitter
 
 ## Типы (`typing.py`)
 
-- `Prop`/`named_fn` — разбор типов свойств (`ref`, `tbl[ref]`, `fn(s: obj)`)
-  и env тел; `base(t)` — база `T?`; `tbl_inner(t)` — внутренний тип `tbl[T]`
+- `Prop`/`named_fn` — разбор типов свойств (`ref`, `tbl[ref]`, `fn(s: obj)
+  -> T`) и env тел; `Prop.ret` уходит в `emit_logic` через `body_type`
+  (`ref`→`obj`, `tbl[ref]`→`tbl[obj]`); `base(t)` — база `T?`;
+  `tbl_inner(t)` — внутренний тип `tbl[T]`
   (`""` у `tbl[]`, None у `tbl`); `split_union`/`union_parts` —
   альтернативы `T|U` верхнего уровня (вне `fn(...)`/`tbl[...]`), канон —
   сортировка + один `?`.
@@ -161,6 +163,8 @@ transpile (main loop) обход корневых элементов → Emitter
   `funcs` для primary);
   `primary` (литералы, имена, `_'id'`, `fn`, переменные, ожидаемые
   `event`/перечисления; голые значения enum/событий — по уникальности;
+  `return`/`stop` без значения и `false`/`nil` не проверяются по типу
+  возврата (`emit_logic`);
   `{ e1, e2 }` — список: элементы под ожидаемый `tbl[T]`, тип
   `tbl[T1|T2...]`, пустой — `tbl[]`/`tbl[T]`; числовой литерал,
   объявленный значением enum-альтернативы (`2` ∈ `gram`), типизируется

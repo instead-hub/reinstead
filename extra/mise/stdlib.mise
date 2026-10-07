@@ -14,46 +14,53 @@ type gram: ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
 
 props:
   daemon: fn(s: obj)
-  description: str | bool | fn(s: obj)
-  dsc: str | bool | fn(s: obj)
-  title: str | bool | fn(s: obj)
-  inv: str | bool | fn(s: obj)
-  inside_dsc: str | bool | fn(s: obj)
-  init_dsc: str | bool | fn(s: obj)
-  dark_dsc: str | bool | fn(s: obj)
-  cant_go: str | bool | fn(s: obj, to: direction)
+  description: str | bool | fn(s: obj) -> str
+  dsc: str | bool | fn(s: obj) -> str
+  title: str | bool | fn(s: obj) -> str
+  inv: str | bool | fn(s: obj) -> str
+  inside_dsc: str | bool | fn(s: obj) -> str
+  init_dsc: str | bool | fn(s: obj) -> str
+  dark_dsc: str | bool | fn(s: obj) -> str
+  cant_go: str | bool | fn(s: obj, to: direction) -> str
   compass_look: fn(s: obj, to: direction)
   onenter: fn(s: obj, w: obj)
   onexit: fn(s: obj, w: obj)
   enter: fn(s: obj, w: obj)
   exit: fn(s: obj, w: obj)
   each_turn: fn(s: obj)
-  when_open: str | bool | fn(s: obj)
-  when_closed: str | bool | fn(s: obj)
-  when_on: str | bool | fn(s: obj)
-  when_off: str | bool | fn(s: obj)
+  when_open: str | bool | fn(s: obj) -> str
+  when_closed: str | bool | fn(s: obj) -> str
+  when_on: str | bool | fn(s: obj) -> str
+  when_off: str | bool | fn(s: obj) -> str
   scope: tbl[ref] | fn(s: obj, w: tbl[ref])
-  found_in: ref | tbl[ref] | fn(s: obj)
-  door_to: ref | fn(s: obj)
-  talk_to: ref | fn(s: obj)
-  with_key: ref | fn(s: obj)
+  found_in: ref | tbl[ref] | fn(s: obj) -> bool
+  door_to: ref | fn(s: obj) -> ref
+  talk_to: ref | fn(s: obj) -> ref
+  with_key: ref | fn(s: obj) -> ref
   from: ref
   to: ref
   walk_to: ref
-  n_to: ref | fn(s: obj)
-  ne_to: ref | fn(s: obj)
-  e_to: ref | fn(s: obj)
-  se_to: ref | fn(s: obj)
-  s_to: ref | fn(s: obj)
-  sw_to: ref | fn(s: obj)
-  w_to: ref | fn(s: obj)
-  nw_to: ref | fn(s: obj)
-  d_to: ref | fn(s: obj)
-  u_to: ref | fn(s: obj)
-  in_to: ref | fn(s: obj)
-  out_to: ref | fn(s: obj)
-  prev_to: ref | fn(s: obj)
-  next_to: ref | fn(s: obj)
+  n_to: ref | fn(s: obj) -> ref
+  ne_to: ref | fn(s: obj) -> ref
+  e_to: ref | fn(s: obj) -> ref
+  se_to: ref | fn(s: obj) -> ref
+  s_to: ref | fn(s: obj) -> ref
+  sw_to: ref | fn(s: obj) -> ref
+  w_to: ref | fn(s: obj) -> ref
+  nw_to: ref | fn(s: obj) -> ref
+  d_to: ref | fn(s: obj) -> ref
+  u_to: ref | fn(s: obj) -> ref
+  in_to: ref | fn(s: obj) -> ref
+  out_to: ref | fn(s: obj) -> ref
+  prev_to: ref | fn(s: obj) -> ref
+  next_to: ref | fn(s: obj) -> ref
+  default_Event: event | fn(s: obj) -> event
+  capacity: num | fn(s: obj) -> num
+  disp: str | fn(s: obj) -> str
+  help: str | fn(s: obj) -> str
+  gfx: str | tbl | fn(s: obj) -> str
+  word: str | fn(s: obj) -> str
+  raw_word: str | fn(s: obj) -> str
 
 type event:
   - Answer, Any, Ask, AskFor, Attack, Blow, Burn, Buy, Climb, Close,

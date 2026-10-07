@@ -155,7 +155,7 @@ def collect_types(root, ctx):
     return ctx.types
 
 
-FIELD_SKIP = {"words", "word", "on", "inside", "with", "attrs", "disabled",
+FIELD_SKIP = {"words", "on", "inside", "with", "attrs", "disabled",
               "dict", "nam", "text", "patterns", "pattern", "tag", "prio",
               "hint", "mixin"}
 
@@ -213,6 +213,8 @@ def check_prop_value(ctx, owner, base, prop, val, t):
             if prop.fn is None:
                 raise Error("%s: expected %s, got use" % (where, prop.text))
             return "any", False
+        if prop.has_event and t == "event":
+            return "event", False
         if prop.has_ref and t == "obj":
             return "obj", True
         raise Error("%s: expected %s, got %s" % (where, prop.text, t))

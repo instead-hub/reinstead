@@ -186,6 +186,23 @@ def fn_type_parts(t):
     return split_types(inner), (rest[2:] or None if rest else None)
 
 
+def body_type(t):
+    """Prop value type as seen in a body: `ref`/`tbl[ref]` become obj forms."""
+    if not t:
+        return t
+    opt = t.endswith("?")
+    b = base(t)
+    if b == "ref":
+        return "obj" + ("?" if opt else "")
+    if b == "tbl[ref]":
+        return "tbl[obj]" + ("?" if opt else "")
+    alts = union_parts(t)
+    if alts is not None:
+        out = sorted({body_type(a) for a in alts})
+        return "|".join(out) + ("?" if opt else "")
+    return t
+
+
 def named_fn(text, known):
     """`fn(s: obj, ...) [-> ret]` -> ([(name|None, type)], ret|None)."""
     parts = _fn_split(text.strip())
@@ -212,7 +229,9 @@ class Prop:
         self.alts = []
         self.has_ref = self.has_reflist = False
         self.has_str = self.has_num = self.has_bool = self.has_tbl = False
+        self.has_event = False
         self.fn = None
+        self.ret = None
         self.names = None
         self.env = None
         for alt in split_union(self.text):
@@ -232,6 +251,8 @@ class Prop:
                 self.has_bool = True
             elif c == "tbl":
                 self.has_tbl = True
+            elif c == "event":
+                self.has_event = True
             elif c.startswith("fn(") and self.fn is None:
                 self.fn = named_fn(alt, known)
         if self.fn is not None:
@@ -241,6 +262,7 @@ class Prop:
                             % self.text)
             self.names = ", ".join(names)
             self.env = {pn: pt for pn, pt in self.fn[0]}
+            self.ret = self.fn[1]
 
 
 def type_ok(ctx, t, exp):

@@ -46,7 +46,9 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
                     raise LintError("%s: %r is an object name; return it "
                                     "without quotes" % (where,
                                     m.group(1) or m.group(2)))
-            if ret and ret != "any" and not type_ok(ctx, rtype, ret):
+            src = (st[1] or "").strip()
+            if (ret and ret != "any" and src not in ("", "false", "nil")
+                    and not type_ok(ctx, rtype, ret)):
                 c = ("fn %s" % ret_name) if ret_name else "logic"
                 raise LintError("%s: return type is %s, expected %s"
                                 % (c, rtype, ret))

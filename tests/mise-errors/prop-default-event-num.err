@@ -1,0 +1,1 @@
+mise: error: line 10: hall.default_Event: expected event | fn(s: obj) -> event, got num

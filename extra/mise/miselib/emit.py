@@ -5,7 +5,7 @@ from .common import *
 from .emitlogic import emit_logic
 from .decl import (PRESETS, check_ref_value, decl_key,
                    is_true, sym_text)
-from .typing import class_le, type_value_error
+from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import fn_name, min_args, transpile_exprlist
 
 
@@ -44,10 +44,10 @@ class Emitter:
             return "nil"
         raise Error("unsupported value: %r (ctx=%s)" % (v, mode))
 
-    def check_use(self, name, prm):
+    def check_use(self, name, prm, ret=None):
         if name not in self.ctx.fn_sigs or not prm:
             return
-        plist, _ret, variadic = self.ctx.fn_sigs[name]
+        plist, fret, variadic = self.ctx.fn_sigs[name]
         n = len(self.param_env(prm))
         pt = plist[0][1] if plist else None
         if pt in self.ctx.classes:
@@ -63,6 +63,9 @@ class Emitter:
                             % (name, len(plist), n))
             raise Error("fn %s takes at least %d parameter(s), event "
                         "provides %d" % (name, mn, n))
+        if ret and fret and fret != "any" and not type_ok(self.ctx, fret, ret):
+            raise Error("fn %s: return type is %s, expected %s"
+                        % (name, fret, ret))
 
     def use_name(self, v):
         if isinstance(v, (Text, Bare)):
@@ -91,10 +94,10 @@ class Emitter:
             env[pn] = S.PARAM_TYPES.get(pn, "any")
         return env
 
-    def make_body(self, v, prm, indent, env=None):
+    def make_body(self, v, prm, indent, env=None, ret=None, ret_name=None):
         uname = self.use_name(v)
         if uname:
-            self.check_use(uname, prm)
+            self.check_use(uname, prm, ret)
             return fn_name(uname)
         if isinstance(v, Lua):
             body = reindent(v.s, indent + IND)
@@ -102,8 +105,8 @@ class Emitter:
         if isinstance(v, Logic):
             if env is None:
                 env = self.param_env(prm)
-            body = "\n".join(emit_logic(v.stmts, indent + IND,
-                                        env, ctx=self.ctx))
+            body = "\n".join(emit_logic(v.stmts, indent + IND, env, ret,
+                                        ret_name, ctx=self.ctx))
             return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
         return self.value(v)
 
@@ -112,7 +115,10 @@ class Emitter:
         prop = self.ctx.props.get(base)
         prm = params or (prop.names if prop else None) or "s"
         env = None if params else (prop.env if prop else None)
-        return self.make_body(v, prm, indent, env)
+        ret = None
+        if prop is not None and not params and prop.ret:
+            ret = body_type(prop.ret)
+        return self.make_body(v, prm, indent, env, ret, base)
 
     def handler(self, val, prm, indent):
         if isinstance(val, (Text, Bare)) and val.s.strip() == "pass":

@@ -91,12 +91,15 @@ Door gate2:
   words: калитка
   from: hall
   to: garden
+  door_to: |
+    return hall
 
 room garden:
   words: сад
   dsc: [[Тихий сад.]]
   home_to: hall
   scope: statue, relic
+  default_Event: Exam
 
 obj statue:
   words: статуя
@@ -110,6 +113,11 @@ obj relic:
   disabled: true
   daemon: use tick
   when_open: [[Открыто.]]
+  help: [[Подсказка.]]
+  disp: [[Реликвия.]]
+  gfx: [[relic.png]]
+  word: |
+    return 'реликвия'
 
 obj key:
   words: ключ
@@ -118,6 +126,7 @@ obj casket:
   words: шкатулка
   attrs: lockable, locked
   with_key: key
+  capacity: 2
 
 verb Probe:
   tag: #Probe

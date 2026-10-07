@@ -1,0 +1,10 @@
+name: t
+lang: ru
+include: stdlib
+
+fn f(s: obj) -> str: |
+  return 'x'
+
+room hall:
+  words: зал
+  capacity: use f

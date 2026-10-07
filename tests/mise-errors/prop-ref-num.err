@@ -1,1 +1,1 @@
-mise: error: line 10: hall.n_to: expected ref | fn(s: obj), got num
+mise: error: line 10: hall.n_to: expected ref | fn(s: obj) -> ref, got num
