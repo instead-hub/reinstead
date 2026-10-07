@@ -23,6 +23,7 @@ fn on_take(s: Box): |
   say(label(s, 'им'))
   say(label(s, вн))
   say(s:noun(вн))
+  say(s:noun(зв))
   say(s:noun('рд,2'))
   say(s:noun 'им')
   say(s:noun({ вн, 2 }))
