@@ -36,6 +36,8 @@ def classify(key):
         return "refs", None
     if key == "extend refs":
         return "extend_refs", None
+    if key == "props":
+        return "props", None
     m = re.match(r"^class\s+([A-Z]\w*)\s*(?:\(([^)]*)\))?$", key)
     if m:
         return "class", (m.group(1), m.group(2))

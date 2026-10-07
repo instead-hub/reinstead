@@ -28,6 +28,8 @@ class Ctx:
         self.global_types = {}
         self.event_names = set()
         self.ref_fields = set()
+        self.props = {}
+        self.prop_params = {}
         self.inline = {}
         self.types = {}
         self.enum_values = {}

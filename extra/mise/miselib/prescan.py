@@ -1,10 +1,11 @@
 import os
 import re
 
+from . import state as S
 from .common import *
 from .parse import parse_source
 from .decl import classify, parse_fn_sig
-from .typing import literal_type
+from .typing import Prop, literal_type
 
 def collect_ids(root):
     ids = {}
@@ -60,6 +61,8 @@ def check_refs(root, ids):
 
     def walk(block):
         for i, (key, val) in enumerate(block.items):
+            if key == "props":
+                continue
             if key in ("with", "inside", "found_in"):
                 CURRENT_LINE[0] = block.line_at(i)
                 refs(key, val)
@@ -168,6 +171,75 @@ def _check_impl_target(target, ctx):
     raise Error("unknown impl target: " + target)
 
 
+def _register_props(root, ctx):
+    """`props:` -> typed engine properties (refs, handlers, text/fn)."""
+    ctx.props = {}
+    ctx.prop_params = {}
+    known = S.TYPES | set(ctx.types) | {"ref", "nil"}
+    for i, (key, val) in enumerate(root.items):
+        CURRENT_LINE[0] = root.line_at(i)
+        if classify(key)[0] != "props":
+            continue
+        if not isinstance(val, Block):
+            raise Error("props must be a block")
+        for j, (name, tval) in enumerate(val.items):
+            CURRENT_LINE[0] = val.line_at(j) or CURRENT_LINE[0]
+            if not re.fullmatch(r"[^\W\d]\w*", name, re.UNICODE):
+                raise Error("bad prop name %r" % name)
+            if name in ctx.props:
+                raise Error("duplicate prop: " + name)
+            if not isinstance(tval, (Bare, Text)):
+                raise Error("props: %s needs a type" % name)
+            prop = Prop(tval.s, known)
+            ctx.props[name] = prop
+            if prop.names:
+                ctx.prop_params[name] = prop.names
+            if prop.has_ref or prop.has_reflist:
+                ctx.ref_fields.add(name)
+
+
+def check_prop_value(ctx, owner, base, prop, val, t):
+    """Validate a prop field value; returns (type, is_ref)."""
+    where = ("%s.%s" % (owner, base)) if owner else base
+    if isinstance(val, (Raw, Data, Nil)):
+        return ("tbl" if isinstance(val, Data) else
+                "nil" if isinstance(val, Nil) else "any", False)
+    if isinstance(val, (Logic, Lua)):
+        if prop.fn is None:
+            raise Error("%s: expected %s, got function" % (where, prop.text))
+        return "any", False
+    if isinstance(val, Bare):
+        if S.USE_RE.match(val.s.strip()):
+            if prop.fn is None:
+                raise Error("%s: expected %s, got use" % (where, prop.text))
+            return "any", False
+        if prop.has_ref and t == "obj":
+            return "obj", True
+        raise Error("%s: expected %s, got %s" % (where, prop.text, t))
+    if isinstance(val, Text):
+        if prop.has_str:
+            return "str", False
+        if prop.has_ref:
+            raise Error("%s: object reference must be a bare name, not a "
+                        "quoted string (%r)" % (where, val.s))
+        raise Error("%s: expected %s, got str" % (where, prop.text))
+    if isinstance(val, list):
+        if prop.has_reflist:
+            return "tbl", False
+        raise Error("%s: expected %s, got list" % (where, prop.text))
+    if isinstance(val, Num):
+        if prop.has_num:
+            return "num", False
+        raise Error("%s: expected %s, got num" % (where, prop.text))
+    if isinstance(val, Bool):
+        if prop.has_bool:
+            return "bool", False
+        raise Error("%s: expected %s, got bool" % (where, prop.text))
+    if prop.has_tbl:
+        return "tbl", False
+    raise Error("%s: expected %s, got %s" % (where, prop.text, type(val).__name__.lower()))
+
+
 def field_base(key, val, ctx):
     """Return the field name of a regular object-like key, else None.
 
@@ -207,23 +279,28 @@ def attach_mixins(block, ctx, into):
         collect_block_fields(bdef, ctx, into)
 
 
-def collect_block_fields(block, ctx, into):
+def collect_block_fields(block, ctx, into, owner=None):
     attach_mixins(block, ctx, into)
     for i, (key, val) in enumerate(block.items):
         CURRENT_LINE[0] = block.line_at(i)
         if key in ("with", "inside") and isinstance(val, Block):
             for kind, ident, nv in _nested_decls(val):
                 fields = dict(ctx.fields.get(kind, {}))
-                collect_block_fields(nv, ctx, fields)
+                collect_block_fields(nv, ctx, fields, ident)
                 ctx.fields[ident] = fields
             continue
         base = field_base(key, val, ctx)
         if base is None:
             continue
         t = literal_type(ctx, val, refs=True)
-        if isinstance(val, Bare) and t == "str":
+        if (isinstance(val, Bare) and t == "str"
+                and not S.USE_RE.match(val.s.strip())):
             raise Error("unknown name %r in field %s (quote string "
                         "values: [[...]]/\"...\")" % (val.s, base))
+        prop = ctx.props.get(base)
+        if prop is not None:
+            into[base] = check_prop_value(ctx, owner, base, prop, val, t)
+            continue
         into[base] = (t, t == "obj" and isinstance(val, Bare))
 
 
@@ -247,7 +324,7 @@ def collect_field_types(root, ctx):
     ctx.classes = set(class_defs)
     for name, blk in mixin_defs.items():
         fields = {}
-        collect_block_fields(blk, ctx, fields)
+        collect_block_fields(blk, ctx, fields, name)
         ctx.fields[name] = fields
     done = set()
 
@@ -257,7 +334,7 @@ def collect_field_types(root, ctx):
         done.add(name)
         parent, blk = class_defs[name]
         fields = resolve(parent) if parent else {}
-        collect_block_fields(blk, ctx, fields)
+        collect_block_fields(blk, ctx, fields, name)
         ctx.fields[name] = fields
         return fields
 
@@ -267,7 +344,7 @@ def collect_field_types(root, ctx):
         kind, info = classify(key)
         if kind == "decl" and info[1] and isinstance(val, Block):
             fields = dict(ctx.fields.get(info[0], {}))
-            collect_block_fields(val, ctx, fields)
+            collect_block_fields(val, ctx, fields, info[1])
             ctx.fields[info[1]] = fields
 
 
@@ -277,7 +354,7 @@ def check_bare_names(root, ctx):
     Same rule as object/class fields: a bare name must resolve to an
     object, event or enum value; strings have to be quoted.
     """
-    def walk_fields(block):
+    def walk_fields(block, use_props=False, owner=None):
         for i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(i)
             if key == "mixin":
@@ -287,10 +364,14 @@ def check_bare_names(root, ctx):
                         raise Error("unknown mixin: " + name)
                 continue
             base = field_base(key, val, ctx)
-            if (base is not None and isinstance(val, Bare)
-                    and literal_type(ctx, val, refs=True) == "str"):
+            t = literal_type(ctx, val, refs=True)
+            if (base is not None and isinstance(val, Bare) and t == "str"
+                    and not S.USE_RE.match(val.s.strip())):
                 raise Error("unknown name %r in field %s (quote string "
                             "values: [[...]]/\"...\")" % (val.s, base))
+            prop = ctx.props.get(base) if (use_props and base) else None
+            if prop is not None:
+                check_prop_value(ctx, owner, base, prop, val, t)
 
     for i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(i)
@@ -298,15 +379,15 @@ def check_bare_names(root, ctx):
             continue
         kind, _info = classify(key)
         if kind == "mixin":
-            walk_fields(val)
+            walk_fields(val, True, _info)
         elif kind == "impl":
             _check_impl_target(_info, ctx)
-            walk_fields(val)
+            walk_fields(val, True, _info)
         elif kind == "setup":
             for j, (skey, sval) in enumerate(val.items):
                 CURRENT_LINE[0] = val.line_at(j)
                 if skey in ("hero", "game") and isinstance(sval, Block):
-                    walk_fields(sval)
+                    walk_fields(sval, True, skey)
         elif kind in ("const", "global"):
             walk_fields(val)
 
@@ -568,6 +649,7 @@ def prescan(root, ctx):
     ctx.id_kind = ids
     _register_refs(root, ctx)
     _register_events(root, ctx)
+    _register_props(root, ctx)
     collect_field_types(root, ctx)
     check_bare_names(root, ctx)
     game_funcs, game_vars = collect_game_defs(root)

@@ -64,7 +64,9 @@ transpile (main loop) обход корневых элементов → Emitter
 Порядок вызовов из `prescan()`:
 
 1. `collect_types` — `type`/`extend_type` → `ctx.types` (значения и
-   `~`-отрицание).
+   `~`-отрицание); `_register_props` — `props:` → `ctx.props`/`prop_params`
+   (+ref-поля); значения полей проверяются по типам, имена fn-параметров
+   дают env тел, `ref`/`tbl[ref]` — ref-проверки.
 2. `collect_ids` — декларации и теги, включая вложенные `with`;
    `ctx.id_kind` (имя → вид/класс).
 3. `collect_field_types` — `ctx.fields`; `collect_block_fields` рекурсивно
@@ -119,7 +121,8 @@ transpile (main loop) обход корневых элементов → Emitter
 
 ## Типы (`typing.py`)
 
-- `base(t)` — база `T?`; `tbl_inner(t)` — внутренний тип `tbl[T]`
+- `Prop`/`named_fn` — разбор типов свойств (`ref`, `tbl[ref]`, `fn(s: obj)`)
+  и env тел; `base(t)` — база `T?`; `tbl_inner(t)` — внутренний тип `tbl[T]`
   (`""` у `tbl[]`, None у `tbl`); `split_union`/`union_parts` —
   альтернативы `T|U` верхнего уровня (вне `fn(...)`/`tbl[...]`), канон —
   сортировка + один `?`.

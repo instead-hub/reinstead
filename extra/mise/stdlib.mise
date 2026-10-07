@@ -12,10 +12,48 @@ type case: им, рд, дт, вн, тв, пр, зв
 
 type gram: ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
 
-refs:
-  - d_to, door_to, e_to, found_in, from, in_to, n_to, ne_to, next_to,
-  - nw_to, out_to, prev_to, s_to, scope, se_to, sw_to, talk_to, to, u_to,
-  - w_to, walk_to, with_key
+props:
+  daemon: fn(s: obj)
+  description: str | bool | fn(s: obj)
+  dsc: str | bool | fn(s: obj)
+  title: str | bool | fn(s: obj)
+  inv: str | bool | fn(s: obj)
+  inside_dsc: str | bool | fn(s: obj)
+  init_dsc: str | bool | fn(s: obj)
+  dark_dsc: str | bool | fn(s: obj)
+  cant_go: str | bool | fn(s: obj, to: direction)
+  compass_look: fn(s: obj, to: direction)
+  onenter: fn(s: obj, w: obj)
+  onexit: fn(s: obj, w: obj)
+  enter: fn(s: obj, w: obj)
+  exit: fn(s: obj, w: obj)
+  each_turn: fn(s: obj)
+  when_open: str | bool | fn(s: obj)
+  when_closed: str | bool | fn(s: obj)
+  when_on: str | bool | fn(s: obj)
+  when_off: str | bool | fn(s: obj)
+  scope: tbl[ref] | fn(s: obj, w: tbl[ref])
+  found_in: ref | tbl[ref] | fn(s: obj)
+  door_to: ref | fn(s: obj)
+  talk_to: ref | fn(s: obj)
+  with_key: ref | fn(s: obj)
+  from: ref
+  to: ref
+  walk_to: ref
+  n_to: ref | fn(s: obj)
+  ne_to: ref | fn(s: obj)
+  e_to: ref | fn(s: obj)
+  se_to: ref | fn(s: obj)
+  s_to: ref | fn(s: obj)
+  sw_to: ref | fn(s: obj)
+  w_to: ref | fn(s: obj)
+  nw_to: ref | fn(s: obj)
+  d_to: ref | fn(s: obj)
+  u_to: ref | fn(s: obj)
+  in_to: ref | fn(s: obj)
+  out_to: ref | fn(s: obj)
+  prev_to: ref | fn(s: obj)
+  next_to: ref | fn(s: obj)
 
 type event:
   - Answer, Any, Ask, AskFor, Attack, Blow, Burn, Buy, Climb, Close,

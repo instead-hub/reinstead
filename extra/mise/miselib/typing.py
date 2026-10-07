@@ -186,6 +186,63 @@ def fn_type_parts(t):
     return split_types(inner), (rest[2:] or None if rest else None)
 
 
+def named_fn(text, known):
+    """`fn(s: obj, ...) [-> ret]` -> ([(name|None, type)], ret|None)."""
+    parts = _fn_split(text.strip())
+    if parts is None:
+        return [], None
+    plist = []
+    for part in split_types(parts[0]):
+        pn, _, pt = part.partition(":")
+        pn, pt = pn.strip(), pt.strip()
+        plist.append((pn if pt else None,
+                      canon_type(known, pt if pt else pn)))
+    ret = None
+    rest = parts[1].strip()
+    if rest.startswith("->"):
+        ret = canon_type(known, rest[2:].strip())
+    return plist, ret
+
+
+class Prop:
+    """A typed engine property: `str`, `ref`, `tbl[ref]`, `fn(s: obj, ...)`."""
+
+    def __init__(self, text, known):
+        self.text = text.strip()
+        self.alts = []
+        self.has_ref = self.has_reflist = False
+        self.has_str = self.has_num = self.has_bool = self.has_tbl = False
+        self.fn = None
+        self.names = None
+        self.env = None
+        for alt in split_union(self.text):
+            c = canon_type(known, alt)
+            if c is None:
+                raise Error("props: bad type %r in %r" % (alt, self.text))
+            self.alts.append(c)
+            if c == "ref":
+                self.has_ref = True
+            elif c == "tbl[ref]":
+                self.has_reflist = True
+            elif c == "str":
+                self.has_str = True
+            elif c == "num":
+                self.has_num = True
+            elif c == "bool":
+                self.has_bool = True
+            elif c == "tbl":
+                self.has_tbl = True
+            elif c.startswith("fn(") and self.fn is None:
+                self.fn = named_fn(alt, known)
+        if self.fn is not None:
+            names = [pn for pn, _pt in self.fn[0]]
+            if not names or any(pn is None for pn in names):
+                raise Error("props: fn parameters need names in %r"
+                            % self.text)
+            self.names = ", ".join(names)
+            self.env = {pn: pt for pn, pt in self.fn[0]}
+
+
 def type_ok(ctx, t, exp):
     """May a value of type t be used where type exp is expected?"""
     if exp in (None, "any") or t == exp:

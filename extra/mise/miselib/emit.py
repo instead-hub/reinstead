@@ -30,7 +30,8 @@ class Emitter:
         if isinstance(v, Text):
             return lua_str(v.s)
         if isinstance(v, Lua):
-            return "function(%s)\n%s\nend" % (FIELD_PARAMS.get(mode, "s"), v.s)
+            return "function(%s)\n%s\nend" % (
+                self.ctx.prop_params.get(mode, "s"), v.s)
         if isinstance(v, Bare):
             return "'%s'" % v.s if v.s in self.ctx.ids else lua_str(v.s)
         if isinstance(v, (Num, Bool)):
@@ -90,7 +91,7 @@ class Emitter:
             env[pn] = S.PARAM_TYPES.get(pn, "any")
         return env
 
-    def make_body(self, v, prm, indent):
+    def make_body(self, v, prm, indent, env=None):
         uname = self.use_name(v)
         if uname:
             self.check_use(uname, prm)
@@ -99,14 +100,19 @@ class Emitter:
             body = reindent(v.s, indent + IND)
             return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
         if isinstance(v, Logic):
+            if env is None:
+                env = self.param_env(prm)
             body = "\n".join(emit_logic(v.stmts, indent + IND,
-                                        self.param_env(prm), ctx=self.ctx))
+                                        env, ctx=self.ctx))
             return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
         return self.value(v)
 
     def body(self, v, key, indent=""):
         base, params = parse_key(key)
-        return self.make_body(v, params or FIELD_PARAMS.get(base, "s"), indent)
+        prop = self.ctx.props.get(base)
+        prm = params or (prop.names if prop else None) or "s"
+        env = None if params else (prop.env if prop else None)
+        return self.make_body(v, prm, indent, env)
 
     def handler(self, val, prm, indent):
         if isinstance(val, (Text, Bare)) and val.s.strip() == "pass":

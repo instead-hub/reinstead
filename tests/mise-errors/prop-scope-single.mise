@@ -1,0 +1,10 @@
+name: t
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+
+room hall:
+  words: зал
+  scope: box

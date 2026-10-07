@@ -12,7 +12,7 @@ from .expr import fn_name
 
 
 _SKIP_KINDS = ("skip", "type", "extend_type", "mixin",
-               "refs", "extend_refs")
+               "refs", "extend_refs", "props")
 
 
 def _as_list(v):

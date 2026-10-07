@@ -4,6 +4,10 @@
 require "fmt"
 require "parser/mp-ru"
 
+local function fn_tick(s)
+  return false
+end
+
 obj {
   nam = "none";
 }
@@ -153,12 +157,15 @@ obj {
   -"статуя";
   nam = "statue";
   mood = "calm";
+  treasure = 'relic';
 }:attr 'scenery'
 
 obj {
   -"реликвия";
   nam = "relic";
   mood = "tired";
+  daemon = fn_tick;
+  when_open = "Открыто.";
 }:disable()
 
 obj {

@@ -2,6 +2,12 @@ name: kinds
 lang: ru
 include: stdlib
 
+fn tick(s: obj): |
+  pass
+
+props:
+  treasure: ref | fn(s: obj)
+
 type mood:
   - calm, angry
 
@@ -96,11 +102,14 @@ obj statue:
   words: статуя
   attrs: scenery
   mood: calm
+  treasure: relic
 
 obj relic:
   words: реликвия
   mood: tired
   disabled: true
+  daemon: use tick
+  when_open: [[Открыто.]]
 
 obj key:
   words: ключ
