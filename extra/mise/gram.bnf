@@ -11,7 +11,9 @@ NEWLINE   ::= <конец строки>
 INDENT    ::= <увеличение отступа>
 DEDENT    ::= <уменьшение отступа>
 IDENT     ::= [A-Za-z_] { [A-Za-z0-9_] }
+LIDENT    ::= [a-z_] { [A-Za-z0-9_] }                 (* имя type/атрибута *)
 CLASS     ::= [A-Z] { [A-Za-z0-9_] }                 (* имя класса *)
+EVENT     ::= CLASS                                  (* имя события: Walk, Any *)
 NAME      ::= IDENT | "#" IDENT                     (* тег: #окно, #глаза_совы *)
 STRING    ::= '"' { <символ с escape \n \t \" \' \\> } '"'
             | "'" { <символ с escape \n \t \" \' \\> } "'"
@@ -37,7 +39,9 @@ include   ::= "include" ":" name_list
 require   ::= "require" ":" name_list
 evdecl    ::= "event" EVENT ":" block
 (* поля evdecl: on (mp.Event — действие), before/after (mp.before_/after_Event);
-   имя регистрируется автоматически; EVENT — CamelCase *)
+   имя регистрируется автоматически; EVENT — CamelCase.
+   event Any: / event Default: — глобальные правила для всех событий,
+   параметры по умолчанию: s, ev, w, wh *)
 name_list ::= NAME { "," NAME }
 
 vars      ::= ("const" | "global") ":" block
@@ -47,8 +51,9 @@ decl      ::= kind [ NAME ] ":" block
 kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
             | CLASS
 (* имена деклараций — только NAME (идентификатор/тег), кавычки запрещены;
-   with/inside перечисляют голые NAME; поля-ссылки (n_to/out_to/door_to/
-   talk_to/found_in/...) — голое NAME, строка-имя объекта — ошибка *)
+   kind — пресет (obj/scenery/room/door/story/ending) или класс-экземпляр
+   (`Prop дерево:`); with/inside перечисляют голые NAME; поля-ссылки
+   объявляются через refs: и сверяются с объявленными объектами *)
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
 param     ::= IDENT [ ":" type ] | "..."
@@ -71,10 +76,12 @@ fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
               [ "->" type ] ":" value
 (* value: блок |/|lua или inline-выражение в бэктиках (`#v`) *)
 class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
-mixin  ::= "mixin" CLASS ":" block
+mixin     ::= "mixin" CLASS ":" block
 (* набор полей/обработчиков; привязка `mixin: A, B` в obj/class/impl *)
 refs      ::= ("refs" | "extend" "refs") ":" (name_list | list)
-(* поля-ссылки: значения сверяются с объявленными объектами *)
+(* поля-ссылки: голые имена полей, значения сверяются с объявленными
+   объектами; в stdlib объявлены d_to, door_to, found_in, n_to, talk_to,
+   walk_to, ... *)
 
 verb      ::= "verb" CLASS ":" block
 (* поля verb: tag, words, patterns (список "- ..."), prio, hint;
@@ -84,7 +91,7 @@ extend    ::= "extend" "#" IDENT ":" block
 (* поля extend: words, patterns, prio, hint;
    words: -> VerbExtendWord, только patterns: -> VerbExtend *)
 
-custom_type ::= ("type" IDENT | "extend" "type" IDENT) ":"
+custom_type ::= ("type" LIDENT | "extend" "type" LIDENT) ":"
                 (name_list | list)
 (* значения — голые имена без пробелов; кавычки запрещены; пустой type —
    ошибка; extend type с неизвестным именем — ошибка; ведущий элемент "~"
@@ -103,13 +110,16 @@ talk_field  ::= key ":" value
 setup     ::= "setup" ":" block
 (* поля setup: dsc, fmt, take, hero, on, game, init, start *)
 impl     ::= "impl" PNAME ":" block
-PNAME     ::= [@#.\w-]+                            (* цель impl; без кавычек *)
+PNAME     ::= [@\w.+-]+                             (* цель: объявленный
+                                       объект/класс, game или @…; иначе ошибка *)
 
 lua_section ::= "lua" ":" "|lua" NEWLINE INDENT { lua_line } DEDENT
 
 (* ---------- значения ---------- *)
-value     ::= BARE | scalar | block | list | data
+value     ::= BARE | scalar | block | list | data | raw
 scalar    ::= STRING | LONG | NUMBER | BOOL | NIL | IDENT
+raw       ::= "`" <Lua-выражение> "`"   (* сырое Lua: inline-тело fn,
+                                           динамические поля/слова *)
 list      ::= NEWLINE INDENT { "-" [ value ] NEWLINE } DEDENT
 data      ::= "{" <сбалансированный Lua-литерал> "}"
             | "[" <сбалансированный Lua-литерал> "]"
@@ -118,7 +128,6 @@ data      ::= "{" <сбалансированный Lua-литерал> "}"
    строка, если не распознано как выражение/ссылка.
    words: строка или список строк (элементы — синонимы через ",", между
    элементами ставится "|").
-   RAW (`...`) — legacy escape, вне грамматики.
    Значение-обработчик: value, либо "pass", либо "use IDENT". *)
 
 (* ---------- логика (|) ---------- *)
@@ -149,7 +158,8 @@ expr      ::= <подмножество Lua: литералы, имена, по�
 call      ::= IDENT call_args
             | IDENT ":" IDENT call_args      (* obj:fn arg -> fn(obj, arg) *)
 call_args ::= "(" [ expr_list ] ")"
-            | STRING | LONG | IDENT          (* один хвостовой аргумент *)
+            | STRING | LONG                  (* строковый хвостовой аргумент *)
+            | IDENT | "#" IDENT | "-" NUMBER | NUMBER   (* по типу параметра *)
 
 (* Примечания (сахар поверх Lua-выражений):
    - say/line/append — обычные fn из include: stdlib
@@ -165,6 +175,12 @@ call_args ::= "(" [ expr_list ] ")"
    - ^ запрещён: сравнение объектов только через == (w == имя);
    - event-параметр и сравнение принимают голое имя события
      (xaction(Wear, s), ev == Exam);
+   - &имя — значение fn (только объявленная fn; сигнатура сверяется с
+     типом параметра; безымянную fn так не передать), вызов значения — f(x);
+   - голые значения перечислений/событий в логике (local x = light,
+     e == Exam) резолвятся по уникальности; неоднозначность — ошибка;
+   - переменные цикла можно аннотировать (for _, w: obj in ipairs(t):);
+     в числовом for аннотация должна принимать num;
    - #тег — ссылка на объект; статическая _'…' в логике запрещена;
    - |/|lua — блоки логики и Lua;
    - кавычки в именах/тегах/событиях/attrs/элементах списков запрещены. *)
