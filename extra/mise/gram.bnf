@@ -113,8 +113,11 @@ talk_field  ::= key ":" value
 setup     ::= "setup" ":" block
 (* поля setup: dsc, fmt, take, hero, on, game, init, start *)
 impl     ::= "impl" PNAME ":" block
-PNAME     ::= [@\w.+-]+                             (* цель: объявленный
+PNAME    ::= [@\w.+-]+                             (* цель: объявленный
                                        объект/класс, game или @…; иначе ошибка *)
+(* поля impl: обработчики (on X / life X / before|after|post X),
+   dict: { ... } (словарные формы), var имя: значение (поле как есть,
+   имя не проверяется на события), прочие поля *)
 
 lua_section ::= "lua" ":" "|lua" NEWLINE INDENT { lua_line } DEDENT
 

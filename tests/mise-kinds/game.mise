@@ -77,3 +77,8 @@ verb Probe:
     say [[Подсказка.]]
   patterns:
     - {noun}/вн : Probe
+
+impl game:
+  dict: { ["зал/вн"] = "зал" }
+  var time: 0
+  var Look: 2

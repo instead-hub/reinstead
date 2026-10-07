@@ -115,3 +115,7 @@ obj {
 Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 10, hint = function(s)
   p([[Подсказка.]])
 end }
+
+_'game':dict { ["зал/вн"] = "зал" }
+_'game'.time = 0
+_'game'.Look = 2
