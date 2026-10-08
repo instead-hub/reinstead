@@ -28,6 +28,56 @@ def transpile_cond(cond, env, where, ctx):
     return cond_emit(parse_cond(cond), dict(env), where, ctx)
 
 
+def _emit_return(st, indent, env, where, ret, ret_name, ctx):
+    code = ""
+    rtype = "nil"
+    if st[1]:
+        code, types = transpile_exprlist(st[1], env, where, None, ctx=ctx)
+        rtype = types[0] if types else "any"
+        m = re.fullmatch(r"'([^']*)'|\"([^\"]*)\"", code)
+        if m and (m.group(1) or m.group(2)) in ctx.ids:
+            raise LintError("%s: %r is an object name; return it "
+                            "without quotes" % (where,
+                            m.group(1) or m.group(2)))
+    src = (st[1] or "").strip()
+    if (ret and ret != "any" and src not in ("", "false", "nil")
+            and not type_ok(ctx, rtype, ret)):
+        c = ("fn %s" % ret_name) if ret_name else "logic"
+        raise LintError("%s: return type is %s, expected %s"
+                        % (c, rtype, ret))
+    return ["%sreturn%s" % (indent, (" " + code) if code else "")]
+
+
+def _emit_for(st, indent, env, ret, ret_name, where, ctx):
+    header, vars_ = transpile_for(st[1], env, where, ctx=ctx)
+    out = ["%sfor %s do" % (indent, header)]
+    child = dict(env)
+    child.update(vars_)
+    out.extend(emit_logic(st[2], indent + IND, child, ret, ret_name, ctx=ctx))
+    out.append(indent + "end")
+    return out
+
+
+def _emit_if(st, indent, env, ret, ret_name, where, ctx):
+    branches, else_body = st[1], st[2]
+    out = []
+    for idx, (cond, body) in enumerate(branches):
+        code, eenv = transpile_cond(cond, env, where, ctx)
+        out.append("%s%s %s then" % (
+            indent, "if" if idx == 0 else "elseif", code))
+        out.extend(emit_logic(body, indent + IND, eenv, ret,
+                              ret_name, ctx=ctx))
+    if else_body is not None:
+        eenv = dict(env)
+        if len(branches) == 1:
+            eenv.update(narrow_cond(branches[0][0], env, negate=True))
+        out.append(indent + "else")
+        out.extend(emit_logic(else_body, indent + IND, eenv,
+                              ret, ret_name, ctx=ctx))
+    out.append(indent + "end")
+    return out
+
+
 def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
     env = dict(env or {})
     out = []
@@ -36,47 +86,11 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
         lno = st[-1] if isinstance(st[-1], int) else None
         where = ("logic:%d" % lno) if lno else "logic"
         if kind == "return":
-            code = ""
-            rtype = "nil"
-            if st[1]:
-                code, types = transpile_exprlist(st[1], env, where, None, ctx=ctx)
-                rtype = types[0] if types else "any"
-                m = re.fullmatch(r"'([^']*)'|\"([^\"]*)\"", code)
-                if m and (m.group(1) or m.group(2)) in ctx.ids:
-                    raise LintError("%s: %r is an object name; return it "
-                                    "without quotes" % (where,
-                                    m.group(1) or m.group(2)))
-            src = (st[1] or "").strip()
-            if (ret and ret != "any" and src not in ("", "false", "nil")
-                    and not type_ok(ctx, rtype, ret)):
-                c = ("fn %s" % ret_name) if ret_name else "logic"
-                raise LintError("%s: return type is %s, expected %s"
-                                % (c, rtype, ret))
-            out.append("%sreturn%s" % (indent, (" " + code) if code else ""))
+            out.extend(_emit_return(st, indent, env, where, ret, ret_name, ctx))
         elif kind == "stmt":
             out.append(indent + transpile_stmt(st[1], env, where, ctx=ctx))
         elif kind == "for":
-            header, vars_ = transpile_for(st[1], env, where, ctx=ctx)
-            out.append("%sfor %s do" % (indent, header))
-            child = dict(env)
-            child.update(vars_)
-            out.extend(emit_logic(st[2], indent + IND, child, ret, ret_name,
-                                  ctx=ctx))
-            out.append(indent + "end")
+            out.extend(_emit_for(st, indent, env, ret, ret_name, where, ctx))
         elif kind == "if":
-            branches, else_body = st[1], st[2]
-            for idx, (cond, body) in enumerate(branches):
-                code, eenv = transpile_cond(cond, env, where, ctx)
-                out.append("%s%s %s then" % (
-                    indent, "if" if idx == 0 else "elseif", code))
-                out.extend(emit_logic(body, indent + IND, eenv, ret,
-                                      ret_name, ctx=ctx))
-            if else_body is not None:
-                eenv = dict(env)
-                if len(branches) == 1:
-                    eenv.update(narrow_cond(branches[0][0], env, negate=True))
-                out.append(indent + "else")
-                out.extend(emit_logic(else_body, indent + IND, eenv,
-                                      ret, ret_name, ctx=ctx))
-            out.append(indent + "end")
+            out.extend(_emit_if(st, indent, env, ret, ret_name, where, ctx))
     return out

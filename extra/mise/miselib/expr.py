@@ -385,49 +385,61 @@ class ExprEmit:
             return self.list_literal()
         self.err("unexpected %r" % val)
 
+    def _list_elem(self):
+        """Element type expected from `self.expected` (`tbl[T]`/`tbl`)."""
+        exp = base(self.expected) if self.expected else None
+        if not exp:
+            return None
+        for a in (union_parts(exp) or [exp]):
+            inner = tbl_inner(a)
+            if inner is not None:
+                return inner
+            if a == "tbl":
+                return "any"
+        return None
+
+    def _list_num_enum(self, node, elem):
+        """Retype a numeric literal declared as an enum value (`2` in gram)."""
+        if not (elem and node.t == "num"
+                and re.fullmatch(r"\d+(\.\d+)?", node.code or "")):
+            return
+        for a in (union_parts(elem) or [elem]):
+            td = self.ctx.types.get(a)
+            if td is not None and node.code in td["values"]:
+                node.t = a
+                return
+
+    def _list_item(self, elem):
+        self.expected = elem if elem else None
+        node = self.expr()
+        self.expected = None
+        self._list_num_enum(node, elem)
+        if elem and elem != "any":
+            self.check(node.t, elem, node.code)
+        return node
+
+    def _list_type(self, types, elem):
+        if types:
+            return "tbl[%s]" % "|".join(sorted(types))
+        if elem and elem != "any":
+            return "tbl[%s]" % elem
+        return "tbl" if elem == "any" else "tbl[]"
+
     def list_literal(self):
         """`{ e1, ... }` -> Lua table, type `tbl[elem types]`."""
-        elem = None
-        exp = base(self.expected) if self.expected else None
-        if exp:
-            for a in (union_parts(exp) or [exp]):
-                inner = tbl_inner(a)
-                if inner is not None:
-                    elem = inner
-                    break
-                if a == "tbl":
-                    elem = "any"
-                    break
+        elem = self._list_elem()
         codes, types = [], []
         if not self.accept("}"):
             while True:
-                self.expected = elem if elem else None
-                node = self.expr()
-                self.expected = None
-                if (elem and node.t == "num"
-                        and re.fullmatch(r"\d+(\.\d+)?", node.code or "")):
-                    for a in (union_parts(elem) or [elem]):
-                        td = self.ctx.types.get(a)
-                        if td is not None and node.code in td["values"]:
-                            node.t = a
-                            break
-                if elem and elem != "any":
-                    self.check(node.t, elem, node.code)
+                node = self._list_item(elem)
                 codes.append(node.code)
                 if node.t not in types:
                     types.append(node.t)
                 if not self.accept(","):
                     break
             self.expect("}")
-        if types:
-            t = "tbl[%s]" % "|".join(sorted(types))
-        elif elem and elem != "any":
-            t = "tbl[%s]" % elem
-        elif elem == "any":
-            t = "tbl"
-        else:
-            t = "tbl[]"
-        return Node("({ %s })" % ", ".join(codes) if codes else "({})", t)
+        code = "({ %s })" % ", ".join(codes) if codes else "({})"
+        return Node(code, self._list_type(types, elem))
 
     def unary(self):
         _k, v = self.peek()

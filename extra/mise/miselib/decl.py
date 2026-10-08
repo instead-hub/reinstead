@@ -77,7 +77,8 @@ def classify(key):
     return "unknown", (kind, ident)
 
 
-def parse_fn_sig(key, types=None):
+def _fn_header(key):
+    """`fn name(params) -> ret` -> (name, params|None, ret|None)."""
     m = re.match(r"^fn\s+([\w.+-]+)\s*", key)
     if not m:
         raise Error("bad fn: " + key)
@@ -98,52 +99,64 @@ def parse_fn_sig(key, types=None):
             raise Error("bad fn: " + key)
         params = rest[1:end]
         rest = rest[end + 1:].strip()
-    ret = "any"
     if rest:
-        if not rest.startswith("->"):
+        if not rest.startswith("->") or not rest[2:].strip():
             raise Error("bad fn: " + key)
-        ret = rest[2:].strip()
-        if not ret:
-            raise Error("bad fn: " + key)
-    known = S.TYPES | (types or set()) | {"nil"}
+        return name, params, rest[2:].strip()
+    return name, params, None
 
-    def check_type(pt, what):
-        msg = type_error(known, pt)
-        if msg:
-            raise Error("fn %s: %s for %s" % (name, msg, what))
 
-    plist = []
-    variadic = False
+def _check_type(name, known, pt, what):
+    msg = type_error(known, pt)
+    if msg:
+        raise Error("fn %s: %s for %s" % (name, msg, what))
+
+
+def _fn_params(name, params, known):
+    """`(a: T, ...)` text -> (plist, variadic)."""
     if params is None:
-        plist = [("s", "obj"), ("w", "obj"), ("wh", "obj")]
-    elif params.strip():
-        parts = split_types(params)
-        for idx, p in enumerate(parts):
-            if p == "...":
-                if idx != len(parts) - 1:
-                    raise Error("fn %s: ... must be the last parameter"
-                                % name)
-                variadic = True
-                continue
-            if ":" in p:
-                pn, pt = p.split(":", 1)
-                pn, pt = pn.strip(), pt.strip()
-            else:
-                pn, pt = p, "any"
-            if not re.fullmatch(r"[^\W\d]\w*", pn, re.UNICODE):
-                raise Error("fn %s: bad parameter %r" % (name, pn))
-            check_type(pt, pn)
-            plist.append((pn, canon_type(known, pt)))
-    seen_optional = False
+        return [("s", "obj"), ("w", "obj"), ("wh", "obj")], False
+    plist, variadic = [], False
+    if not params.strip():
+        return plist, variadic
+    parts = split_types(params)
+    for idx, p in enumerate(parts):
+        if p == "...":
+            if idx != len(parts) - 1:
+                raise Error("fn %s: ... must be the last parameter" % name)
+            variadic = True
+            continue
+        if ":" in p:
+            pn, pt = p.split(":", 1)
+            pn, pt = pn.strip(), pt.strip()
+        else:
+            pn, pt = p, "any"
+        if not re.fullmatch(r"[^\W\d]\w*", pn, re.UNICODE):
+            raise Error("fn %s: bad parameter %r" % (name, pn))
+        _check_type(name, known, pt, pn)
+        plist.append((pn, canon_type(known, pt)))
+    return plist, variadic
+
+
+def _check_optional_order(name, plist):
+    seen = False
     for pn, pt in plist:
         if pt == "nil" or pt.endswith("?"):
-            seen_optional = True
-        elif seen_optional:
+            seen = True
+        elif seen:
             raise Error("fn %s: required parameter %s after optional"
                         % (name, pn))
-    check_type(ret, "return")
-    if ret != "any":
-        ret = canon_type(known, ret)
+
+
+def parse_fn_sig(key, types=None):
+    name, params, ret_text = _fn_header(key)
+    known = S.TYPES | (types or set()) | {"nil"}
+    plist, variadic = _fn_params(name, params, known)
+    _check_optional_order(name, plist)
+    ret = "any"
+    if ret_text is not None:
+        _check_type(name, known, ret_text, "return")
+        ret = canon_type(known, ret_text)
     return name, plist, ret, variadic
 
 

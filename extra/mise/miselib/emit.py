@@ -580,34 +580,68 @@ class Emitter:
         ctor, preset = PRESETS[kind]
         return self.obj(block, ident, base, ctor, preset)
 
-    def setup(self, block):
-        lines = []
+    def _setup_fmt(self, block):
         fmt = block.get("fmt")
+        out = []
         if fmt:
             vals = fmt if isinstance(fmt, list) else [fmt]
             for v in vals:
                 if isinstance(v, (Bare, Text)):
-                    lines.append("fmt.%s = true" % v.s)
+                    out.append("fmt.%s = true" % v.s)
+        return out
+
+    def _setup_take(self, block):
         take = block.get("take")
-        takes = []
-        if take:
-            takes = take if isinstance(take, list) else [take]
-            for t in takes:
-                if not isinstance(t, (Bare, Text)):
-                    raise Error("take must list identifiers")
+        if not take:
+            return []
+        takes = take if isinstance(take, list) else [take]
+        for t in takes:
+            if not isinstance(t, (Bare, Text)):
+                raise Error("take must list identifiers")
+        return takes
+
+    def _setup_nested(self, key, val):
+        target = "pl." if key == "hero" else "game."
+        out = []
+        for hk, hv in val.items:
+            if hk == "on":
+                out.extend(self.on(hv, "", target))
+            elif key == "hero" and hk == "words":
+                out.append('pl.word = -"%s"' % hv.s)
+            else:
+                out.append("%s%s = %s" % (target, hk, self.body(hv, hk)))
+        return out
+
+    def _setup_start(self, val):
+        if isinstance(val, Lua):
+            sb = reindent(val.s, IND)
+        elif isinstance(val, Logic):
+            sb = "\n".join(emit_logic(val.stmts, IND, {"load": "bool"},
+                                      ctx=self.ctx))
+        else:
+            raise Error("start must be a | block")
+        return ["function start(load)", sb, "end"]
+
+    def _setup_init(self, takes, block):
+        out = ["function init()"]
+        for t in takes:
+            out.append("%stake('%s')" % (IND, t.s))
+        init = block.get("init")
+        if isinstance(init, Lua):
+            out.append(reindent(init.s, IND))
+        elif isinstance(init, Logic):
+            out.extend(emit_logic(init.stmts, IND, ctx=self.ctx))
+        out.append("end")
+        return out
+
+    def setup(self, block):
+        lines = self._setup_fmt(block)
+        takes = self._setup_take(block)
         for key, val in block.items:
             if key in ("take", "fmt", "init"):
                 continue
             if key in ("hero", "game") and isinstance(val, Block):
-                target = "pl." if key == "hero" else "game."
-                for hk, hv in val.items:
-                    if hk == "on":
-                        lines.extend(self.on(hv, "", target))
-                    elif key == "hero" and hk == "words":
-                        lines.append('pl.word = -"%s"' % hv.s)
-                    else:
-                        lines.append("%s%s = %s" % (target, hk,
-                                                    self.body(hv, hk)))
+                lines.extend(self._setup_nested(key, val))
                 continue
             if key == "on":
                 lines.extend(self.on(val, "", "game."))
@@ -616,26 +650,10 @@ class Emitter:
                 lines.append("game.dsc = %s" % self.body(val, "dsc"))
                 continue
             if key == "start":
-                if isinstance(val, Lua):
-                    sb = reindent(val.s, IND)
-                elif isinstance(val, Logic):
-                    sb = "\n".join(emit_logic(val.stmts, IND, {"load": "bool"}, ctx=self.ctx))
-                else:
-                    raise Error("start must be a | block")
-                lines.append("function start(load)")
-                lines.append(sb)
-                lines.append("end")
+                lines.extend(self._setup_start(val))
                 continue
             raise Error("unknown setup key: " + key)
-        lines.append("function init()")
-        for t in takes:
-            lines.append("%stake('%s')" % (IND, t.s))
-        init = block.get("init")
-        if isinstance(init, Lua):
-            lines.append(reindent(init.s, IND))
-        elif isinstance(init, Logic):
-            lines.extend(emit_logic(init.stmts, IND, ctx=self.ctx))
-        lines.append("end")
+        lines.extend(self._setup_init(takes, block))
         return lines
 
     def impl(self, target, block):

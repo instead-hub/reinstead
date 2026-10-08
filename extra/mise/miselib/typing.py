@@ -73,6 +73,64 @@ def _fn_split(t):
     return None
 
 
+def _canon_union(known, alts, opt):
+    """`a|b` -> (canonical body, optional flag) or (None, False)."""
+    out = []
+    for a in alts:
+        c = canon_type(known, a)
+        if c is None:
+            return None, False
+        if c.endswith("?"):
+            opt = True
+            c = c[:-1]
+        if c == "nil":
+            opt = True
+            continue
+        if c not in out:
+            out.append(c)
+    if not out:
+        return None, False
+    return "|".join(sorted(out)), opt
+
+
+def _canon_tbl(known, text, opt):
+    """`tbl[...]` -> (canonical body, optional flag) or (None, False)."""
+    inner = text[4:].strip()[:-1].strip()
+    if not inner:
+        return "tbl[]", opt
+    c = canon_type(known, inner)
+    if c is None:
+        return None, False
+    if c == "any":
+        return "tbl", opt
+    return "tbl[%s]" % c, opt
+
+
+def _canon_fn(known, parts, opt):
+    """`fn(...) -> T` -> (canonical body, optional flag) or (None, False)."""
+    inner, rest = parts[0].strip(), parts[1].strip()
+    ps = []
+    for part in split_types(inner):
+        pn, _, pt = part.partition(":")
+        if pn.strip() == "...":
+            return None, False
+        c = canon_type(known, pt if pt else pn)
+        if c is None:
+            return None, False
+        ps.append(c)
+    ret = None
+    if rest:
+        if not rest.startswith("->"):
+            return None, False
+        ret = canon_type(known, rest[2:].strip())
+        if ret is None:
+            return None, False
+    s = "fn(%s)" % ",".join(ps)
+    if ret and ret != "any":
+        s += "->" + ret
+    return s, opt
+
+
 def canon_type(known, text):
     """Return the canonical form of a type or None: `fn(obj)->bool`."""
     text = text.strip()
@@ -80,61 +138,22 @@ def canon_type(known, text):
     if opt:
         text = text[:-1].strip()
     alts = split_union(text)
-    if len(alts) > 1:
-        out = []
-        for a in alts:
-            c = canon_type(known, a)
-            if c is None:
-                return None
-            if c.endswith("?"):
-                opt = True
-                c = c[:-1]
-            if c == "nil":
-                opt = True
-                continue
-            if c not in out:
-                out.append(c)
-        if not out:
-            return None
-        return "|".join(sorted(out)) + ("?" if opt else "")
-    if text.startswith("tbl[") and text.endswith("]"):
-        inner = text[4:].strip()[:-1].strip()
-        if not inner:
-            return "tbl[]" + ("?" if opt else "")
-        c = canon_type(known, inner)
-        if c is None:
-            return None
-        if c == "any":
-            return "tbl" + ("?" if opt else "")
-        return "tbl[%s]" % c + ("?" if opt else "")
     parts = _fn_split(text)
-    if parts is not None:
-        inner, rest = parts[0].strip(), parts[1].strip()
-        ps = []
-        for part in split_types(inner):
-            pn, _, pt = part.partition(":")
-            if pn.strip() == "...":
-                return None
-            c = canon_type(known, pt if pt else pn)
-            if c is None:
-                return None
-            ps.append(c)
-        ret = None
-        if rest:
-            if not rest.startswith("->"):
-                return None
-            ret = canon_type(known, rest[2:].strip())
-            if ret is None:
-                return None
-        s = "fn(%s)" % ",".join(ps)
-        if ret and ret != "any":
-            s += "->" + ret
-        return s + ("?" if opt else "")
-    if text == "nil":
+    if len(alts) > 1:
+        body, opt = _canon_union(known, alts, opt)
+    elif text.startswith("tbl[") and text.endswith("]"):
+        body, opt = _canon_tbl(known, text, opt)
+    elif parts is not None:
+        body, opt = _canon_fn(known, parts, opt)
+    elif text == "nil":
         return None if opt else "nil"
-    if text not in known:
+    elif text in known:
+        return text + ("?" if opt else "")
+    else:
         return None
-    return text + ("?" if opt else "")
+    if body is None:
+        return None
+    return body + ("?" if opt else "")
 
 
 def type_error(known, text):

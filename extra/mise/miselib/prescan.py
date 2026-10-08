@@ -215,51 +215,69 @@ def check_ref_list(ctx, where, val):
             raise Error("%s: unknown object reference %r" % (where, name))
 
 
+def _prop_bare(prop, val, where, t):
+    if S.USE_RE.match(val.s.strip()):
+        if prop.fn is None:
+            raise Error("%s: expected %s, got use" % (where, prop.text))
+        return "any", False
+    if prop.has_event and t == "event":
+        return "event", False
+    if prop.has_ref and t == "obj":
+        return "obj", True
+    raise Error("%s: expected %s, got %s" % (where, prop.text, t))
+
+
+def _prop_text(prop, val, where):
+    if prop.has_str:
+        return "str", False
+    if prop.has_ref:
+        raise Error("%s: object reference must be a bare name, not a "
+                    "quoted string (%r)" % (where, val.s))
+    raise Error("%s: expected %s, got str" % (where, prop.text))
+
+
+def _prop_list(ctx, prop, val, where):
+    if prop.has_reflist:
+        check_ref_list(ctx, where, val)
+        return "tbl", False
+    if prop.has_tbl:
+        return "tbl", False
+    raise Error("%s: expected %s, got list" % (where, prop.text))
+
+
+def _prop_scalar(prop, kind, flag, where):
+    if getattr(prop, flag):
+        return kind, False
+    raise Error("%s: expected %s, got %s" % (where, prop.text, kind))
+
+
 def check_prop_value(ctx, owner, base, prop, val, t):
     """Validate a prop field value; returns (type, is_ref)."""
     where = ("%s.%s" % (owner, base)) if owner else base
-    if isinstance(val, (Raw, Data, Nil)):
-        return ("tbl" if isinstance(val, Data) else
-                "nil" if isinstance(val, Nil) else "any", False)
+    if isinstance(val, Raw):
+        return "any", False
+    if isinstance(val, Nil):
+        return "nil", False
+    if isinstance(val, Data):
+        return "tbl", False
     if isinstance(val, (Logic, Lua)):
         if prop.fn is None:
             raise Error("%s: expected %s, got function" % (where, prop.text))
         return "any", False
     if isinstance(val, Bare):
-        if S.USE_RE.match(val.s.strip()):
-            if prop.fn is None:
-                raise Error("%s: expected %s, got use" % (where, prop.text))
-            return "any", False
-        if prop.has_event and t == "event":
-            return "event", False
-        if prop.has_ref and t == "obj":
-            return "obj", True
-        raise Error("%s: expected %s, got %s" % (where, prop.text, t))
+        return _prop_bare(prop, val, where, t)
     if isinstance(val, Text):
-        if prop.has_str:
-            return "str", False
-        if prop.has_ref:
-            raise Error("%s: object reference must be a bare name, not a "
-                        "quoted string (%r)" % (where, val.s))
-        raise Error("%s: expected %s, got str" % (where, prop.text))
+        return _prop_text(prop, val, where)
     if isinstance(val, list):
-        if prop.has_reflist:
-            check_ref_list(ctx, where, val)
-            return "tbl", False
-        if prop.has_tbl:
-            return "tbl", False
-        raise Error("%s: expected %s, got list" % (where, prop.text))
+        return _prop_list(ctx, prop, val, where)
     if isinstance(val, Num):
-        if prop.has_num:
-            return "num", False
-        raise Error("%s: expected %s, got num" % (where, prop.text))
+        return _prop_scalar(prop, "num", "has_num", where)
     if isinstance(val, Bool):
-        if prop.has_bool:
-            return "bool", False
-        raise Error("%s: expected %s, got bool" % (where, prop.text))
+        return _prop_scalar(prop, "bool", "has_bool", where)
     if prop.has_tbl:
         return "tbl", False
-    raise Error("%s: expected %s, got %s" % (where, prop.text, type(val).__name__.lower()))
+    raise Error("%s: expected %s, got %s"
+                % (where, prop.text, type(val).__name__.lower()))
 
 
 def field_base(key, val, ctx):
@@ -557,51 +575,57 @@ def _register_events(root, ctx):
     ctx.event_names = names
 
 
+def _params_used_once(plist, text):
+    """True if no parameter occurs in text more than once."""
+    return all(len(re.findall(r"(?<![\w.])%s(?![\w])" % re.escape(pn),
+                              text)) <= 1
+               for pn, _pt in plist)
+
+
+def _inline_expr(ctx, name, val, plist, has_optional):
+    e = val.s.strip()
+    if not e or ";" in e or "..." in e or "fn_" in e:
+        raise Error("fn %s: bad expression body" % name)
+    if not _params_used_once(plist, e):
+        raise Error("fn %s: expression body uses a parameter "
+                    "more than once" % name)
+    if has_optional:
+        for pn, pt in plist:
+            if ((pt == "nil" or pt.endswith("?"))
+                    and re.search(r"(?<![\w.])%s(?![\w])"
+                                  % re.escape(pn), e)):
+                raise Error("fn %s: expression body cannot use optional "
+                            "parameter %s" % (name, pn))
+    ctx.inline[name] = ("expr", (plist, e))
+
+
+def _set_adapter(ctx, name, callee):
+    """Register a `call`/`meth` adapter if the body matched one."""
+    if not callee:
+        return
+    if isinstance(callee, tuple):
+        ctx.inline[name] = ("meth", (callee[1],))
+    else:
+        ctx.inline[name] = ("call", (callee,))
+
+
 def _inline_fn(ctx, name, val, plist, variadic):
     has_optional = any(pt == "nil" or pt.endswith("?") for _pn, pt in plist)
     if isinstance(val, Raw):
         if variadic:
             raise Error("fn %s: expression body cannot be variadic" % name)
-        e = val.s.strip()
-        if not e or ";" in e or "..." in e or "fn_" in e:
-            raise Error("fn %s: bad expression body" % name)
-        if any(len(re.findall(r"(?<![\w.])%s(?![\w])" % re.escape(pn), e)) > 1
-               for pn, _pt in plist):
-            raise Error("fn %s: expression body uses a parameter "
-                        "more than once" % name)
-        if has_optional:
-            for pn, pt in plist:
-                if ((pt == "nil" or pt.endswith("?"))
-                        and re.search(r"(?<![\w.])%s(?![\w])"
-                                      % re.escape(pn), e)):
-                    raise Error("fn %s: expression body cannot use optional "
-                                "parameter %s" % (name, pn))
-        ctx.inline[name] = ("expr", (plist, e))
+        _inline_expr(ctx, name, val, plist, has_optional)
         return
     if not isinstance(val, Lua):
         return
     if variadic:
-        callee = adapter_callee(val.s, plist)
-        if callee:
-            if isinstance(callee, tuple):
-                ctx.inline[name] = ("meth", (callee[1],))
-            else:
-                ctx.inline[name] = ("call", (callee,))
+        _set_adapter(ctx, name, adapter_callee(val.s, plist))
         return
     if has_optional:
-        callee = adapter_callee(val.s, plist, full=True)
-        if callee:
-            if isinstance(callee, tuple):
-                ctx.inline[name] = ("meth", (callee[1],))
-            else:
-                ctx.inline[name] = ("call", (callee,))
+        _set_adapter(ctx, name, adapter_callee(val.s, plist, full=True))
         return
     t = wrapper_template(val.s)
-    if t and "fn_" in t:
-        t = None
-    if t and plist and any(
-            len(re.findall(r"(?<![\w.])%s(?![\w])" % re.escape(pn), t)) > 1
-            for pn, _pt in plist):
+    if t and ("fn_" in t or not _params_used_once(plist, t)):
         t = None
     if t:
         ctx.inline[name] = ("wrap", (plist, t))
