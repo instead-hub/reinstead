@@ -21,8 +21,12 @@ def parse_list(lines, i, indent):
         if rest.startswith(("'", '"')):
             parse_error(i + 1, "quotes are not allowed in list items")
         if rest:
-            items.append(parse_scalar(rest, i + 1, textmode=True))
-            i += 1
+            if re.match(r"\[(=*)\[", rest):
+                item, i = read_long(lines, i, rest, i + 1)
+                items.append(item)
+            else:
+                items.append(parse_scalar(rest, i + 1, textmode=True))
+                i += 1
         else:
             j = i + 1
             while j < len(lines) and not lines[j][0].strip():

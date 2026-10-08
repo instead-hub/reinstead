@@ -56,6 +56,17 @@ cutscene {
   end;
 }
 
+cutscene {
+  nam = "prologue";
+  text = { [[Первая страница.
+Вторая строка первой страницы.]], "Вторая страница." };
+}
+
+cutscene {
+  nam = "epilogue";
+  text = "Конец.";
+}
+
 obj {
   -"небо";
   nam = "sky";

@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+story s:
+  text: [[a]]
+  text: [[b]]

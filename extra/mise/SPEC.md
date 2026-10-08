@@ -227,7 +227,7 @@ refs       — поля-ссылки (см. «Типы полей»)
 | `scope` | список объектов или обработчик `(s, w)` |
 | `enter`/`exit`, `onenter`/`onexit` | обработчики STEAD3 `(s, w)` (откуда/куда) |
 | `default_Event`, `capacity`, `help`, `disp`, `gfx`, `word`/`raw_word` | простые свойства (типы — в `props:`) |
-| `text:` | страницы cutscene (несколько `text:` → список) |
+| `text:` | текст cutscene: одна строка/`[[...]]`, страницы — `-`-список или fn(s, n) |
 
 `scope` задаётся списком объектов (`scope: ключ, лампа` — голые имена,
 сверяются по `refs:`) или обработчиком (`scope: |`, `scope: |lua` — в
@@ -490,6 +490,7 @@ props:
   default_Event: event | fn(s: obj) -> event
   capacity: num | fn(s: obj) -> num
   gfx: str | fn(s: obj) -> str
+  text: str | tbl[str] | fn(s: obj, n: num) -> str
   word: str | fn(s: obj) -> str
 ```
 

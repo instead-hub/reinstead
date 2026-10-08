@@ -216,9 +216,12 @@ class Emitter:
         self._obj_words(block, fi, lines)
         self._obj_nam(block, ident, fi, lines)
         attrs = self._obj_attrs(block, ident, preset)
-        texts = block.all("text")
-        self._obj_fields(block, ident, fi, lines, texts)
-        self._obj_texts(texts, fi, lines)
+        ntext = sum(1 for k, _v in block.items if k == "text")
+        if ntext > 1:
+            CURRENT_LINE[0] = block.line("text")
+            raise Error("%s.text: set once; use a - list for pages"
+                        % (self.ctx.current_owner or ident or "?"))
+        self._obj_fields(block, ident, fi, lines)
         self._obj_nested(block, fi, lines)
         lines.append(self._obj_tail(block, ident, base, parent, attrs))
         return "\n".join(lines)
@@ -274,13 +277,11 @@ class Emitter:
                     raise Error("%s.attrs: %s" % (ident or "?", msg))
         return attrs
 
-    def _obj_fields(self, block, ident, fi, lines, texts):
+    def _obj_fields(self, block, ident, fi, lines):
         for _i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(_i)
             if key in ("words", "inside", "with", "attrs",
                        "disabled", "dict", "before", "after", "post"):
-                continue
-            if key == "text" and len(texts) > 1:
                 continue
             if re.match(r"^(on|life|before|after|post)\s+\S", key):
                 one = Block()
@@ -313,14 +314,6 @@ class Emitter:
                 lines.append('%s["%s"] = %s;' % (fi, fbase, rendered))
             else:
                 lines.append("%s%s = %s;" % (fi, fbase, rendered))
-
-    def _obj_texts(self, texts, fi, lines):
-        if len(texts) <= 1:
-            return
-        lines.append("%stext = {" % fi)
-        for t in texts:
-            lines.append("%s%s%s;" % (fi, IND, self.value(t)))
-        lines.append("%s};" % fi)
 
     def _obj_nested(self, block, fi, lines):
         obj_items = []

@@ -5,7 +5,7 @@ from . import state as S
 from .common import *
 from .parse import parse_source
 from .decl import classify, parse_fn_sig
-from .typing import Prop, literal_type
+from .typing import Prop, literal_type, type_ok
 
 def collect_ids(root):
     ids = {}
@@ -156,7 +156,7 @@ def collect_types(root, ctx):
 
 
 FIELD_SKIP = {"words", "on", "inside", "with", "attrs", "disabled",
-              "dict", "nam", "text", "patterns", "pattern", "tag", "prio",
+              "dict", "nam", "patterns", "pattern", "tag", "prio",
               "hint", "mixin"}
 
 ENGINE_TARGETS = {"game", "player", "pl", "mp", "std", "main"}
@@ -241,6 +241,12 @@ def _prop_list(ctx, prop, val, where):
         check_ref_list(ctx, where, val)
         return "tbl", False
     if prop.has_tbl:
+        if prop.tbl_elem:
+            for it in val:
+                t = literal_type(ctx, it)
+                if not type_ok(ctx, t, prop.tbl_elem):
+                    raise Error("%s: expected %s in list, got %s"
+                                % (where, prop.tbl_elem, t))
         return "tbl", False
     raise Error("%s: expected %s, got list" % (where, prop.text))
 

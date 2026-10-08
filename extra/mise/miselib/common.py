@@ -69,9 +69,6 @@ class Block:
                 return v
         return None
 
-    def all(self, key):
-        return [v for k, v in self.items if k == key]
-
 def parse_key(key):
     m = re.match(r"^(.*?)(?:\(([^)]*)\))?$", key)
     return m.group(1).strip(), m.group(2)

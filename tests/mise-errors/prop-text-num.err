@@ -1,0 +1,1 @@
+mise: error: line 6: s.text: expected str | tbl[str] | fn(s: obj, n: num) -> str, got num

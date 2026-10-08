@@ -57,6 +57,7 @@ props:
   default_Event: event | fn(s: obj) -> event
   capacity: num | fn(s: obj) -> num
   disp: str | fn(s: obj) -> str
+  text: str | tbl[str] | fn(s: obj, n: num) -> str
   help: str | fn(s: obj) -> str
   gfx: str | fn(s: obj) -> str
   word: str | fn(s: obj) -> str

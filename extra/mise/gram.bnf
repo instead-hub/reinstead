@@ -133,6 +133,7 @@ scalar    ::= STRING | LONG | NUMBER | BOOL | NIL | IDENT
 raw       ::= "`" <Lua-выражение> "`"   (* сырое Lua: inline-тело fn,
                                            динамические поля/слова *)
 list      ::= NEWLINE INDENT { "-" [ value ] NEWLINE } DEDENT
+(* элемент списка может быть Long (`- [[...]]`) или вложенным списком *)
 data      ::= "{" <сбалансированный Lua-литерал> "}"
             | "[" <сбалансированный Lua-литерал> "]"
 (* BARE — текст без кавычек: в текстовых ключах (description, dsc, text,

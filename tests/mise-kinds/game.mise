@@ -32,6 +32,15 @@ story intro:
   after Enter: |
     say [[История началась.]]
 
+story prologue:
+  text:
+    - [[Первая страница.
+Вторая строка первой страницы.]]
+    - [[Вторая страница.]]
+
+story epilogue:
+  text: [[Конец.]]
+
 scenery sky:
   words: небо
   dsc: [[Небо в облаках.]]

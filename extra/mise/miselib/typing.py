@@ -249,6 +249,7 @@ class Prop:
         self.has_ref = self.has_reflist = False
         self.has_str = self.has_num = self.has_bool = self.has_tbl = False
         self.has_event = False
+        self.tbl_elem = None
         self.fn = None
         self.ret = None
         self.names = None
@@ -270,6 +271,9 @@ class Prop:
                 self.has_bool = True
             elif c == "tbl":
                 self.has_tbl = True
+            elif tbl_inner(base(c)):
+                self.has_tbl = True
+                self.tbl_elem = tbl_inner(base(c))
             elif c == "event":
                 self.has_event = True
             elif c.startswith("fn(") and self.fn is None:
