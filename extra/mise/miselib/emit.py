@@ -47,7 +47,7 @@ class Emitter:
     def check_use(self, name, prm, ret=None):
         if name not in self.ctx.fn_sigs or not prm:
             return
-        plist, fret, variadic = self.ctx.fn_sigs[name]
+        plist, fret, _v = self.ctx.fn_sigs[name]
         n = len(self.param_env(prm))
         pt = plist[0][1] if plist else None
         if pt in self.ctx.classes:
