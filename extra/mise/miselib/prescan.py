@@ -198,6 +198,23 @@ def _register_props(root, ctx):
                 ctx.ref_fields.add(name)
 
 
+def check_ref_list(ctx, where, val):
+    """`tbl[ref]` list items: bare names or `-`-list strings."""
+    for it in val:
+        if isinstance(it, Text):
+            name = it.s.strip()
+        elif isinstance(it, Bare):
+            if not re.fullmatch(r"[#@\w]+", it.s, re.UNICODE):
+                raise Error("%s: object name must be an identifier without "
+                            "spaces/hyphens (%r)" % (where, it.s))
+            name = it.s
+        else:
+            raise Error("%s: expected object reference, got %s"
+                        % (where, type(it).__name__.lower()))
+        if name not in ctx.ids:
+            raise Error("%s: unknown object reference %r" % (where, name))
+
+
 def check_prop_value(ctx, owner, base, prop, val, t):
     """Validate a prop field value; returns (type, is_ref)."""
     where = ("%s.%s" % (owner, base)) if owner else base
@@ -227,6 +244,9 @@ def check_prop_value(ctx, owner, base, prop, val, t):
         raise Error("%s: expected %s, got str" % (where, prop.text))
     if isinstance(val, list):
         if prop.has_reflist:
+            check_ref_list(ctx, where, val)
+            return "tbl", False
+        if prop.has_tbl:
             return "tbl", False
         raise Error("%s: expected %s, got list" % (where, prop.text))
     if isinstance(val, Num):

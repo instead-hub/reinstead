@@ -133,6 +133,9 @@ transpile (main loop) обход корневых элементов → Emitter
   ожидания и все альтернативы значения; перечисления совместимы с `str`;
   `tbl[A]`→`tbl[B]` поэлементно, `tbl[A]`→`tbl` да, `tbl`→`tbl[A]` нет,
   `tbl[]` (пустой) совместим с любым `tbl[B]`; `tbl[any]` ≡ `tbl`.
+- `check_ref_list` (`prescan`) — элементы `tbl[ref]`-props: `Bare`/`Text`
+  сверяются с `ctx.ids`; `check_ref_value(..., allow_text=True)` — тот же
+  backstop на эмиссии для безымянных объектов (`-`-список даёт `Text`).
 - `type_value_error` — проверка значений перечислений (`values`,
   `~`-отрицание при `negate`, подсказки `difflib`).
 - `canon_type`/`type_error` — канонизация и валидация аннотаций

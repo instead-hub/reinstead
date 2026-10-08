@@ -1,0 +1,11 @@
+name: t
+lang: ru
+include: stdlib
+
+obj statue:
+  words: статуя
+
+room hall:
+  words: зал
+  scope:
+    - 3

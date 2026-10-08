@@ -147,22 +147,28 @@ def parse_fn_sig(key, types=None):
     return name, plist, ret, variadic
 
 
-def check_ref_value(where, key, v, ids=None):
+def check_ref_value(where, key, v, ids=None, allow_text=False, in_list=False):
+    if isinstance(v, list):
+        for r in v:
+            check_ref_value(where, key, r, ids, allow_text, True)
+        return
     if isinstance(v, Text):
-        raise Error("%s.%s: object reference must be a bare name, not a "
-                    "quoted string (%r)" % (where, key, v.s))
-    if isinstance(v, Bare):
+        if not (allow_text and in_list):
+            raise Error("%s.%s: object reference must be a bare name, not a "
+                        "quoted string (%r)" % (where, key, v.s))
+        name = v.s.strip()
+    elif isinstance(v, Bare):
         if not re.fullmatch(r"[#@\w]+", v.s, re.UNICODE):
             raise Error("%s.%s: object name must be an identifier without "
                         "spaces/hyphens (%r)" % (where, key, v.s))
-        if ids is not None and v.s not in ids:
-            raise Error("%s.%s: unknown object reference %r"
-                        % (where, key, v.s))
+        name = v.s
+    elif in_list:
+        raise Error("%s.%s: expected object reference, got %s"
+                    % (where, key, type(v).__name__.lower()))
+    else:
         return
-    if isinstance(v, list):
-        for r in v:
-            check_ref_value(where, key, r, ids)
-        return
+    if ids is not None and name not in ids:
+        raise Error("%s.%s: unknown object reference %r" % (where, key, name))
 
 
 def decl_key(key):

@@ -297,10 +297,13 @@ class Emitter:
                         raise Error("event %s needs an on/life/before/after/"
                                     "post prefix" % part)
             if not params:
+                prop = self.ctx.props.get(fbase)
                 for part in parts:
                     if part in self.ctx.ref_fields:
                         check_ref_value(ident or "?", key, val,
-                                        self.ctx.ids)
+                                        self.ctx.ids,
+                                        allow_text=bool(prop
+                                                       and prop.has_reflist))
                         break
             try:
                 rendered = self.body(val, key, fi)

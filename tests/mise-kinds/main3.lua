@@ -153,7 +153,7 @@ room {
   nam = "garden";
   dsc = "Тихий сад.";
   home_to = 'hall';
-  scope = { 'statue', 'relic' };
+  scope = { "statue", "relic" };
   default_Event = "Exam";
 }
 
@@ -172,7 +172,8 @@ obj {
   when_open = "Открыто.";
   help = "Подсказка.";
   disp = "Реликвия.";
-  gfx = "relic.png";
+  gfx = { "relic.png", "relic2.png" };
+  found_in = { "garden" };
   word = function(s)
     return 'реликвия'
   end;

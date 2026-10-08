@@ -1,1 +1,1 @@
-mise: error: line 7: unknown reference in found_in: nosuch
+mise: error: line 7: box.found_in: unknown object reference 'nosuch'
