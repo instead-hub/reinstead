@@ -1,0 +1,8 @@
+name: t
+lang: ru
+include: stdlib
+
+room hall:
+  words: зал
+  gfx:
+    - a.png

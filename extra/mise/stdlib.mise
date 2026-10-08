@@ -58,7 +58,7 @@ props:
   capacity: num | fn(s: obj) -> num
   disp: str | fn(s: obj) -> str
   help: str | fn(s: obj) -> str
-  gfx: str | tbl | fn(s: obj) -> str
+  gfx: str | fn(s: obj) -> str
   word: str | fn(s: obj) -> str
   raw_word: str | fn(s: obj) -> str
 

@@ -489,7 +489,7 @@ props:
   dsc: str | bool | fn(s: obj) -> str
   default_Event: event | fn(s: obj) -> event
   capacity: num | fn(s: obj) -> num
-  gfx: str | tbl | fn(s: obj) -> str
+  gfx: str | fn(s: obj) -> str
   word: str | fn(s: obj) -> str
 ```
 

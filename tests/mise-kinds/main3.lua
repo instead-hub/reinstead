@@ -172,7 +172,7 @@ obj {
   when_open = "Открыто.";
   help = "Подсказка.";
   disp = "Реликвия.";
-  gfx = { "relic.png", "relic2.png" };
+  gfx = "relic.png";
   found_in = { "garden" };
   word = function(s)
     return 'реликвия'

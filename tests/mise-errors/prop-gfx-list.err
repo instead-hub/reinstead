@@ -1,0 +1,1 @@
+mise: error: line 7: hall.gfx: expected str | fn(s: obj) -> str, got list
