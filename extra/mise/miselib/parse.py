@@ -3,11 +3,15 @@ import re
 from .common import *
 from .logicparse import parse_logic
 from . import messages as M
+from . import patterns as P
+
+_LIST_ITEM_RE = re.compile(r"^-\s")
+_LIST_MARK_RE = re.compile(r"^-(\s|$)")
 
 def _is_list_item(lines, j, indent):
     """Is line `j` an indented `- ` list item below `indent`?"""
     return (j < len(lines) and lines[j][1] > indent
-            and re.match(r"^-\s", lines[j][0].strip()))
+            and _LIST_ITEM_RE.match(lines[j][0].strip()))
 
 
 def _list_value(lines, pos, ind, text, recurse):
@@ -16,7 +20,7 @@ def _list_value(lines, pos, ind, text, recurse):
     if rest.startswith(("'", '"')):
         parse_error(pos + 1, M.LIST_ITEM_QUOTES)
     if rest:
-        if re.match(r"\[(=*)\[", rest):
+        if P.LONG_OPEN_RE.match(rest):
             item, lnxt = read_long(lines, pos, rest, pos + 1)
             return item, lnxt - pos
         return parse_scalar(rest, pos + 1, textmode=True), 1
@@ -39,7 +43,7 @@ def parse_list(lines, i, indent):
         if ind > indent:
             parse_error(pos + 1, M.UNEXPECTED_INDENT % raw)
         text = strip_comment(raw.strip())
-        if not re.match(r"^-(\s|$)", text):
+        if not _LIST_MARK_RE.match(text):
             break
         item, consumed = _list_value(lines, pos, ind, text, parse_list)
         items.append(item)

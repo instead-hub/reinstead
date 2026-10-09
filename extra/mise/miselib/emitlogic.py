@@ -5,6 +5,8 @@ from .expr import transpile_exprlist, transpile_stmt, transpile_for
 from . import templates as T
 from . import messages as M
 
+_QUOTED_LIT_RE = re.compile(r"'([^']*)'|\"([^\"]*)\"")
+
 
 def _emit_and(parts, cur, where, ctx, emit):
     codes = []
@@ -44,7 +46,7 @@ def _return_expr(st, env, where, ctx):
         return "", "nil"
     code, types = transpile_exprlist(st[1], env, where, None, ctx=ctx)
     rtype = types[0] if types else "any"
-    m = re.fullmatch(r"'([^']*)'|\"([^\"]*)\"", code)
+    m = _QUOTED_LIT_RE.fullmatch(code)
     if m and (m.group(1) or m.group(2)) in ctx.ids:
         raise LintError(M.RETURN_OBJECT_NAME_WITHOUT_QUOTES % (where,
                         m.group(1) or m.group(2)))

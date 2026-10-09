@@ -7,6 +7,7 @@ from .lex import lex_lua
 from .typing import canon_type, type_error, type_ok
 from .exprparse import Call, ExprEmit, Field, Index, Ref, check_arity, fn_call
 from . import messages as M
+from . import patterns as P
 
 
 def expr_cont(s):
@@ -19,7 +20,7 @@ def expr_cont(s):
         return not (len(s) > 1 and s[1].isdigit())
     if c in "=<>~+*/%^.,)]}:":
         return True
-    m = re.match(r"[^\W\d]\w*", s, re.UNICODE)
+    m = P.DSL_RE.match(s)
     return bool(m and m.group(0) in S.KEYWORDS)
 
 def _no_paren_kind(plist, variadic, rest, env, ctx):
@@ -54,7 +55,7 @@ def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
 
 def no_paren_call(text, env, where, ctx):
     """Raw-text forms only; typed one-arg calls are parsed by ExprEmit."""
-    m = re.match(r"^([^\W\d]\w*)\s+([^(\s].*)$", text.strip(), re.S)
+    m = re.match(r"^(" + P.DSL_NAME + r")\s+([^(\s].*)$", text.strip(), re.S)
     if not m or m.group(1) not in ctx.fn_sigs:
         return None
     name = m.group(1)
@@ -222,7 +223,7 @@ def _loop_var(spec, where, ctx):
     """`name` or `name: T` -> (name, canonical type or None)."""
     name, sep, pt = spec.partition(":")
     name = name.strip()
-    if not re.fullmatch(r"[^\W\d]\w*", name, re.UNICODE):
+    if not P.DSL_RE.fullmatch(name):
         raise LintError(M.BAD_LOOP_VARIABLE % (spec.strip(), where))
     if not sep:
         return name, None
@@ -235,7 +236,7 @@ def _loop_var(spec, where, ctx):
 
 
 def _for_in(header, env, where, ctx):
-    names, iterable = re.split(r"\bin\b", header, 1)
+    names, iterable = P.IN_RE.split(header, 1)
     vars_ = {}
     for spec in names.split(","):
         if not spec.strip():
@@ -263,10 +264,10 @@ def _for_bound(p, env, where, ctx):
 
 
 def transpile_for(header, env, where, ctx):
-    if re.search(r"\bin\b", header):
+    if P.IN_RE.search(header):
         return _for_in(header, env, where, ctx)
     parts = split_list(header)
-    m = re.match(r"^([^\W\d]\w*)\s*(?::\s*([^=]+?))?\s*=\s*(.*)$",
+    m = re.match(r"^(" + P.DSL_NAME + r")\s*(?::\s*([^=]+?))?\s*=\s*(.*)$",
                  parts[0], re.UNICODE)
     if not m:
         raise LintError(M.BAD_FOR_HEADER % (where, header))
@@ -284,7 +285,7 @@ def expr_like(s, env, ctx):
         return True
     if c == "-" and len(s) > 1 and s[1].isdigit():
         return True
-    m = re.match(r"[^\W\d]\w*", s, re.UNICODE)
+    m = P.DSL_RE.match(s)
     if not m:
         return False
     tok = m.group(0)

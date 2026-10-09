@@ -11,6 +11,10 @@ from .proptypes import (check_prop_value, collect_types,
                        register_refs)
 from .typing import literal_type
 from . import messages as M
+from . import patterns as P
+
+_MIXIN_KEY_RE = re.compile(r"^mixins?\b")
+_EVENT_PREFIX_RE = re.compile(r"^(on|life|before|after|post)\s")
 
 def _decl_id(key):
     """(ident, kind) of a declaration or talk key, else None."""
@@ -99,13 +103,13 @@ def check_refs(root, ids):
             refs("take", take)
 
 def scan_lua_defs(text, funcs, vars_):
-    for m in re.finditer(r"function\s+([A-Za-z_]\w*)\s*\(", text):
+    for m in re.finditer(r"function\s+(" + P.LUA_NAME + r")\s*\(", text):
         funcs.add(m.group(1))
-    for m in re.finditer(r"([A-Za-z_]\w*)\s*=\s*function\s*\(", text):
+    for m in re.finditer(r"(" + P.LUA_NAME + r")\s*=\s*function\s*\(", text):
         funcs.add(m.group(1))
-    for m in re.finditer(r"^\s*local\s+([A-Za-z_]\w*)", text, re.M):
+    for m in re.finditer(r"^\s*local\s+(" + P.LUA_NAME + r")", text, re.M):
         vars_.add(m.group(1))
-    for m in re.finditer(r"^\s*([A-Za-z_]\w*)\s*=", text, re.M):
+    for m in re.finditer(r"^\s*(" + P.LUA_NAME + r")\s*=", text, re.M):
         vars_.add(m.group(1))
 
 FIELD_SKIP = {"words", "on", "inside", "with", "attrs", "disabled",
@@ -135,7 +139,7 @@ def field_base(key, val, ctx):
     parts = [p.strip() for p in base.split(",")]
     if (params is not None or isinstance(val, Block)
             or base in FIELD_SKIP or base in ("Any", "Default")
-            or re.match(r"^(on|life|before|after|post)\s", base)
+            or _EVENT_PREFIX_RE.match(base)
             or any(p in ctx.event_names or p.startswith("life_")
                    or p in ("Any", "Default") for p in parts)):
         return None
@@ -227,7 +231,7 @@ def _add_mixin(info, val, mixin_defs):
     """Register one mixin body, rejecting duplicates and nesting."""
     if info in mixin_defs:
         raise Error(M.DUPLICATE_MIXIN + info)
-    if any(re.match(r"^mixins?\b", k2) for k2, _ in val.items):
+    if any(_MIXIN_KEY_RE.match(k2) for k2, _ in val.items):
         raise Error(M.MIXIN_CANNOT_INCLUDE_MIXIN % info)
     mixin_defs[info] = val
 
@@ -462,7 +466,7 @@ def _use_refs(root):
     def _walk_use(block):
         for _k, v in block.items:
             if isinstance(v, (Text, Bare)):
-                m = re.match(r"^use\s+([\w.+-]+)$", v.s.strip())
+                m = S.USE_RE.match(v.s.strip())
                 if m:
                     refs.add(m.group(1))
             for sub in _sub_blocks(v):

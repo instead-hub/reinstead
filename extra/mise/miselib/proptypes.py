@@ -1,11 +1,10 @@
 """Types, `props:` and reference fields: registration and value checks."""
-import re
-
 from . import state as S
 from .common import *
 from .decl import classify
 from .typing import Prop, literal_type, type_ok
 from . import messages as M
+from . import patterns as P
 
 
 def _type_atoms(val):
@@ -41,7 +40,7 @@ def _type_value(name, x):
         raise Error(M.TYPE_QUOTES_ARE_NOT_ALLOWED % name)
     if not isinstance(x, (Bare, Num)):
         raise Error(M.TYPE_EXPECTED_BARE_VALUES % name)
-    if not re.fullmatch(r"\S+", x.s, re.UNICODE):
+    if not P.NONSPACE_RE.fullmatch(x.s):
         raise Error(M.TYPE_BAD_VALUE % (name, x.s))
     return x.s
 
@@ -70,7 +69,7 @@ def _extend_type(ctx, name, val):
         if (isinstance(x, Text) or not isinstance(x, (Bare, Num))
                 or x.s == "~"):
             raise Error(M.EXTEND_TYPE_EXPECTED_BARE_VALUES % name)
-        if not re.fullmatch(r"\S+", x.s, re.UNICODE):
+        if not P.NONSPACE_RE.fullmatch(x.s):
             raise Error(M.EXTEND_TYPE_BAD_VALUE % (name, x.s))
         if x.s not in td["values"]:
             td["values"].append(x.s)
@@ -100,7 +99,7 @@ def collect_types(root, ctx):
 
 def _register_prop(ctx, known, name, tval):
     """Validate and register one `props:` entry."""
-    if not re.fullmatch(r"[^\W\d]\w*", name, re.UNICODE):
+    if not P.DSL_RE.fullmatch(name):
         raise Error(M.BAD_PROP_NAME % name)
     if name in ctx.props:
         raise Error(M.DUPLICATE_PROP + name)
@@ -142,7 +141,7 @@ def check_ref_list(ctx, where, val):
         if isinstance(it, Text):
             _check_ref_name(ctx, where, it.s.strip())
         elif isinstance(it, Bare):
-            if not re.fullmatch(r"[#@\w]+", it.s, re.UNICODE):
+            if not P.REF_RE.fullmatch(it.s):
                 raise Error(M.OBJECT_NAME_IDENTIFIER % (where, it.s))
             _check_ref_name(ctx, where, it.s)
         else:
@@ -232,7 +231,7 @@ def register_refs(root, ctx):
         for x in _type_atoms(val):
             if isinstance(x, Text) or not isinstance(x, Bare) or x.s == "~":
                 raise Error(M.REFS_EXPECTED_BARE_NAMES)
-            if not re.fullmatch(r"\S+", x.s, re.UNICODE):
+            if not P.NONSPACE_RE.fullmatch(x.s):
                 raise Error(M.REFS_BAD_NAME % x.s)
             ctx.ref_fields.add(x.s)
 

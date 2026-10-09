@@ -1,8 +1,12 @@
 import re
 import textwrap
 from . import messages as M
+from . import patterns as P
 
 IND = "  "
+
+_KEY_RE = re.compile(r"^(.*?)(?:\(([^)]*)\))?$")
+_NUM_RE = re.compile(r"-?\d+(\.\d+)?")
 
 class Error(Exception):
     def __init__(self, msg):
@@ -71,7 +75,7 @@ class Block:
         return None
 
 def parse_key(key):
-    m = re.match(r"^(.*?)(?:\(([^)]*)\))?$", key)
+    m = _KEY_RE.match(key)
     return m.group(1).strip(), m.group(2)
 
 def _skip_quoted(text, i):
@@ -177,7 +181,7 @@ def parse_scalar(s, line, textmode=False):
         return Bool(s)
     if s == "nil":
         return Nil()
-    if re.fullmatch(r"-?\d+(\.\d+)?", s):
+    if _NUM_RE.fullmatch(s):
         return Num(s)
     return Text(s) if textmode else Bare(s)
 
@@ -225,7 +229,7 @@ def skip_blank(lines, i):
 
 def _long_skip(text, i):
     """Length of a `[[...]]` section at `i`: -1 unterminated, None no opener."""
-    m = re.match(r"\[(=*)\[", text[i:])
+    m = P.LONG_OPEN_RE.match(text[i:])
     if m is None:
         return None
     close = "]" + m.group(1) + "]"
@@ -297,7 +301,7 @@ class TypeCheckError(LintError):
     pass
 
 def read_long(lines, i, first, line_no):
-    opener = re.match(r"^\[(=*)\[", first)
+    opener = P.LONG_OPEN_RE.match(first)
     close = "]" + opener.group(1) + "]"
     content = first[opener.end():]
     if close in content:

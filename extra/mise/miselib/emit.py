@@ -10,6 +10,7 @@ from .expr import transpile_exprlist
 from .exprparse import fn_name, min_args
 from . import templates as T
 from . import messages as M
+from . import patterns as P
 
 
 def _pfx(kw):
@@ -31,6 +32,10 @@ def _one_item_block(key, val):
 
 
 _EVENT_KEY_RE = re.compile(r"^(on|life|before|after|post)\s+\S")
+_EVENT_PREFIX_RE = re.compile(r"^(on|life|before|after|post)\s+(.+)$")
+_HANDLER_KEY_RE = re.compile(r"^(on|before|after)(\s|$)")
+_PHASE_PREFIX_RE = re.compile(r"^[a-z]+_")
+_TAG_NAME_RE = re.compile(r"[#\w]+")
 
 
 def _group_years(names):
@@ -178,7 +183,7 @@ class Emitter:
             if not p or p == "...":
                 continue
             pn = p.split(":")[0].strip()
-            if not re.fullmatch(r"[^\W\d]\w*", pn, re.UNICODE):
+            if not P.DSL_RE.fullmatch(pn):
                 continue
             env[pn] = S.PARAM_TYPES.get(pn, "any")
         return env
@@ -244,7 +249,7 @@ class Emitter:
         return params, [self._on_name(part, inherited) for part in parts]
 
     def _event_prefix(self, part):
-        m = re.match(r"^(on|life|before|after|post)\s+(.+)$", part)
+        m = _EVENT_PREFIX_RE.match(part)
         if not m:
             return None
         return _pfx(m.group(1)), m.group(2)
@@ -402,7 +407,7 @@ class Emitter:
 
     def _check_phase_prefix(self, base):
         """Reject a bare event name without an on/life prefix."""
-        if re.match(r"^[a-z]+_", base):
+        if _PHASE_PREFIX_RE.match(base):
             return
         for part in (p.strip() for p in base.split(",")):
             if part in self.ctx.event_names:
@@ -449,7 +454,7 @@ class Emitter:
         for r in refs:
             if not isinstance(r, Bare):
                 raise Error(M.FIELD_BARE_IDENTIFIERS % (key, key))
-            if not re.fullmatch(r"[#@\w]+", r.s, re.UNICODE):
+            if not P.REF_RE.fullmatch(r.s):
                 raise Error(M.OBJECT_NAME_IDENTIFIER % (key, r.s))
             out.append(T.LIST_ITEM % (ind, r.s))
         return out
@@ -489,7 +494,7 @@ class Emitter:
         """First handler key (`on X`/`before X`/`after X`) of a declaration."""
         for key, _val in block.items:
             base_key, _params = parse_key(key)
-            if re.match(r"^(on|before|after)(\s|$)", base_key):
+            if _HANDLER_KEY_RE.match(base_key):
                 return base_key
         return None
 
@@ -678,8 +683,8 @@ class Emitter:
         kind, ident = decl_key(key)
         if not kind:
             raise Error(M.BAD_DECLARATION + key)
-        if ident and kind != "verb" and kind != "extend" and not re.fullmatch(
-                r"[#\w]+", ident, re.UNICODE):
+        if ident and kind != "verb" and kind != "extend" and not (
+                _TAG_NAME_RE.fullmatch(ident)):
             raise Error(M.OBJECT_NAMES_MUST_BE_IDENTIFIERS
                         % ident)
         handler = DECL_FORMS.get(kind)
@@ -689,7 +694,7 @@ class Emitter:
                 raise Error(M.DECLARATION_NEEDS_NAME % kind)
             return getattr(self, method)(block, ident, base)
         if kind not in PRESETS:
-            if re.fullmatch(r"[A-Z][\w]*", kind):
+            if P.CLASS_RE.fullmatch(kind):
                 return self.obj(block, ident, base, kind, [])
             raise Error(M.UNKNOWN_KIND + kind)
         ctor, preset = PRESETS[kind]

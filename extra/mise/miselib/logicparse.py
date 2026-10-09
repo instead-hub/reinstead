@@ -1,6 +1,8 @@
 import re
 
 from .common import *
+
+_RETURN_RE = re.compile(r"^return\b\s*(.*)$", re.S)
 from . import messages as M
 
 
@@ -66,7 +68,7 @@ def _logic_stmt(lines, i, ind, text, lno, recurse):
     """Parse one logical line at `i`; returns (stmt, next_i)."""
     if text in LOGIC_CONSTS:
         return ("return", LOGIC_CONSTS[text], lno), i + 1
-    m = re.match(r"^return\b\s*(.*)$", text, re.S)
+    m = _RETURN_RE.match(text)
     if m:
         return ("return", m.group(1) or None, lno), i + 1
     if text == "default:":

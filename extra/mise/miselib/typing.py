@@ -3,6 +3,8 @@ import re
 from .common import *
 from . import messages as M
 
+_RAW_REF_RE = re.compile(r"_'[^']+'")
+
 
 def base(t):
     return t[:-1] if t and t.endswith("?") else t
@@ -490,7 +492,7 @@ def _bare_type(ctx, node, refs):
 
 
 def _raw_type(_ctx, node, _refs):
-    return "obj" if re.fullmatch(r"_'[^']+'", node.s.strip()) else "any"
+    return "obj" if _RAW_REF_RE.fullmatch(node.s.strip()) else "any"
 
 
 # the type of each literal class: a name or a (ctx, node, refs) function

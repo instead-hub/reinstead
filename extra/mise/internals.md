@@ -237,7 +237,10 @@ transpile (main loop) обход корневых элементов → Emitter
 собирают строку из кусочков. Тексты диагностик (`raise`, `err`/`terr`,
 `parse_error`, возвраты проверок типов) собраны в `messages.py`
 (`M.UNKNOWN_MIXIN`, `M.EXPECTED_GOT`, …) — формулировки правятся в одном
-месте, а место подстановки остаётся в коде.
+месте, а место подстановки остаётся в коде. Общие регулярные фрагменты и
+шаблоны — в `patterns.py` (`P.DSL_NAME`, `P.LUA_NAME`, `P.LONG_OPEN_RE`, …);
+одноразовые паттерны — именованными константами в своём модуле, а
+динамические (собираемые через `%`) остаются на месте.
 
 ## Реестры (точки расширения)
 
@@ -248,8 +251,8 @@ transpile (main loop) обход корневых элементов → Emitter
 |---|---|---|
 | вид значения → форма | `VALUE_FORMS` | emit.py |
 | форма `key: value` (предикат + reader) | `VALUE_FORMS` | parse.py |
-| вид объявления → эмиттер | `DECL_FORMS`, `NAMED_DECLS` | emit.py, transpile.py |
-| ключи `setup` | `SETUP_FORMS`, `SETUP_BLOCKS` | emit.py |
+| вид объявления → эмиттер (и признак «нужно имя») | `DECL_FORMS` | emit.py, transpile.py |
+| ключи `setup` (и признак «нужен блок») | `SETUP_FORMS` | emit.py |
 | поля `talk` | `TALK_FORMS` | emit.py |
 | ключи объекта, эмитящиеся отдельно | `OBJ_SKIP_KEYS` | emit.py |
 | вид декларации в `classify` | `SIMPLE_KINDS`, `TAGGED_FORMS`+`TAGGED_NAMES` | decl.py |
@@ -265,6 +268,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | операторы и виды операторов логики | `LOGIC_CONSTS`, `LOGIC_FORMS` | logicparse.py, emitlogic.py |
 | формы генерируемого Lua | константы `T.*` | templates.py |
 | тексты диагностик | константы `M.*` | messages.py |
+| общие регулярные фрагменты | `DSL_NAME`, `LUA_NAME`, `LONG_OPEN_RE`, … | patterns.py |
 | формы типов | `CANON_FORMS`, `BODY_TYPES` | typing.py |
 | правила совместимости типов | `SCALAR_RULES` | typing.py |
 | тип литерального класса | `LITERAL_TYPES` | typing.py |

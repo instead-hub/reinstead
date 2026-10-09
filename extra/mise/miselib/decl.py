@@ -4,6 +4,10 @@ from . import state as S
 from .common import *
 from .typing import canon_type, split_types, type_error
 from . import messages as M
+from . import patterns as P
+
+_FN_HEAD_RE = re.compile(r"^fn\s+([\w.+-]+)\s*")
+_DECL_KEY_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*)(?:\s+([\w#.+-]+))?$")
 
 PRESETS = {
     "obj": ("obj", []),
@@ -86,14 +90,14 @@ def _extend_kind(_key, m):
 # the tagged top-level forms in lookup order: a compiled pattern and the
 # builder of its (kind, info)
 TAGGED_FORMS = (
-    (re.compile(r"^class\s+([A-Z]\w*)\s*(?:\(([^)]*)\))?$"), _class_kind),
-    (re.compile(r"^mixin\s+([A-Z]\w*)$"), _mixin_kind),
+    (re.compile(r"^class\s+(" + P.CLASS_NAME + r")\s*(?:\(([^)]*)\))?$"), _class_kind),
+    (re.compile(r"^mixin\s+(" + P.CLASS_NAME + r")$"), _mixin_kind),
     (re.compile(r"^fn\s+"), _fn_kind),
     (re.compile(r"^impl\s+([@\w.+-]+)$"), _impl_kind),
-    (re.compile(r"^event\s+([A-Z]\w*)$"), _event_kind),
+    (re.compile(r"^event\s+(" + P.CLASS_NAME + r")$"), _event_kind),
     (re.compile(r"^type\s+([a-z_]\w*)$"), _type_kind),
     (re.compile(r"^extend\s+type\s+([a-z_]\w*)$"), _extend_type_kind),
-    (re.compile(r"^extend\s+#([^\W\d]\w*)$", re.UNICODE), _extend_kind),
+    (re.compile(r"^extend\s+#(" + P.DSL_NAME + r")$", re.UNICODE), _extend_kind),
 )
 
 # the prefixes of those forms that must carry a name
@@ -127,14 +131,14 @@ def _classify_decl(key):
         return "unknown", None
     if kind in ("verb", "talk"):
         return kind, ident
-    if kind in PRESETS or re.fullmatch(r"[A-Z][\w]*", kind):
+    if kind in PRESETS or P.CLASS_RE.fullmatch(kind):
         return "decl", (kind, ident)
     return "unknown", (kind, ident)
 
 
 def _fn_header(key):
     """`fn name(params) -> ret` -> (name, params|None, ret|None)."""
-    m = re.match(r"^fn\s+([\w.+-]+)\s*", key)
+    m = _FN_HEAD_RE.match(key)
     if not m:
         raise Error(M.BAD_FN + key)
     name = m.group(1)
@@ -197,7 +201,7 @@ def _fn_params(name, params, known):
                 raise Error(M.FN_MUST_BE_LAST_PARAMETER % name)
             return plist, True
         pn, pt = _split_param(p)
-        if not re.fullmatch(r"[^\W\d]\w*", pn, re.UNICODE):
+        if not P.DSL_RE.fullmatch(pn):
             raise Error(M.FN_BAD_PARAMETER % (name, pn))
         _check_type(name, known, pt, pn)
         plist.append((pn, canon_type(known, pt)))
@@ -240,7 +244,7 @@ def check_ref_value(where, key, v, ids=None, allow_text=False, in_list=False):
             raise Error(M.FIELD_OBJECT_REFERENCE % (where, key, v.s))
         return _check_ref_name(where, key, v.s.strip(), ids)
     if isinstance(v, Bare):
-        if not re.fullmatch(r"[#@\w]+", v.s, re.UNICODE):
+        if not P.REF_RE.fullmatch(v.s):
             raise Error(M.FIELD_OBJECT_NAME_IDENTIFIER % (where, key, v.s))
         return _check_ref_name(where, key, v.s, ids)
     if in_list:
@@ -255,7 +259,7 @@ def _check_ref_name(where, key, name, ids):
 
 
 def decl_key(key):
-    m = re.match(r"^([A-Za-z][A-Za-z0-9_]*)(?:\s+([\w#.+-]+))?$", key)
+    m = _DECL_KEY_RE.match(key)
     if not m:
         return None, None
     return m.group(1), m.group(2)

@@ -3,6 +3,9 @@ import re
 
 from .common import *
 from . import messages as M
+from . import patterns as P
+
+_CALLEE = P.LUA_NAME + r"(?:\." + P.LUA_NAME + r")*(?::" + P.LUA_NAME + r")?"
 
 
 def _skip_string(text, i):
@@ -42,8 +45,7 @@ def wrapper_template(text):
         return None
     if b.startswith("return "):
         b = b[7:].strip()
-    if not re.match(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*(?::[A-Za-z_]\w*)?\s*\(",
-                    b):
+    if not re.match(r"^" + _CALLEE + r"\s*\(", b):
         return None
     end = _call_end(b)
     if end is None:
@@ -78,8 +80,7 @@ def adapter_callee(text, plist, full=False):
         return None
     if b.startswith("return "):
         b = b[7:].strip()
-    m = re.match(r"^([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*"
-                 r"(?::[A-Za-z_]\w*)?)\s*\(([^()]*)\)$", b)
+    m = re.match(r"^(" + _CALLEE + r")\s*\(([^()]*)\)$", b)
     if not m:
         return None
     callee, raw = m.group(1), m.group(2)
@@ -98,8 +99,7 @@ def adapter_callee(text, plist, full=False):
 
 def _params_used_once(plist, text):
     """True if no parameter occurs in text more than once."""
-    return all(len(re.findall(r"(?<![\w.])%s(?![\w])" % re.escape(pn),
-                              text)) <= 1
+    return all(len(re.findall(P.PARAM_REF % re.escape(pn), text)) <= 1
                for pn, _pt in plist)
 
 
@@ -112,8 +112,7 @@ def _inline_expr(ctx, name, val, plist, has_optional):
     if has_optional:
         for pn, pt in plist:
             if ((pt == "nil" or pt.endswith("?"))
-                    and re.search(r"(?<![\w.])%s(?![\w])"
-                                  % re.escape(pn), e)):
+                    and re.search(P.PARAM_REF % re.escape(pn), e)):
                 raise Error(M.FN_EXPRESSION_BODY_CANNOT_OPTIONAL % (name, pn))
     ctx.inline[name] = ("expr", (plist, e))
 

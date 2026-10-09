@@ -7,6 +7,7 @@ from .common import *
 from .typing import (base, canon_fn_sig, fn_type_parts, tbl_inner, type_ok,
                      type_value_error, union_parts)
 from . import messages as M
+from . import patterns as P
 
 
 def min_args(plist):
@@ -34,7 +35,10 @@ def fn_name(name):
     return "fn_" + name
 
 
-_SIMPLE_ARG = re.compile(r"[A-Za-z_]\w*|\d+(?:\.\d+)?|'[^']*'")
+_SIMPLE_ARG = re.compile(P.LUA_NAME + r"|\d+(?:\.\d+)?|'[^']*'")
+_TYPE_VALUE_RE = re.compile(r"~?[A-Za-z_][\w-]*")
+_UINT_RE = re.compile(r"\d+(\.\d+)?")
+_SLOT_RE = re.compile(r"\x00(\d+)\x00")
 
 # the arithmetic and string levels of the expression parser: operators,
 # the result type and whether both operands must be numbers
@@ -81,7 +85,7 @@ STR_ARG_FORMS = {
 def _wrap_params(template, plist, args):
     for i, ((pn, _pt), a) in enumerate(zip(plist, args)):
         ph = "\x00%d\x00" % i
-        pat = re.compile(r"(?<![\w.])%s(?![\w])" % re.escape(pn))
+        pat = re.compile(P.PARAM_REF % re.escape(pn))
         if _SIMPLE_ARG.fullmatch(a):
             template = pat.sub(ph, template)
             continue
@@ -89,8 +93,7 @@ def _wrap_params(template, plist, args):
         template = re.sub(r"(?<=[(,\s])%s(?=[,)\s]|$)" % re.escape(pn),
                           ph, template)
         template = pat.sub("(%s)" % ph, template)
-    return re.sub(r"\x00(\d+)\x00", lambda m: args[int(m.group(1))],
-                  template)
+    return _SLOT_RE.sub(lambda m: args[int(m.group(1))], template)
 
 
 def fn_call(ctx, name, args):
@@ -251,7 +254,7 @@ class ExprEmit:
 
     def strval(self, tok):
         if tok.startswith("["):
-            m = re.match(r"\[(=*)\[", tok)
+            m = P.LONG_OPEN_RE.match(tok)
             close = "]" + m.group(1) + "]"
             return tok[m.end():len(tok) - len(close)]
         val, _ = parse_string(tok, 0)
@@ -391,7 +394,7 @@ class ExprEmit:
         if self.expected == "event":
             return self._primary_event(val)
         if (self.expected in self.ctx.types
-                and re.fullmatch(r"~?[A-Za-z_][\w-]*", val)):
+                and _TYPE_VALUE_RE.fullmatch(val)):
             msg = type_value_error(self.ctx, self.expected, val)
             if msg:
                 self.terr(msg)
@@ -430,7 +433,7 @@ class ExprEmit:
     def _list_num_enum(self, node, elem):
         """Retype a numeric literal declared as an enum value (`2` in gram)."""
         if not (elem and node.t == "num"
-                and re.fullmatch(r"\d+(\.\d+)?", node.code or "")):
+                and _UINT_RE.fullmatch(node.code or "")):
             return
         for a in (union_parts(elem) or [elem]):
             td = self.ctx.types.get(a)

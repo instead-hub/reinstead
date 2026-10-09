@@ -3,6 +3,12 @@ import re
 
 from .common import LintError
 from . import messages as M
+from . import patterns as P
+
+_NUMBER_RE = re.compile(r"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?")
+_OP_RE = re.compile(r"\.\.\.|\.\.|==|~=|<=|>=|\+=|-=|::|//|[+\-*/%^#<>=(){}\[\],;:.&]")
+_IDENT_RE = re.compile(P.DSL_NAME)
+_TILDE_IDENT_RE = re.compile("~" + P.DSL_NAME)
 
 
 def _lex_skip(text, i, n):
@@ -40,26 +46,25 @@ def _lex_long_string(text, i, _n):
 
 
 def _lex_number(text, i, _n):
-    m = re.match(r"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?", text[i:])
-    return ("num", m.group(0)), i + m.end()
+    m = _NUMBER_RE.match(text, i)
+    return ("num", m.group(0)), m.end()
 
 
 def _lex_ident(text, i, pattern):
-    m = re.match(pattern, text[i:], re.UNICODE)
-    return ("name", m.group(0)), i + m.end()
+    m = pattern.match(text, i)
+    return ("name", m.group(0)), m.end()
 
 
 def _lex_name(text, i, _n):
     if text[i] == "~":
-        return _lex_ident(text, i, r"~[^\W\d]\w*")
-    return _lex_ident(text, i, r"[^\W\d]\w*")
+        return _lex_ident(text, i, _TILDE_IDENT_RE)
+    return _lex_ident(text, i, _IDENT_RE)
 
 
 def _lex_op(text, i):
-    m = re.match(r"\.\.\.|\.\.|==|~=|<=|>=|\+=|-=|::|//|[+\-*/%^#<>=(){}\[\],;:.&]",
-                 text[i:])
+    m = _OP_RE.match(text, i)
     if m:
-        return ("op", m.group(0)), i + m.end()
+        return ("op", m.group(0)), m.end()
     return None
 
 
