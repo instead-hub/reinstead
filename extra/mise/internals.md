@@ -230,6 +230,12 @@ transpile (main loop) обход корневых элементов → Emitter
 `const`/`global`/`event_decl`/`decl`/`verb`/`extend`/`talk` → эмиттеры.
 В конце — `require "parser/mp-<lang>"` и `require` из `require:`.
 
+## Шаблоны Lua (`templates.py`)
+
+Формы генерируемого текста (`T.FUNC_IND`, `T.FIELD`, `T.FOR`, …) вынесены
+отдельными константами: эмиттеры подставляют значения через `%`, а не
+собирают строку из кусочков. Сообщения об ошибках остаются на месте.
+
 ## Реестры (точки расширения)
 
 Ветвления «по виду» сведены в таблицы: новый вид — это запись в таблице
@@ -254,6 +260,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | блочные инструкции логики | `LOGIC_BLOCKS` | logicparse.py |
 | формы токенов | `LEX_FORMS` | lex.py |
 | операторы и виды операторов логики | `LOGIC_CONSTS`, `LOGIC_FORMS` | logicparse.py, emitlogic.py |
+| формы генерируемого Lua | константы `T.*` | templates.py |
 | формы типов | `CANON_FORMS`, `BODY_TYPES` | typing.py |
 | правила совместимости типов | `SCALAR_RULES` | typing.py |
 | тип литерального класса | `LITERAL_TYPES` | typing.py |

@@ -2,6 +2,7 @@ from .common import *
 from .condast import Leaf, leaf_text, narrow_assume, narrow_cond, parse_cond
 from .typing import type_ok
 from .expr import transpile_exprlist, transpile_stmt, transpile_for
+from . import templates as T
 
 
 def _emit_and(parts, cur, where, ctx, emit):
@@ -58,12 +59,12 @@ def _emit_return(st, indent, env, where, ret, ret_name, ctx):
         c = ("fn %s" % ret_name) if ret_name else "logic"
         raise LintError("%s: return type is %s, expected %s"
                         % (c, rtype, ret))
-    return ["%sreturn%s" % (indent, (" " + code) if code else "")]
+    return [T.RETURN % (indent, (" " + code) if code else "")]
 
 
 def _emit_for(st, indent, env, ret, ret_name, where, ctx, recurse):
     header, vars_ = transpile_for(st[1], env, where, ctx=ctx)
-    out = ["%sfor %s do" % (indent, header)]
+    out = [T.FOR % (indent, header)]
     child = dict(env)
     child.update(vars_)
     out.extend(recurse(st[2], indent + IND, child, ret, ret_name, ctx=ctx))
@@ -75,7 +76,7 @@ def _emit_branches(branches, indent, env, ret, ret_name, where, ctx, recurse):
     out = []
     for idx, (cond, body) in enumerate(branches):
         code, eenv = transpile_cond(cond, env, where, ctx)
-        out.append("%s%s %s then" % (
+        out.append(T.THEN % (
             indent, "if" if idx == 0 else "elseif", code))
         out.extend(recurse(body, indent + IND, eenv, ret,
                            ret_name, ctx=ctx))

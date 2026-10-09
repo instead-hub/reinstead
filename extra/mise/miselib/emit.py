@@ -8,6 +8,7 @@ from .decl import (PRESETS, check_ref_value, decl_key,
 from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import transpile_exprlist
 from .exprparse import fn_name, min_args
+from . import templates as T
 
 
 
@@ -78,11 +79,11 @@ def _value_text(v, _mode, _ctx):
 
 
 def _value_lua(v, mode, ctx):
-    return "function(%s)\n%s\nend" % (ctx.prop_params.get(mode, "s"), v.s)
+    return T.FUNC_LUA % (ctx.prop_params.get(mode, "s"), v.s)
 
 
 def _value_bare(v, _mode, ctx):
-    return "'%s'" % v.s if v.s in ctx.ids else lua_str(v.s)
+    return T.QUOTED % v.s if v.s in ctx.ids else lua_str(v.s)
 
 
 def _value_raw(v, _mode, _ctx):
@@ -119,7 +120,7 @@ def _emit_event(em, name, block):
                   "after": "mp.after_"}[base] + name
         prm = params or ("s, ev, w, wh" if name in ("Any", "Default")
                          else "s, w, wh")
-        lines.append("%s = %s" % (mpname, em.handler(val, prm, "")))
+        lines.append(T.ASSIGN % (mpname, em.handler(val, prm, "")))
     return "\n".join(lines)
 
 
@@ -129,7 +130,7 @@ class Emitter:
 
     def value(self, v, mode="s"):
         if isinstance(v, list):
-            return "{ %s }" % ", ".join(self.value(x, mode) for x in v)
+            return T.TABLE % ", ".join(self.value(x, mode) for x in v)
         form = VALUE_FORMS.get(type(v))
         if form is None:
             raise Error("unsupported value: %r (ctx=%s)" % (v, mode))
@@ -197,14 +198,14 @@ class Emitter:
         return self.value(v)
 
     def _lua_body(self, v, prm, indent):
-        return "function(%s)\n%s\n%s" % (prm, reindent(v.s, indent + IND),
+        return T.FUNC_IND % (prm, reindent(v.s, indent + IND),
                                          indent + "end")
 
     def _logic_body(self, v, prm, indent, env, ret, ret_name):
         senv = self.param_env(prm) if env is None else env
         body = "\n".join(emit_logic(v.stmts, indent + IND, senv, ret,
                                     ret_name, ctx=self.ctx))
-        return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
+        return T.FUNC_IND % (prm, body, indent + "end")
 
     def body(self, v, key, indent=""):
         base, params = parse_key(key)
@@ -232,10 +233,10 @@ class Emitter:
                                  else "s, w, wh")
                 src = self.handler(val, prm, indent)
                 if len(years) > 1 and not target:
-                    out.append('%s["%s%s"] = %s;'
+                    out.append(T.INDEX_KEY
                                % (indent, pfx, ",".join(years), src))
                 else:
-                    out.extend("%s%s%s%s = %s;"
+                    out.extend(T.EVENT_ASSIGN
                                % (indent, target, pfx, year, src)
                                for year in years)
         return out
@@ -311,8 +312,8 @@ class Emitter:
     def _obj(self, block, ident, base, ctor, preset, parent=None):
         block = self.expand_mixins(block)
         fi = base + IND
-        lines = ["%s%s({" % (base, ctor) if parent
-                 else "%s%s {" % (base, ctor)]
+        lines = [T.CTOR_OPEN_PARENT % (base, ctor) if parent
+                 else T.CTOR_OPEN % (base, ctor)]
         self._obj_words(block, fi, lines)
         self._obj_nam(block, ident, fi, lines)
         attrs = self._obj_attrs(block, ident, preset)
@@ -332,16 +333,16 @@ class Emitter:
             return
         CURRENT_LINE[0] = block.line("words") or block.line("word")
         if isinstance(words, Text):
-            lines.append('%s-"%%s";' % fi % words.s)
+            lines.append(T.WORDS_ALIAS % fi % words.s)
         elif isinstance(words, Raw):
-            lines.append("%s%s;" % (fi, words.s))
+            lines.append(T.LINE % (fi, words.s))
         elif isinstance(words, list):
             items = []
             for it in words:
                 if not isinstance(it, Text):
                     raise Error("words list items must be strings")
                 items.append(it.s.strip())
-            lines.append('%s-"%%s";' % fi % "|".join(items))
+            lines.append(T.WORDS_ALIAS % fi % "|".join(items))
         else:
             raise Error("words must be a quoted string or list")
 
@@ -351,7 +352,7 @@ class Emitter:
             raise Error("nam: is not supported; the declaration name is the "
                         "object name")
         if ident:
-            lines.append("%snam = %s;" % (fi, lua_str(ident)))
+            lines.append(T.NAM % (fi, lua_str(ident)))
 
     def _obj_attrs(self, block, ident, preset):
         attrs = list(preset)
@@ -409,8 +410,8 @@ class Emitter:
         except Error as e:
             raise Error("%s.%s: %s" % (ident, key, e))
         if "," in fbase:
-            return ['%s["%s"] = %s;' % (fi, fbase, rendered)]
-        return ["%s%s = %s;" % (fi, fbase, rendered)]
+            return [T.INDEX_ASSIGN % (fi, fbase, rendered)]
+        return [T.FIELD % (fi, fbase, rendered)]
 
     def _check_event_prefix(self, fbase):
         if re.match(r"^[a-z]+_", fbase):
@@ -432,12 +433,12 @@ class Emitter:
         blobs = self._nested_blobs(block, fi)
         if not blobs:
             return
-        lines.append("%sobj = {" % fi)
+        lines.append(T.OBJ_OPEN % fi)
         for k, b in enumerate(blobs):
             if k:
                 lines.append("")
             lines.extend(b.split("\n"))
-        lines.append("%s};" % fi)
+        lines.append(T.OBJ_CLOSE % fi)
 
     def _nested_blobs(self, block, fi):
         obj_items = []
@@ -465,20 +466,20 @@ class Emitter:
             if not re.fullmatch(r"[#@\w]+", r.s, re.UNICODE):
                 raise Error("%s: object name must be an identifier without "
                             "spaces/hyphens (%r)" % (key, r.s))
-            out.append("%s'%s';" % (ind, r.s))
+            out.append(T.LIST_ITEM % (ind, r.s))
         return out
 
     def _obj_tail(self, block, ident, base, parent, attrs):
-        tail = "%s}, %s)" % (base, parent) if parent else "%s}" % base
+        tail = T.TAIL_PARENT % (base, parent) if parent else T.CLOSE % base
         if attrs:
-            tail += ":attr '%s'" % ",".join(attrs)
+            tail += T.ATTRS % ",".join(attrs)
         d = block.get("dict")
         if d is not None:
             CURRENT_LINE[0] = block.line("dict")
             if not isinstance(d, (Data, Raw)):
                 raise Error("%s.dict: must be a table literal { ... }"
                             % (ident or "?"))
-            tail += ":dict %s" % self.value(d)
+            tail += T.DICT % self.value(d)
         if block.get("disabled"):
             tail += ":disable()"
         return tail
@@ -508,16 +509,16 @@ class Emitter:
     def verb_extra(self, block):
         extra = []
         if block.get("prio") is not None:
-            extra.append("prio = %s" % self.value(block.get("prio")))
+            extra.append(T.PRIO % self.value(block.get("prio")))
         if block.get("hint") is not None:
-            extra.append("hint = %s" % self.body(block.get("hint"), "hint"))
+            extra.append(T.HINT % self.body(block.get("hint"), "hint"))
         return extra
 
     def verb(self, block, ident, base):
         fields = []
         tag = block.get("tag")
         if tag is None:
-            fields.append("'#%s'" % ident)
+            fields.append(T.TAG_LIT % ident)
         elif not (isinstance(tag, Bool) and tag.s == "false"):
             fields.append(self.value(tag))
         fields += self.verb_fields(block, required=True)
@@ -527,7 +528,7 @@ class Emitter:
                 raise Error("verb %s: %s is declared in 'event %s:' now"
                             % (ident or "?", base_key, ident or "?"))
         extra = self.verb_extra(block)
-        return "%sVerb { %s%s }" % (base, ", ".join(fields),
+        return T.VERB % (base, ", ".join(fields),
                                     (", " + ", ".join(extra)) if extra else "")
 
     def verb_extend(self, block, ident, base):
@@ -544,7 +545,7 @@ class Emitter:
         extra = self.verb_extra(block)
         ctor = "VerbExtendWord" if block.get("words") is not None \
             else "VerbExtend"
-        return "%s%s { %s%s }" % (base, ctor, ", ".join(fields),
+        return T.VERB_EXTEND % (base, ctor, ", ".join(fields),
                                   (", " + ", ".join(extra)) if extra else "")
 
     def talk_act(self, reply, do, indent):
@@ -552,9 +553,9 @@ class Emitter:
             return reply
         body = self._talk_body(do, indent)
         if reply is None:
-            return ["%sfunction(s)" % indent] + body + ["%send" % indent]
-        act = ["%sfunction(s)" % indent, "%sp(%s)" % (indent + IND, reply)]
-        return act + body + ["%send" % indent]
+            return [T.FN_S % indent] + body + [T.END % indent]
+        act = [T.FN_S % indent, T.P_CALL % (indent + IND, reply)]
+        return act + body + [T.END % indent]
 
     def _talk_body(self, do, indent):
         if isinstance(do, Logic):
@@ -571,23 +572,23 @@ class Emitter:
         for key, val in oblock.items:
             self._talk_item(key, val, indent, labels, named, children,
                             specials)
-        lines = ["%s{" % indent]
+        lines = [T.OPEN % indent]
         if tag:
-            lines.append("%s'%s';" % (indent + IND, tag))
+            lines.append(T.LIST_ITEM % (indent + IND, tag))
         if specials["dsc"] is not None:
-            lines.append("%s%s;" % (indent + IND, specials["dsc"]))
+            lines.append(T.LINE % (indent + IND, specials["dsc"]))
         act = self.talk_act(specials["reply"], specials["do"], indent + IND)
         if isinstance(act, list):
             lines.extend(act)
             lines[-1] += ";"
         elif act is not None:
-            lines.append("%s%s;" % (indent + IND, act))
+            lines.append(T.LINE % (indent + IND, act))
         for ch in children:
             lines.extend(ch)
             lines[-1] += ";"
         for n in named:
-            lines.append("%s%s;" % (indent + IND, n))
-        lines.append("%s}" % indent)
+            lines.append(T.LINE % (indent + IND, n))
+        lines.append(T.CLOSE % indent)
         return lines
 
     def _talk_dsc(self, _base, _key, val, _indent, _labels, _named, _children,
@@ -604,18 +605,18 @@ class Emitter:
 
     def _talk_when(self, _base, _key, val, _indent, _labels, named, _children,
                    _specials):
-        named.append("cond = function() return %s end"
+        named.append(T.TALK_COND
                      % transpile_exprlist(sym_text(val), {}, "talk when",
                                           ctx=self.ctx)[0])
 
     def _talk_goto(self, _base, _key, val, _indent, _labels, named, _children,
                    _specials):
-        named.append("next = '#%s'" % sym_text(val).lstrip('#'))
+        named.append(T.TALK_NEXT % sym_text(val).lstrip('#'))
 
     def _talk_flag(self, base, _key, val, _indent, _labels, named, _children,
                    _specials):
         if is_true(val):
-            named.append("%s = true" % base)
+            named.append(T.ASSIGN_TRUE % base)
 
     def _talk_option(self, _base, _key, val, indent, labels, _named,
                      children, _specials):
@@ -630,7 +631,7 @@ class Emitter:
         elif key.startswith("label ") and isinstance(val, Block):
             labels.append((key[6:].strip(), val))
         else:
-            named.append("%s = %s" % (base, self.body(val, key, indent + IND)))
+            named.append(T.ASSIGN % (base, self.body(val, key, indent + IND)))
 
     def talk(self, block, name, base):
         fi = base + IND
@@ -647,25 +648,25 @@ class Emitter:
                 labels.append((key[6:].strip(), val))
             else:
                 fields.append((key, val))
-        lines = ["%sdlg {" % base, "%snam = '%s';" % (fi, name)]
+        lines = [T.DLG % base, T.DLG_NAM % (fi, name)]
         for key, val in fields:
-            lines.append("%s%s = %s;" % (fi, key, self.body(val, key, fi)))
-        lines.append("%sphr = {" % fi)
+            lines.append(T.FIELD % (fi, key, self.body(val, key, fi)))
+        lines.append(T.PHR % fi)
         for r in root:
             if isinstance(r, list):
                 lines.extend(r)
                 lines[-1] += ";"
             else:
-                lines.append("%s%s;" % (fi + IND, r))
-        lines.append("%s};" % fi)
+                lines.append(T.LINE % (fi + IND, r))
+        lines.append(T.OBJ_CLOSE % fi)
         if labels:
-            lines.append("%sobj = {" % fi)
+            lines.append(T.OBJ_OPEN % fi)
             for lname, lblock in labels:
                 lines.extend(self.talk_table(lblock, fi + IND, labels,
                                         tag="#" + lname))
                 lines[-1] += ";"
-            lines.append("%s};" % fi)
-        lines.append("%s}" % base)
+            lines.append(T.OBJ_CLOSE % fi)
+        lines.append(T.CLOSE % base)
         return "\n".join(lines)
 
     def cls(self, block, name, parent):
@@ -675,7 +676,7 @@ class Emitter:
             body = self.obj(block, None, "", "Class", [], parent)
         finally:
             self.ctx.current_owner = prev
-        return "%s = %s" % (name, body)
+        return T.ASSIGN % (name, body)
 
     def decl(self, key, block, base):
         kind, ident = decl_key(key)
@@ -704,7 +705,7 @@ class Emitter:
             vals = fmt if isinstance(fmt, list) else [fmt]
             for v in vals:
                 if isinstance(v, (Bare, Text)):
-                    out.append("fmt.%s = true" % v.s)
+                    out.append(T.FMT % v.s)
         return out
 
     def _setup_take(self, block):
@@ -724,9 +725,9 @@ class Emitter:
             if hk == "on":
                 out.extend(self.on(hv, "", target))
             elif key == "hero" and hk == "words":
-                out.append('pl.word = -"%s"' % hv.s)
+                out.append(T.HERO_WORD % hv.s)
             else:
-                out.append("%s%s = %s" % (target, hk, self.body(hv, hk)))
+                out.append(T.FIELD_BARE % (target, hk, self.body(hv, hk)))
         return out
 
     def _setup_start(self, val):
@@ -744,7 +745,7 @@ class Emitter:
     def _setup_init(self, takes, block):
         out = ["function init()"]
         for t in takes:
-            out.append("%stake('%s')" % (IND, t.s))
+            out.append(T.TAKE % (IND, t.s))
         init = block.get("init")
         if isinstance(init, Lua):
             out.append(reindent(init.s, IND))
@@ -757,7 +758,7 @@ class Emitter:
         return self.on(val, "", "game.")
 
     def _setup_dsc_line(self, _key, val):
-        return ["game.dsc = %s" % self.body(val, "dsc")]
+        return [T.GAME_DSC % self.body(val, "dsc")]
 
     def _setup_start_lines(self, _key, val):
         return self._setup_start(val)
@@ -786,7 +787,7 @@ class Emitter:
         # objects/instances/modules are looked up by name; a class
         # (`Kitten`) is a plain global variable
         ref = (t if t in self.ctx.fields and t not in self.ctx.ids
-               else "_'%s'" % t)
+               else T.REF % t)
         prev = self.ctx.current_owner
         if t in self.ctx.fields:
             self.ctx.current_owner = t
@@ -812,14 +813,14 @@ class Emitter:
             if not isinstance(val, (Data, Raw)):
                 raise Error("impl %s.dict: must be a table literal "
                             "{ ... }" % t)
-            return ["%s:dict %s" % (ref, self.value(val))]
+            return [T.IMPL_DICT % (ref, self.value(val))]
         if key.startswith("var "):
             name = parse_key(key[4:])[0]
-            return ["%s.%s = %s" % (ref, name, self.body(val, name))]
+            return [T.DOT_ASSIGN % (ref, name, self.body(val, name))]
         if "," in base:
             raise Error("comma key needs a phase "
                         "(on/life/before/after/post)")
-        return ["%s.%s = %s" % (ref, base, self.body(val, key))]
+        return [T.DOT_ASSIGN % (ref, base, self.body(val, key))]
 
     def _check_impl_prefix(self, base):
         if re.match(r"^[a-z]+_", base):
@@ -829,9 +830,9 @@ class Emitter:
                         % base)
 
     def const(self, block):
-        return ["const '%s' (%s)" % (key, self.value(val))
+        return [T.CONST % (key, self.value(val))
                 for key, val in block.items]
 
     def glob(self, block):
-        return ["global '%s' (%s)" % (key, self.value(val))
+        return [T.GLOBAL % (key, self.value(val))
                 for key, val in block.items]

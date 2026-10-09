@@ -9,6 +9,7 @@ from .decl import classify, parse_fn_sig
 from .emit import Emitter
 from .emitlogic import emit_logic
 from .exprparse import fn_name
+from . import templates as T
 
 
 _SKIP_KINDS = ("skip", "type", "extend_type", "mixin",
@@ -54,7 +55,7 @@ def _emit_fn(ctx, em, key, val):
         return None
     prm = _joined_params(plist, variadic)
     hb = _fn_body(ctx, em, val, plist, ret, name, prm)
-    return "local function %s(%s)\n%s\nend" % (fn_name(name), prm, hb)
+    return T.FN_DEF % (fn_name(name), prm, hb)
 
 
 def _lua_decl(_em, _info, _key, val):
@@ -138,7 +139,7 @@ def _body_items(ctx, em, root):
         CURRENT_LINE[0] = root.line_at(_i)
         kind, info = classify(key)
         if kind == "meta":
-            header.append("--$%s:%s$" % (key.title(), val.s))
+            header.append(T.META % (key.title(), val.s))
         elif kind in _SKIP_KINDS:
             continue
         elif kind == "require":
@@ -157,9 +158,9 @@ def _prelude(root, header, reqs):
         'require "fmt"']
     for v in _as_list(root.get("fmt")):
         if isinstance(v, (Bare, Text)):
-            pre.append("fmt.%s = true" % v.s)
-    pre.append('require "parser/mp-%s"' % lang)
-    pre += ['require "%s"' % r for r in reqs]
+            pre.append(T.FMT % v.s)
+    pre.append(T.REQUIRE_PARSER % lang)
+    pre += [T.REQUIRE % r for r in reqs]
     return pre
 
 
