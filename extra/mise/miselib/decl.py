@@ -98,9 +98,9 @@ TAGGED_FORMS = (
 
 # the prefixes of those forms that must carry a name
 TAGGED_NAMES = (
-    (re.compile(r"^mixin\b"), "mixin needs a name: %s"),
-    (re.compile(r"^impl\b"), "impl needs a bare target: %s"),
-    (re.compile(r"^extend\b"), "extend needs a bare #Tag: %s"),
+    (re.compile(r"^mixin\b"), M.MIXIN_NEEDS_NAME),
+    (re.compile(r"^impl\b"), M.IMPL_NEEDS_TARGET),
+    (re.compile(r"^extend\b"), M.EXTEND_NEEDS_TAG),
 )
 
 

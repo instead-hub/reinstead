@@ -86,7 +86,7 @@ def _local_names(p):
     while True:
         nk, nv = p.next()
         if nk != "name":
-            p.err("expected local name")
+            p.err(M.EXPECTED_LOCAL_NAME)
         names.append(nv)
         if not p.accept(","):
             break
@@ -187,10 +187,10 @@ STMT_FORMS = {
 
 def _check_stmt_lhs(lhs, ctx, p):
     if isinstance(lhs, Ref) and not lhs.obj and lhs.name in ctx.fn_sigs:
-        p.err("fn %s must be called with ()" % lhs.name)
+        p.err(M.FN_MUST_BE_CALLED % lhs.name)
     if not isinstance(lhs, (Call, Field, Index)) \
             and not (isinstance(lhs, Ref) and not lhs.obj):
-        p.err("unsupported statement")
+        p.err(M.UNSUPPORTED_STATEMENT)
 
 
 def _stmt_expr(p, env, where, ctx):

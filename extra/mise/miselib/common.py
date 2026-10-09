@@ -155,7 +155,7 @@ def parse_string(s, line):
             return "".join(out), i + 1
         out.append(c)
         i += 1
-    parse_error(line, "unterminated string")
+    parse_error(line, M.UNTERMINATED_STRING_PLAIN)
 
 TEXT_KEYS = {
     "name", "version", "author", "info", "description", "dsc", "title",
@@ -257,7 +257,7 @@ def read_bracket(lines, i, first, line_no):
     while not balanced_expr(text):
         i += 1
         if i >= len(lines):
-            parse_error(line_no, "unterminated {...}")
+            parse_error(line_no, M.UNTERMINATED_BRACES)
         text += "\n" + lines[i][0]
     return Data(text), i + 1
 
@@ -307,7 +307,7 @@ def read_long(lines, i, first, line_no):
             return Text(first_line + ("\n" + rest if rest else "")), i + 1
         body.append(raw)
         i += 1
-    parse_error(line_no, "unterminated [[ string")
+    parse_error(line_no, M.UNTERMINATED_BRACKET_STRING)
 
 def lua_str(s):
     if "\n" not in s and "\r" not in s and "\\" not in s:

@@ -211,13 +211,13 @@ def _tbl_error(known, text, t, recurse):
         msg = recurse(known, inner)
         if msg:
             return msg
-    return "bad type %r" % text
+    return M.BAD_TYPE % text
 
 
 def _bad_type(text):
     if "(" in text or "[" in text or "]" in text or "->" in text:
-        return "bad type %r" % text
-    return "unknown type %r" % text
+        return M.BAD_TYPE % text
+    return M.UNKNOWN_TYPE % text
 
 
 def type_error(known, text):
@@ -233,7 +233,7 @@ def type_error(known, text):
         if msg:
             return msg
     if t == "nil":
-        return "unknown type %r" % text
+        return M.UNKNOWN_TYPE % text
     if t.startswith("tbl[") and t.endswith("]"):
         return _tbl_error(known, text, t, type_error)
     return _bad_type(text)
@@ -468,12 +468,12 @@ def type_value_error(ctx, typ, value):
         return None
     if neg:
         if not negate:
-            return "type %s does not allow '~' negation (%r)" % (typ, value)
+            return M.NEGATION_NOT_ALLOWED % (typ, value)
         if b in vals:
             return None
     near = difflib.get_close_matches(b, sorted(vals), 1, 0.6)
     hint = " (did you mean %r?)" % near[0] if near else ""
-    return "unknown %s %r%s" % (typ, value, hint)
+    return M.UNKNOWN_ENUM_VALUE % (typ, value, hint)
 
 
 def _bare_type(ctx, node, refs):

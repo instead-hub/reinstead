@@ -1,6 +1,7 @@
 import re
 
 from .common import *
+from . import messages as M
 
 
 def _skip_blanks(lines, i):
@@ -13,7 +14,7 @@ def _branch_body(lines, header, indent, what, recurse):
     """Parse the indented body of a branch or loop header."""
     j = _skip_blanks(lines, header + 1)
     if j >= len(lines) or lines[j][1] <= indent:
-        parse_error(lines[header][2], "empty %s" % what)
+        parse_error(lines[header][2], M.EMPTY_BRANCH % what)
     return recurse(lines, j, lines[j][1])
 
 
@@ -28,7 +29,7 @@ def _chain_error(text, lno, style):
     seen = text.split(" ", 1)[0].rstrip(":")
     want = {"when": "elseif", "default": "else",
             "elseif": "when", "else": "default"}[seen]
-    parse_error(lno, "use %s: instead of %s: in %s %s-chain"
+    parse_error(lno, M.CHAIN_STYLE
                 % (want, seen, "an" if style == "if" else "a", style))
 
 
@@ -74,7 +75,7 @@ def _logic_stmt(lines, i, ind, text, lno, recurse):
     if m:
         return ("return", m.group(1) or None, lno), i + 1
     if text == "default:":
-        parse_error(lno, "default: without when:")
+        parse_error(lno, M.DEFAULT_WITHOUT_WHEN)
     return _logic_block(lines, i, ind, text, lno, recurse)
 
 
@@ -118,7 +119,7 @@ def parse_logic(lines, i, indent):
         if ind < indent:
             break
         if ind > indent:
-            parse_error(lno, "unexpected indent: %r" % raw)
+            parse_error(lno, M.UNEXPECTED_INDENT % raw)
         text = strip_comment(raw.strip())
         while not long_balanced(text) and i + 1 < len(lines):
             i += 1

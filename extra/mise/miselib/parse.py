@@ -2,6 +2,7 @@ import re
 
 from .common import *
 from .logicparse import parse_logic
+from . import messages as M
 
 def _skip_blank(lines, i):
     while i < len(lines) and not lines[i][0].strip():
@@ -12,7 +13,7 @@ def _list_value(lines, pos, ind, text, recurse):
     """Parse one list item; return `(item, consumed)`."""
     rest = text[1:].strip()
     if rest.startswith(("'", '"')):
-        parse_error(pos + 1, "quotes are not allowed in list items")
+        parse_error(pos + 1, M.LIST_ITEM_QUOTES)
     if rest:
         if re.match(r"\[(=*)\[", rest):
             item, lnxt = read_long(lines, pos, rest, pos + 1)
@@ -23,7 +24,7 @@ def _list_value(lines, pos, ind, text, recurse):
             r"^-\s", lines[j][0].strip()):
         sub, snxt = recurse(lines, j, lines[j][1])
         return sub, snxt - pos
-    parse_error(pos + 1, "empty list item")
+    parse_error(pos + 1, M.EMPTY_LIST_ITEM)
 
 def parse_list(lines, i, indent):
     items = []
@@ -36,7 +37,7 @@ def parse_list(lines, i, indent):
         if ind < indent:
             break
         if ind > indent:
-            parse_error(pos + 1, "unexpected indent: %r" % raw)
+            parse_error(pos + 1, M.UNEXPECTED_INDENT % raw)
         text = strip_comment(raw.strip())
         if not re.match(r"^-(\s|$)", text):
             break
@@ -67,7 +68,7 @@ def pipe_value(lines, i, indent, tag):
         return Logic([]), j
     stmts, m = parse_logic(body, k, body[k][1])
     if m != len(body):
-        parse_error(body[m][2], "trailing logic")
+        parse_error(body[m][2], M.TRAILING_LOGIC)
     return Logic(stmts), j
 
 def _block_child(lines, pos, indent, key, recurse):
@@ -134,14 +135,14 @@ def parse_block(lines, i, indent, text_values=False):
         if ind < indent:
             break
         if ind > indent:
-            parse_error(pos + 1, "unexpected indent: %r" % raw)
+            parse_error(pos + 1, M.UNEXPECTED_INDENT % raw)
         text = strip_comment(raw.strip())
         if not text:
             pos += 1
             continue
         key, rest = split_key(text)
         if key is None:
-            parse_error(pos + 1, "expected 'key: value'")
+            parse_error(pos + 1, M.EXPECTED_KEY_VALUE)
         key, rest = key.strip(), rest.strip()
         line_no = pos + 1
         parsed = (_block_child(lines, pos, indent, key, parse_block)
@@ -161,5 +162,5 @@ def parse_source(src):
         lines.append((raw, ind))
     blk, i = parse_block(lines, 0, 0)
     if i != len(lines):
-        parse_error(i + 1, "trailing content")
+        parse_error(i + 1, M.TRAILING_CONTENT)
     return blk

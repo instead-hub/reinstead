@@ -185,11 +185,11 @@ class ExprEmit:
     def expect(self, val):
         _, v = self.next()
         if v != val:
-            self.err("expected %r, got %r" % (val, v))
+            self.err(M.EXPECTED_TOKEN % (val, v))
 
     def expect_eof(self):
         if self.peek()[0] != "eof":
-            self.err("unexpected %r" % self.peek()[1])
+            self.err(M.UNEXPECTED % self.peek()[1])
 
     def err(self, msg):
         raise LintError(M.IN_MESSAGE % (
@@ -221,7 +221,7 @@ class ExprEmit:
     def check(self, t, exp, code):
         if type_ok(self.ctx, t, exp):
             return
-        self.terr("expected %s, got %s: %s" % (exp, t, code))
+        self.terr(M.EXPECTED_GOT_CODE % (exp, t, code))
 
     def check_fn_ref(self, name, actual, expected):
         """Check a `&name` signature against an expected fn type."""
@@ -235,14 +235,13 @@ class ExprEmit:
         eps, eret = exp
         n = len([p for p in aps if p != "..."])
         if n > len(eps):
-            self.terr("fn %s: callback takes %d parameter(s), expected %d"
+            self.terr(M.CALLBACK_PARAM_COUNT
                       % (name, n, len(eps)))
         for i, ap in enumerate(aps[:len(eps)]):
             if not type_ok(self.ctx, eps[i], ap):
-                self.terr("fn %s: callback parameter %d is %s, but %s is "
-                          "passed" % (name, i + 1, ap, eps[i]))
+                self.terr(M.CALLBACK_PARAM_TYPE % (name, i + 1, ap, eps[i]))
         if eret is not None and not type_ok(self.ctx, aret or "any", eret):
-            self.terr("fn %s: callback returns %s, expected %s"
+            self.terr(M.CALLBACK_RETURN
                       % (name, aret or "any", eret))
 
     def strval(self, tok):
@@ -271,16 +270,16 @@ class ExprEmit:
                 return tok
             elif alt == "obj" and val in self.ctx.ids:
                 return "_'%s'" % val
-        self.terr("expected %s, got str %r" % (exp, val))
+        self.terr(M.EXPECTED_GOT_STR_VAL % (exp, val))
 
     def _str_arg_obj(self, _tok, val):
         if val in self.ctx.ids:
             return "_'%s'" % val
-        self.terr("unknown object %r (expected obj)" % val)
+        self.terr(M.UNKNOWN_OBJECT_EXPECTED_OBJ % val)
 
     def _str_arg_event(self, tok, val):
         if val not in self.ctx.event_names:
-            self.terr("unknown event %r" % val)
+            self.terr(M.UNKNOWN_EVENT_NAMED % val)
         return tok
 
     def _scalar_str_arg(self, tok, exp, val):
@@ -330,18 +329,17 @@ class ExprEmit:
     def call(self, name):
         if name == "_":
             if self.peek()[0] == "str":
-                self.err("_'...' is not allowed; use a bare name, #tag "
-                         "or quoted name")
+                self.err(M.UNDERSCORE_QUOTED)
             return self._call_args(), "obj"
         if name in self.ctx.funcs or name in self.env:
             return self._call_args(), "any"
-        self.err("unknown function %r (declare fn %s)" % (name, name))
+        self.err(M.UNKNOWN_FUNCTION % (name, name))
 
     def primary(self):
         kind, val = self.next()
         handler = PRIMARY_FORMS.get(kind)
         if handler is None:
-            self.err("unexpected %r" % val)
+            self.err(M.UNEXPECTED % val)
         return getattr(self, handler)(val)
 
     def _primary_num(self, val):
@@ -349,19 +347,19 @@ class ExprEmit:
 
     def _primary_op(self, val):
         if val == "...":
-            self.err("... is not allowed in logic; use |lua for varargs")
+            self.err(M.VARARGS_NOT_IN_LOGIC)
         if val == "(":
             return self._primary_paren()
         if val == "{":
             return self.list_literal()
-        self.err("unexpected %r" % val)
+        self.err(M.UNEXPECTED % val)
 
     def _primary_str(self, val):
         if self.expected == "obj":
-            self.terr("strings are not objects; use a bare name (%r)"
+            self.terr(M.STRINGS_NOT_OBJECTS
                       % self.strval(val))
         if self.expected == "event":
-            self.err("event names are bare, not quoted (%r)"
+            self.err(M.EVENT_NAMES_BARE
                      % self.strval(val))
         if self.expected in self.ctx.types:
             msg = type_value_error(self.ctx, self.expected, self.strval(val))
@@ -380,8 +378,8 @@ class ExprEmit:
             return Lit(val, ("bool" if val != "nil" else "nil"))
         if val in S.KEYWORDS:
             if val == "function":
-                self.err("anonymous functions are not allowed (use |lua)")
-            self.err("unexpected keyword %r" % val)
+                self.err(M.ANONYMOUS_FN)
+            self.err(M.UNEXPECTED_KEYWORD % val)
         node = self.name_ref(val, funcs=True)
         if node is not None:
             return node
@@ -398,18 +396,18 @@ class ExprEmit:
         owners = self.ctx.enum_values.get(val)
         if owners:
             return self._primary_enum(val, owners)
-        self.err("unknown name %r" % val)
+        self.err(M.UNKNOWN_NAME % val)
 
     def _primary_enum(self, val, owners):
         if len(owners) > 1:
-            self.terr("ambiguous value %r (types: %s)"
+            self.terr(M.AMBIGUOUS_VALUE_TYPES
                       % (val, ", ".join(sorted(owners))))
         return Lit(lua_str(val), next(iter(owners)), val=val)
 
     def _primary_event(self, val):
         if val in self.ctx.event_names:
             return _event_lit(val)
-        self.err("unknown event %r" % val)
+        self.err(M.UNKNOWN_EVENT_NAMED % val)
 
     def _list_elem(self):
         """Element type expected from `self.expected` (`tbl[T]`/`tbl`)."""
@@ -490,8 +488,7 @@ class ExprEmit:
             self.next()
             return self.postfix(Ref("_'#%s'" % nv, "obj", "#" + nv,
                                     obj=True))
-        self.err("# is only for declared #tags; the DSL has no tables "
-                 "(wrap the length in a fn)")
+        self.err(M.HASH_TAG_ONLY)
 
     def _fn_ref_parts(self, nv):
         if nv in self.ctx.fn_sigs:
@@ -499,15 +496,15 @@ class ExprEmit:
             return canon_fn_sig(plist, ret, variadic), fn_name(nv)
         if nv in self.ctx.funcs:
             return "fn", nv
-        self.err("unknown fn %r in &-reference" % nv)
+        self.err(M.UNKNOWN_FN_REF % nv)
 
     def _unary_fn_ref(self):
         self.next()
         nk, nv = self.next()
         if nk != "name":
-            self.err("expected fn name after &")
+            self.err(M.EXPECTED_FN_NAME)
         if nv in self.ctx.inline:
-            self.err("inline fn %s cannot be used as a value" % nv)
+            self.err(M.INLINE_FN_AS_VALUE % nv)
         sig, code = self._fn_ref_parts(nv)
         if self.expected:
             self.check_fn_ref(nv, sig, self.expected)
@@ -534,7 +531,7 @@ class ExprEmit:
         while self.peek()[1] in ("==", "~=", "<", ">", "<=", ">=", "^"):
             op = self.next()[1]
             if op == "^":
-                self.err("^ is forbidden; compare objects with ==")
+                self.err(M.CARET_FORBIDDEN)
             self.expected = self._cmp_expected(node, op)
             rhs = self.concat_expr()
             self.expected = None
@@ -641,9 +638,9 @@ class ExprEmit:
         self.next()
         nk, nv = self.next()
         if nk != "name":
-            self.err("expected field name")
+            self.err(M.EXPECTED_FIELD_NAME)
         if node.t == "str":
-            self.terr("strings are not objects; use a bare name (%r)"
+            self.terr(M.STRINGS_NOT_OBJECTS
                       % (node.val,))
         if node.t == "obj?":
             self.check(node.t, "obj", node.code)
@@ -683,15 +680,14 @@ class ExprEmit:
         self.next()
         nk, nv = self.next()
         if nk != "name":
-            self.err("expected method name")
+            self.err(M.EXPECTED_METHOD_NAME)
         if nv not in self.ctx.fn_sigs:
-            self.err("method %r is not a fn (engine methods are "
-                     "not allowed in logic)" % nv)
+            self.err(M.METHOD_NOT_FN % nv)
         plist, ret, variadic = self.ctx.fn_sigs[nv]
         if not plist:
-            self.err("fn %s takes no receiver" % nv)
+            self.err(M.FN_NO_RECEIVER % nv)
         if node.t == "str":
-            self.err("strings are not objects; use a bare name (%r)"
+            self.err(M.STRINGS_NOT_OBJECTS
                      % (node.val,))
         self.check(node.t, plist[0][1], node.code)
         if self._method_bare(plist, variadic):
@@ -726,7 +722,7 @@ class ExprEmit:
             return _event_lit(nm)
         arg = self.name_ref(nm, zero_call=True)
         if arg is None:
-            self.err("unknown name %r" % nm)
+            self.err(M.UNKNOWN_NAME % nm)
         return arg
 
     def _method_tail_call(self, node, nv, plist, ret):
@@ -741,7 +737,7 @@ class ExprEmit:
             return None, "any", False
         plist, rt, variadic = self.ctx.fn_sigs[name]
         if not plist:
-            self.err("fn %s takes no arguments" % name)
+            self.err(M.FN_NO_ARGUMENTS % name)
         self.check_arity(name, plist, variadic, 1)
         return plist[0][1], rt, variadic
 
@@ -772,7 +768,7 @@ class ExprEmit:
         params, ret = ft
         codes, n = self.arglist(params)
         if n != len(params):
-            self.err("fn %s expects %d argument(s), got %d"
+            self.err(M.FN_ARGUMENT_COUNT
                      % (name, len(params), n))
         return "%s(%s)" % (node.code, ", ".join(codes)), ret or "any"
 
@@ -793,7 +789,6 @@ class ExprEmit:
 
     def postfix_arg_call(self, node):
         if not (isinstance(node, Ref) and not node.obj):
-            self.err("call of field/expression is not allowed in "
-                     "logic (wrap it in fn)")
+            self.err(M.CALL_FIELD_IN_LOGIC)
         code, ret = self._arg_call_parts(node, node.name)
         return Call(code, ret)
