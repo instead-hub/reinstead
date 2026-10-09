@@ -153,7 +153,7 @@ transpile (main loop) обход корневых элементов → Emitter
 ссылки безопасны). Тип переменных стабилен: первое конкретное
 присваивание фиксирует тип, дальше — только совместимое.
 
-## Компиляция выражений (`expr.py`, лексер `lex.py`)
+## Компиляция выражений (`exprparse.py`, API `expr.py`, лексер `lex.py`)
 
 - `lex.py:lex_lua` — токены логики (`LEX_FORMS` — таблица сканеров).
 - `_wrap_params` — подстановка аргументов в шаблон через плейсхолдеры
@@ -248,7 +248,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | регистрация `type`/`extend_type` | `TYPE_FORMS` | prescan.py |
 | сбор class/mixin | `DEFS_FORMS` | prescan.py |
 | проверка bare-имён | `BARE_FORMS` | prescan.py |
-| операторы и приоритеты выражений | `BIN_LEVELS`, `UNARY_OPS`, `STR_ARG_ERRORS` | expr.py |
+| операторы и приоритеты выражений | `BIN_LEVELS`, `UNARY_OPS`, `STR_ARG_ERRORS` | exprparse.py |
 | формы токенов | `LEX_FORMS` | lex.py |
 | операторы и виды операторов логики | `LOGIC_CONSTS`, `LOGIC_FORMS` | logicparse.py, emitlogic.py |
 | формы типов | `CANON_FORMS`, `BODY_TYPES` | typing.py |

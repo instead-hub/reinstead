@@ -8,7 +8,7 @@ from .prescan import apply_includes, prescan
 from .decl import classify, parse_fn_sig
 from .emit import Emitter
 from .emitlogic import emit_logic
-from .expr import fn_name
+from .exprparse import fn_name
 
 
 _SKIP_KINDS = ("skip", "type", "extend_type", "mixin",

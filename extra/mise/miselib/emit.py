@@ -6,7 +6,8 @@ from .emitlogic import emit_logic
 from .decl import (PRESETS, check_ref_value, decl_key,
                    is_true, sym_text)
 from .typing import body_type, class_le, type_ok, type_value_error
-from .expr import fn_name, min_args, transpile_exprlist
+from .expr import transpile_exprlist
+from .exprparse import fn_name, min_args
 
 
 
