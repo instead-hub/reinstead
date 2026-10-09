@@ -3,41 +3,47 @@ import re
 from .common import *
 from .logicparse import parse_logic
 
+def _skip_blank(lines, i):
+    while i < len(lines) and not lines[i][0].strip():
+        i += 1
+    return i
+
+def _list_value(lines, pos, ind, text, recurse):
+    """Parse one list item; return `(item, consumed)`."""
+    rest = text[1:].strip()
+    if rest.startswith(("'", '"')):
+        parse_error(pos + 1, "quotes are not allowed in list items")
+    if rest:
+        if re.match(r"\[(=*)\[", rest):
+            item, lnxt = read_long(lines, pos, rest, pos + 1)
+            return item, lnxt - pos
+        return parse_scalar(rest, pos + 1, textmode=True), 1
+    j = _skip_blank(lines, pos + 1)
+    if j < len(lines) and lines[j][1] > ind and re.match(
+            r"^-\s", lines[j][0].strip()):
+        sub, snxt = recurse(lines, j, lines[j][1])
+        return sub, snxt - pos
+    parse_error(pos + 1, "empty list item")
+
 def parse_list(lines, i, indent):
     items = []
-    while i < len(lines):
-        raw, ind = lines[i]
+    pos = i
+    while pos < len(lines):
+        raw, ind = lines[pos]
         if not raw.strip():
-            i += 1
+            pos += 1
             continue
         if ind < indent:
             break
         if ind > indent:
-            parse_error(i + 1, "unexpected indent: %r" % raw)
+            parse_error(pos + 1, "unexpected indent: %r" % raw)
         text = strip_comment(raw.strip())
         if not re.match(r"^-(\s|$)", text):
             break
-        rest = text[1:].strip()
-        if rest.startswith(("'", '"')):
-            parse_error(i + 1, "quotes are not allowed in list items")
-        if rest:
-            if re.match(r"\[(=*)\[", rest):
-                item, i = read_long(lines, i, rest, i + 1)
-                items.append(item)
-            else:
-                items.append(parse_scalar(rest, i + 1, textmode=True))
-                i += 1
-        else:
-            j = i + 1
-            while j < len(lines) and not lines[j][0].strip():
-                j += 1
-            if j < len(lines) and lines[j][1] > ind and re.match(
-                    r"^-\s", lines[j][0].strip()):
-                sub, i = parse_list(lines, j, lines[j][1])
-                items.append(sub)
-            else:
-                parse_error(i + 1, "empty list item")
-    return items, i
+        item, consumed = _list_value(lines, pos, ind, text, parse_list)
+        items.append(item)
+        pos += consumed
+    return items, pos
 
 def pipe_value(lines, i, indent, tag):
     body = []
@@ -64,58 +70,60 @@ def pipe_value(lines, i, indent, tag):
         parse_error(body[m][2], "trailing logic")
     return Logic(stmts), j
 
+def _block_child(lines, pos, indent, key, recurse):
+    j = _skip_blank(lines, pos + 1)
+    if (j < len(lines) and re.match(r"^-\s", lines[j][0].strip())
+            and lines[j][1] > indent):
+        sub, cnxt = parse_list(lines, j, lines[j][1])
+        return sub, cnxt - pos
+    if j < len(lines) and lines[j][1] > indent:
+        node, bnxt = recurse(lines, j, lines[j][1], key in HANDLER_KEYS)
+        return node, bnxt - pos
+    return Block(), 1
+
+def _block_value(lines, pos, indent, rest, text_values, key):
+    if rest in ("|", "|lua"):
+        pval, pnxt = pipe_value(lines, pos + 1, indent, rest)
+        return pval, pnxt - pos
+    if rest.startswith("[["):
+        lval, lnxt = read_long(lines, pos, rest, pos + 1)
+        return lval, lnxt - pos
+    if (rest.startswith(("{", "["))
+            and not (text_values or key in TEXT_KEYS)):
+        bval, bnxt = read_bracket(lines, pos, rest, pos + 1)
+        return bval, bnxt - pos
+    tm = text_values or key in TEXT_KEYS
+    parts = split_list(rest)
+    if len(parts) > 1 and not tm:
+        return [parse_scalar(p, pos + 1) for p in parts], 1
+    return parse_scalar(rest, pos + 1, tm), 1
+
 def parse_block(lines, i, indent, text_values=False):
     blk = Block()
-    while i < len(lines):
-        raw, ind = lines[i]
+    pos = i
+    while pos < len(lines):
+        raw, ind = lines[pos]
         if ind < indent:
             break
         if ind > indent:
-            parse_error(i + 1, "unexpected indent: %r" % raw)
+            parse_error(pos + 1, "unexpected indent: %r" % raw)
         text = strip_comment(raw.strip())
         if not text:
-            i += 1
+            pos += 1
             continue
         key, rest = split_key(text)
         if key is None:
-            parse_error(i + 1, "expected 'key: value'")
+            parse_error(pos + 1, "expected 'key: value'")
         key, rest = key.strip(), rest.strip()
-        line_no = i + 1
-        if rest == "":
-            j = i + 1
-            while j < len(lines) and not lines[j][0].strip():
-                j += 1
-            if j < len(lines) and re.match(
-                    r"^-\s", lines[j][0].strip()) and lines[j][1] > indent:
-                child, i = parse_list(lines, j, lines[j][1])
-                blk.add(key, child, line_no)
-            elif j < len(lines) and lines[j][1] > indent:
-                child, i = parse_block(lines, j, lines[j][1],
-                                       key in HANDLER_KEYS)
-                blk.add(key, child, line_no)
-            else:
-                blk.add(key, Block(), line_no)
-                i += 1
-        elif rest in ("|", "|lua"):
-            val, i = pipe_value(lines, i + 1, indent, rest)
-            blk.add(key, val, line_no)
-        elif rest.startswith("[["):
-            val, i = read_long(lines, i, rest, line_no)
-            blk.add(key, val, line_no)
-        elif (rest.startswith(("{", "["))
-              and not (text_values or key in TEXT_KEYS)):
-            val, i = read_bracket(lines, i, rest, line_no)
-            blk.add(key, val, line_no)
-        else:
-            tm = text_values or key in TEXT_KEYS
-            parts = split_list(rest)
-            if len(parts) > 1 and not tm:
-                blk.add(key, [parse_scalar(p, line_no) for p in parts],
-                        line_no)
-            else:
-                blk.add(key, parse_scalar(rest, line_no, tm), line_no)
-            i += 1
-    return blk, i
+        line_no = pos + 1
+        parsed = (_block_child(lines, pos, indent, key, parse_block)
+                  if rest == ""
+                  else _block_value(lines, pos, indent, rest, text_values,
+                                    key))
+        val, consumed = parsed
+        blk.add(key, val, line_no)
+        pos += consumed
+    return blk, pos
 
 def parse_source(src):
     lines = []

@@ -7,29 +7,46 @@ from .parse import parse_source
 from .decl import classify, parse_fn_sig
 from .typing import Prop, literal_type, type_ok
 
+def _decl_id(key):
+    """(ident, kind) of a declaration or talk key, else None."""
+    kind, info = classify(key)
+    if kind == "decl":
+        return info[1], info[0]
+    if kind == "talk":
+        return info, kind
+    return None
+
+
+def _register_id(ids, ident, ikind):
+    """Record one declared id; returns False for an empty ident."""
+    if not ident:
+        return False
+    if ident not in ids:
+        ids[ident] = ikind
+    elif not ident.startswith("#"):
+        raise Error("duplicate declaration: " + ident)
+    return True
+
+
+def _with_subblocks(val):
+    """`with` sub-blocks of a declaration value."""
+    sub = val.get("with") if isinstance(val, Block) else None
+    return [sub] if isinstance(sub, Block) else []
+
+
 def collect_ids(root):
     ids = {}
 
     def add_from(block):
         for i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(i)
-            kind, info = classify(key)
-            if kind == "decl":
-                ident, ikind = info[1], info[0]
-            elif kind == "talk":
-                ident, ikind = info, kind
-            else:
+            hit = _decl_id(key)
+            if hit is None:
                 continue
-            if not ident:
+            if not _register_id(ids, hit[0], hit[1]):
                 continue
-            if ident not in ids:
-                ids[ident] = ikind
-            elif not ident.startswith("#"):
-                raise Error("duplicate declaration: " + ident)
-            for pkey in ("with",):
-                sub = val.get(pkey) if isinstance(val, Block) else None
-                if isinstance(sub, Block):
-                    add_from(sub)
+            for sub in _with_subblocks(val):
+                add_from(sub)
 
     add_from(root)
     return ids
@@ -59,7 +76,7 @@ def check_refs(root, ids):
             if isinstance(r, Bare) and r.s not in ids:
                 raise Error("unknown reference in %s: %s" % (key, r.s))
 
-    def walk(block):
+    def _walk_refs(block):
         for i, (key, val) in enumerate(block.items):
             if key == "props":
                 continue
@@ -67,9 +84,9 @@ def check_refs(root, ids):
                 CURRENT_LINE[0] = block.line_at(i)
                 refs(key, val)
             for sub in _sub_blocks(val):
-                walk(sub)
+                _walk_refs(sub)
 
-    walk(root)
+    _walk_refs(root)
     setup = root.get("setup")
     if isinstance(setup, Block):
         take = setup.get("take")
@@ -101,23 +118,38 @@ def _type_atoms(val):
             yield x
 
 
+def _is_negation(name, atoms):
+    """True if the type starts with the `~` negation marker."""
+    if not atoms:
+        return False
+    first = atoms[0]
+    if isinstance(first, Text):
+        raise Error("type %s: quotes are not allowed" % name)
+    if not isinstance(first, (Bare, Num)):
+        raise Error("type %s: expected bare values" % name)
+    return first.s == "~"
+
+
+def _type_value(name, x):
+    """Validate one type atom and return its string."""
+    if isinstance(x, Text):
+        raise Error("type %s: quotes are not allowed" % name)
+    if not isinstance(x, (Bare, Num)):
+        raise Error("type %s: expected bare values" % name)
+    if not re.fullmatch(r"\S+", x.s, re.UNICODE):
+        raise Error("type %s: bad value %r" % (name, x.s))
+    return x.s
+
+
 def _new_type(ctx, name, val):
     if name in ctx.types:
         raise Error("duplicate type: " + name)
     if isinstance(val, Block):
         raise Error("type %s: no values" % name)
-    vals, negate = [], False
-    for x in _type_atoms(val):
-        if isinstance(x, Text):
-            raise Error("type %s: quotes are not allowed" % name)
-        if not isinstance(x, (Bare, Num)):
-            raise Error("type %s: expected bare values" % name)
-        if x.s == "~" and not negate and not vals:
-            negate = True
-            continue
-        if not re.fullmatch(r"\S+", x.s, re.UNICODE):
-            raise Error("type %s: bad value %r" % (name, x.s))
-        vals.append(x.s)
+    atoms = list(_type_atoms(val))
+    negate = _is_negation(name, atoms)
+    rest = atoms[1:] if negate else atoms
+    vals = [_type_value(name, x) for x in rest]
     if not vals:
         raise Error("type %s: no values" % name)
     ctx.types[name] = {"values": vals, "negate": negate}
@@ -171,6 +203,22 @@ def _check_impl_target(target, ctx):
     raise Error("unknown impl target: " + target)
 
 
+def _register_prop(ctx, known, name, tval):
+    """Validate and register one `props:` entry."""
+    if not re.fullmatch(r"[^\W\d]\w*", name, re.UNICODE):
+        raise Error("bad prop name %r" % name)
+    if name in ctx.props:
+        raise Error("duplicate prop: " + name)
+    if not isinstance(tval, (Bare, Text)):
+        raise Error("props: %s needs a type" % name)
+    prop = Prop(tval.s, known)
+    ctx.props[name] = prop
+    if prop.names:
+        ctx.prop_params[name] = prop.names
+    if prop.has_ref or prop.has_reflist:
+        ctx.ref_fields.add(name)
+
+
 def _register_props(root, ctx):
     """`props:` -> typed engine properties (refs, handlers, text/fn)."""
     ctx.props = {}
@@ -184,35 +232,28 @@ def _register_props(root, ctx):
             raise Error("props must be a block")
         for j, (name, tval) in enumerate(val.items):
             CURRENT_LINE[0] = val.line_at(j) or CURRENT_LINE[0]
-            if not re.fullmatch(r"[^\W\d]\w*", name, re.UNICODE):
-                raise Error("bad prop name %r" % name)
-            if name in ctx.props:
-                raise Error("duplicate prop: " + name)
-            if not isinstance(tval, (Bare, Text)):
-                raise Error("props: %s needs a type" % name)
-            prop = Prop(tval.s, known)
-            ctx.props[name] = prop
-            if prop.names:
-                ctx.prop_params[name] = prop.names
-            if prop.has_ref or prop.has_reflist:
-                ctx.ref_fields.add(name)
+            _register_prop(ctx, known, name, tval)
+
+
+def _check_ref_name(ctx, where, name):
+    """Object reference name must be a declared id."""
+    if name not in ctx.ids:
+        raise Error("%s: unknown object reference %r" % (where, name))
 
 
 def check_ref_list(ctx, where, val):
     """`tbl[ref]` list items: bare names or `-`-list strings."""
     for it in val:
         if isinstance(it, Text):
-            name = it.s.strip()
+            _check_ref_name(ctx, where, it.s.strip())
         elif isinstance(it, Bare):
             if not re.fullmatch(r"[#@\w]+", it.s, re.UNICODE):
                 raise Error("%s: object name must be an identifier without "
                             "spaces/hyphens (%r)" % (where, it.s))
-            name = it.s
+            _check_ref_name(ctx, where, it.s)
         else:
             raise Error("%s: expected object reference, got %s"
                         % (where, type(it).__name__.lower()))
-        if name not in ctx.ids:
-            raise Error("%s: unknown object reference %r" % (where, name))
 
 
 def _prop_bare(prop, val, where, t):
@@ -304,7 +345,7 @@ def field_base(key, val, ctx):
     return base
 
 
-def attach_mixins(block, ctx, into):
+def attach_mixins(block, ctx, into, collect):
     """Merge attached mixins' fields first (own keys override)."""
     val = block.get("mixin")
     if val is None:
@@ -322,70 +363,74 @@ def attach_mixins(block, ctx, into):
                 raise Error("mixin key conflict: %s (%s and %s)"
                             % (k, seen[k], name))
             seen[k] = name
-        collect_block_fields(bdef, ctx, into)
+        collect(bdef, ctx, into)
+
+
+def _collect_nested(block, ctx, collect):
+    """Field maps of declarations inside a with/inside block."""
+    for kind, ident, nv in _nested_decls(block):
+        fields = dict(ctx.fields.get(kind, {}))
+        collect(nv, ctx, fields, ident)
+        ctx.fields[ident] = fields
+
+
+def _collect_field(ctx, into, owner, key, val):
+    """Store the typed value of one regular field."""
+    base = field_base(key, val, ctx)
+    if base is None:
+        return
+    t = literal_type(ctx, val, refs=True)
+    if (isinstance(val, Bare) and t == "str"
+            and not S.USE_RE.match(val.s.strip())):
+        raise Error("unknown name %r in field %s (quote string "
+                    "values: [[...]]/\"...\")" % (val.s, base))
+    prop = ctx.props.get(base)
+    if prop is not None:
+        into[base] = check_prop_value(ctx, owner, base, prop, val, t)
+        return
+    into[base] = (t, t == "obj" and isinstance(val, Bare))
 
 
 def collect_block_fields(block, ctx, into, owner=None):
-    attach_mixins(block, ctx, into)
+    attach_mixins(block, ctx, into, collect_block_fields)
     for i, (key, val) in enumerate(block.items):
         CURRENT_LINE[0] = block.line_at(i)
         if key in ("with", "inside") and isinstance(val, Block):
-            for kind, ident, nv in _nested_decls(val):
-                fields = dict(ctx.fields.get(kind, {}))
-                collect_block_fields(nv, ctx, fields, ident)
-                ctx.fields[ident] = fields
+            _collect_nested(val, ctx, collect_block_fields)
             continue
-        base = field_base(key, val, ctx)
-        if base is None:
-            continue
-        t = literal_type(ctx, val, refs=True)
-        if (isinstance(val, Bare) and t == "str"
-                and not S.USE_RE.match(val.s.strip())):
-            raise Error("unknown name %r in field %s (quote string "
-                        "values: [[...]]/\"...\")" % (val.s, base))
-        prop = ctx.props.get(base)
-        if prop is not None:
-            into[base] = check_prop_value(ctx, owner, base, prop, val, t)
-            continue
-        into[base] = (t, t == "obj" and isinstance(val, Bare))
+        _collect_field(ctx, into, owner, key, val)
 
 
-def collect_field_types(root, ctx):
-    ctx.fields = {}
-    class_defs = {}
-    mixin_defs = {}
+def _collect_defs(root, class_defs, mixin_defs):
+    """Scan top-level class and mixin definitions."""
     for i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(i)
         kind, info = classify(key)
         if kind == "class" and isinstance(val, Block):
             class_defs[info[0]] = (info[1], val)
         elif kind == "mixin" and isinstance(val, Block):
-            if info in mixin_defs:
-                raise Error("duplicate mixin: " + info)
-            if any(re.match(r"^mixins?\b", k2) for k2, _ in val.items):
-                raise Error("mixin %s cannot include mixin" % info)
-            mixin_defs[info] = val
-    ctx.mixin_defs = mixin_defs
-    ctx.class_parents = {n: info[0] for n, info in class_defs.items()}
-    ctx.classes = set(class_defs)
+            _add_mixin(info, val, mixin_defs)
+
+
+def _add_mixin(info, val, mixin_defs):
+    """Register one mixin body, rejecting duplicates and nesting."""
+    if info in mixin_defs:
+        raise Error("duplicate mixin: " + info)
+    if any(re.match(r"^mixins?\b", k2) for k2, _ in val.items):
+        raise Error("mixin %s cannot include mixin" % info)
+    mixin_defs[info] = val
+
+
+def _collect_mixin_fields(ctx, mixin_defs):
+    """Field maps of mixin bodies."""
     for name, blk in mixin_defs.items():
         fields = {}
         collect_block_fields(blk, ctx, fields, name)
         ctx.fields[name] = fields
-    done = set()
 
-    def resolve(name):
-        if name in done or name not in class_defs:
-            return dict(ctx.fields.get(name, {}))
-        done.add(name)
-        parent, blk = class_defs[name]
-        fields = resolve(parent) if parent else {}
-        collect_block_fields(blk, ctx, fields, name)
-        ctx.fields[name] = fields
-        return fields
 
-    for name in class_defs:
-        resolve(name)
+def _collect_decl_fields(root, ctx):
+    """Field maps of declared objects/classes."""
     for key, val in root.items:
         kind, info = classify(key)
         if kind == "decl" and info[1] and isinstance(val, Block):
@@ -394,62 +439,110 @@ def collect_field_types(root, ctx):
             ctx.fields[info[1]] = fields
 
 
+def collect_field_types(root, ctx):
+    ctx.fields = {}
+    class_defs = {}
+    mixin_defs = {}
+    _collect_defs(root, class_defs, mixin_defs)
+    ctx.mixin_defs = mixin_defs
+    ctx.class_parents = {n: info[0] for n, info in class_defs.items()}
+    ctx.classes = set(class_defs)
+    _collect_mixin_fields(ctx, mixin_defs)
+    done = set()
+
+    def resolve(cls_name):
+        if cls_name in done or cls_name not in class_defs:
+            return dict(ctx.fields.get(cls_name, {}))
+        done.add(cls_name)
+        parent, body = class_defs[cls_name]
+        own = resolve(parent) if parent else {}
+        collect_block_fields(body, ctx, own, cls_name)
+        ctx.fields[cls_name] = own
+        return own
+
+    for name in class_defs:
+        resolve(name)
+    _collect_decl_fields(root, ctx)
+
+
+def _check_mixin_names(ctx, value):
+    """Validate the mixin names of a `mixin` field value."""
+    for item in (value if isinstance(value, list) else [value]):
+        name = item.s if hasattr(item, "s") else str(item)
+        if name not in ctx.mixin_defs:
+            raise Error("unknown mixin: " + name)
+
+
+def _check_bare_field(ctx, use_props, owner, key, val):
+    """Validate one non-mixin field of an impl/setup/hero block."""
+    base = field_base(key, val, ctx)
+    t = literal_type(ctx, val, refs=True)
+    if (base is not None and isinstance(val, Bare) and t == "str"
+            and not S.USE_RE.match(val.s.strip())):
+        raise Error("unknown name %r in field %s (quote string "
+                    "values: [[...]]/\"...\")" % (val.s, base))
+    prop = ctx.props.get(base) if (use_props and base) else None
+    if prop is not None:
+        check_prop_value(ctx, owner, base, prop, val, t)
+
+
+def _walk_fields(ctx, block, use_props=False, owner=None):
+    """Validate the fields of one impl/setup/hero/const block."""
+    for n, (field_key, field_val) in enumerate(block.items):
+        CURRENT_LINE[0] = block.line_at(n)
+        if field_key == "mixin":
+            _check_mixin_names(ctx, field_val)
+            continue
+        _check_bare_field(ctx, use_props, owner, field_key, field_val)
+
+
+def _walk_setup_fields(setup, ctx):
+    """Validate hero/game blocks inside a setup block."""
+    for j, (skey, sval) in enumerate(setup.items):
+        CURRENT_LINE[0] = setup.line_at(j)
+        if skey in ("hero", "game") and isinstance(sval, Block):
+            _walk_fields(ctx, sval, True, skey)
+
+
+def _check_bare_block(key, val, ctx):
+    """Dispatch bare-name validation by top-level block kind."""
+    kind, info = classify(key)
+    if kind == "mixin":
+        _walk_fields(ctx, val, True, info)
+    elif kind == "impl":
+        _check_impl_target(info, ctx)
+        _walk_fields(ctx, val, True, info)
+    elif kind == "setup":
+        _walk_setup_fields(val, ctx)
+    elif kind in ("const", "global"):
+        _walk_fields(ctx, val)
+
+
 def check_bare_names(root, ctx):
     """Validate bare field values in impl/setup/hero/const/global.
 
     Same rule as object/class fields: a bare name must resolve to an
     object, event or enum value; strings have to be quoted.
     """
-    def walk_fields(block, use_props=False, owner=None):
-        for i, (key, val) in enumerate(block.items):
-            CURRENT_LINE[0] = block.line_at(i)
-            if key == "mixin":
-                for v in (val if isinstance(val, list) else [val]):
-                    name = v.s if hasattr(v, "s") else str(v)
-                    if name not in ctx.mixin_defs:
-                        raise Error("unknown mixin: " + name)
-                continue
-            base = field_base(key, val, ctx)
-            t = literal_type(ctx, val, refs=True)
-            if (base is not None and isinstance(val, Bare) and t == "str"
-                    and not S.USE_RE.match(val.s.strip())):
-                raise Error("unknown name %r in field %s (quote string "
-                            "values: [[...]]/\"...\")" % (val.s, base))
-            prop = ctx.props.get(base) if (use_props and base) else None
-            if prop is not None:
-                check_prop_value(ctx, owner, base, prop, val, t)
-
     for i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(i)
         if not isinstance(val, Block):
             continue
-        kind, _info = classify(key)
-        if kind == "mixin":
-            walk_fields(val, True, _info)
-        elif kind == "impl":
-            _check_impl_target(_info, ctx)
-            walk_fields(val, True, _info)
-        elif kind == "setup":
-            for j, (skey, sval) in enumerate(val.items):
-                CURRENT_LINE[0] = val.line_at(j)
-                if skey in ("hero", "game") and isinstance(sval, Block):
-                    walk_fields(sval, True, skey)
-        elif kind in ("const", "global"):
-            walk_fields(val)
+        _check_bare_block(key, val, ctx)
 
 
 def collect_game_defs(root):
     funcs = set()
     vars_ = set()
 
-    def walk(block):
+    def _walk_defs(block):
         for _key, val in block.items:
             if isinstance(val, Lua):
                 scan_lua_defs(val.s, funcs, vars_)
             for sub in _sub_blocks(val):
-                walk(sub)
+                _walk_defs(sub)
 
-    walk(root)
+    _walk_defs(root)
     return funcs, vars_
 
 def scan_required(name, ctx):
@@ -466,6 +559,18 @@ def find_include(name, ctx):
             return path
     raise Error("include not found: " + name)
 
+def _include_one(name, ctx, seen, extra, extra_lines, recurse):
+    """Parse one included file; append its items and lines."""
+    if name in seen:
+        return
+    seen.add(name)
+    sub = parse_source(open(find_include(name, ctx),
+                            encoding="utf-8").read())
+    recurse(sub, ctx, seen)
+    extra.extend(sub.items)
+    extra_lines.extend(sub.lines)
+
+
 def apply_includes(root, ctx, seen=None):
     seen = seen or set()
     extra = []
@@ -476,18 +581,41 @@ def apply_includes(root, ctx, seen=None):
         vals = val if isinstance(val, list) else [val]
         for v in vals:
             name = v.s if hasattr(v, "s") else str(v)
-            if name in seen:
-                continue
-            seen.add(name)
-            sub = parse_source(open(find_include(name, ctx),
-                                    encoding="utf-8").read())
-            apply_includes(sub, ctx, seen)
-            extra += sub.items
-            extra_lines += sub.lines
+            _include_one(name, ctx, seen, extra, extra_lines, apply_includes)
     if extra:
         root.items = extra + root.items
         root.lines = extra_lines + root.lines
     return root
+
+def _skip_string(text, i):
+    """Index after the quoted run starting at text[i]."""
+    quote = text[i]
+    i += 1
+    while i < len(text) and text[i] != quote:
+        if text[i] == "\\":
+            i += 1
+        i += 1
+    return i + 1
+
+
+def _call_end(text):
+    """Index of the `)` closing the call at the first `(`, or None."""
+    depth = 0
+    i = text.index("(")
+    while i < len(text):
+        c = text[i]
+        if c in "\"'":
+            i = _skip_string(text, i)
+            continue
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return None
+
 
 def wrapper_template(text):
     """Return the inner call if body is a single call/return-call, else None."""
@@ -499,25 +627,23 @@ def wrapper_template(text):
     if not re.match(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*(?::[A-Za-z_]\w*)?\s*\(",
                     b):
         return None
-    depth = 0
-    i = b.index("(")
-    while i < len(b):
-        c = b[i]
-        if c in "\"'":
-            q = c
-            i += 1
-            while i < len(b) and b[i] != q:
-                if b[i] == "\\":
-                    i += 1
-                i += 1
-        elif c == "(":
-            depth += 1
-        elif c == ")":
-            depth -= 1
-            if depth == 0:
-                return b if b[i + 1:].strip() == "" else None
-        i += 1
-    return None
+    end = _call_end(b)
+    if end is None:
+        return None
+    return b if b[end + 1:].strip() == "" else None
+
+
+def _method_adapter(callee, pnames, got, tails):
+    """Forwarded method call; returns (handled, result)."""
+    if ":" not in callee:
+        return False, None
+    recv, meth = callee.split(":", 1)
+    if not (pnames and recv == pnames[0]
+            and any(got == t[1:] for t in tails)):
+        return False, None
+    if "fn_" in meth:
+        return True, None
+    return True, ("method", meth)
 
 
 def adapter_callee(text, plist, full=False):
@@ -544,11 +670,9 @@ def adapter_callee(text, plist, full=False):
     tails = [pnames + ["..."]]
     if full:
         tails.append(pnames)
-    if ":" in callee:
-        recv, meth = callee.split(":", 1)
-        if (pnames and recv == pnames[0]
-                and any(got == t[1:] for t in tails)):
-            return None if "fn_" in meth else ("method", meth)
+    handled, method = _method_adapter(callee, pnames, got, tails)
+    if handled:
+        return method
     if got in tails:
         return None if "fn_" in callee else callee
     return None
@@ -632,7 +756,7 @@ def _inline_fn(ctx, name, val, plist, variadic):
         return
     t = wrapper_template(val.s)
     if t and ("fn_" in t or not _params_used_once(plist, t)):
-        t = None
+        return
     if t:
         ctx.inline[name] = ("wrap", (plist, t))
 
@@ -680,16 +804,16 @@ def _register_globals(root, ctx):
 def _use_refs(root):
     refs = set()
 
-    def walk(block):
+    def _walk_use(block):
         for _k, v in block.items:
             if isinstance(v, (Text, Bare)):
                 m = re.match(r"^use\s+([\w.+-]+)$", v.s.strip())
                 if m:
                     refs.add(m.group(1))
             for sub in _sub_blocks(v):
-                walk(sub)
+                _walk_use(sub)
 
-    walk(root)
+    _walk_use(root)
     return refs
 
 

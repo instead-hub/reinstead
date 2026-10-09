@@ -14,22 +14,25 @@ def tbl_inner(t):
     return None
 
 
-def split_union(text):
-    """Split a `|` list at top-level parentheses/brackets."""
-    parts, cur, depth = [], [], 0
-    for c in text:
+def _split_top(text, sep):
+    """Split `text` on top-level `sep` characters, trimming the parts."""
+    cuts = []
+    depth = 0
+    for i, c in enumerate(text):
         if c in "([":
             depth += 1
         elif c in ")]":
             depth -= 1
-        if c == "|" and depth == 0:
-            parts.append("".join(cur).strip())
-            cur = []
-        else:
-            cur.append(c)
-    if cur or parts:
-        parts.append("".join(cur).strip())
-    return [p for p in parts if p]
+        elif c == sep and depth == 0:
+            cuts.append(i)
+    starts = [0] + [c + 1 for c in cuts]
+    ends = cuts + [len(text)]
+    return [text[a:b].strip() for a, b in zip(starts, ends)]
+
+
+def split_union(text):
+    """Split a `|` list at top-level parentheses/brackets."""
+    return [p for p in _split_top(text, "|") if p]
 
 
 def union_parts(t):
@@ -42,20 +45,7 @@ def union_parts(t):
 
 def split_types(text):
     """Split a comma list at top-level parentheses/brackets."""
-    parts, cur, depth = [], [], 0
-    for c in text:
-        if c in "([":
-            depth += 1
-        elif c in ")]":
-            depth -= 1
-        if c == "," and depth == 0:
-            parts.append("".join(cur).strip())
-            cur = []
-        else:
-            cur.append(c)
-    if cur:
-        parts.append("".join(cur).strip())
-    return [p for p in parts if p]
+    return [p for p in _split_top(text, ",") if p]
 
 
 def _fn_split(t):
@@ -73,32 +63,38 @@ def _fn_split(t):
     return None
 
 
-def _canon_union(known, alts, opt):
+def _canon_alt(known, a, opt, recurse):
+    """Canonical body of one union alternative and its optional flag."""
+    c = recurse(known, a)
+    if c is None:
+        return None, opt
+    if c == "nil":
+        return "", True
+    if c.endswith("?"):
+        return c[:-1], True
+    return c, opt
+
+
+def _canon_union(known, alts, opt, recurse):
     """`a|b` -> (canonical body, optional flag) or (None, False)."""
     out = []
     for a in alts:
-        c = canon_type(known, a)
+        c, opt = _canon_alt(known, a, opt, recurse)
         if c is None:
             return None, False
-        if c.endswith("?"):
-            opt = True
-            c = c[:-1]
-        if c == "nil":
-            opt = True
-            continue
-        if c not in out:
+        if c and c not in out:
             out.append(c)
     if not out:
         return None, False
     return "|".join(sorted(out)), opt
 
 
-def _canon_tbl(known, text, opt):
+def _canon_tbl(known, text, opt, recurse):
     """`tbl[...]` -> (canonical body, optional flag) or (None, False)."""
     inner = text[4:].strip()[:-1].strip()
     if not inner:
         return "tbl[]", opt
-    c = canon_type(known, inner)
+    c = recurse(known, inner)
     if c is None:
         return None, False
     if c == "any":
@@ -106,7 +102,17 @@ def _canon_tbl(known, text, opt):
     return "tbl[%s]" % c, opt
 
 
-def _canon_fn(known, parts, opt):
+def _canon_ret(known, rest, recurse):
+    """Canonical return type of an `fn` type; False for a bad arrow."""
+    if not rest:
+        return None
+    if not rest.startswith("->"):
+        return False
+    ret = recurse(known, rest[2:].strip())
+    return False if ret is None else ret
+
+
+def _canon_fn(known, parts, opt, recurse):
     """`fn(...) -> T` -> (canonical body, optional flag) or (None, False)."""
     inner, rest = parts[0].strip(), parts[1].strip()
     ps = []
@@ -114,21 +120,34 @@ def _canon_fn(known, parts, opt):
         pn, _, pt = part.partition(":")
         if pn.strip() == "...":
             return None, False
-        c = canon_type(known, pt if pt else pn)
+        c = recurse(known, pt if pt else pn)
         if c is None:
             return None, False
         ps.append(c)
-    ret = None
-    if rest:
-        if not rest.startswith("->"):
-            return None, False
-        ret = canon_type(known, rest[2:].strip())
-        if ret is None:
-            return None, False
+    ret = _canon_ret(known, rest, recurse)
+    if ret is False:
+        return None, False
     s = "fn(%s)" % ",".join(ps)
     if ret and ret != "any":
         s += "->" + ret
     return s, opt
+
+
+def _canon_dispatch(known, text, opt, recurse):
+    """Canonical body and optional flag for one type expression."""
+    alts = split_union(text)
+    parts = _fn_split(text)
+    if len(alts) > 1:
+        return _canon_union(known, alts, opt, recurse)
+    if text.startswith("tbl[") and text.endswith("]"):
+        return _canon_tbl(known, text, opt, recurse)
+    if parts is not None:
+        return _canon_fn(known, parts, opt, recurse)
+    if text == "nil":
+        return (None, False) if opt else ("nil", opt)
+    if text in known:
+        return text, opt
+    return None, False
 
 
 def canon_type(known, text):
@@ -137,23 +156,33 @@ def canon_type(known, text):
     opt = text.endswith("?")
     if opt:
         text = text[:-1].strip()
-    alts = split_union(text)
-    parts = _fn_split(text)
-    if len(alts) > 1:
-        body, opt = _canon_union(known, alts, opt)
-    elif text.startswith("tbl[") and text.endswith("]"):
-        body, opt = _canon_tbl(known, text, opt)
-    elif parts is not None:
-        body, opt = _canon_fn(known, parts, opt)
-    elif text == "nil":
-        return None if opt else "nil"
-    elif text in known:
-        return text + ("?" if opt else "")
-    else:
-        return None
+    body, opt = _canon_dispatch(known, text, opt, canon_type)
     if body is None:
         return None
     return body + ("?" if opt else "")
+
+
+def _alt_error(known, alts, recurse):
+    for a in alts:
+        msg = recurse(known, a)
+        if msg:
+            return msg
+    return None
+
+
+def _tbl_error(known, text, t, recurse):
+    inner = t[4:].strip()[:-1].strip()
+    if inner:
+        msg = recurse(known, inner)
+        if msg:
+            return msg
+    return "bad type %r" % text
+
+
+def _bad_type(text):
+    if "(" in text or "[" in text or "]" in text or "->" in text:
+        return "bad type %r" % text
+    return "unknown type %r" % text
 
 
 def type_error(known, text):
@@ -165,22 +194,14 @@ def type_error(known, text):
         t = t[:-1].strip()
     alts = split_union(t)
     if len(alts) > 1:
-        for a in alts:
-            msg = type_error(known, a)
-            if msg:
-                return msg
+        msg = _alt_error(known, alts, type_error)
+        if msg:
+            return msg
     if t == "nil":
         return "unknown type %r" % text
     if t.startswith("tbl[") and t.endswith("]"):
-        inner = t[4:].strip()[:-1].strip()
-        if inner:
-            msg = type_error(known, inner)
-            if msg:
-                return msg
-        return "bad type %r" % text
-    if "(" in text or "[" in text or "]" in text or "->" in text:
-        return "bad type %r" % text
-    return "unknown type %r" % text
+        return _tbl_error(known, text, t, type_error)
+    return _bad_type(text)
 
 
 def canon_fn_sig(plist, ret, variadic=False):
@@ -222,22 +243,28 @@ def body_type(t):
     return t
 
 
+def _named_params(known, inner):
+    plist = []
+    for part in split_types(inner):
+        pn, _, pt = part.partition(":")
+        pn, pt = pn.strip(), pt.strip()
+        plist.append((pn if pt else None,
+                      canon_type(known, pt if pt else pn)))
+    return plist
+
+
+def _named_ret(known, rest):
+    if rest.startswith("->"):
+        return canon_type(known, rest[2:].strip())
+    return None
+
+
 def named_fn(text, known):
     """`fn(s: obj, ...) [-> ret]` -> ([(name|None, type)], ret|None)."""
     parts = _fn_split(text.strip())
     if parts is None:
         return [], None
-    plist = []
-    for part in split_types(parts[0]):
-        pn, _, pt = part.partition(":")
-        pn, pt = pn.strip(), pt.strip()
-        plist.append((pn if pt else None,
-                      canon_type(known, pt if pt else pn)))
-    ret = None
-    rest = parts[1].strip()
-    if rest.startswith("->"):
-        ret = canon_type(known, rest[2:].strip())
-    return plist, ret
+    return _named_params(known, parts[0]), _named_ret(known, parts[1].strip())
 
 
 class Prop:
@@ -255,65 +282,66 @@ class Prop:
         self.names = None
         self.env = None
         for alt in split_union(self.text):
-            c = canon_type(known, alt)
-            if c is None:
-                raise Error("props: bad type %r in %r" % (alt, self.text))
-            self.alts.append(c)
-            if c == "ref":
-                self.has_ref = True
-            elif c == "tbl[ref]":
-                self.has_reflist = True
-            elif c == "str":
-                self.has_str = True
-            elif c == "num":
-                self.has_num = True
-            elif c == "bool":
-                self.has_bool = True
-            elif c == "tbl":
-                self.has_tbl = True
-            elif tbl_inner(base(c)):
-                self.has_tbl = True
-                self.tbl_elem = tbl_inner(base(c))
-            elif c == "event":
-                self.has_event = True
-            elif c.startswith("fn(") and self.fn is None:
-                self.fn = named_fn(alt, known)
-        if self.fn is not None:
-            names = [pn for pn, _pt in self.fn[0]]
-            if not names or any(pn is None for pn in names):
-                raise Error("props: fn parameters need names in %r"
-                            % self.text)
-            self.names = ", ".join(names)
-            self.env = {pn: pt for pn, pt in self.fn[0]}
-            self.ret = self.fn[1]
+            self._add_alt(known, alt)
+        self._init_fn()
+
+    def _add_alt(self, known, alt):
+        c = canon_type(known, alt)
+        if c is None:
+            raise Error("props: bad type %r in %r" % (alt, self.text))
+        self.alts.append(c)
+        if c == "ref":
+            self.has_ref = True
+        elif c == "tbl[ref]":
+            self.has_reflist = True
+        elif c == "str":
+            self.has_str = True
+        elif c == "num":
+            self.has_num = True
+        elif c == "bool":
+            self.has_bool = True
+        elif c == "tbl":
+            self.has_tbl = True
+        elif tbl_inner(base(c)):
+            self.has_tbl = True
+            self.tbl_elem = tbl_inner(base(c))
+        elif c == "event":
+            self.has_event = True
+        elif c.startswith("fn(") and self.fn is None:
+            self.fn = named_fn(alt, known)
+
+    def _init_fn(self):
+        if self.fn is None:
+            return
+        names = [pn for pn, _pt in self.fn[0]]
+        if not names or any(pn is None for pn in names):
+            raise Error("props: fn parameters need names in %r" % self.text)
+        self.names = ", ".join(names)
+        self.env = {pn: pt for pn, pt in self.fn[0]}
+        self.ret = self.fn[1]
 
 
-def type_ok(ctx, t, exp):
-    """May a value of type t be used where type exp is expected?"""
-    if exp in (None, "any") or t == exp:
+def _union_ok(ctx, t, exp, alts, recurse):
+    """All alternatives of a `t` union fit `exp`."""
+    if t.endswith("?") and not recurse(ctx, "nil", exp):
+        return False
+    return all(recurse(ctx, alt, exp) for alt in alts)
+
+
+def _tbl_ok(ctx, t, inner_exp, recurse):
+    """Content rules when `exp` is a `tbl[...]` type."""
+    inner_t = tbl_inner(t)
+    if inner_t is None:
+        return False
+    if inner_t == "":
         return True
-    alts = union_parts(t)
-    if alts is not None:
-        if t.endswith("?") and not type_ok(ctx, "nil", exp):
-            return False
-        return all(type_ok(ctx, alt, exp) for alt in alts)
-    if exp.endswith("?"):
-        return t == "nil" or type_ok(ctx, t, exp[:-1])
-    alts = union_parts(exp)
-    if alts is not None:
-        return any(type_ok(ctx, t, alt) for alt in alts)
-    if exp == "tbl":
-        return t == "tbl" or tbl_inner(t) is not None
-    inner_exp = tbl_inner(exp)
-    if inner_exp is not None:
-        inner_t = tbl_inner(t)
-        if inner_t is None:
-            return False
-        if inner_t == "":
-            return True
-        if inner_exp == "":
-            return False
-        return type_ok(ctx, inner_t, inner_exp)
+    if inner_exp == "":
+        return False
+    return recurse(ctx, inner_t, inner_exp)
+
+
+def _scalar_ok(ctx, t, exp):
+    """Named type, class and fn compatibility rules; None when unmatched."""
     if exp in ctx.types and t in ("str", exp):
         return True
     if t in ctx.types and exp == "str":
@@ -325,7 +353,27 @@ def type_ok(ctx, t, exp):
     if (exp == "fn" or exp.startswith("fn(")) and (
             t == "fn" or t.startswith("fn(")):
         return True
-    return False
+    return None
+
+
+def type_ok(ctx, t, exp):
+    """May a value of type t be used where type exp is expected?"""
+    if exp in (None, "any") or t == exp:
+        return True
+    t_alts = union_parts(t)
+    if t_alts is not None:
+        return _union_ok(ctx, t, exp, t_alts, type_ok)
+    if exp.endswith("?"):
+        return t == "nil" or type_ok(ctx, t, exp[:-1])
+    exp_alts = union_parts(exp)
+    if exp_alts is not None:
+        return any(type_ok(ctx, t, alt) for alt in exp_alts)
+    if exp == "tbl":
+        return t == "tbl" or tbl_inner(t) is not None
+    inner_exp = tbl_inner(exp)
+    if inner_exp is not None:
+        return _tbl_ok(ctx, t, inner_exp, type_ok)
+    return _scalar_ok(ctx, t, exp) is True
 
 
 def class_le(ctx, t, exp):
@@ -360,6 +408,23 @@ def type_value_error(ctx, typ, value):
     return "unknown %s %r%s" % (typ, value, hint)
 
 
+def _bare_type(ctx, node, refs):
+    """Type of a bare word; refs resolve to obj/event/enum names."""
+    if not refs:
+        return "str"
+    if node.s in ctx.ids:
+        return "obj"
+    if node.s in ctx.event_names:
+        return "event"
+    owners = ctx.enum_values.get(node.s)
+    if not owners:
+        return "str"
+    if len(owners) > 1:
+        raise Error("ambiguous value %r (types: %s)"
+                    % (node.s, ", ".join(sorted(owners))))
+    return next(iter(owners))
+
+
 def literal_type(ctx, node, refs=False):
     if isinstance(node, list):
         return "tbl"
@@ -372,18 +437,7 @@ def literal_type(ctx, node, refs=False):
     if isinstance(node, Text):
         return "str"
     if isinstance(node, Bare):
-        if refs:
-            if node.s in ctx.ids:
-                return "obj"
-            if node.s in ctx.event_names:
-                return "event"
-            owners = ctx.enum_values.get(node.s)
-            if owners:
-                if len(owners) > 1:
-                    raise Error("ambiguous value %r (types: %s)"
-                                % (node.s, ", ".join(sorted(owners))))
-                return next(iter(owners))
-        return "str"
+        return _bare_type(ctx, node, refs)
     if isinstance(node, Data):
         return "tbl"
     if isinstance(node, Raw) and re.fullmatch(r"_'[^']+'", node.s.strip()):

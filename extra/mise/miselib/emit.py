@@ -20,6 +20,35 @@ def _pfx(kw):
     return "" if kw == "on" else kw + "_"
 
 
+def _group_years(names):
+    """Group `(event, prefix)` pairs into runs sharing a prefix."""
+    groups = []
+    for year, pfx in names:
+        if groups and groups[-1][0] == pfx:
+            groups[-1][1].append(year)
+        else:
+            groups.append((pfx, [year]))
+    return groups
+
+
+def _emit_event(em, name, block):
+    if not isinstance(block, Block):
+        raise Error("event %s must be a block" % name)
+    lines = []
+    for key, val in block.items:
+        base, params = parse_key(key)
+        if base not in ("on", "before", "after"):
+            raise Error("event %s: unknown field %r" % (name, key))
+        if not isinstance(val, (Lua, Logic, Text, Bare)):
+            raise Error("event %s.%s must be logic or lua" % (name, key))
+        mpname = {"on": "mp.", "before": "mp.before_",
+                  "after": "mp.after_"}[base] + name
+        prm = params or ("s, ev, w, wh" if name in ("Any", "Default")
+                         else "s, w, wh")
+        lines.append("%s = %s" % (mpname, em.handler(val, prm, "")))
+    return "\n".join(lines)
+
+
 class Emitter:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -100,15 +129,20 @@ class Emitter:
             self.check_use(uname, prm, ret)
             return fn_name(uname)
         if isinstance(v, Lua):
-            body = reindent(v.s, indent + IND)
-            return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
+            return self._lua_body(v, prm, indent)
         if isinstance(v, Logic):
-            if env is None:
-                env = self.param_env(prm)
-            body = "\n".join(emit_logic(v.stmts, indent + IND, env, ret,
-                                        ret_name, ctx=self.ctx))
-            return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
+            return self._logic_body(v, prm, indent, env, ret, ret_name)
         return self.value(v)
+
+    def _lua_body(self, v, prm, indent):
+        return "function(%s)\n%s\n%s" % (prm, reindent(v.s, indent + IND),
+                                         indent + "end")
+
+    def _logic_body(self, v, prm, indent, env, ret, ret_name):
+        senv = self.param_env(prm) if env is None else env
+        body = "\n".join(emit_logic(v.stmts, indent + IND, senv, ret,
+                                    ret_name, ctx=self.ctx))
+        return "function(%s)\n%s\n%s" % (prm, body, indent + "end")
 
     def body(self, v, key, indent=""):
         base, params = parse_key(key)
@@ -129,33 +163,8 @@ class Emitter:
         out = []
         for i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(i) or CURRENT_LINE[0]
-            base, params = parse_key(key)
-            parts = [p.strip() for p in base.split(",")]
-            inherited = None
-            m0 = re.match(r"^(on|life|before|after|post)\s+(.+)$", parts[0])
-            if m0:
-                inherited = _pfx(m0.group(1))
-                parts[0] = m0.group(2)
-            names = []
-            for part in parts:
-                pfx = inherited
-                m = re.match(r"^(on|life|before|after|post)\s+(.+)$", part)
-                if m:
-                    pfx = _pfx(m.group(1))
-                    part = m.group(2)
-                if part not in self.ctx.event_names:
-                    raise Error("unknown event: " + part)
-                if pfx is None:
-                    raise Error("event %s needs an on/life/before/after/post "
-                                "prefix" % part)
-                names.append((part, pfx))
-            groups = []
-            for year, pfx in names:
-                if groups and groups[-1][0] == pfx:
-                    groups[-1][1].append(year)
-                else:
-                    groups.append((pfx, [year]))
-            for pfx, years in groups:
+            params, names = self._on_parts(key)
+            for pfx, years in _group_years(names):
                 prm = params or ("s, ev, w, wh"
                                  if years[0] in ("Any", "Default")
                                  else "s, w, wh")
@@ -164,10 +173,33 @@ class Emitter:
                     out.append('%s["%s%s"] = %s;'
                                % (indent, pfx, ",".join(years), src))
                 else:
-                    for year in years:
-                        out.append("%s%s%s%s = %s;"
-                                   % (indent, target, pfx, year, src))
+                    out.extend("%s%s%s%s = %s;"
+                               % (indent, target, pfx, year, src)
+                               for year in years)
         return out
+
+    def _on_parts(self, key):
+        base, params = parse_key(key)
+        parts = [p.strip() for p in base.split(",")]
+        first = self._event_prefix(parts[0])
+        inherited = first[0] if first is not None else None
+        return params, [self._on_name(part, inherited) for part in parts]
+
+    def _event_prefix(self, part):
+        m = re.match(r"^(on|life|before|after|post)\s+(.+)$", part)
+        if not m:
+            return None
+        return _pfx(m.group(1)), m.group(2)
+
+    def _on_name(self, part, inherited):
+        found = self._event_prefix(part)
+        pfx, name = found if found is not None else (inherited, part)
+        if name not in self.ctx.event_names:
+            raise Error("unknown event: " + name)
+        if pfx is None:
+            raise Error("event %s needs an on/life/before/after/post "
+                        "prefix" % name)
+        return name, pfx
 
     def obj(self, block, ident, base, ctor, preset, parent=None):
         prev = self.ctx.current_owner
@@ -192,21 +224,27 @@ class Emitter:
             bdef = self.ctx.mixin_defs.get(name)
             if bdef is None:
                 raise Error("unknown mixin: " + name)
-            for i, (k, bv) in enumerate(bdef.items):
-                if k in seen:
-                    raise Error("mixin key conflict: %s (%s and %s)"
-                                % (k, seen[k], name))
-                seen[k] = name
-                if k in own:
-                    continue
-                merged.items.append((k, bv))
-                merged.lines.append(bdef.line_at(i))
+            self._merge_mixin(merged, seen, own, bdef, name)
+        self._merge_own(merged, block)
+        return merged
+
+    def _merge_mixin(self, merged, seen, own, bdef, name):
+        for i, (k, bv) in enumerate(bdef.items):
+            if k in seen:
+                raise Error("mixin key conflict: %s (%s and %s)"
+                            % (k, seen[k], name))
+            seen[k] = name
+            if k in own:
+                continue
+            merged.items.append((k, bv))
+            merged.lines.append(bdef.line_at(i))
+
+    def _merge_own(self, merged, block):
         for i, (k, bv) in enumerate(block.items):
             if k == "mixin":
                 continue
             merged.items.append((k, bv))
             merged.lines.append(block.line_at(i))
-        return merged
 
     def _obj(self, block, ident, base, ctor, preset, parent=None):
         block = self.expand_mixins(block)
@@ -255,20 +293,7 @@ class Emitter:
 
     def _obj_attrs(self, block, ident, preset):
         attrs = list(preset)
-        a = block.get("attrs")
-        if a is not None:
-            if isinstance(a, list):
-                for x in a:
-                    if isinstance(x, Text):
-                        raise Error("%s.attrs: quotes are not allowed"
-                                    % (ident or "?"))
-                    if isinstance(x, Bare):
-                        attrs.append(x.s)
-            elif isinstance(a, Bare):
-                attrs.append(a.s)
-            elif isinstance(a, Text):
-                raise Error("%s.attrs: quotes are not allowed"
-                            % (ident or "?"))
+        attrs.extend(self._extra_attrs(block, ident))
         if attrs and "attr" in self.ctx.types:
             CURRENT_LINE[0] = block.line("attrs")
             for an in attrs:
@@ -277,80 +302,113 @@ class Emitter:
                     raise Error("%s.attrs: %s" % (ident or "?", msg))
         return attrs
 
+    def _extra_attrs(self, block, ident):
+        a = block.get("attrs")
+        if a is None:
+            return []
+        if isinstance(a, list):
+            return self._attrs_items(a, ident)
+        if isinstance(a, Bare):
+            return [a.s]
+        if isinstance(a, Text):
+            raise Error("%s.attrs: quotes are not allowed" % (ident or "?"))
+        return []
+
+    def _attrs_items(self, items, ident):
+        out = []
+        for x in items:
+            if isinstance(x, Text):
+                raise Error("%s.attrs: quotes are not allowed"
+                            % (ident or "?"))
+            if isinstance(x, Bare):
+                out.append(x.s)
+        return out
+
     def _obj_fields(self, block, ident, fi, lines):
         for _i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(_i)
-            if key in ("words", "inside", "with", "attrs",
-                       "disabled", "dict", "before", "after", "post"):
-                continue
-            if re.match(r"^(on|life|before|after|post)\s+\S", key):
-                one = Block()
-                one.items = [(key, val)]
-                lines.extend(self.on(one, fi))
-                continue
-            fbase, params = parse_key(key)
-            if fbase == "on":
-                raise Error("on: must name an event (on Take:)")
-            parts = [p.strip() for p in fbase.split(",")]
-            if not re.match(r"^[a-z]+_", fbase):
-                for part in parts:
-                    if part in self.ctx.event_names:
-                        raise Error("event %s needs an on/life/before/after/"
-                                    "post prefix" % part)
-            if not params:
-                prop = self.ctx.props.get(fbase)
-                for part in parts:
-                    if part in self.ctx.ref_fields:
-                        check_ref_value(ident or "?", key, val,
-                                        self.ctx.ids,
-                                        allow_text=bool(prop
-                                                       and prop.has_reflist))
-                        break
-            try:
-                rendered = self.body(val, key, fi)
-            except Error as e:
-                raise Error("%s.%s: %s" % (ident, key, e))
-            if "," in fbase:
-                lines.append('%s["%s"] = %s;' % (fi, fbase, rendered))
-            else:
-                lines.append("%s%s = %s;" % (fi, fbase, rendered))
+            lines.extend(self._obj_field(key, val, ident, fi))
+
+    def _obj_field(self, key, val, ident, fi):
+        if key in ("words", "inside", "with", "attrs",
+                   "disabled", "dict", "before", "after", "post"):
+            return []
+        if re.match(r"^(on|life|before|after|post)\s+\S", key):
+            one = Block()
+            one.items = [(key, val)]
+            return self.on(one, fi)
+        fbase, params = parse_key(key)
+        if fbase == "on":
+            raise Error("on: must name an event (on Take:)")
+        self._check_event_prefix(fbase)
+        if not params:
+            self._check_ref_value(ident, key, val, fbase)
+        try:
+            rendered = self.body(val, key, fi)
+        except Error as e:
+            raise Error("%s.%s: %s" % (ident, key, e))
+        if "," in fbase:
+            return ['%s["%s"] = %s;' % (fi, fbase, rendered)]
+        return ["%s%s = %s;" % (fi, fbase, rendered)]
+
+    def _check_event_prefix(self, fbase):
+        if re.match(r"^[a-z]+_", fbase):
+            return
+        for part in (p.strip() for p in fbase.split(",")):
+            if part in self.ctx.event_names:
+                raise Error("event %s needs an on/life/before/after/"
+                            "post prefix" % part)
+
+    def _check_ref_value(self, ident, key, val, fbase):
+        prop = self.ctx.props.get(fbase)
+        for part in (p.strip() for p in fbase.split(",")):
+            if part in self.ctx.ref_fields:
+                check_ref_value(ident or "?", key, val, self.ctx.ids,
+                                allow_text=bool(prop and prop.has_reflist))
+                break
 
     def _obj_nested(self, block, fi, lines):
+        blobs = self._nested_blobs(block, fi)
+        if not blobs:
+            return
+        lines.append("%sobj = {" % fi)
+        for k, b in enumerate(blobs):
+            if k:
+                lines.append("")
+            lines.extend(b.split("\n"))
+        lines.append("%s};" % fi)
+
+    def _nested_blobs(self, block, fi):
         obj_items = []
         nested = []
         for key, val in block.items:
-            if key in ("inside", "with"):
-                if isinstance(val, Block):
-                    for nk, nv in val.items:
-                        nested.append(self.decl(nk, nv, fi + IND) + ";")
-                else:
-                    refs = val if isinstance(val, list) else [val]
-                    for r in refs:
-                        if not isinstance(r, Bare):
-                            raise Error("%s must list bare identifiers, not "
-                                        "quoted strings (%s)" % (key, key))
-                        if not re.fullmatch(r"[#@\w]+", r.s, re.UNICODE):
-                            raise Error("%s: object name must be an identifier "
-                                        "without spaces/hyphens (%r)"
-                                        % (key, r.s))
-                        obj_items.append("%s'%s';" % (fi + IND, r.s))
-        blobs = []
-        if obj_items:
-            blobs.append("\n".join(obj_items))
-        blobs += nested
-        if blobs:
-            lines.append("%sobj = {" % fi)
-            for k, b in enumerate(blobs):
-                if k:
-                    lines.append("")
-                lines.extend(b.split("\n"))
-            lines.append("%s};" % fi)
+            if key not in ("inside", "with"):
+                continue
+            if isinstance(val, Block):
+                nested.extend(self._nested_decls(val, fi + IND))
+            else:
+                obj_items.extend(self._nested_refs(key, val, fi + IND))
+        blobs = ["\n".join(obj_items)] if obj_items else []
+        return blobs + nested
+
+    def _nested_decls(self, val, ind):
+        return [self.decl(nk, nv, ind) + ";" for nk, nv in val.items]
+
+    def _nested_refs(self, key, val, ind):
+        refs = val if isinstance(val, list) else [val]
+        out = []
+        for r in refs:
+            if not isinstance(r, Bare):
+                raise Error("%s must list bare identifiers, not quoted "
+                            "strings (%s)" % (key, key))
+            if not re.fullmatch(r"[#@\w]+", r.s, re.UNICODE):
+                raise Error("%s: object name must be an identifier without "
+                            "spaces/hyphens (%r)" % (key, r.s))
+            out.append("%s'%s';" % (ind, r.s))
+        return out
 
     def _obj_tail(self, block, ident, base, parent, attrs):
-        if parent:
-            tail = "%s}, %s)" % (base, parent)
-        else:
-            tail = "%s}" % base
+        tail = "%s}, %s)" % (base, parent) if parent else "%s}" % base
         if attrs:
             tail += ":attr '%s'" % ",".join(attrs)
         d = block.get("dict")
@@ -365,21 +423,7 @@ class Emitter:
         return tail
 
     def event(self, name, block):
-        if not isinstance(block, Block):
-            raise Error("event %s must be a block" % name)
-        lines = []
-        for key, val in block.items:
-            base, params = parse_key(key)
-            if base not in ("on", "before", "after"):
-                raise Error("event %s: unknown field %r" % (name, key))
-            if not isinstance(val, (Lua, Logic, Text, Bare)):
-                raise Error("event %s.%s must be logic or lua" % (name, key))
-            mpname = {"on": "mp.", "before": "mp.before_",
-                      "after": "mp.after_"}[base] + name
-            prm = params or ("s, ev, w, wh" if name in ("Any", "Default")
-                             else "s, w, wh")
-            lines.append("%s = %s" % (mpname, self.handler(val, prm, "")))
-        return "\n".join(lines)
+        return _emit_event(self, name, block)
 
     def verb_fields(self, block, required):
         """Shared `words`/`patterns` fields of verb and extend verb."""
@@ -445,51 +489,33 @@ class Emitter:
     def talk_act(self, reply, do, indent):
         if do is None:
             return reply
+        body = self._talk_body(do, indent)
+        if reply is None:
+            return ["%sfunction(s)" % indent] + body + ["%send" % indent]
+        act = ["%sfunction(s)" % indent, "%sp(%s)" % (indent + IND, reply)]
+        return act + body + ["%send" % indent]
+
+    def _talk_body(self, do, indent):
         if isinstance(do, Logic):
-            body = emit_logic(do.stmts, indent + IND, {"s": "obj"}, ctx=self.ctx)
-        elif isinstance(do, Lua):
-            body = [reindent(do.s, indent + IND)]
-        else:
-            raise Error("expected logic/lua block")
-        if reply is not None:
-            body = ["%sp(%s)" % (indent + IND, reply)] + body
-        return ["%sfunction(s)" % indent] + body + ["%send" % indent]
+            return emit_logic(do.stmts, indent + IND, {"s": "obj"},
+                              ctx=self.ctx)
+        if isinstance(do, Lua):
+            return [reindent(do.s, indent + IND)]
+        raise Error("expected logic/lua block")
 
     def talk_table(self, oblock, indent, labels, tag=None):
-        dsc = None
-        reply = None
-        do = None
         named = []
         children = []
+        specials = {"dsc": None, "reply": None, "do": None}
         for key, val in oblock.items:
-            base, _ = parse_key(key)
-            if base in ("ask", "say"):
-                dsc = self.value(val)
-            elif base == "reply":
-                reply = self.value(val)
-            elif base == "do":
-                do = val
-            elif base == "when":
-                named.append("cond = function() return %s end"
-                             % transpile_exprlist(sym_text(val), {},
-                                                  "talk when", ctx=self.ctx)[0])
-            elif base == "goto":
-                named.append("next = '#%s'" % sym_text(val).lstrip('#'))
-            elif base in ("always", "hidden", "only"):
-                if is_true(val):
-                    named.append("%s = true" % base)
-            elif base == "option":
-                children.append(self.talk_table(val, indent + IND, labels))
-            elif key.startswith("label ") and isinstance(val, Block):
-                labels.append((key[6:].strip(), val))
-            else:
-                named.append("%s = %s" % (base, self.body(val, key, indent + IND)))
+            self._talk_item(key, val, indent, labels, named, children,
+                            specials)
         lines = ["%s{" % indent]
         if tag:
             lines.append("%s'%s';" % (indent + IND, tag))
-        if dsc is not None:
-            lines.append("%s%s;" % (indent + IND, dsc))
-        act = self.talk_act(reply, do, indent + IND)
+        if specials["dsc"] is not None:
+            lines.append("%s%s;" % (indent + IND, specials["dsc"]))
+        act = self.talk_act(specials["reply"], specials["do"], indent + IND)
         if isinstance(act, list):
             lines.extend(act)
             lines[-1] += ";"
@@ -502,6 +528,31 @@ class Emitter:
             lines.append("%s%s;" % (indent + IND, n))
         lines.append("%s}" % indent)
         return lines
+
+    def _talk_item(self, key, val, indent, labels, named, children, specials):
+        base, _ = parse_key(key)
+        if base in ("ask", "say"):
+            specials["dsc"] = self.value(val)
+        elif base == "reply":
+            specials["reply"] = self.value(val)
+        elif base == "do":
+            specials["do"] = val
+        elif base == "when":
+            named.append("cond = function() return %s end"
+                         % transpile_exprlist(sym_text(val), {},
+                                              "talk when",
+                                              ctx=self.ctx)[0])
+        elif base == "goto":
+            named.append("next = '#%s'" % sym_text(val).lstrip('#'))
+        elif base in ("always", "hidden", "only"):
+            if is_true(val):
+                named.append("%s = true" % base)
+        elif base == "option":
+            children.append(self.talk_table(val, indent + IND, labels))
+        elif key.startswith("label ") and isinstance(val, Block):
+            labels.append((key[6:].strip(), val))
+        else:
+            named.append("%s = %s" % (base, self.body(val, key, indent + IND)))
 
     def talk(self, block, name, base):
         fi = base + IND
@@ -606,14 +657,16 @@ class Emitter:
         return out
 
     def _setup_start(self, val):
-        if isinstance(val, Lua):
-            sb = reindent(val.s, IND)
-        elif isinstance(val, Logic):
-            sb = "\n".join(emit_logic(val.stmts, IND, {"load": "bool"},
-                                      ctx=self.ctx))
-        else:
-            raise Error("start must be a | block")
+        sb = self._start_body(val)
         return ["function start(load)", sb, "end"]
+
+    def _start_body(self, val):
+        if isinstance(val, Lua):
+            return reindent(val.s, IND)
+        if isinstance(val, Logic):
+            return "\n".join(emit_logic(val.stmts, IND, {"load": "bool"},
+                                        ctx=self.ctx))
+        raise Error("start must be a | block")
 
     def _setup_init(self, takes, block):
         out = ["function init()"]
@@ -657,10 +710,8 @@ class Emitter:
             t = t[1:-1]
         # objects/instances/modules are looked up by name; a class
         # (`Kitten`) is a plain global variable
-        if t in self.ctx.fields and t not in self.ctx.ids:
-            ref = t
-        else:
-            ref = "_'%s'" % t
+        ref = (t if t in self.ctx.fields and t not in self.ctx.ids
+               else "_'%s'" % t)
         prev = self.ctx.current_owner
         if t in self.ctx.fields:
             self.ctx.current_owner = t
@@ -668,43 +719,44 @@ class Emitter:
             lines = []
             for i, (key, val) in enumerate(block.items):
                 CURRENT_LINE[0] = block.line_at(i)
-                base, _ = parse_key(key)
-                if base == "on":
-                    raise Error("on: must name an event (on Take:)")
-                if re.match(r"^(on|life|before|after|post)\s+\S", key):
-                    one = Block()
-                    one.items = [(key, val)]
-                    lines.extend(self.on(one, "", ref + "."))
-                elif not re.match(r"^[a-z]+_", base) and any(
-                        p.strip() in self.ctx.event_names
-                        for p in base.split(",")):
-                    raise Error("event %s needs an on/life/before/after/post "
-                                "prefix" % base)
-                elif base == "dict":
-                    if not isinstance(val, (Data, Raw)):
-                        raise Error("impl %s.dict: must be a table literal "
-                                    "{ ... }" % t)
-                    lines.append("%s:dict %s" % (ref, self.value(val)))
-                elif key.startswith("var "):
-                    name = parse_key(key[4:])[0]
-                    lines.append("%s.%s = %s"
-                                 % (ref, name, self.body(val, name)))
-                else:
-                    if "," in base:
-                        raise Error("comma key needs a phase "
-                                    "(on/life/before/after/post)")
-                    lines.append("%s.%s = %s"
-                                 % (ref, base, self.body(val, key)))
+                lines.extend(self._impl_item(key, val, ref, t))
         finally:
             self.ctx.current_owner = prev
         return "\n".join(lines)
 
-    def pragma(self, block, kw):
-        return ["%s '%s' (%s)" % (kw, key, self.value(val))
-                for key, val in block.items]
+    def _impl_item(self, key, val, ref, t):
+        base, _ = parse_key(key)
+        if base == "on":
+            raise Error("on: must name an event (on Take:)")
+        if re.match(r"^(on|life|before|after|post)\s+\S", key):
+            one = Block()
+            one.items = [(key, val)]
+            return self.on(one, "", ref + ".")
+        self._check_impl_prefix(base)
+        if base == "dict":
+            if not isinstance(val, (Data, Raw)):
+                raise Error("impl %s.dict: must be a table literal "
+                            "{ ... }" % t)
+            return ["%s:dict %s" % (ref, self.value(val))]
+        if key.startswith("var "):
+            name = parse_key(key[4:])[0]
+            return ["%s.%s = %s" % (ref, name, self.body(val, name))]
+        if "," in base:
+            raise Error("comma key needs a phase "
+                        "(on/life/before/after/post)")
+        return ["%s.%s = %s" % (ref, base, self.body(val, key))]
+
+    def _check_impl_prefix(self, base):
+        if re.match(r"^[a-z]+_", base):
+            return
+        if any(p.strip() in self.ctx.event_names for p in base.split(",")):
+            raise Error("event %s needs an on/life/before/after/post prefix"
+                        % base)
 
     def const(self, block):
-        return self.pragma(block, "const")
+        return ["const '%s' (%s)" % (key, self.value(val))
+                for key, val in block.items]
 
     def glob(self, block):
-        return self.pragma(block, "global")
+        return ["global '%s' (%s)" % (key, self.value(val))
+                for key, val in block.items]

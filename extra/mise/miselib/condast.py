@@ -25,20 +25,20 @@ _CLOSE = (("op", ")"), ("op", "]"), ("op", "}"))
 
 def _split(toks, word):
     """Split tokens on top-level `word`; a trailing operator is kept."""
-    parts, cur = [], []
+    cuts = []
     depth = 0
     for i, t in enumerate(toks):
         if t in _OPEN:
             depth += 1
         elif t in _CLOSE:
             depth -= 1
-        if (depth == 0 and t == ("name", word) and cur
+        prev = cuts[-1] + 1 if cuts else 0
+        if (depth == 0 and t == ("name", word) and i > prev
                 and i + 1 < len(toks)):
-            parts.append(cur)
-            cur = []
-        else:
-            cur.append(t)
-    parts.append(cur)
+            cuts.append(i)
+    starts = [0] + [c + 1 for c in cuts]
+    ends = cuts + [len(toks)]
+    parts = [toks[a:b] for a, b in zip(starts, ends)]
     return [p for p in parts if p] or [toks]
 
 
@@ -60,29 +60,33 @@ def leaf_text(node):
     return " ".join(t[1] for t in node.toks)
 
 
+def _narrow_simple(toks):
+    """(name, want_nil) for `x`, `x == nil` or `not x`, else None."""
+    if len(toks) == 1 and toks[0][0] == "name":
+        return toks[0][1], False
+    if (len(toks) == 3 and toks[0][0] == "name"
+            and toks[2] == ("name", "nil")
+            and toks[1] in (("op", "=="), ("op", "~="))):
+        return toks[0][1], toks[1] == ("op", "==")
+    if (len(toks) == 2 and toks[0] == ("name", "not")
+            and toks[1][0] == "name"):
+        return toks[1][1], True
+    return None
+
+
 def narrow_assume(node, env, negate):
     """Type narrowing implied by `node` being false (negate=True) / true."""
     if not isinstance(node, Leaf):
         return {}
-    toks = node.toks
-    name = want_nil = None
-    if len(toks) == 1 and toks[0][0] == "name":
-        name, want_nil = toks[0][1], False
-    elif (len(toks) == 3 and toks[0][0] == "name"
-          and toks[2] == ("name", "nil")
-          and toks[1] in (("op", "=="), ("op", "~="))):
-        name, want_nil = toks[0][1], toks[1] == ("op", "==")
-    elif (len(toks) == 2 and toks[0] == ("name", "not")
-          and toks[1][0] == "name"):
-        name, want_nil = toks[1][1], True
-    if name is None:
+    found = _narrow_simple(node.toks)
+    if found is None:
         return {}
-    if negate:
-        want_nil = not want_nil
+    name, want_nil = found
     t = env.get(name)
     if not t or not t.endswith("?"):
         return {}
-    return {name: "nil" if want_nil else t[:-1]}
+    want = (not want_nil) if negate else want_nil
+    return {name: "nil" if want else t[:-1]}
 
 
 def narrow_cond(text, env, negate=False):

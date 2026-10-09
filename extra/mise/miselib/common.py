@@ -73,21 +73,29 @@ def parse_key(key):
     m = re.match(r"^(.*?)(?:\(([^)]*)\))?$", key)
     return m.group(1).strip(), m.group(2)
 
+def _skip_quoted(text, i):
+    """Return the index after the quoted section starting at `i`."""
+    quote = text[i]
+    i += 1
+    while i < len(text):
+        c = text[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c == quote:
+            return i + 1
+        i += 1
+    return i
+
 def split_key(text):
     depth = 0
-    quote = None
     i = 0
     while i < len(text):
         c = text[i]
-        if quote:
-            if c == "\\":
-                i += 2
-                continue
-            if c == quote:
-                quote = None
-        elif c in "\"'":
-            quote = c
-        elif c in "([{":
+        if c in "\"'":
+            i = _skip_quoted(text, i)
+            continue
+        if c in "([{":
             depth += 1
         elif c in ")]}":
             depth -= 1
@@ -99,27 +107,34 @@ def split_key(text):
 def parse_error(line, msg):
     raise Error("line %d: %s" % (line, msg))
 
+def _copy_quoted(s, i, out):
+    """Append the quoted section starting at `i` to `out`; return its end."""
+    quote = s[i]
+    out.append(quote)
+    i += 1
+    while i < len(s):
+        c = s[i]
+        out.append(c)
+        if c == "\\" and i + 1 < len(s):
+            out.append(s[i + 1])
+            i += 1
+        elif c == quote:
+            return i + 1
+        i += 1
+    return i
+
 def strip_comment(s):
     out = []
-    quote = None
     i = 0
     while i < len(s):
         c = s[i]
-        if quote:
-            out.append(c)
-            if c == "\\" and i + 1 < len(s):
-                out.append(s[i + 1])
-                i += 1
-            elif c == quote:
-                quote = None
-        elif c in "\"'":
-            quote = c
-            out.append(c)
-        elif c == "#" and (i == 0 or s[i - 1] in " \t") and (
+        if c in "\"'":
+            i = _copy_quoted(s, i, out)
+            continue
+        if c == "#" and (i == 0 or s[i - 1] in " \t") and (
                 i + 1 >= len(s) or s[i + 1] in " \t"):
             break
-        else:
-            out.append(c)
+        out.append(c)
         i += 1
     return "".join(out).rstrip()
 
@@ -165,34 +180,52 @@ def parse_scalar(s, line, textmode=False):
         return Num(s)
     return Text(s) if textmode else Bare(s)
 
-def split_list(s):
-    parts = []
+def _skip_quoted_naive(s, i):
+    """Return the index after a quoted section, ignoring backslashes."""
+    quote = s[i]
+    i += 1
+    while i < len(s):
+        if s[i] == quote:
+            return i + 1
+        i += 1
+    return i
+
+def _list_cuts(s):
+    """Indices of top-level commas in `s` (outside quotes/brackets)."""
+    cuts = []
     depth = 0
-    quote = None
-    cur = []
-    for c in s:
-        if quote:
-            cur.append(c)
-            if c == quote:
-                quote = None
-            continue
+    i = 0
+    while i < len(s):
+        c = s[i]
         if c in "\"'":
-            quote = c
-            cur.append(c)
-        elif c in "([{":
+            i = _skip_quoted_naive(s, i)
+            continue
+        if c in "([{":
             depth += 1
-            cur.append(c)
         elif c in ")]}":
             depth -= 1
-            cur.append(c)
         elif c == "," and depth == 0:
-            parts.append("".join(cur))
-            cur = []
-        else:
-            cur.append(c)
-    if cur:
-        parts.append("".join(cur))
+            cuts.append(i)
+        i += 1
+    return cuts
+
+def split_list(s):
+    cuts = _list_cuts(s)
+    starts = [0] + [c + 1 for c in cuts]
+    ends = cuts + [len(s)]
+    parts = [s[a:b] for a, b in zip(starts, ends)]
     return [p.strip() for p in parts if p.strip()]
+
+def _long_skip(text, i):
+    """Length of a `[[...]]` section at `i`: -1 unterminated, None no opener."""
+    m = re.match(r"\[(=*)\[", text[i:])
+    if m is None:
+        return None
+    close = "]" + m.group(1) + "]"
+    j = text.find(close, i + m.end())
+    if j == -1:
+        return -1
+    return j + len(close) - i
 
 def balanced_expr(text):
     depth = 0
@@ -201,24 +234,13 @@ def balanced_expr(text):
     while i < n:
         c = text[i]
         if c in "\"'":
-            j = i + 1
-            while j < n:
-                if text[j] == "\\":
-                    j += 2
-                    continue
-                if text[j] == c:
-                    j += 1
-                    break
-                j += 1
-            i = j
+            i = _skip_quoted(text, i)
             continue
-        m = re.match(r"\[(=*)\[", text[i:]) if text.startswith("[[", i) else None
-        if m:
-            close = "]" + m.group(1) + "]"
-            j = text.find(close, i + m.end())
-            if j == -1:
+        if text.startswith("[[", i):
+            skip = _long_skip(text, i)
+            if skip == -1:
                 return False
-            i = j + len(close)
+            i += skip
             continue
         if c in "{[(":
             depth += 1
@@ -242,13 +264,11 @@ def long_balanced(text):
     i = 0
     while i < len(text):
         if text[i] == "[":
-            m = re.match(r"\[(=*)\[", text[i:])
-            if m:
-                close = "]" + m.group(1) + "]"
-                j = text.find(close, i + m.end())
-                if j == -1:
-                    return False
-                i = j + len(close)
+            skip = _long_skip(text, i)
+            if skip == -1:
+                return False
+            if skip is not None:
+                i += skip
                 continue
         i += 1
     return True
@@ -300,13 +320,15 @@ def lua_str(s):
             return "[" + eq + "[" + s + "]" + eq + "]"
     raise Error("cannot quote string for Lua")
 
-def reindent(text, prefix):
-    lines = text.split("\n")
-    base = 0
+def _first_indent(lines):
     for l in lines:
         if l.strip():
-            base = len(l) - len(l.lstrip())
-            break
+            return len(l) - len(l.lstrip())
+    return 0
+
+def reindent(text, prefix):
+    lines = text.split("\n")
+    base = _first_indent(lines)
     out = []
     for l in lines:
         if not l.strip():

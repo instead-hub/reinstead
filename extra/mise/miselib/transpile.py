@@ -21,6 +21,30 @@ def _as_list(v):
     return [] if v is None else [v]
 
 
+def _joined_params(plist, variadic):
+    prm = ", ".join(pn for pn, _pt in plist)
+    if variadic:
+        prm = (prm + ", ...") if prm else "..."
+    return prm
+
+
+def _fn_body(ctx, em, val, plist, ret, name, prm):
+    if isinstance(val, Lua):
+        return reindent(val.s, IND)
+    if not isinstance(val, Logic):
+        raise Error("fn %s must be a | block" % name)
+    owner = plist[0][1] if plist else None
+    prev = ctx.current_owner
+    if owner in ctx.classes:
+        ctx.current_owner = owner
+    try:
+        return "\n".join(emit_logic(val.stmts, IND,
+                                    em.param_env(prm, name), ret,
+                                    name, ctx=ctx))
+    finally:
+        ctx.current_owner = prev
+
+
 def _emit_fn(ctx, em, key, val):
     """Emit a `local function fn_...` body, or None when inlined."""
     name, plist, ret, variadic = parse_fn_sig(
@@ -28,24 +52,8 @@ def _emit_fn(ctx, em, key, val):
     ctx.fns.add(name)
     if name in ctx.inline:
         return None
-    prm = ", ".join(pn for pn, _pt in plist)
-    if variadic:
-        prm = (prm + ", ...") if prm else "..."
-    if isinstance(val, Lua):
-        hb = reindent(val.s, IND)
-    elif isinstance(val, Logic):
-        owner = plist[0][1] if plist else None
-        prev = ctx.current_owner
-        if owner in ctx.classes:
-            ctx.current_owner = owner
-        try:
-            hb = "\n".join(emit_logic(val.stmts, IND,
-                                      em.param_env(prm, name), ret,
-                                      name, ctx=ctx))
-        finally:
-            ctx.current_owner = prev
-    else:
-        raise Error("fn %s must be a | block" % name)
+    prm = _joined_params(plist, variadic)
+    hb = _fn_body(ctx, em, val, plist, ret, name, prm)
     return "local function %s(%s)\n%s\nend" % (fn_name(name), prm, hb)
 
 
@@ -70,6 +78,22 @@ def _emit_decl(em, kind, key, val, info):
     raise Error("unknown declaration: " + key)
 
 
+def _require_text(val):
+    return [v.s if hasattr(v, "s") else str(v) for v in _as_list(val)]
+
+
+def _add_fn(ctx, em, key, val, fn_body):
+    block = _emit_fn(ctx, em, key, val)
+    if block is not None:
+        fn_body.append(block)
+
+
+def _add_decl(em, kind, key, val, info, body):
+    chunk = _emit_decl(em, kind, key, val, info)
+    if chunk is not None:
+        body.append(chunk)
+
+
 def _body_items(ctx, em, root):
     header: list = []
     body: list = []
@@ -83,16 +107,11 @@ def _body_items(ctx, em, root):
         elif kind in _SKIP_KINDS:
             continue
         elif kind == "require":
-            reqs.extend(v.s if hasattr(v, "s") else str(v)
-                        for v in _as_list(val))
+            reqs.extend(_require_text(val))
         elif kind == "fn":
-            block = _emit_fn(ctx, em, key, val)
-            if block is not None:
-                fn_body.append(block)
+            _add_fn(ctx, em, key, val, fn_body)
         else:
-            chunk = _emit_decl(em, kind, key, val, info)
-            if chunk is not None:
-                body.append(chunk)
+            _add_decl(em, kind, key, val, info, body)
     return header, fn_body + body, reqs
 
 
@@ -129,8 +148,8 @@ def main(argv):
         src = f.read()
     out = transpile(src, os.path.dirname(os.path.abspath(argv[1])))
     if "-o" in argv:
-        with open(argv[argv.index("-o") + 1], "w", encoding="utf-8") as f:
-            f.write(out)
+        with open(argv[argv.index("-o") + 1], "w", encoding="utf-8") as outf:
+            outf.write(out)
     else:
         sys.stdout.write(out)
     return 0
