@@ -59,7 +59,7 @@ transpile (main loop) обход корневых элементов → Emitter
 `PARAM_TYPES` (типы обработчиков по имени параметра: `s/w/wh` → obj и
 т.п.), `KEYWORDS`, `USE_RE`.
 
-## Prescan (`prescan.py`)
+## Prescan (`prescan.py`, `proptypes.py`, `inline.py`)
 
 Порядок вызовов из `prescan()`:
 
@@ -133,7 +133,7 @@ transpile (main loop) обход корневых элементов → Emitter
   ожидания и все альтернативы значения; перечисления совместимы с `str`;
   `tbl[A]`→`tbl[B]` поэлементно, `tbl[A]`→`tbl` да, `tbl`→`tbl[A]` нет,
   `tbl[]` (пустой) совместим с любым `tbl[B]`; `tbl[any]` ≡ `tbl`.
-- `check_ref_list` (`prescan`) — элементы `tbl[ref]`-props: `Bare`/`Text`
+- `check_ref_list` (`proptypes`) — элементы `tbl[ref]`-props: `Bare`/`Text`
   сверяются с `ctx.ids`; `check_ref_value(..., allow_text=True)` — тот же
   backstop на эмиссии для безымянных объектов (`-`-список даёт `Text`).
 - `type_value_error` — проверка значений перечислений (`values`,
@@ -245,7 +245,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | ключи объекта, эмитящиеся отдельно | `OBJ_SKIP_KEYS` | emit.py |
 | вид декларации в `classify` | `SIMPLE_KINDS`, `TAGGED_FORMS`+`TAGGED_NAMES` | decl.py |
 | пресеты объявлений | `PRESETS` | decl.py |
-| регистрация `type`/`extend_type` | `TYPE_FORMS` | prescan.py |
+| регистрация `type`/`extend_type` | `TYPE_FORMS` | proptypes.py |
 | сбор class/mixin | `DEFS_FORMS` | prescan.py |
 | проверка bare-имён | `BARE_FORMS` | prescan.py |
 | операторы и приоритеты выражений | `BIN_LEVELS`, `UNARY_OPS`, `STR_ARG_ERRORS` | exprparse.py |
