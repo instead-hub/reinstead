@@ -6,6 +6,7 @@ from .common import *
 from .lex import lex_lua
 from .typing import canon_type, type_error, type_ok
 from .exprparse import Call, ExprEmit, Field, Index, Ref, check_arity, fn_call
+from . import messages as M
 
 
 def expr_cont(s):
@@ -46,7 +47,7 @@ def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
     check_arity(name, plist, variadic, len(types))
     for (pn, pt), t in zip(plist, types):
         if not type_ok(ctx, t, pt):
-            raise TypeCheckError("fn %s: argument %s expects %s, got %s"
+            raise TypeCheckError(M.FN_ARGUMENT_EXPECTS_GOT
                                  % (name, pn, pt, t))
     return fn_call(ctx, name, [code]), [ret]
 
@@ -156,7 +157,7 @@ def _check_env_assign(lhs, types, env, ctx, where):
     if old == "any":
         env[lhs.name] = new
     elif new != "any" and not type_ok(ctx, new, old):
-        raise LintError("%s: %s (%s) cannot take %s"
+        raise LintError(M.FN_CANNOT_TAKE
                         % (where, lhs.name, old, new))
 
 
@@ -167,7 +168,7 @@ def _check_field_assign(lhs, types, ctx, where):
     old = ctx.fields[lhs.recv][lhs.fname][0]
     new = types[0]
     if old != "any" and new != "any" and not type_ok(ctx, new, old):
-        raise LintError("%s: %s.%s (%s) cannot take %s"
+        raise LintError(M.METHOD_CANNOT_TAKE
                         % (where, lhs.recv, lhs.fname, old, new))
 
 
@@ -235,14 +236,14 @@ def _loop_var(spec, where, ctx):
     name, sep, pt = spec.partition(":")
     name = name.strip()
     if not re.fullmatch(r"[^\W\d]\w*", name, re.UNICODE):
-        raise LintError("bad loop variable %r in %s" % (spec.strip(), where))
+        raise LintError(M.BAD_LOOP_VARIABLE % (spec.strip(), where))
     if not sep:
         return name, None
     pt = pt.strip()
     known = S.TYPES | set(ctx.types) | ctx.classes | {"nil"}
     msg = type_error(known, pt)
     if msg:
-        raise LintError("%s: for %s: %s" % (where, name, msg))
+        raise LintError(M.FOR_MESSAGE % (where, name, msg))
     return name, canon_type(known, pt)
 
 
@@ -263,7 +264,7 @@ def _check_for_var(name, pt, where, ctx):
         return
     _, canon = _loop_var("%s: %s" % (name, pt), where, ctx)
     if not type_ok(ctx, "num", canon):
-        raise LintError("%s: for variable %s: expected num, got %s"
+        raise LintError(M.FOR_VARIABLE_EXPECTED_NUM
                         % (where, name, canon))
 
 
@@ -272,7 +273,7 @@ def _for_bounds(parts, env, where, ctx):
     for p in parts:
         c, ct = transpile_exprlist(p, env, where, None, ctx)
         if ct and ct[0] not in ("num", "any"):
-            raise LintError("%s: for bound must be num, got %s"
+            raise LintError(M.FOR_BOUND_MUST_BE_NUM
                             % (where, ct[0]))
         codes.append(c)
     return codes
@@ -285,12 +286,12 @@ def transpile_for(header, env, where, ctx):
     m = re.match(r"^([^\W\d]\w*)\s*(?::\s*([^=]+?))?\s*=\s*(.*)$",
                  parts[0], re.UNICODE)
     if not m:
-        raise LintError("bad for header in %s: %s" % (where, header))
+        raise LintError(M.BAD_FOR_HEADER % (where, header))
     name, pt, start_expr = m.group(1), m.group(2), m.group(3)
     _check_for_var(name, pt, where, ctx)
     start, st = transpile_exprlist(start_expr, env, where, None, ctx)
     if st and st[0] not in ("num", "any"):
-        raise LintError("%s: for bound must be num, got %s" % (where, st[0]))
+        raise LintError(M.FOR_BOUND_MUST_BE_NUM % (where, st[0]))
     codes = [start] + _for_bounds(parts[1:], env, where, ctx)
     return ("%s = %s" % (name, ", ".join(codes)), {name: "num"})
 

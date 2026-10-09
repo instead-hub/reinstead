@@ -1,6 +1,7 @@
 import re
 
 from .common import *
+from . import messages as M
 
 
 def base(t):
@@ -327,7 +328,7 @@ class Prop:
     def _add_alt(self, known, alt):
         c = canon_type(known, alt)
         if c is None:
-            raise Error("props: bad type %r in %r" % (alt, self.text))
+            raise Error(M.PROPS_BAD_TYPE % (alt, self.text))
         self.alts.append(c)
         if c == "ref":
             self.has_ref = True
@@ -354,7 +355,7 @@ class Prop:
             return
         names = [pn for pn, _pt in self.fn[0]]
         if not names or any(pn is None for pn in names):
-            raise Error("props: fn parameters need names in %r" % self.text)
+            raise Error(M.PROPS_FN_PARAMETERS_NEED_NAMES % self.text)
         self.names = ", ".join(names)
         self.env = {pn: pt for pn, pt in self.fn[0]}
         self.ret = self.fn[1]
@@ -487,7 +488,7 @@ def _bare_type(ctx, node, refs):
     if not owners:
         return "str"
     if len(owners) > 1:
-        raise Error("ambiguous value %r (types: %s)"
+        raise Error(M.AMBIGUOUS_VALUE_TYPES
                     % (node.s, ", ".join(sorted(owners))))
     return next(iter(owners))
 

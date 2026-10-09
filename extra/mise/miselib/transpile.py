@@ -10,6 +10,7 @@ from .emit import Emitter
 from .emitlogic import emit_logic
 from .exprparse import fn_name
 from . import templates as T
+from . import messages as M
 
 
 _SKIP_KINDS = ("skip", "type", "extend_type", "mixin",
@@ -33,7 +34,7 @@ def _fn_body(ctx, em, val, plist, ret, name, prm):
     if isinstance(val, Lua):
         return reindent(val.s, IND)
     if not isinstance(val, Logic):
-        raise Error("fn %s must be a | block" % name)
+        raise Error(M.FN_MUST_BE_BLOCK % name)
     owner = plist[0][1] if plist else None
     prev = ctx.current_owner
     if owner in ctx.classes:
@@ -110,7 +111,7 @@ def _emit_decl(em, kind, key, val, info):
     """Emit one non-fn declaration; None means nothing to append."""
     form = DECL_FORMS.get(kind)
     if form is None:
-        raise Error("unknown declaration: " + key)
+        raise Error(M.UNKNOWN_DECLARATION + key)
     return form(em, info, key, val)
 
 

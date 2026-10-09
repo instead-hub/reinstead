@@ -3,6 +3,7 @@ import re
 from . import state as S
 from .common import *
 from .typing import canon_type, split_types, type_error
+from . import messages as M
 
 PRESETS = {
     "obj": ("obj", []),
@@ -29,7 +30,7 @@ def classify(key):
     if key in SKIP_KEYS:
         return "skip", None
     if "'" in key or '"' in key:
-        raise Error("quotes are not allowed in declarations: %s" % key)
+        raise Error(M.QUOTES_ARE_NOT_ALLOWED_DECLARATIONS % key)
     simple = _classify_simple(key)
     if simple is not None:
         return simple
@@ -144,14 +145,14 @@ def _fn_header(key):
     """`fn name(params) -> ret` -> (name, params|None, ret|None)."""
     m = re.match(r"^fn\s+([\w.+-]+)\s*", key)
     if not m:
-        raise Error("bad fn: " + key)
+        raise Error(M.BAD_FN + key)
     name = m.group(1)
     rest = key[m.end():].strip()
     if not rest.startswith("("):
         return _fn_tail(key, name, None, rest)
     end = _paren_end(rest)
     if end is None:
-        raise Error("bad fn: " + key)
+        raise Error(M.BAD_FN + key)
     return _fn_tail(key, name, rest[1:end], rest[end + 1:].strip())
 
 
@@ -173,14 +174,14 @@ def _fn_tail(key, name, params, rest):
     if not rest:
         return name, params, None
     if not rest.startswith("->") or not rest[2:].strip():
-        raise Error("bad fn: " + key)
+        raise Error(M.BAD_FN + key)
     return name, params, rest[2:].strip()
 
 
 def _check_type(name, known, pt, what):
     msg = type_error(known, pt)
     if msg:
-        raise Error("fn %s: %s for %s" % (name, msg, what))
+        raise Error(M.FN_MESSAGE % (name, msg, what))
 
 
 def _split_param(p):
@@ -202,11 +203,11 @@ def _fn_params(name, params, known):
     for idx, p in enumerate(parts):
         if p == "...":
             if idx != len(parts) - 1:
-                raise Error("fn %s: ... must be the last parameter" % name)
+                raise Error(M.FN_MUST_BE_LAST_PARAMETER % name)
             return plist, True
         pn, pt = _split_param(p)
         if not re.fullmatch(r"[^\W\d]\w*", pn, re.UNICODE):
-            raise Error("fn %s: bad parameter %r" % (name, pn))
+            raise Error(M.FN_BAD_PARAMETER % (name, pn))
         _check_type(name, known, pt, pn)
         plist.append((pn, canon_type(known, pt)))
     return plist, False
@@ -223,7 +224,7 @@ def _check_optional_order(name, plist):
         return
     for pn, pt in plist[first_opt + 1:]:
         if not _is_optional(pt):
-            raise Error("fn %s: required parameter %s after optional"
+            raise Error(M.FN_REQUIRED_PARAMETER_AFTER_OPTIONAL
                         % (name, pn))
 
 
@@ -245,23 +246,21 @@ def check_ref_value(where, key, v, ids=None, allow_text=False, in_list=False):
         return
     if isinstance(v, Text):
         if not (allow_text and in_list):
-            raise Error("%s.%s: object reference must be a bare name, not a "
-                        "quoted string (%r)" % (where, key, v.s))
+            raise Error(M.FIELD_OBJECT_REFERENCE % (where, key, v.s))
         return _check_ref_name(where, key, v.s.strip(), ids)
     if isinstance(v, Bare):
         if not re.fullmatch(r"[#@\w]+", v.s, re.UNICODE):
-            raise Error("%s.%s: object name must be an identifier without "
-                        "spaces/hyphens (%r)" % (where, key, v.s))
+            raise Error(M.FIELD_OBJECT_NAME_IDENTIFIER % (where, key, v.s))
         return _check_ref_name(where, key, v.s, ids)
     if in_list:
-        raise Error("%s.%s: expected object reference, got %s"
+        raise Error(M.FIELD_EXPECTED_OBJECT_REFERENCE
                     % (where, key, type(v).__name__.lower()))
 
 
 def _check_ref_name(where, key, name, ids):
     """Reject a reference name that is not among the declared ids."""
     if ids is not None and name not in ids:
-        raise Error("%s.%s: unknown object reference %r" % (where, key, name))
+        raise Error(M.FIELD_UNKNOWN_OBJECT_REFERENCE % (where, key, name))
 
 
 def decl_key(key):
@@ -274,7 +273,7 @@ def decl_key(key):
 def sym_text(v):
     if isinstance(v, (Bare, Text)):
         return v.s
-    raise Error("expected expression")
+    raise Error(M.EXPECTED_EXPRESSION)
 
 
 def is_true(v):

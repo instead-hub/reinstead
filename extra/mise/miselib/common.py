@@ -1,5 +1,6 @@
 import re
 import textwrap
+from . import messages as M
 
 IND = "  "
 
@@ -105,7 +106,7 @@ def split_key(text):
     return None, None
 
 def parse_error(line, msg):
-    raise Error("line %d: %s" % (line, msg))
+    raise Error(M.LINE_PREFIX % (line, msg))
 
 def _copy_quoted(s, i, out):
     """Append the quoted section starting at `i` to `out`; return its end."""
@@ -318,7 +319,7 @@ def lua_str(s):
         eq = "=" * n
         if "]" + eq + "]" not in s:
             return "[" + eq + "[" + s + "]" + eq + "]"
-    raise Error("cannot quote string for Lua")
+    raise Error(M.CANNOT_QUOTE_STRING_LUA)
 
 def _first_indent(lines):
     for l in lines:

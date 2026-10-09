@@ -5,6 +5,7 @@ from . import state as S
 from .common import *
 from .decl import classify
 from .typing import Prop, literal_type, type_ok
+from . import messages as M
 
 
 def _type_atoms(val):
@@ -28,49 +29,49 @@ def _is_negation(name, atoms):
         return False
     first = atoms[0]
     if isinstance(first, Text):
-        raise Error("type %s: quotes are not allowed" % name)
+        raise Error(M.TYPE_QUOTES_ARE_NOT_ALLOWED % name)
     if not isinstance(first, (Bare, Num)):
-        raise Error("type %s: expected bare values" % name)
+        raise Error(M.TYPE_EXPECTED_BARE_VALUES % name)
     return first.s == "~"
 
 
 def _type_value(name, x):
     """Validate one type atom and return its string."""
     if isinstance(x, Text):
-        raise Error("type %s: quotes are not allowed" % name)
+        raise Error(M.TYPE_QUOTES_ARE_NOT_ALLOWED % name)
     if not isinstance(x, (Bare, Num)):
-        raise Error("type %s: expected bare values" % name)
+        raise Error(M.TYPE_EXPECTED_BARE_VALUES % name)
     if not re.fullmatch(r"\S+", x.s, re.UNICODE):
-        raise Error("type %s: bad value %r" % (name, x.s))
+        raise Error(M.TYPE_BAD_VALUE % (name, x.s))
     return x.s
 
 
 def _new_type(ctx, name, val):
     if name in ctx.types:
-        raise Error("duplicate type: " + name)
+        raise Error(M.DUPLICATE_TYPE + name)
     if isinstance(val, Block):
-        raise Error("type %s: no values" % name)
+        raise Error(M.TYPE_NO_VALUES % name)
     atoms = list(_type_atoms(val))
     negate = _is_negation(name, atoms)
     rest = atoms[1:] if negate else atoms
     vals = [_type_value(name, x) for x in rest]
     if not vals:
-        raise Error("type %s: no values" % name)
+        raise Error(M.TYPE_NO_VALUES % name)
     ctx.types[name] = {"values": vals, "negate": negate}
 
 
 def _extend_type(ctx, name, val):
     if name not in ctx.types:
-        raise Error("extend type: unknown type %r" % name)
+        raise Error(M.EXTEND_TYPE_UNKNOWN_TYPE % name)
     if isinstance(val, Block):
-        raise Error("extend type %s: no values" % name)
+        raise Error(M.EXTEND_TYPE_NO_VALUES % name)
     td = ctx.types[name]
     for x in _type_atoms(val):
         if (isinstance(x, Text) or not isinstance(x, (Bare, Num))
                 or x.s == "~"):
-            raise Error("extend type %s: expected bare values" % name)
+            raise Error(M.EXTEND_TYPE_EXPECTED_BARE_VALUES % name)
         if not re.fullmatch(r"\S+", x.s, re.UNICODE):
-            raise Error("extend type %s: bad value %r" % (name, x.s))
+            raise Error(M.EXTEND_TYPE_BAD_VALUE % (name, x.s))
         if x.s not in td["values"]:
             td["values"].append(x.s)
 
@@ -100,11 +101,11 @@ def collect_types(root, ctx):
 def _register_prop(ctx, known, name, tval):
     """Validate and register one `props:` entry."""
     if not re.fullmatch(r"[^\W\d]\w*", name, re.UNICODE):
-        raise Error("bad prop name %r" % name)
+        raise Error(M.BAD_PROP_NAME % name)
     if name in ctx.props:
-        raise Error("duplicate prop: " + name)
+        raise Error(M.DUPLICATE_PROP + name)
     if not isinstance(tval, (Bare, Text)):
-        raise Error("props: %s needs a type" % name)
+        raise Error(M.PROPS_NEEDS_TYPE % name)
     prop = Prop(tval.s, known)
     ctx.props[name] = prop
     if prop.names:
@@ -123,7 +124,7 @@ def register_props(root, ctx):
         if classify(key)[0] != "props":
             continue
         if not isinstance(val, Block):
-            raise Error("props must be a block")
+            raise Error(M.PROPS_MUST_BE_BLOCK)
         for j, (name, tval) in enumerate(val.items):
             CURRENT_LINE[0] = val.line_at(j) or CURRENT_LINE[0]
             _register_prop(ctx, known, name, tval)
@@ -132,7 +133,7 @@ def register_props(root, ctx):
 def _check_ref_name(ctx, where, name):
     """Object reference name must be a declared id."""
     if name not in ctx.ids:
-        raise Error("%s: unknown object reference %r" % (where, name))
+        raise Error(M.UNKNOWN_OBJECT_REFERENCE % (where, name))
 
 
 def check_ref_list(ctx, where, val):
@@ -142,33 +143,31 @@ def check_ref_list(ctx, where, val):
             _check_ref_name(ctx, where, it.s.strip())
         elif isinstance(it, Bare):
             if not re.fullmatch(r"[#@\w]+", it.s, re.UNICODE):
-                raise Error("%s: object name must be an identifier without "
-                            "spaces/hyphens (%r)" % (where, it.s))
+                raise Error(M.OBJECT_NAME_IDENTIFIER % (where, it.s))
             _check_ref_name(ctx, where, it.s)
         else:
-            raise Error("%s: expected object reference, got %s"
+            raise Error(M.EXPECTED_OBJECT_REFERENCE
                         % (where, type(it).__name__.lower()))
 
 
 def _prop_bare(prop, val, where, t):
     if S.USE_RE.match(val.s.strip()):
         if prop.fn is None:
-            raise Error("%s: expected %s, got use" % (where, prop.text))
+            raise Error(M.EXPECTED_GOT_USE % (where, prop.text))
         return "any", False
     if prop.has_event and t == "event":
         return "event", False
     if prop.has_ref and t == "obj":
         return "obj", True
-    raise Error("%s: expected %s, got %s" % (where, prop.text, t))
+    raise Error(M.EXPECTED_GOT % (where, prop.text, t))
 
 
 def _prop_text(prop, val, where):
     if prop.has_str:
         return "str", False
     if prop.has_ref:
-        raise Error("%s: object reference must be a bare name, not a "
-                    "quoted string (%r)" % (where, val.s))
-    raise Error("%s: expected %s, got str" % (where, prop.text))
+        raise Error(M.OBJECT_REFERENCE % (where, val.s))
+    raise Error(M.EXPECTED_GOT_STR % (where, prop.text))
 
 
 def _prop_list(ctx, prop, val, where):
@@ -180,16 +179,16 @@ def _prop_list(ctx, prop, val, where):
             for it in val:
                 t = literal_type(ctx, it)
                 if not type_ok(ctx, t, prop.tbl_elem):
-                    raise Error("%s: expected %s in list, got %s"
+                    raise Error(M.EXPECTED_GOT_IN_LIST
                                 % (where, prop.tbl_elem, t))
         return "tbl", False
-    raise Error("%s: expected %s, got list" % (where, prop.text))
+    raise Error(M.EXPECTED_GOT_LIST % (where, prop.text))
 
 
 def _prop_scalar(prop, kind, flag, where):
     if getattr(prop, flag):
         return kind, False
-    raise Error("%s: expected %s, got %s" % (where, prop.text, kind))
+    raise Error(M.EXPECTED_GOT % (where, prop.text, kind))
 
 
 def check_prop_value(ctx, owner, base, prop, val, t):
@@ -203,7 +202,7 @@ def check_prop_value(ctx, owner, base, prop, val, t):
         return "tbl", False
     if isinstance(val, (Logic, Lua)):
         if prop.fn is None:
-            raise Error("%s: expected %s, got function" % (where, prop.text))
+            raise Error(M.EXPECTED_GOT_FUNCTION % (where, prop.text))
         return "any", False
     if isinstance(val, Bare):
         return _prop_bare(prop, val, where, t)
@@ -217,7 +216,7 @@ def check_prop_value(ctx, owner, base, prop, val, t):
         return _prop_scalar(prop, "bool", "has_bool", where)
     if prop.has_tbl:
         return "tbl", False
-    raise Error("%s: expected %s, got %s"
+    raise Error(M.EXPECTED_GOT
                 % (where, prop.text, type(val).__name__.lower()))
 
 
@@ -229,12 +228,12 @@ def register_refs(root, ctx):
         if kind not in ("refs", "extend_refs"):
             continue
         if isinstance(val, Block):
-            raise Error("refs: expected a list of names")
+            raise Error(M.REFS_EXPECTED_LIST_NAMES)
         for x in _type_atoms(val):
             if isinstance(x, Text) or not isinstance(x, Bare) or x.s == "~":
-                raise Error("refs: expected bare names")
+                raise Error(M.REFS_EXPECTED_BARE_NAMES)
             if not re.fullmatch(r"\S+", x.s, re.UNICODE):
-                raise Error("refs: bad name %r" % x.s)
+                raise Error(M.REFS_BAD_NAME % x.s)
             ctx.ref_fields.add(x.s)
 
 

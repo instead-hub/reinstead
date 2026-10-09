@@ -2,6 +2,7 @@
 import re
 
 from .common import LintError
+from . import messages as M
 
 
 def _lex_skip(text, i, n):
@@ -27,14 +28,14 @@ def _lex_quoted(text, i, n):
             break
         j += 1
     else:
-        raise LintError("unterminated string: %s" % text)
+        raise LintError(M.UNTERMINATED_STRING % text)
     return ("str", text[i:j]), j
 
 
 def _lex_long_string(text, i, _n):
     j = text.find("]]", i + 2)
     if j < 0:
-        raise LintError("unterminated long string: %s" % text)
+        raise LintError(M.UNTERMINATED_LONG_STRING % text)
     return ("str", text[i:j + 2]), j + 2
 
 
@@ -106,7 +107,7 @@ def _lex_one(text, i, n):
     op = _lex_op(text, i)
     if op is None:
         c = text[i]
-        raise LintError("bad character %r in logic: %s" % (c, text))
+        raise LintError(M.BAD_CHARACTER_LOGIC % (c, text))
     return op
 
 

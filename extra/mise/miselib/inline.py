@@ -2,6 +2,7 @@
 import re
 
 from .common import *
+from . import messages as M
 
 
 def _skip_string(text, i):
@@ -105,17 +106,15 @@ def _params_used_once(plist, text):
 def _inline_expr(ctx, name, val, plist, has_optional):
     e = val.s.strip()
     if not e or ";" in e or "..." in e or "fn_" in e:
-        raise Error("fn %s: bad expression body" % name)
+        raise Error(M.FN_BAD_EXPRESSION_BODY % name)
     if not _params_used_once(plist, e):
-        raise Error("fn %s: expression body uses a parameter "
-                    "more than once" % name)
+        raise Error(M.FN_EXPRESSION_BODY_USES_PARAMETER % name)
     if has_optional:
         for pn, pt in plist:
             if ((pt == "nil" or pt.endswith("?"))
                     and re.search(r"(?<![\w.])%s(?![\w])"
                                   % re.escape(pn), e)):
-                raise Error("fn %s: expression body cannot use optional "
-                            "parameter %s" % (name, pn))
+                raise Error(M.FN_EXPRESSION_BODY_CANNOT_OPTIONAL % (name, pn))
     ctx.inline[name] = ("expr", (plist, e))
 
 
@@ -133,7 +132,7 @@ def _inline_fn(ctx, name, val, plist, variadic):
     has_optional = any(pt == "nil" or pt.endswith("?") for _pn, pt in plist)
     if isinstance(val, Raw):
         if variadic:
-            raise Error("fn %s: expression body cannot be variadic" % name)
+            raise Error(M.FN_EXPRESSION_BODY_VARIADIC % name)
         _inline_expr(ctx, name, val, plist, has_optional)
         return
     if not isinstance(val, Lua):

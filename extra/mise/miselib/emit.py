@@ -9,6 +9,7 @@ from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import transpile_exprlist
 from .exprparse import fn_name, min_args
 from . import templates as T
+from . import messages as M
 
 
 
@@ -108,14 +109,14 @@ VALUE_FORMS = {
 
 def _emit_event(em, name, block):
     if not isinstance(block, Block):
-        raise Error("event %s must be a block" % name)
+        raise Error(M.EVENT_MUST_BE_BLOCK % name)
     lines = []
     for key, val in block.items:
         base, params = parse_key(key)
         if base not in ("on", "before", "after"):
-            raise Error("event %s: unknown field %r" % (name, key))
+            raise Error(M.EVENT_UNKNOWN_FIELD % (name, key))
         if not isinstance(val, (Lua, Logic, Text, Bare)):
-            raise Error("event %s.%s must be logic or lua" % (name, key))
+            raise Error(M.EVENT_MUST_BE_LOGIC_LUA % (name, key))
         mpname = {"on": "mp.", "before": "mp.before_",
                   "after": "mp.after_"}[base] + name
         prm = params or ("s, ev, w, wh" if name in ("Any", "Default")
@@ -133,7 +134,7 @@ class Emitter:
             return T.TABLE % ", ".join(self.value(x, mode) for x in v)
         form = VALUE_FORMS.get(type(v))
         if form is None:
-            raise Error("unsupported value: %r (ctx=%s)" % (v, mode))
+            raise Error(M.UNSUPPORTED_VALUE_CTX % (v, mode))
         return form(v, mode, self.ctx)
 
     def check_use(self, name, prm, ret=None):
@@ -146,17 +147,16 @@ class Emitter:
             owner = self.ctx.current_owner
             kind = self.ctx.id_kind.get(owner, owner)
             if not kind or not class_le(self.ctx, kind, pt):
-                raise Error("fn %s expects %s, not %s"
+                raise Error(M.FN_EXPECTS_NOT_KIND
                             % (name, pt, kind or owner or "?"))
         mn = min_args(plist)
         if n < mn:
             if mn == len(plist):
-                raise Error("fn %s takes %d parameter(s), event provides %d"
+                raise Error(M.FN_TAKES_PARAMETERS_EVENT
                             % (name, len(plist), n))
-            raise Error("fn %s takes at least %d parameter(s), event "
-                        "provides %d" % (name, mn, n))
+            raise Error(M.FN_TAKES_AT_LEAST_PARAMETERS % (name, mn, n))
         if ret and fret and fret != "any" and not type_ok(self.ctx, fret, ret):
-            raise Error("fn %s: return type is %s, expected %s"
+            raise Error(M.FN_RETURN_TYPE_EXPECTED
                         % (name, fret, ret))
 
     def use_name(self, v):
@@ -165,9 +165,9 @@ class Emitter:
             if m:
                 name = m.group(1)
                 if name not in self.ctx.fns:
-                    raise Error("unknown fn in use: " + name)
+                    raise Error(M.UNKNOWN_FN + name)
                 if name in self.ctx.inline:
-                    raise Error("inline fn %s cannot be used with use"
+                    raise Error(M.INLINE_FN_CANNOT_BE_USED
                                 % name)
                 return name
         return None
@@ -258,10 +258,9 @@ class Emitter:
         found = self._event_prefix(part)
         pfx, name = found if found is not None else (inherited, part)
         if name not in self.ctx.event_names:
-            raise Error("unknown event: " + name)
+            raise Error(M.UNKNOWN_EVENT + name)
         if pfx is None:
-            raise Error("event %s needs an on/life/before/after/post "
-                        "prefix" % name)
+            raise Error(M.EVENT_NEEDS_PHASE_PREFIX % name)
         return name, pfx
 
     def obj(self, block, ident, base, ctor, preset, parent=None):
@@ -286,7 +285,7 @@ class Emitter:
             name = v.s if hasattr(v, "s") else str(v)
             bdef = self.ctx.mixin_defs.get(name)
             if bdef is None:
-                raise Error("unknown mixin: " + name)
+                raise Error(M.UNKNOWN_MIXIN + name)
             self._merge_mixin(merged, seen, own, bdef, name)
         self._merge_own(merged, block)
         return merged
@@ -294,7 +293,7 @@ class Emitter:
     def _merge_mixin(self, merged, seen, own, bdef, name):
         for i, (k, bv) in enumerate(bdef.items):
             if k in seen:
-                raise Error("mixin key conflict: %s (%s and %s)"
+                raise Error(M.MIXIN_KEY_CONFLICT
                             % (k, seen[k], name))
             seen[k] = name
             if k in own:
@@ -320,7 +319,7 @@ class Emitter:
         ntext = sum(1 for k, _v in block.items if k == "text")
         if ntext > 1:
             CURRENT_LINE[0] = block.line("text")
-            raise Error("%s.text: set once; use a - list for pages"
+            raise Error(M.TEXT_SET_ONCE_USE_LIST
                         % (self.ctx.current_owner or ident or "?"))
         self._obj_fields(block, ident, fi, lines)
         self._obj_nested(block, fi, lines)
@@ -340,17 +339,16 @@ class Emitter:
             items = []
             for it in words:
                 if not isinstance(it, Text):
-                    raise Error("words list items must be strings")
+                    raise Error(M.WORDS_LIST_ITEMS_STRINGS)
                 items.append(it.s.strip())
             lines.append(T.WORDS_ALIAS % fi % "|".join(items))
         else:
-            raise Error("words must be a quoted string or list")
+            raise Error(M.WORDS_QUOTED_OR_LIST)
 
     def _obj_nam(self, block, ident, fi, lines):
         if block.get("nam") is not None:
             CURRENT_LINE[0] = block.line("nam")
-            raise Error("nam: is not supported; the declaration name is the "
-                        "object name")
+            raise Error(M.NAM_NOT_SUPPORTED)
         if ident:
             lines.append(T.NAM % (fi, lua_str(ident)))
 
@@ -362,7 +360,7 @@ class Emitter:
             for an in attrs:
                 msg = type_value_error(self.ctx, "attr", an)
                 if msg:
-                    raise Error("%s.attrs: %s" % (ident or "?", msg))
+                    raise Error(M.ATTRS_MESSAGE % (ident or "?", msg))
         return attrs
 
     def _extra_attrs(self, block, ident):
@@ -374,14 +372,14 @@ class Emitter:
         if isinstance(a, Bare):
             return [a.s]
         if isinstance(a, Text):
-            raise Error("%s.attrs: quotes are not allowed" % (ident or "?"))
+            raise Error(M.ATTRS_QUOTES_ARE_NOT_ALLOWED % (ident or "?"))
         return []
 
     def _attrs_items(self, items, ident):
         out = []
         for x in items:
             if isinstance(x, Text):
-                raise Error("%s.attrs: quotes are not allowed"
+                raise Error(M.ATTRS_QUOTES_ARE_NOT_ALLOWED
                             % (ident or "?"))
             if isinstance(x, Bare):
                 out.append(x.s)
@@ -401,14 +399,14 @@ class Emitter:
             return self.on(one, fi)
         fbase, params = parse_key(key)
         if fbase == "on":
-            raise Error("on: must name an event (on Take:)")
+            raise Error(M.ON_MUST_NAME_EVENT)
         self._check_event_prefix(fbase)
         if not params:
             self._check_ref_value(ident, key, val, fbase)
         try:
             rendered = self.body(val, key, fi)
         except Error as e:
-            raise Error("%s.%s: %s" % (ident, key, e))
+            raise Error(M.FIELD_MESSAGE % (ident, key, e))
         if "," in fbase:
             return [T.INDEX_ASSIGN % (fi, fbase, rendered)]
         return [T.FIELD % (fi, fbase, rendered)]
@@ -418,8 +416,7 @@ class Emitter:
             return
         for part in (p.strip() for p in fbase.split(",")):
             if part in self.ctx.event_names:
-                raise Error("event %s needs an on/life/before/after/"
-                            "post prefix" % part)
+                raise Error(M.EVENT_NEEDS_PHASE_PREFIX % part)
 
     def _check_ref_value(self, ident, key, val, fbase):
         prop = self.ctx.props.get(fbase)
@@ -461,11 +458,9 @@ class Emitter:
         out = []
         for r in refs:
             if not isinstance(r, Bare):
-                raise Error("%s must list bare identifiers, not quoted "
-                            "strings (%s)" % (key, key))
+                raise Error(M.FIELD_BARE_IDENTIFIERS % (key, key))
             if not re.fullmatch(r"[#@\w]+", r.s, re.UNICODE):
-                raise Error("%s: object name must be an identifier without "
-                            "spaces/hyphens (%r)" % (key, r.s))
+                raise Error(M.OBJECT_NAME_IDENTIFIER % (key, r.s))
             out.append(T.LIST_ITEM % (ind, r.s))
         return out
 
@@ -477,7 +472,7 @@ class Emitter:
         if d is not None:
             CURRENT_LINE[0] = block.line("dict")
             if not isinstance(d, (Data, Raw)):
-                raise Error("%s.dict: must be a table literal { ... }"
+                raise Error(M.DICT_MUST_BE_TABLE_LITERAL
                             % (ident or "?"))
             tail += T.DICT % self.value(d)
         if block.get("disabled"):
@@ -493,10 +488,10 @@ class Emitter:
         fields = []
         words = block.get("words")
         if words is None and required:
-            raise Error("verb words must be a quoted string")
+            raise Error(M.VERB_WORDS_MUST_BE_QUOTED)
         if words is not None:
             if not isinstance(words, Text):
-                raise Error("%s words must be a quoted string" % label)
+                raise Error(M.FIELD_WORDS_QUOTED % label)
             fields.append(lua_str(words.s))
         pats = block.get("patterns")
         if pats is not None:
@@ -525,7 +520,7 @@ class Emitter:
         for key, _val in block.items:
             base_key, _params = parse_key(key)
             if re.match(r"^(on|before|after)(\s|$)", base_key):
-                raise Error("verb %s: %s is declared in 'event %s:' now"
+                raise Error(M.VERB_DECLARED_EVENT_NOW
                             % (ident or "?", base_key, ident or "?"))
         extra = self.verb_extra(block)
         return T.VERB % (base, ", ".join(fields),
@@ -533,14 +528,14 @@ class Emitter:
 
     def verb_extend(self, block, ident, base):
         if not ident:
-            raise Error("extend needs a verb tag")
+            raise Error(M.EXTEND_NEEDS_VERB_TAG)
         fields = [lua_str(ident)] + self.verb_fields(block, required=False)
         if len(fields) == 1:
-            raise Error("extend needs words or patterns")
+            raise Error(M.EXTEND_NEEDS_WORDS_OR_PATTERNS)
         for key, _val in block.items:
             base_key, _params = parse_key(key)
             if re.match(r"^(on|before|after)(\s|$)", base_key):
-                raise Error("extend %s: %s is declared in 'event %s:' now"
+                raise Error(M.EXTEND_DECLARED_EVENT_NOW
                             % (ident, base_key, ident.lstrip("#")))
         extra = self.verb_extra(block)
         ctor = "VerbExtendWord" if block.get("words") is not None \
@@ -563,7 +558,7 @@ class Emitter:
                               ctx=self.ctx)
         if isinstance(do, Lua):
             return [reindent(do.s, indent + IND)]
-        raise Error("expected logic/lua block")
+        raise Error(M.EXPECTED_LOGIC_LUA_BLOCK)
 
     def talk_table(self, oblock, indent, labels, tag=None):
         named = []
@@ -681,20 +676,20 @@ class Emitter:
     def decl(self, key, block, base):
         kind, ident = decl_key(key)
         if not kind:
-            raise Error("bad declaration: " + key)
+            raise Error(M.BAD_DECLARATION + key)
         if ident and kind != "verb" and kind != "extend" and not re.fullmatch(
                 r"[#\w]+", ident, re.UNICODE):
-            raise Error("object names must be identifiers, no spaces/hyphens: %s"
+            raise Error(M.OBJECT_NAMES_MUST_BE_IDENTIFIERS
                         % ident)
         handler = DECL_FORMS.get(kind)
         if handler is not None:
             if not ident and kind in NAMED_DECLS:
-                raise Error("%s needs a name" % kind)
+                raise Error(M.DECLARATION_NEEDS_NAME % kind)
             return getattr(self, handler)(block, ident, base)
         if kind not in PRESETS:
             if re.fullmatch(r"[A-Z][\w]*", kind):
                 return self.obj(block, ident, base, kind, [])
-            raise Error("unknown kind: " + kind)
+            raise Error(M.UNKNOWN_KIND + kind)
         ctor, preset = PRESETS[kind]
         return self.obj(block, ident, base, ctor, preset)
 
@@ -715,7 +710,7 @@ class Emitter:
         takes = take if isinstance(take, list) else [take]
         for t in takes:
             if not isinstance(t, (Bare, Text)):
-                raise Error("take must list identifiers")
+                raise Error(M.TAKE_MUST_LIST_IDENTIFIERS)
         return takes
 
     def _setup_nested(self, key, val):
@@ -740,7 +735,7 @@ class Emitter:
         if isinstance(val, Logic):
             return "\n".join(emit_logic(val.stmts, IND, {"load": "bool"},
                                         ctx=self.ctx))
-        raise Error("start must be a | block")
+        raise Error(M.START_MUST_BE_PIPE_BLOCK)
 
     def _setup_init(self, takes, block):
         out = ["function init()"]
@@ -770,10 +765,10 @@ class Emitter:
             if key in ("take", "fmt", "init"):
                 continue
             if key in SETUP_BLOCKS and not isinstance(val, Block):
-                raise Error("unknown setup key: " + key)
+                raise Error(M.UNKNOWN_SETUP_KEY + key)
             handler = SETUP_FORMS.get(key)
             if handler is None:
-                raise Error("unknown setup key: " + key)
+                raise Error(M.UNKNOWN_SETUP_KEY + key)
             lines.extend(getattr(self, handler)(key, val))
         lines.extend(self._setup_init(takes, block))
         return lines
@@ -803,7 +798,7 @@ class Emitter:
     def _impl_item(self, key, val, ref, t):
         base, _ = parse_key(key)
         if base == "on":
-            raise Error("on: must name an event (on Take:)")
+            raise Error(M.ON_MUST_NAME_EVENT)
         if re.match(r"^(on|life|before|after|post)\s+\S", key):
             one = Block()
             one.items = [(key, val)]
@@ -811,22 +806,20 @@ class Emitter:
         self._check_impl_prefix(base)
         if base == "dict":
             if not isinstance(val, (Data, Raw)):
-                raise Error("impl %s.dict: must be a table literal "
-                            "{ ... }" % t)
+                raise Error(M.IMPL_DICT_MUST_BE_TABLE % t)
             return [T.IMPL_DICT % (ref, self.value(val))]
         if key.startswith("var "):
             name = parse_key(key[4:])[0]
             return [T.DOT_ASSIGN % (ref, name, self.body(val, name))]
         if "," in base:
-            raise Error("comma key needs a phase "
-                        "(on/life/before/after/post)")
+            raise Error(M.COMMA_KEY_NEEDS_PHASE)
         return [T.DOT_ASSIGN % (ref, base, self.body(val, key))]
 
     def _check_impl_prefix(self, base):
         if re.match(r"^[a-z]+_", base):
             return
         if any(p.strip() in self.ctx.event_names for p in base.split(",")):
-            raise Error("event %s needs an on/life/before/after/post prefix"
+            raise Error(M.EVENT_NEEDS_PHASE_PREFIX
                         % base)
 
     def const(self, block):

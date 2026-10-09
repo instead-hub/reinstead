@@ -6,6 +6,7 @@ from . import state as S
 from .common import *
 from .typing import (base, canon_fn_sig, fn_type_parts, tbl_inner, type_ok,
                      type_value_error, union_parts)
+from . import messages as M
 
 
 def min_args(plist):
@@ -18,14 +19,14 @@ def check_arity(name, plist, variadic, n):
     mn = min_args(plist)
     if variadic:
         if n < mn:
-            raise LintError("fn %s expects at least %d argument(s), got %d"
+            raise LintError(M.FN_EXPECTS_AT_LEAST_ARGUMENT
                             % (name, mn, n))
     elif mn == len(plist):
         if n != len(plist):
-            raise LintError("fn %s expects %d argument(s), got %d"
+            raise LintError(M.FN_ARGUMENT_COUNT
                             % (name, len(plist), n))
     elif not mn <= n <= len(plist):
-        raise LintError("fn %s expects %d..%d argument(s), got %d"
+        raise LintError(M.FN_ARGUMENT_RANGE
                         % (name, mn, len(plist), n))
 
 
@@ -183,11 +184,11 @@ class ExprEmit:
             self.err("expected %r, got %r" % (val, v))
 
     def err(self, msg):
-        raise LintError("%s in %s: %s" % (
+        raise LintError(M.IN_MESSAGE % (
             msg, self.where, " ".join(t[1] for t in self.toks[:-1])))
 
     def terr(self, msg):
-        raise TypeCheckError("%s in %s: %s" % (
+        raise TypeCheckError(M.IN_MESSAGE % (
             msg, self.where, " ".join(t[1] for t in self.toks[:-1])))
 
     def exprlist(self, expected=None):

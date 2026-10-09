@@ -3,6 +3,7 @@ from .condast import Leaf, leaf_text, narrow_assume, narrow_cond, parse_cond
 from .typing import type_ok
 from .expr import transpile_exprlist, transpile_stmt, transpile_for
 from . import templates as T
+from . import messages as M
 
 
 def _emit_and(parts, cur, where, ctx, emit):
@@ -45,8 +46,7 @@ def _return_expr(st, env, where, ctx):
     rtype = types[0] if types else "any"
     m = re.fullmatch(r"'([^']*)'|\"([^\"]*)\"", code)
     if m and (m.group(1) or m.group(2)) in ctx.ids:
-        raise LintError("%s: %r is an object name; return it "
-                        "without quotes" % (where,
+        raise LintError(M.RETURN_OBJECT_NAME_WITHOUT_QUOTES % (where,
                         m.group(1) or m.group(2)))
     return code, rtype
 
@@ -57,7 +57,7 @@ def _emit_return(st, indent, env, where, ret, ret_name, ctx):
     if (ret and ret != "any" and src not in ("", "false", "nil")
             and not type_ok(ctx, rtype, ret)):
         c = ("fn %s" % ret_name) if ret_name else "logic"
-        raise LintError("%s: return type is %s, expected %s"
+        raise LintError(M.RETURN_TYPE_EXPECTED
                         % (c, rtype, ret))
     return [T.RETURN % (indent, (" " + code) if code else "")]
 

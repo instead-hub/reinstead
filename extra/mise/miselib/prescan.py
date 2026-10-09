@@ -10,6 +10,7 @@ from .proptypes import (check_prop_value, collect_types,
                        register_events, register_props,
                        register_refs)
 from .typing import literal_type
+from . import messages as M
 
 def _decl_id(key):
     """(ident, kind) of a declaration or talk key, else None."""
@@ -28,7 +29,7 @@ def _register_id(ids, ident, ikind):
     if ident not in ids:
         ids[ident] = ikind
     elif not ident.startswith("#"):
-        raise Error("duplicate declaration: " + ident)
+        raise Error(M.DUPLICATE_DECLARATION + ident)
     return True
 
 
@@ -78,7 +79,7 @@ def check_refs(root, ids):
             return
         for r in (val if isinstance(val, list) else [val]):
             if isinstance(r, Bare) and r.s not in ids:
-                raise Error("unknown reference in %s: %s" % (key, r.s))
+                raise Error(M.UNKNOWN_REFERENCE % (key, r.s))
 
     def _walk_refs(block):
         for i, (key, val) in enumerate(block.items):
@@ -120,7 +121,7 @@ def _check_impl_target(target, ctx):
         return
     if target.startswith("@") or "." in target or target in ENGINE_TARGETS:
         return
-    raise Error("unknown impl target: " + target)
+    raise Error(M.UNKNOWN_IMPL_TARGET + target)
 
 
 def field_base(key, val, ctx):
@@ -153,10 +154,10 @@ def attach_mixins(block, ctx, into, collect):
         name = v.s if hasattr(v, "s") else str(v)
         bdef = ctx.mixin_defs.get(name)
         if bdef is None:
-            raise Error("unknown mixin: " + name)
+            raise Error(M.UNKNOWN_MIXIN + name)
         for k, _bv in bdef.items:
             if k in seen:
-                raise Error("mixin key conflict: %s (%s and %s)"
+                raise Error(M.MIXIN_KEY_CONFLICT
                             % (k, seen[k], name))
             seen[k] = name
         collect(bdef, ctx, into)
@@ -178,8 +179,7 @@ def _collect_field(ctx, into, owner, key, val):
     t = literal_type(ctx, val, refs=True)
     if (isinstance(val, Bare) and t == "str"
             and not S.USE_RE.match(val.s.strip())):
-        raise Error("unknown name %r in field %s (quote string "
-                    "values: [[...]]/\"...\")" % (val.s, base))
+        raise Error(M.FIELD_STRING_VALUES_QUOTED % (val.s, base))
     prop = ctx.props.get(base)
     if prop is not None:
         into[base] = check_prop_value(ctx, owner, base, prop, val, t)
@@ -227,9 +227,9 @@ def _collect_defs(root, class_defs, mixin_defs):
 def _add_mixin(info, val, mixin_defs):
     """Register one mixin body, rejecting duplicates and nesting."""
     if info in mixin_defs:
-        raise Error("duplicate mixin: " + info)
+        raise Error(M.DUPLICATE_MIXIN + info)
     if any(re.match(r"^mixins?\b", k2) for k2, _ in val.items):
-        raise Error("mixin %s cannot include mixin" % info)
+        raise Error(M.MIXIN_CANNOT_INCLUDE_MIXIN % info)
     mixin_defs[info] = val
 
 
@@ -282,7 +282,7 @@ def _check_mixin_names(ctx, value):
     for item in (value if isinstance(value, list) else [value]):
         name = item.s if hasattr(item, "s") else str(item)
         if name not in ctx.mixin_defs:
-            raise Error("unknown mixin: " + name)
+            raise Error(M.UNKNOWN_MIXIN + name)
 
 
 def _check_bare_field(ctx, use_props, owner, key, val):
@@ -291,8 +291,7 @@ def _check_bare_field(ctx, use_props, owner, key, val):
     t = literal_type(ctx, val, refs=True)
     if (base is not None and isinstance(val, Bare) and t == "str"
             and not S.USE_RE.match(val.s.strip())):
-        raise Error("unknown name %r in field %s (quote string "
-                    "values: [[...]]/\"...\")" % (val.s, base))
+        raise Error(M.FIELD_STRING_VALUES_QUOTED % (val.s, base))
     prop = ctx.props.get(base) if (use_props and base) else None
     if prop is not None:
         check_prop_value(ctx, owner, base, prop, val, t)
@@ -390,7 +389,7 @@ def find_include(name, ctx):
         path = os.path.join(base, name + ".mise")
         if os.path.exists(path):
             return path
-    raise Error("include not found: " + name)
+    raise Error(M.INCLUDE_NOT_FOUND + name)
 
 def _include_one(name, ctx, seen, extra, extra_lines, recurse):
     """Parse one included file; append its items and lines."""
@@ -430,7 +429,7 @@ def _register_fns(root, ctx):
         name, plist, ret, variadic = parse_fn_sig(
             key, set(ctx.types) | ctx.classes)
         if name in ctx.fn_sigs:
-            raise Error("duplicate fn: " + name)
+            raise Error(M.DUPLICATE_FN + name)
         ctx.fn_sigs[name] = (plist, ret, variadic)
         names.add(name)
         _inline_fn(ctx, name, val, plist, variadic)
