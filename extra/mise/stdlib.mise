@@ -316,6 +316,9 @@ class Door(door):
 
 fn desc(s: obj) -> str?: `s.desc`
 
+lua: |lua
+  --"мочь"
+
 class Path:
   attrs: scenery, enterable
   walk_to: none
@@ -328,5 +331,5 @@ class Path:
     if d:
       say d
       stop
-    say('Ты можешь пойти в ', noun(s.walk_to, вн), '.')
+    say('{#Me} {#word/мочь,нст,#me} пойти в ', noun(s.walk_to, вн), '.')
   default_Event: Walk
