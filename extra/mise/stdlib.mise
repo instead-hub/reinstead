@@ -257,6 +257,9 @@ fn check_touch() -> bool: |lua
 fn check_worn(w: obj) -> bool: |lua
   return mp:check_worn(w)
 
+fn check_inside(w: obj) -> bool: |lua
+  return mp:check_inside(w)
+
 fn clear(): |lua
   mp:clear()
 
@@ -311,12 +314,19 @@ class Door(door):
       return s.from
     pass
 
+fn desc(s: obj) -> str?: `s.desc`
+
 class Path:
   attrs: scenery, enterable
-  before Walk, Enter: |lua
-    if mp:check_inside(std.ref(s.walk_to)) then return end
+  walk_to: none
+  before Walk, Enter: |
+    if check_inside(s.walk_to):
+      stop
     walk(s.walk_to)
-  before Default: |lua
-    if s.desc then p(s.desc) return end
-    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
+  before Default: |
+    local d = desc(s)
+    if d:
+      say d
+      stop
+    say('Ты можешь пойти в ', noun(s.walk_to, вн), '.')
   default_Event: Walk

@@ -23,13 +23,20 @@ Door = Class({
 }, door):attr 'open'
 
 Path = Class {
+  walk_to = 'none';
   ["before_Walk,Enter"] = function(s, w, wh)
-    if mp:check_inside(std.ref(s.walk_to)) then return end
-    walk(s.walk_to)
+    if mp:check_inside(_(s.walk_to)) then
+      return
+    end
+    walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    if s.desc then p(s.desc) return end
-    p([[Ты можешь пойти в ]], std.ref(s.walk_to):noun('вн'), '.')
+    local d = (s.desc)
+    if d then
+      p(d)
+      return
+    end
+    p('Ты можешь пойти в ', _(s.walk_to):noun_hint("вн"), '.')
   end;
   default_Event = "Walk";
 }:attr 'scenery,enterable'
