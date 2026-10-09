@@ -39,57 +39,92 @@ def classify(key):
     return _classify_decl(key)
 
 
+SIMPLE_KINDS = {
+    "require": "require",
+    "lua": "lua",
+    "setup": "setup",
+    "const": "const",
+    "global": "global",
+    "refs": "refs",
+    "extend refs": "extend_refs",
+    "props": "props",
+}
+
+
 def _classify_simple(key):
     """Plain keyword and reserved-tag kinds, else None."""
-    if key in ("require", "lua", "setup", "const", "global"):
-        return key, None
-    if key == "refs":
-        return "refs", None
-    if key == "extend refs":
-        return "extend_refs", None
-    if key == "props":
-        return "props", None
-    return None
+    kind = SIMPLE_KINDS.get(key)
+    if kind is None:
+        return None
+    return kind, None
+
+
+def _class_kind(_key, m):
+    return "class", (m.group(1), m.group(2))
+
+
+def _mixin_kind(_key, m):
+    return "mixin", m.group(1)
+
+
+def _fn_kind(key, _m):
+    return "fn", key
+
+
+def _impl_kind(_key, m):
+    return "impl", m.group(1)
+
+
+def _event_kind(_key, m):
+    return "event_decl", m.group(1)
+
+
+def _type_kind(_key, m):
+    return "type", m.group(1)
+
+
+def _extend_type_kind(_key, m):
+    return "extend_type", m.group(1)
+
+
+def _extend_kind(_key, m):
+    return "extend", "#" + m.group(1)
+
+
+# the tagged top-level forms in lookup order: a compiled pattern and the
+# builder of its (kind, info)
+TAGGED_FORMS = (
+    (re.compile(r"^class\s+([A-Z]\w*)\s*(?:\(([^)]*)\))?$"), _class_kind),
+    (re.compile(r"^mixin\s+([A-Z]\w*)$"), _mixin_kind),
+    (re.compile(r"^fn\s+"), _fn_kind),
+    (re.compile(r"^impl\s+([@\w.+-]+)$"), _impl_kind),
+    (re.compile(r"^event\s+([A-Z]\w*)$"), _event_kind),
+    (re.compile(r"^type\s+([a-z_]\w*)$"), _type_kind),
+    (re.compile(r"^extend\s+type\s+([a-z_]\w*)$"), _extend_type_kind),
+    (re.compile(r"^extend\s+#([^\W\d]\w*)$", re.UNICODE), _extend_kind),
+)
+
+# the prefixes of those forms that must carry a name
+TAGGED_NAMES = (
+    (re.compile(r"^mixin\b"), "mixin needs a name: %s"),
+    (re.compile(r"^impl\b"), "impl needs a bare target: %s"),
+    (re.compile(r"^extend\b"), "extend needs a bare #Tag: %s"),
+)
+
+
+def _need_tagged_name(key):
+    for pat, msg in TAGGED_NAMES:
+        if pat.match(key):
+            raise Error(msg % key)
 
 
 def _classify_tagged(key):
     """class/mixin/fn/impl tags, event/type/extend tags, else None."""
-    m_class = re.match(r"^class\s+([A-Z]\w*)\s*(?:\(([^)]*)\))?$", key)
-    if m_class:
-        return "class", (m_class.group(1), m_class.group(2))
-    m_mixin = re.match(r"^mixin\b", key)
-    if m_mixin:
-        m_mixin_name = re.match(r"^mixin\s+([A-Z]\w*)$", key)
-        if not m_mixin_name:
-            raise Error("mixin needs a name: " + key)
-        return "mixin", m_mixin_name.group(1)
-    if re.match(r"^fn\s+", key):
-        return "fn", key
-    m_impl = re.match(r"^impl\b", key)
-    if m_impl:
-        m_impl_name = re.match(r"^impl\s+([@\w.+-]+)$", key)
-        if not m_impl_name:
-            raise Error("impl needs a bare target: %s" % key)
-        return "impl", m_impl_name.group(1)
-    return _classify_event_type(key)
-
-
-def _classify_event_type(key):
-    """event/type/extend tags, else None."""
-    m_event = re.match(r"^event\s+([A-Z]\w*)$", key)
-    if m_event:
-        return "event_decl", m_event.group(1)
-    m_type = re.match(r"^type\s+([a-z_]\w*)$", key)
-    if m_type:
-        return "type", m_type.group(1)
-    m_ext_type = re.match(r"^extend\s+type\s+([a-z_]\w*)$", key)
-    if m_ext_type:
-        return "extend_type", m_ext_type.group(1)
-    if re.match(r"^extend\b", key):
-        m_extend = re.match(r"^extend\s+#([^\W\d]\w*)$", key, re.UNICODE)
-        if not m_extend:
-            raise Error("extend needs a bare #Tag: %s" % key)
-        return "extend", "#" + m_extend.group(1)
+    for pat, build in TAGGED_FORMS:
+        m = pat.match(key)
+        if m:
+            return build(key, m)
+    _need_tagged_name(key)
     return None
 
 

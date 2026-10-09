@@ -59,12 +59,17 @@ def _parse_branches(lines, i, indent, style, branches, recurse):
     return i, (else_bodies[-1] if else_bodies else None)
 
 
+# the bare logic statements with a fixed return value
+LOGIC_CONSTS = {
+    "stop": None,
+    "pass": "false",
+}
+
+
 def _logic_stmt(lines, i, ind, text, lno, recurse):
     """Parse one logical line at `i`; returns (stmt, next_i)."""
-    if text == "stop":
-        return ("return", None, lno), i + 1
-    if text == "pass":
-        return ("return", "false", lno), i + 1
+    if text in LOGIC_CONSTS:
+        return ("return", LOGIC_CONSTS[text], lno), i + 1
     m = re.match(r"^return\b\s*(.*)$", text, re.S)
     if m:
         return ("return", m.group(1) or None, lno), i + 1

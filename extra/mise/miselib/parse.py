@@ -81,18 +81,46 @@ def _block_child(lines, pos, indent, key, recurse):
         return node, bnxt - pos
     return Block(), 1
 
+def _is_pipe(rest, _tm):
+    return rest in ("|", "|lua")
+
+
+def _is_long(rest, _tm):
+    return rest.startswith("[[")
+
+
+def _is_bracket(rest, tm):
+    return rest.startswith(("{", "[")) and not tm
+
+
+def _read_pipe(lines, pos, indent, rest, _tm):
+    val, nxt = pipe_value(lines, pos + 1, indent, rest)
+    return val, nxt - pos
+
+
+def _read_long(lines, pos, _indent, rest, _tm):
+    val, nxt = read_long(lines, pos, rest, pos + 1)
+    return val, nxt - pos
+
+
+def _read_bracket(lines, pos, _indent, rest, _tm):
+    val, nxt = read_bracket(lines, pos, rest, pos + 1)
+    return val, nxt - pos
+
+
+# the special value forms of `key: value`, tried in order
+VALUE_FORMS = (
+    (_is_pipe, _read_pipe),
+    (_is_long, _read_long),
+    (_is_bracket, _read_bracket),
+)
+
+
 def _block_value(lines, pos, indent, rest, text_values, key):
-    if rest in ("|", "|lua"):
-        pval, pnxt = pipe_value(lines, pos + 1, indent, rest)
-        return pval, pnxt - pos
-    if rest.startswith("[["):
-        lval, lnxt = read_long(lines, pos, rest, pos + 1)
-        return lval, lnxt - pos
-    if (rest.startswith(("{", "["))
-            and not (text_values or key in TEXT_KEYS)):
-        bval, bnxt = read_bracket(lines, pos, rest, pos + 1)
-        return bval, bnxt - pos
     tm = text_values or key in TEXT_KEYS
+    for matches, read in VALUE_FORMS:
+        if matches(rest, tm):
+            return read(lines, pos, indent, rest, tm)
     parts = split_list(rest)
     if len(parts) > 1 and not tm:
         return [parse_scalar(p, pos + 1) for p in parts], 1

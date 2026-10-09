@@ -16,7 +16,8 @@ def _lex_skip(text, i, n):
     return None
 
 
-def _lex_quoted(text, i, n, quote):
+def _lex_quoted(text, i, n):
+    quote = text[i]
     j = i + 1
     while j < n:
         if text[j] == "\\":
@@ -31,7 +32,7 @@ def _lex_quoted(text, i, n, quote):
     return ("str", text[i:j]), j
 
 
-def _lex_long_string(text, i):
+def _lex_long_string(text, i, _n):
     j = text.find("]]", i + 2)
     if j < 0:
         raise LintError("unterminated long string: %s" % text)
@@ -51,7 +52,7 @@ def _lex_ident(text, i, pattern):
     return ("name", m.group(0)), i + m.end()
 
 
-def _lex_name(text, i):
+def _lex_name(text, i, _n):
     c = text[i]
     if c.isalpha() or c == "_":
         return _lex_ident(text, i, r"[^\W\d]\w*")
@@ -69,20 +70,43 @@ def _lex_op(text, i):
     return None
 
 
+def _is_quote(text, i, _n):
+    return text[i] in "\"'"
+
+
+def _is_long(text, i, _n):
+    return text.startswith("[[", i)
+
+
+def _is_number(text, i, n):
+    c = text[i]
+    return c.isdigit() or (c == "." and i + 1 < n and text[i + 1].isdigit())
+
+
+def _is_name(text, i, n):
+    c = text[i]
+    return (c.isalpha() or c == "_" or (
+        c == "~" and i + 1 < n and (text[i + 1].isalpha()
+                                    or text[i + 1] == "_")))
+
+
+# the token scanners, tried in order
+LEX_FORMS = (
+    (_is_quote, _lex_quoted),
+    (_is_long, _lex_long_string),
+    (_is_number, _lex_number),
+    (_is_name, _lex_name),
+)
+
+
 def _lex_one(text, i, n):
     """The token at `i` and the index after it."""
-    c = text[i]
-    if c in "\"'":
-        return _lex_quoted(text, i, n, c)
-    if text.startswith("[[", i):
-        return _lex_long_string(text, i)
-    if c.isdigit() or (c == "." and i + 1 < n and text[i + 1].isdigit()):
-        return _lex_number(text, i, n)
-    named = _lex_name(text, i)
-    if named is not None:
-        return named
+    for matches, scan in LEX_FORMS:
+        if matches(text, i, n):
+            return scan(text, i, n)
     op = _lex_op(text, i)
     if op is None:
+        c = text[i]
         raise LintError("bad character %r in logic: %s" % (c, text))
     return op
 
@@ -132,6 +156,26 @@ def fn_name(name):
 
 
 _SIMPLE_ARG = re.compile(r"[A-Za-z_]\w*|\d+(?:\.\d+)?|'[^']*'")
+
+# the arithmetic and string levels of the expression parser: operators,
+# the result type and whether both operands must be numbers
+BIN_LEVELS = (
+    (("..",), "str", False),
+    (("+", "-"), "num", True),
+    (("*", "/", "%", "//"), "num", True),
+)
+
+# the prefix operators: the code format and the result type
+UNARY_OPS = {
+    "not": ("not %s", "bool"),
+    "-": ("-%s", "num"),
+}
+
+# the scalar expected types that never accept a quoted string
+STR_ARG_ERRORS = {
+    "num": "expected num, got str",
+    "bool": "expected bool, got str",
+}
 
 
 def _wrap_params(template, plist, args):
@@ -335,10 +379,9 @@ class ExprEmit:
             if msg:
                 self.terr(msg)
             return tok
-        if exp == "num":
-            self.terr("expected num, got str")
-        if exp == "bool":
-            self.terr("expected bool, got str")
+        err = STR_ARG_ERRORS.get(exp)
+        if err is not None:
+            self.terr(err)
         return tok
 
     def _str_arglist(self, expected_list):
@@ -515,15 +558,14 @@ class ExprEmit:
 
     def unary(self):
         _k, v = self.peek()
-        if v == "not":
-            return self._unary_op("not %s", "bool")
-        if v == "-":
-            return self._unary_op("-%s", "num")
         if v == "#":
             return self._unary_tag()
         if v == "&":
             return self._unary_fn_ref()
-        return self.postfix(self.primary())
+        spec = UNARY_OPS.get(v)
+        if spec is None:
+            return self.postfix(self.primary())
+        return self._unary_op(spec[0], spec[1])
 
     def _unary_tag(self):
         nk, nv = self.peek(1)
@@ -598,14 +640,16 @@ class ExprEmit:
         return node
 
     def concat_expr(self):
-        return self.bin_expr(self.add_expr, ("..",), "str")
+        ops, t, check = BIN_LEVELS[0]
+        return self.bin_expr(self.add_expr, ops, t, check)
 
     def add_expr(self):
-        return self.bin_expr(self.mul_expr, ("+", "-"), "num", check_num=True)
+        ops, t, check = BIN_LEVELS[1]
+        return self.bin_expr(self.mul_expr, ops, t, check)
 
     def mul_expr(self):
-        return self.bin_expr(self.unary, ("*", "/", "%", "//"), "num",
-                             check_num=True)
+        ops, t, check = BIN_LEVELS[2]
+        return self.bin_expr(self.unary, ops, t, check)
 
     def expr(self):
         return self.or_expr()

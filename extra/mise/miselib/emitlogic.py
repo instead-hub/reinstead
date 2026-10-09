@@ -101,6 +101,31 @@ def _emit_if(st, indent, env, ret, ret_name, where, ctx, recurse):
     return out
 
 
+def _logic_return(st, indent, env, ret, ret_name, where, ctx, _recurse):
+    return _emit_return(st, indent, env, where, ret, ret_name, ctx)
+
+
+def _logic_stmt(st, indent, env, _ret, _ret_name, where, ctx, _recurse):
+    return [indent + transpile_stmt(st[1], env, where, ctx=ctx)]
+
+
+def _logic_for(st, indent, env, ret, ret_name, where, ctx, recurse):
+    return _emit_for(st, indent, env, ret, ret_name, where, ctx, recurse)
+
+
+def _logic_if(st, indent, env, ret, ret_name, where, ctx, recurse):
+    return _emit_if(st, indent, env, ret, ret_name, where, ctx, recurse)
+
+
+# the emitters of the logic statements
+LOGIC_FORMS = {
+    "return": _logic_return,
+    "stmt": _logic_stmt,
+    "for": _logic_for,
+    "if": _logic_if,
+}
+
+
 def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
     env = dict(env or {})
     out = []
@@ -108,14 +133,8 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
         kind = st[0]
         lno = st[-1] if isinstance(st[-1], int) else None
         where = ("logic:%d" % lno) if lno else "logic"
-        if kind == "return":
-            out.extend(_emit_return(st, indent, env, where, ret, ret_name, ctx))
-        elif kind == "stmt":
-            out.append(indent + transpile_stmt(st[1], env, where, ctx=ctx))
-        elif kind == "for":
-            out.extend(_emit_for(st, indent, env, ret, ret_name, where, ctx,
-                                 emit_logic))
-        elif kind == "if":
-            out.extend(_emit_if(st, indent, env, ret, ret_name, where, ctx,
-                                emit_logic))
+        form = LOGIC_FORMS.get(kind)
+        if form is not None:
+            out.extend(form(st, indent, env, ret, ret_name, where, ctx,
+                            emit_logic))
     return out

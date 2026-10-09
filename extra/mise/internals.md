@@ -230,6 +230,31 @@ transpile (main loop) обход корневых элементов → Emitter
 `const`/`global`/`event_decl`/`decl`/`verb`/`extend`/`talk` → эмиттеры.
 В конце — `require "parser/mp-<lang>"` и `require` из `require:`.
 
+## Реестры (точки расширения)
+
+Ветвления «по виду» сведены в таблицы: новый вид — это запись в таблице
+плюс маленький обработчик, а не правка цепочки `if`.
+
+| Что | Таблица | Файл |
+|---|---|---|
+| вид значения → форма | `VALUE_FORMS` | emit.py |
+| форма `key: value` (предикат + reader) | `VALUE_FORMS` | parse.py |
+| вид объявления → эмиттер | `DECL_FORMS`, `NAMED_DECLS` | emit.py, transpile.py |
+| ключи `setup` | `SETUP_FORMS`, `SETUP_BLOCKS` | emit.py |
+| поля `talk` | `TALK_FORMS` | emit.py |
+| ключи объекта, эмитящиеся отдельно | `OBJ_SKIP_KEYS` | emit.py |
+| вид декларации в `classify` | `SIMPLE_KINDS`, `TAGGED_FORMS`+`TAGGED_NAMES` | decl.py |
+| пресеты объявлений | `PRESETS` | decl.py |
+| регистрация `type`/`extend_type` | `TYPE_FORMS` | prescan.py |
+| сбор class/mixin | `DEFS_FORMS` | prescan.py |
+| проверка bare-имён | `BARE_FORMS` | prescan.py |
+| операторы и приоритеты выражений | `BIN_LEVELS`, `UNARY_OPS`, `STR_ARG_ERRORS` | expr.py |
+| формы токенов | `LEX_FORMS` | expr.py |
+| операторы и виды операторов логики | `LOGIC_CONSTS`, `LOGIC_FORMS` | logicparse.py, emitlogic.py |
+| формы типов | `CANON_FORMS`, `BODY_TYPES` | typing.py |
+| правила совместимости типов | `SCALAR_RULES` | typing.py |
+| тип литерального класса | `LITERAL_TYPES` | typing.py |
+
 ## Инварианты и грабли
 
 - Байт-идентичность Lua при рефакторингах — главный сторож
@@ -245,8 +270,10 @@ transpile (main loop) обход корневых элементов → Emitter
 - `say`-фолбэк не должен глотать типовые ошибки (см. `TypeCheckError`).
 - Class-scoped типизация `s.field` работает только для приёмника с
   именем `s`.
-- При добавлении новой конструкции: `classify` → `prescan`
-  (сбор) → `Emitter` → ветка в `transpile` → `SPEC.md`/`gram.bnf`.
+- При добавлении новой конструкции: `classify`
+  (`SIMPLE_KINDS`/`TAGGED_FORMS`) → `prescan`
+  (`TYPE_FORMS`/`DEFS_FORMS`/`BARE_FORMS`) → `Emitter`/`transpile`
+  (`DECL_FORMS`, `SETUP_FORMS`, `TALK_FORMS`, …) → `SPEC.md`/`gram.bnf`.
 
 ## Тесты
 

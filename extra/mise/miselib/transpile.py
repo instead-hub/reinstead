@@ -57,25 +57,60 @@ def _emit_fn(ctx, em, key, val):
     return "local function %s(%s)\n%s\nend" % (fn_name(name), prm, hb)
 
 
+def _lua_decl(_em, _info, _key, val):
+    return val.s
+
+
+def _class_decl(em, info, _key, val):
+    return em.cls(val, info[0], info[1])
+
+
+def _impl_decl(em, info, _key, val):
+    return em.impl(info, val)
+
+
+def _setup_decl(em, _info, _key, val):
+    return "\n".join(em.setup(val))
+
+
+def _const_decl(em, _info, _key, val):
+    return "\n".join(em.const(val))
+
+
+def _global_decl(em, _info, _key, val):
+    return "\n".join(em.glob(val))
+
+
+def _event_decl(em, info, _key, val):
+    return em.event(info, val) or None
+
+
+def _block_decl(em, _info, key, val):
+    return em.decl(key, val, "")
+
+
+# the emitters of the non-fn top-level kinds
+DECL_FORMS = {
+    "lua": _lua_decl,
+    "class": _class_decl,
+    "impl": _impl_decl,
+    "setup": _setup_decl,
+    "const": _const_decl,
+    "global": _global_decl,
+    "event_decl": _event_decl,
+    "decl": _block_decl,
+    "verb": _block_decl,
+    "extend": _block_decl,
+    "talk": _block_decl,
+}
+
+
 def _emit_decl(em, kind, key, val, info):
     """Emit one non-fn declaration; None means nothing to append."""
-    if kind == "lua":
-        return val.s
-    if kind == "class":
-        return em.cls(val, info[0], info[1])
-    if kind == "impl":
-        return em.impl(info, val)
-    if kind == "setup":
-        return "\n".join(em.setup(val))
-    if kind == "const":
-        return "\n".join(em.const(val))
-    if kind == "global":
-        return "\n".join(em.glob(val))
-    if kind == "event_decl":
-        return em.event(info, val) or None
-    if kind in ("decl", "verb", "extend", "talk"):
-        return em.decl(key, val, "")
-    raise Error("unknown declaration: " + key)
+    form = DECL_FORMS.get(kind)
+    if form is None:
+        raise Error("unknown declaration: " + key)
+    return form(em, info, key, val)
 
 
 def _require_text(val):

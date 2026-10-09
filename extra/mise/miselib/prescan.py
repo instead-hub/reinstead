@@ -171,15 +171,21 @@ def _extend_type(ctx, name, val):
             td["values"].append(x.s)
 
 
+# the enumeration declarations and their registrars
+TYPE_FORMS = {
+    "type": _new_type,
+    "extend_type": _extend_type,
+}
+
+
 def collect_types(root, ctx):
     ctx.types = {}
     for _i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(_i)
         kind, name = classify(key)
-        if kind == "type":
-            _new_type(ctx, name, val)
-        elif kind == "extend_type":
-            _extend_type(ctx, name, val)
+        form = TYPE_FORMS.get(kind)
+        if form is not None:
+            form(ctx, name, val)
     ctx.enum_values = {}
     for _tname, td in ctx.types.items():
         for _v in td["values"]:
@@ -401,15 +407,31 @@ def collect_block_fields(block, ctx, into, owner=None):
         _collect_field(ctx, into, owner, key, val)
 
 
+def _collect_class(info, val, class_defs, _mixin_defs):
+    class_defs[info[0]] = (info[1], val)
+
+
+def _collect_mixin(info, val, _class_defs, mixin_defs):
+    _add_mixin(info, val, mixin_defs)
+
+
+# the top-level definitions that build the field maps
+DEFS_FORMS = {
+    "class": _collect_class,
+    "mixin": _collect_mixin,
+}
+
+
 def _collect_defs(root, class_defs, mixin_defs):
     """Scan top-level class and mixin definitions."""
     for i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(i)
         kind, info = classify(key)
-        if kind == "class" and isinstance(val, Block):
-            class_defs[info[0]] = (info[1], val)
-        elif kind == "mixin" and isinstance(val, Block):
-            _add_mixin(info, val, mixin_defs)
+        if not isinstance(val, Block):
+            continue
+        form = DEFS_FORMS.get(kind)
+        if form is not None:
+            form(info, val, class_defs, mixin_defs)
 
 
 def _add_mixin(info, val, mixin_defs):
@@ -504,18 +526,39 @@ def _walk_setup_fields(setup, ctx):
             _walk_fields(ctx, sval, True, skey)
 
 
+def _bare_mixin(ctx, info, val, _key):
+    _walk_fields(ctx, val, True, info)
+
+
+def _bare_impl(ctx, info, val, _key):
+    _check_impl_target(info, ctx)
+    _walk_fields(ctx, val, True, info)
+
+
+def _bare_setup(ctx, _info, val, _key):
+    _walk_setup_fields(val, ctx)
+
+
+def _bare_vars(ctx, _info, val, _key):
+    _walk_fields(ctx, val)
+
+
+# the top-level blocks whose bare names are validated
+BARE_FORMS = {
+    "mixin": _bare_mixin,
+    "impl": _bare_impl,
+    "setup": _bare_setup,
+    "const": _bare_vars,
+    "global": _bare_vars,
+}
+
+
 def _check_bare_block(key, val, ctx):
     """Dispatch bare-name validation by top-level block kind."""
     kind, info = classify(key)
-    if kind == "mixin":
-        _walk_fields(ctx, val, True, info)
-    elif kind == "impl":
-        _check_impl_target(info, ctx)
-        _walk_fields(ctx, val, True, info)
-    elif kind == "setup":
-        _walk_setup_fields(val, ctx)
-    elif kind in ("const", "global"):
-        _walk_fields(ctx, val)
+    form = BARE_FORMS.get(kind)
+    if form is not None:
+        form(ctx, info, val, key)
 
 
 def check_bare_names(root, ctx):

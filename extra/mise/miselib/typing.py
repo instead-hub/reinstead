@@ -133,18 +133,52 @@ def _canon_fn(known, parts, opt, recurse):
     return s, opt
 
 
+def _is_union(text):
+    return len(split_union(text)) > 1
+
+
+def _is_tbl(text):
+    return text.startswith("tbl[") and text.endswith("]")
+
+
+def _is_fn(text):
+    return _fn_split(text) is not None
+
+
+def _is_nil(text):
+    return text == "nil"
+
+
+def _union_form(known, text, opt, recurse):
+    return _canon_union(known, split_union(text), opt, recurse)
+
+
+def _tbl_form(known, text, opt, recurse):
+    return _canon_tbl(known, text, opt, recurse)
+
+
+def _fn_form(known, text, opt, recurse):
+    return _canon_fn(known, _fn_split(text), opt, recurse)
+
+
+def _nil_form(_known, _text, opt, _recurse):
+    return (None, False) if opt else ("nil", opt)
+
+
+# the type-expression forms, tried in order
+CANON_FORMS = (
+    (_is_union, _union_form),
+    (_is_tbl, _tbl_form),
+    (_is_fn, _fn_form),
+    (_is_nil, _nil_form),
+)
+
+
 def _canon_dispatch(known, text, opt, recurse):
     """Canonical body and optional flag for one type expression."""
-    alts = split_union(text)
-    parts = _fn_split(text)
-    if len(alts) > 1:
-        return _canon_union(known, alts, opt, recurse)
-    if text.startswith("tbl[") and text.endswith("]"):
-        return _canon_tbl(known, text, opt, recurse)
-    if parts is not None:
-        return _canon_fn(known, parts, opt, recurse)
-    if text == "nil":
-        return (None, False) if opt else ("nil", opt)
+    for matches, build in CANON_FORMS:
+        if matches(text):
+            return build(known, text, opt, recurse)
     if text in known:
         return text, opt
     return None, False
@@ -226,16 +260,21 @@ def fn_type_parts(t):
     return split_types(inner), (rest[2:] or None if rest else None)
 
 
+# the body view of the reference property types
+BODY_TYPES = {
+    "ref": "obj",
+    "tbl[ref]": "tbl[obj]",
+}
+
+
 def body_type(t):
     """Prop value type as seen in a body: `ref`/`tbl[ref]` become obj forms."""
     if not t:
         return t
     opt = t.endswith("?")
-    b = base(t)
-    if b == "ref":
-        return "obj" + ("?" if opt else "")
-    if b == "tbl[ref]":
-        return "tbl[obj]" + ("?" if opt else "")
+    mapped = BODY_TYPES.get(base(t))
+    if mapped is not None:
+        return mapped + ("?" if opt else "")
     alts = union_parts(t)
     if alts is not None:
         out = sorted({body_type(a) for a in alts})
@@ -340,19 +379,47 @@ def _tbl_ok(ctx, t, inner_exp, recurse):
     return recurse(ctx, inner_t, inner_exp)
 
 
+def _rule_enum_str(ctx, t, exp):
+    """An enum or `str` value where an enum or `str` is expected."""
+    return exp in ctx.types and t in ("str", exp)
+
+
+def _rule_str_enum(ctx, t, exp):
+    """An enum value where a string is expected."""
+    return t in ctx.types and exp == "str"
+
+
+def _rule_class(ctx, t, exp):
+    """An object or class value where a class is expected."""
+    return exp in ctx.classes and (t == "obj" or t in ctx.classes)
+
+
+def _rule_obj_class(ctx, t, exp):
+    """A class value where an object is expected."""
+    return exp == "obj" and t in ctx.classes
+
+
+def _rule_fn(_ctx, t, exp):
+    """A function value where a function signature is expected."""
+    return (exp == "fn" or exp.startswith("fn(")) and (
+        t == "fn" or t.startswith("fn("))
+
+
+# the named-type compatibility rules, tried in order
+SCALAR_RULES = (
+    _rule_enum_str,
+    _rule_str_enum,
+    _rule_class,
+    _rule_obj_class,
+    _rule_fn,
+)
+
+
 def _scalar_ok(ctx, t, exp):
     """Named type, class and fn compatibility rules; None when unmatched."""
-    if exp in ctx.types and t in ("str", exp):
-        return True
-    if t in ctx.types and exp == "str":
-        return True
-    if exp in ctx.classes:
-        return t == "obj" or t in ctx.classes
-    if exp == "obj" and t in ctx.classes:
-        return True
-    if (exp == "fn" or exp.startswith("fn(")) and (
-            t == "fn" or t.startswith("fn(")):
-        return True
+    for rule in SCALAR_RULES:
+        if rule(ctx, t, exp):
+            return True
     return None
 
 
@@ -425,21 +492,28 @@ def _bare_type(ctx, node, refs):
     return next(iter(owners))
 
 
+def _raw_type(_ctx, node, _refs):
+    return "obj" if re.fullmatch(r"_'[^']+'", node.s.strip()) else "any"
+
+
+# the type of each literal class: a name or a (ctx, node, refs) function
+LITERAL_TYPES = {
+    Num: "num",
+    Bool: "bool",
+    Nil: "nil",
+    Text: "str",
+    Data: "tbl",
+    Bare: _bare_type,
+    Raw: _raw_type,
+}
+
+
 def literal_type(ctx, node, refs=False):
     if isinstance(node, list):
         return "tbl"
-    if isinstance(node, Num):
-        return "num"
-    if isinstance(node, Bool):
-        return "bool"
-    if isinstance(node, Nil):
-        return "nil"
-    if isinstance(node, Text):
-        return "str"
-    if isinstance(node, Bare):
-        return _bare_type(ctx, node, refs)
-    if isinstance(node, Data):
-        return "tbl"
-    if isinstance(node, Raw) and re.fullmatch(r"_'[^']+'", node.s.strip()):
-        return "obj"
-    return "any"
+    form = LITERAL_TYPES.get(type(node))
+    if form is None:
+        return "any"
+    if isinstance(form, str):
+        return form
+    return form(ctx, node, refs)

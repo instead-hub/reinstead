@@ -31,6 +31,79 @@ def _group_years(names):
     return groups
 
 
+# the non-object declarations and the Emitter methods they use
+DECL_FORMS = {
+    "verb": "verb",
+    "extend": "verb_extend",
+    "talk": "talk",
+}
+
+# the declarations whose name is required
+NAMED_DECLS = ("verb", "talk")
+
+# the setup keys and the Emitter methods they use
+SETUP_FORMS = {
+    "hero": "_setup_nested",
+    "game": "_setup_nested",
+    "on": "_setup_game_on",
+    "dsc": "_setup_dsc_line",
+    "start": "_setup_start_lines",
+}
+
+# the setup keys that expect a nested block
+SETUP_BLOCKS = ("hero", "game")
+
+# the talk phrase fields and the Emitter methods they use
+TALK_FORMS = {
+    "ask": "_talk_dsc",
+    "say": "_talk_dsc",
+    "reply": "_talk_reply",
+    "do": "_talk_do",
+    "when": "_talk_when",
+    "goto": "_talk_goto",
+    "always": "_talk_flag",
+    "hidden": "_talk_flag",
+    "only": "_talk_flag",
+    "option": "_talk_option",
+}
+
+# the object keys emitted by their own helpers or nested constructs
+OBJ_SKIP_KEYS = ("words", "inside", "with", "attrs",
+                 "disabled", "dict", "before", "after", "post")
+
+
+def _value_text(v, _mode, _ctx):
+    return lua_str(v.s)
+
+
+def _value_lua(v, mode, ctx):
+    return "function(%s)\n%s\nend" % (ctx.prop_params.get(mode, "s"), v.s)
+
+
+def _value_bare(v, _mode, ctx):
+    return "'%s'" % v.s if v.s in ctx.ids else lua_str(v.s)
+
+
+def _value_raw(v, _mode, _ctx):
+    return v.s
+
+
+def _value_nil(_v, _mode, _ctx):
+    return "nil"
+
+
+VALUE_FORMS = {
+    Text: _value_text,
+    Lua: _value_lua,
+    Bare: _value_bare,
+    Num: _value_raw,
+    Bool: _value_raw,
+    Raw: _value_raw,
+    Data: _value_raw,
+    Nil: _value_nil,
+}
+
+
 def _emit_event(em, name, block):
     if not isinstance(block, Block):
         raise Error("event %s must be a block" % name)
@@ -56,22 +129,10 @@ class Emitter:
     def value(self, v, mode="s"):
         if isinstance(v, list):
             return "{ %s }" % ", ".join(self.value(x, mode) for x in v)
-        if isinstance(v, Text):
-            return lua_str(v.s)
-        if isinstance(v, Lua):
-            return "function(%s)\n%s\nend" % (
-                self.ctx.prop_params.get(mode, "s"), v.s)
-        if isinstance(v, Bare):
-            return "'%s'" % v.s if v.s in self.ctx.ids else lua_str(v.s)
-        if isinstance(v, (Num, Bool)):
-            return v.s
-        if isinstance(v, Raw):
-            return v.s
-        if isinstance(v, Data):
-            return v.s
-        if isinstance(v, Nil):
-            return "nil"
-        raise Error("unsupported value: %r (ctx=%s)" % (v, mode))
+        form = VALUE_FORMS.get(type(v))
+        if form is None:
+            raise Error("unsupported value: %r (ctx=%s)" % (v, mode))
+        return form(v, mode, self.ctx)
 
     def check_use(self, name, prm, ret=None):
         if name not in self.ctx.fn_sigs or not prm:
@@ -330,8 +391,7 @@ class Emitter:
             lines.extend(self._obj_field(key, val, ident, fi))
 
     def _obj_field(self, key, val, ident, fi):
-        if key in ("words", "inside", "with", "attrs",
-                   "disabled", "dict", "before", "after", "post"):
+        if key in OBJ_SKIP_KEYS:
             return []
         if re.match(r"^(on|life|before|after|post)\s+\S", key):
             one = Block()
@@ -529,26 +589,43 @@ class Emitter:
         lines.append("%s}" % indent)
         return lines
 
+    def _talk_dsc(self, _base, _key, val, _indent, _labels, _named, _children,
+                  specials):
+        specials["dsc"] = self.value(val)
+
+    def _talk_reply(self, _base, _key, val, _indent, _labels, _named,
+                    _children, specials):
+        specials["reply"] = self.value(val)
+
+    def _talk_do(self, _base, _key, val, _indent, _labels, _named, _children,
+                 specials):
+        specials["do"] = val
+
+    def _talk_when(self, _base, _key, val, _indent, _labels, named, _children,
+                   _specials):
+        named.append("cond = function() return %s end"
+                     % transpile_exprlist(sym_text(val), {}, "talk when",
+                                          ctx=self.ctx)[0])
+
+    def _talk_goto(self, _base, _key, val, _indent, _labels, named, _children,
+                   _specials):
+        named.append("next = '#%s'" % sym_text(val).lstrip('#'))
+
+    def _talk_flag(self, base, _key, val, _indent, _labels, named, _children,
+                   _specials):
+        if is_true(val):
+            named.append("%s = true" % base)
+
+    def _talk_option(self, _base, _key, val, indent, labels, _named,
+                     children, _specials):
+        children.append(self.talk_table(val, indent + IND, labels))
+
     def _talk_item(self, key, val, indent, labels, named, children, specials):
         base, _ = parse_key(key)
-        if base in ("ask", "say"):
-            specials["dsc"] = self.value(val)
-        elif base == "reply":
-            specials["reply"] = self.value(val)
-        elif base == "do":
-            specials["do"] = val
-        elif base == "when":
-            named.append("cond = function() return %s end"
-                         % transpile_exprlist(sym_text(val), {},
-                                              "talk when",
-                                              ctx=self.ctx)[0])
-        elif base == "goto":
-            named.append("next = '#%s'" % sym_text(val).lstrip('#'))
-        elif base in ("always", "hidden", "only"):
-            if is_true(val):
-                named.append("%s = true" % base)
-        elif base == "option":
-            children.append(self.talk_table(val, indent + IND, labels))
+        handler = TALK_FORMS.get(base)
+        if handler is not None:
+            getattr(self, handler)(base, key, val, indent, labels, named,
+                                   children, specials)
         elif key.startswith("label ") and isinstance(val, Block):
             labels.append((key[6:].strip(), val))
         else:
@@ -607,16 +684,11 @@ class Emitter:
                 r"[#\w]+", ident, re.UNICODE):
             raise Error("object names must be identifiers, no spaces/hyphens: %s"
                         % ident)
-        if kind == "verb":
-            if not ident:
-                raise Error("verb needs a name")
-            return self.verb(block, ident, base)
-        if kind == "extend":
-            return self.verb_extend(block, ident, base)
-        if kind == "talk":
-            if not ident:
-                raise Error("talk needs a name")
-            return self.talk(block, ident, base)
+        handler = DECL_FORMS.get(kind)
+        if handler is not None:
+            if not ident and kind in NAMED_DECLS:
+                raise Error("%s needs a name" % kind)
+            return getattr(self, handler)(block, ident, base)
         if kind not in PRESETS:
             if re.fullmatch(r"[A-Z][\w]*", kind):
                 return self.obj(block, ident, base, kind, [])
@@ -680,25 +752,27 @@ class Emitter:
         out.append("end")
         return out
 
+    def _setup_game_on(self, _key, val):
+        return self.on(val, "", "game.")
+
+    def _setup_dsc_line(self, _key, val):
+        return ["game.dsc = %s" % self.body(val, "dsc")]
+
+    def _setup_start_lines(self, _key, val):
+        return self._setup_start(val)
+
     def setup(self, block):
         lines = self._setup_fmt(block)
         takes = self._setup_take(block)
         for key, val in block.items:
             if key in ("take", "fmt", "init"):
                 continue
-            if key in ("hero", "game") and isinstance(val, Block):
-                lines.extend(self._setup_nested(key, val))
-                continue
-            if key == "on":
-                lines.extend(self.on(val, "", "game."))
-                continue
-            if key == "dsc":
-                lines.append("game.dsc = %s" % self.body(val, "dsc"))
-                continue
-            if key == "start":
-                lines.extend(self._setup_start(val))
-                continue
-            raise Error("unknown setup key: " + key)
+            if key in SETUP_BLOCKS and not isinstance(val, Block):
+                raise Error("unknown setup key: " + key)
+            handler = SETUP_FORMS.get(key)
+            if handler is None:
+                raise Error("unknown setup key: " + key)
+            lines.extend(getattr(self, handler)(key, val))
         lines.extend(self._setup_init(takes, block))
         return lines
 
