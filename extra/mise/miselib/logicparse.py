@@ -78,21 +78,33 @@ def _logic_stmt(lines, i, ind, text, lno, recurse):
     return _logic_block(lines, i, ind, text, lno, recurse)
 
 
+def _if_block(lines, i, ind, lno, m, recurse):
+    style = m.group(1)
+    branches = [(m.group(2).strip(), None)]
+    if_body, i = _branch_body(lines, i, ind, style, recurse)
+    branches[0] = (branches[0][0], if_body)
+    i, else_body = _parse_branches(lines, i, ind, style, branches, recurse)
+    return ("if", branches, else_body, lno), i
+
+
+def _for_block(lines, i, ind, lno, m, recurse):
+    for_body, i = _branch_body(lines, i, ind, "for", recurse)
+    return ("for", dedent_rest(m.group(1).strip()), for_body, lno), i
+
+
+# the block statements of logic: a pattern and the parser of the block
+LOGIC_BLOCKS = (
+    (re.compile(r"^(if|when)\s+(.+):$", re.S), _if_block),
+    (re.compile(r"^for\s+(.+):$", re.S), _for_block),
+)
+
+
 def _logic_block(lines, i, ind, text, lno, recurse):
     """Parse an if/when chain or for loop; else a plain statement."""
-    m_if = re.match(r"^(if|when)\s+(.+):$", text, re.S)
-    if m_if:
-        style = m_if.group(1)
-        branches = [(m_if.group(2).strip(), None)]
-        if_body, i = _branch_body(lines, i, ind, style, recurse)
-        branches[0] = (branches[0][0], if_body)
-        i, else_body = _parse_branches(lines, i, ind, style, branches,
-                                       recurse)
-        return ("if", branches, else_body, lno), i
-    m_for = re.match(r"^for\s+(.+):$", text, re.S)
-    if m_for:
-        for_body, i = _branch_body(lines, i, ind, "for", recurse)
-        return ("for", dedent_rest(m_for.group(1).strip()), for_body, lno), i
+    for pattern, parse in LOGIC_BLOCKS:
+        m = pattern.match(text)
+        if m:
+            return parse(lines, i, ind, lno, m, recurse)
     return ("stmt", text, lno), i + 1
 
 

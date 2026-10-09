@@ -182,11 +182,18 @@ def _stmt_assign(p, lhs, op, env, where, ctx):
     return "%s = %s %s (%s)" % (lhs_code, lhs_code, sign, ", ".join(codes))
 
 
-def _stmt_break(p):
+def _stmt_break(p, _env):
     p.next()
     if p.peek()[0] != "eof":
         p.err("unexpected %r" % p.peek()[1])
     return "break"
+
+
+# the logic statements with their own parsers
+STMT_FORMS = {
+    "local": _stmt_local,
+    "break": _stmt_break,
+}
 
 
 def _check_stmt_lhs(lhs, ctx, p):
@@ -218,10 +225,9 @@ def transpile_stmt(text, env, where, ctx):
         return raw[0]
     p = ExprEmit(lex_lua(text), env, where, ctx)
     kind, val = p.peek()
-    if kind == "name" and val == "local":
-        return _stmt_local(p, env)
-    if kind == "name" and val == "break":
-        return _stmt_break(p)
+    form = STMT_FORMS.get(val) if kind == "name" else None
+    if form is not None:
+        return form(p, env)
     return _stmt_expr(p, env, where, ctx)
 
 def _loop_var(spec, where, ctx):

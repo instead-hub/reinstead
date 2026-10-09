@@ -55,6 +55,27 @@ STR_ARG_ERRORS = {
     "bool": "expected bool, got str",
 }
 
+# the primary token kinds and the ExprEmit methods they use
+PRIMARY_FORMS = {
+    "num": "_primary_num",
+    "str": "_primary_str",
+    "name": "_primary_name",
+    "op": "_primary_op",
+}
+
+# the postfix operators and the ExprEmit methods they use
+POSTFIX_OPS = {
+    ".": "postfix_dot",
+    "[": "postfix_index",
+    ":": "postfix_method",
+}
+
+# the expected types with their own string-value handling
+STR_ARG_FORMS = {
+    "obj": "_str_arg_obj",
+    "event": "_str_arg_event",
+}
+
 
 def _wrap_params(template, plist, args):
     for i, ((pn, _pt), a) in enumerate(zip(plist, args)):
@@ -243,15 +264,20 @@ class ExprEmit:
                 return "_'%s'" % val
         self.terr("expected %s, got str %r" % (exp, val))
 
+    def _str_arg_obj(self, _tok, val):
+        if val in self.ctx.ids:
+            return "_'%s'" % val
+        self.terr("unknown object %r (expected obj)" % val)
+
+    def _str_arg_event(self, tok, val):
+        if val not in self.ctx.event_names:
+            self.terr("unknown event %r" % val)
+        return tok
+
     def _scalar_str_arg(self, tok, exp, val):
-        if exp == "obj":
-            if val in self.ctx.ids:
-                return "_'%s'" % val
-            self.terr("unknown object %r (expected obj)" % val)
-        if exp == "event":
-            if val not in self.ctx.event_names:
-                self.terr("unknown event %r" % val)
-            return tok
+        handler = STR_ARG_FORMS.get(exp)
+        if handler is not None:
+            return getattr(self, handler)(tok, val)
         if exp in self.ctx.types:
             msg = type_value_error(self.ctx, exp, val)
             if msg:
@@ -304,17 +330,20 @@ class ExprEmit:
 
     def primary(self):
         kind, val = self.next()
-        if kind == "num":
-            return Lit(val, "num")
-        if kind == "str":
-            return self._primary_str(val)
-        if kind == "op" and val == "...":
+        handler = PRIMARY_FORMS.get(kind)
+        if handler is None:
+            self.err("unexpected %r" % val)
+        return getattr(self, handler)(val)
+
+    def _primary_num(self, val):
+        return Lit(val, "num")
+
+    def _primary_op(self, val):
+        if val == "...":
             self.err("... is not allowed in logic; use |lua for varargs")
-        if kind == "name":
-            return self._primary_name(val)
-        if kind == "op" and val == "(":
+        if val == "(":
             return self._primary_paren()
-        if kind == "op" and val == "{":
+        if val == "{":
             return self.list_literal()
         self.err("unexpected %r" % val)
 
@@ -580,12 +609,10 @@ class ExprEmit:
         return k == "num"
 
     def _postfix_step(self, node, k, v):
-        if k == "op" and v == ".":
-            return self.postfix_dot(node), False
-        if k == "op" and v == "[":
-            return self.postfix_index(node), False
-        if k == "op" and v == ":":
-            return self.postfix_method(node), False
+        if k == "op":
+            handler = POSTFIX_OPS.get(v)
+            if handler is not None:
+                return getattr(self, handler)(node), False
         if self._is_bare_call(node, k, v):
             return self.postfix_bare_call(node), False
         if k == "str" or (k == "op" and v == "("):
