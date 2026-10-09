@@ -44,27 +44,21 @@ def _group_years(names):
     return groups
 
 
-# the non-object declarations and the Emitter methods they use
+# the non-object declarations: Emitter method and whether a name is required
 DECL_FORMS = {
-    "verb": "verb",
-    "extend": "verb_extend",
-    "talk": "talk",
+    "verb": ("verb", True),
+    "extend": ("verb_extend", False),
+    "talk": ("talk", True),
 }
 
-# the declarations whose name is required
-NAMED_DECLS = ("verb", "talk")
-
-# the setup keys and the Emitter methods they use
+# the setup keys: Emitter method and whether a block is required
 SETUP_FORMS = {
-    "hero": "_setup_nested",
-    "game": "_setup_nested",
-    "on": "_setup_game_on",
-    "dsc": "_setup_dsc_line",
-    "start": "_setup_start",
+    "hero": ("_setup_nested", True),
+    "game": ("_setup_nested", True),
+    "on": ("_setup_game_on", False),
+    "dsc": ("_setup_dsc_line", False),
+    "start": ("_setup_start", False),
 }
-
-# the setup keys that expect a nested block
-SETUP_BLOCKS = ("hero", "game")
 
 # the talk phrase fields and the Emitter methods they use
 TALK_FORMS = {
@@ -115,23 +109,6 @@ VALUE_FORMS = {
     Data: _value_raw,
     Nil: _value_nil,
 }
-
-
-def _emit_event(em, name, block):
-    if not isinstance(block, Block):
-        raise Error(M.EVENT_MUST_BE_BLOCK % name)
-    lines = []
-    for key, val in block.items:
-        base, params = parse_key(key)
-        if base not in ("on", "before", "after"):
-            raise Error(M.EVENT_UNKNOWN_FIELD % (name, key))
-        if not isinstance(val, (Lua, Logic, Text, Bare)):
-            raise Error(M.EVENT_MUST_BE_LOGIC_LUA % (name, key))
-        mpname = {"on": "mp.", "before": "mp.before_",
-                  "after": "mp.after_"}[base] + name
-        prm = _handler_prm(params, name)
-        lines.append(T.ASSIGN % (mpname, em.handler(val, prm, "")))
-    return "\n".join(lines)
 
 
 class _Talk:
@@ -493,7 +470,20 @@ class Emitter:
         return tail
 
     def event(self, name, block):
-        return _emit_event(self, name, block)
+        if not isinstance(block, Block):
+            raise Error(M.EVENT_MUST_BE_BLOCK % name)
+        lines = []
+        for key, val in block.items:
+            base, params = parse_key(key)
+            if base not in ("on", "before", "after"):
+                raise Error(M.EVENT_UNKNOWN_FIELD % (name, key))
+            if not isinstance(val, (Lua, Logic, Text, Bare)):
+                raise Error(M.EVENT_MUST_BE_LOGIC_LUA % (name, key))
+            mpname = {"on": "mp.", "before": "mp.before_",
+                      "after": "mp.after_"}[base] + name
+            prm = _handler_prm(params, name)
+            lines.append(T.ASSIGN % (mpname, self.handler(val, prm, "")))
+        return "\n".join(lines)
 
     def verb_fields(self, block, required):
         """Shared `words`/`patterns` fields of verb and extend verb."""
@@ -688,9 +678,10 @@ class Emitter:
                         % ident)
         handler = DECL_FORMS.get(kind)
         if handler is not None:
-            if not ident and kind in NAMED_DECLS:
+            method, named = handler
+            if named and not ident:
                 raise Error(M.DECLARATION_NEEDS_NAME % kind)
-            return getattr(self, handler)(block, ident, base)
+            return getattr(self, method)(block, ident, base)
         if kind not in PRESETS:
             if re.fullmatch(r"[A-Z][\w]*", kind):
                 return self.obj(block, ident, base, kind, [])
@@ -766,12 +757,10 @@ class Emitter:
         for key, val in block.items:
             if key in ("take", "fmt", "init"):
                 continue
-            if key in SETUP_BLOCKS and not isinstance(val, Block):
+            form = SETUP_FORMS.get(key)
+            if form is None or (form[1] and not isinstance(val, Block)):
                 raise Error(M.UNKNOWN_SETUP_KEY + key)
-            handler = SETUP_FORMS.get(key)
-            if handler is None:
-                raise Error(M.UNKNOWN_SETUP_KEY + key)
-            lines.extend(getattr(self, handler)(key, val))
+            lines.extend(getattr(self, form[0])(key, val))
         lines.extend(self._setup_init(takes, block))
         return lines
 

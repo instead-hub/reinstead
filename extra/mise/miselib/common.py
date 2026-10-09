@@ -217,6 +217,12 @@ def split_list(s):
     parts = [s[a:b] for a, b in zip(starts, ends)]
     return [p.strip() for p in parts if p.strip()]
 
+def skip_blank(lines, i):
+    """Index of the first non-blank line at or after `i`."""
+    while i < len(lines) and not lines[i][0].strip():
+        i += 1
+    return i
+
 def _long_skip(text, i):
     """Length of a `[[...]]` section at `i`: -1 unterminated, None no opener."""
     m = re.match(r"\[(=*)\[", text[i:])

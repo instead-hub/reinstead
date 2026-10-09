@@ -4,11 +4,6 @@ from .common import *
 from .logicparse import parse_logic
 from . import messages as M
 
-def _skip_blank(lines, i):
-    while i < len(lines) and not lines[i][0].strip():
-        i += 1
-    return i
-
 def _list_value(lines, pos, ind, text, recurse):
     """Parse one list item; return `(item, consumed)`."""
     rest = text[1:].strip()
@@ -19,7 +14,7 @@ def _list_value(lines, pos, ind, text, recurse):
             item, lnxt = read_long(lines, pos, rest, pos + 1)
             return item, lnxt - pos
         return parse_scalar(rest, pos + 1, textmode=True), 1
-    j = _skip_blank(lines, pos + 1)
+    j = skip_blank(lines, pos + 1)
     if j < len(lines) and lines[j][1] > ind and re.match(
             r"^-\s", lines[j][0].strip()):
         sub, snxt = recurse(lines, j, lines[j][1])
@@ -72,7 +67,7 @@ def pipe_value(lines, i, indent, tag):
     return Logic(stmts), j
 
 def _block_child(lines, pos, indent, key, recurse):
-    j = _skip_blank(lines, pos + 1)
+    j = skip_blank(lines, pos + 1)
     if (j < len(lines) and re.match(r"^-\s", lines[j][0].strip())
             and lines[j][1] > indent):
         sub, cnxt = parse_list(lines, j, lines[j][1])

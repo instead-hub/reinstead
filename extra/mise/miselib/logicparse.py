@@ -4,15 +4,10 @@ from .common import *
 from . import messages as M
 
 
-def _skip_blanks(lines, i):
-    while i < len(lines) and not lines[i][0].strip():
-        i += 1
-    return i
-
 
 def _branch_body(lines, header, indent, what, recurse):
     """Parse the indented body of a branch or loop header."""
-    j = _skip_blanks(lines, header + 1)
+    j = skip_blank(lines, header + 1)
     if j >= len(lines) or lines[j][1] <= indent:
         parse_error(lines[header][2], M.EMPTY_BRANCH % what)
     return recurse(lines, j, lines[j][1])

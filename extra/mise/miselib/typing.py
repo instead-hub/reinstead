@@ -154,10 +154,6 @@ def _union_form(known, text, opt, recurse):
     return _canon_union(known, split_union(text), opt, recurse)
 
 
-def _tbl_form(known, text, opt, recurse):
-    return _canon_tbl(known, text, opt, recurse)
-
-
 def _fn_form(known, text, opt, recurse):
     return _canon_fn(known, _fn_split(text), opt, recurse)
 
@@ -169,7 +165,7 @@ def _nil_form(_known, _text, opt, _recurse):
 # the type-expression forms, tried in order
 CANON_FORMS = (
     (_is_union, _union_form),
-    (_is_tbl, _tbl_form),
+    (_is_tbl, _canon_tbl),
     (_is_fn, _fn_form),
     (_is_nil, _nil_form),
 )
