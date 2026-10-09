@@ -4,7 +4,7 @@ import re
 from . import state as S
 from .common import *
 from .parse import parse_source
-from .decl import classify, parse_fn_sig
+from .decl import classify, mixin_bodies, parse_fn_sig
 from .inline import _inline_fn
 from .proptypes import (check_prop_value, collect_types,
                        register_events, register_props,
@@ -147,14 +147,8 @@ def attach_mixins(block, ctx, into, collect):
     val = block.get("mixin")
     if val is None:
         return
-    CURRENT_LINE[0] = block.line("mixin") or CURRENT_LINE[0]
     seen = {}
-    for v in (val if isinstance(val, list) else [val]):
-        CURRENT_LINE[0] = block.line("mixin") or CURRENT_LINE[0]
-        name = v.s if hasattr(v, "s") else str(v)
-        bdef = ctx.mixin_defs.get(name)
-        if bdef is None:
-            raise Error(M.UNKNOWN_MIXIN + name)
+    for name, bdef in mixin_bodies(ctx, val, block.line("mixin")):
         for k, _bv in bdef.items:
             if k in seen:
                 raise Error(M.MIXIN_KEY_CONFLICT

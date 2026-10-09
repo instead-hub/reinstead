@@ -267,5 +267,17 @@ def sym_text(v):
     raise Error(M.EXPECTED_EXPRESSION)
 
 
+def mixin_bodies(ctx, val, line=None):
+    """Resolved `(name, body)` pairs of a `mixin` field value."""
+    for v in (val if isinstance(val, list) else [val]):
+        if line is not None:
+            CURRENT_LINE[0] = line
+        name = v.s if hasattr(v, "s") else str(v)
+        body = ctx.mixin_defs.get(name)
+        if body is None:
+            raise Error(M.UNKNOWN_MIXIN + name)
+        yield name, body
+
+
 def is_true(v):
     return isinstance(v, Bool) and v.s == "true"

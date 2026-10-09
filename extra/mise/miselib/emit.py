@@ -4,7 +4,7 @@ from . import state as S
 from .common import *
 from .emitlogic import emit_logic
 from .decl import (PRESETS, check_ref_value, decl_key,
-                   is_true, sym_text)
+                   is_true, mixin_bodies, sym_text)
 from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import transpile_exprlist
 from .exprparse import fn_name, min_args
@@ -132,6 +132,17 @@ def _emit_event(em, name, block):
         prm = _handler_prm(params, name)
         lines.append(T.ASSIGN % (mpname, em.handler(val, prm, "")))
     return "\n".join(lines)
+
+
+class _Talk:
+    """Per-table state of a `talk` phrase (labels shared with siblings)."""
+
+    def __init__(self, indent, labels):
+        self.indent = indent
+        self.labels = labels
+        self.named = []
+        self.children = []
+        self.specials = {"dsc": None, "reply": None, "do": None}
 
 
 class Emitter:
@@ -288,11 +299,7 @@ class Emitter:
         own = {k for k, _ in block.items if k != "mixin"}
         merged = Block()
         seen = {}
-        for v in (val if isinstance(val, list) else [val]):
-            name = v.s if hasattr(v, "s") else str(v)
-            bdef = self.ctx.mixin_defs.get(name)
-            if bdef is None:
-                raise Error(M.UNKNOWN_MIXIN + name)
+        for name, bdef in mixin_bodies(self.ctx, val):
             self._merge_mixin(merged, seen, own, bdef, name)
         self._merge_own(merged, block)
         return merged
@@ -405,7 +412,7 @@ class Emitter:
         fbase, params = parse_key(key)
         if fbase == "on":
             raise Error(M.ON_MUST_NAME_EVENT)
-        self._check_event_prefix(fbase)
+        self._check_phase_prefix(fbase)
         if not params:
             self._check_ref_value(ident, key, val, fbase)
         try:
@@ -416,10 +423,11 @@ class Emitter:
             return [T.INDEX_ASSIGN % (fi, fbase, rendered)]
         return [T.FIELD % (fi, fbase, rendered)]
 
-    def _check_event_prefix(self, fbase):
-        if re.match(r"^[a-z]+_", fbase):
+    def _check_phase_prefix(self, base):
+        """Reject a bare event name without an on/life prefix."""
+        if re.match(r"^[a-z]+_", base):
             return
-        for part in (p.strip() for p in fbase.split(",")):
+        for part in (p.strip() for p in base.split(",")):
             if part in self.ctx.event_names:
                 raise Error(M.EVENT_NEEDS_PHASE_PREFIX % part)
 
@@ -566,72 +574,64 @@ class Emitter:
         raise Error(M.EXPECTED_LOGIC_LUA_BLOCK)
 
     def talk_table(self, oblock, indent, labels, tag=None):
-        named = []
-        children = []
-        specials = {"dsc": None, "reply": None, "do": None}
+        talk = _Talk(indent, labels)
         for key, val in oblock.items:
-            self._talk_item(key, val, indent, labels, named, children,
-                            specials)
+            self._talk_item(key, val, talk)
         lines = [T.OPEN % indent]
         if tag:
             lines.append(T.LIST_ITEM % (indent + IND, tag))
-        if specials["dsc"] is not None:
-            lines.append(T.LINE % (indent + IND, specials["dsc"]))
-        act = self.talk_act(specials["reply"], specials["do"], indent + IND)
+        if talk.specials["dsc"] is not None:
+            lines.append(T.LINE % (indent + IND, talk.specials["dsc"]))
+        act = self.talk_act(talk.specials["reply"], talk.specials["do"],
+                            indent + IND)
         if isinstance(act, list):
             lines.extend(act)
             lines[-1] += ";"
         elif act is not None:
             lines.append(T.LINE % (indent + IND, act))
-        for ch in children:
+        for ch in talk.children:
             lines.extend(ch)
             lines[-1] += ";"
-        for n in named:
+        for n in talk.named:
             lines.append(T.LINE % (indent + IND, n))
         lines.append(T.CLOSE % indent)
         return lines
 
-    def _talk_dsc(self, _base, _key, val, _indent, _labels, _named, _children,
-                  specials):
-        specials["dsc"] = self.value(val)
+    def _talk_dsc(self, _base, _key, val, talk):
+        talk.specials["dsc"] = self.value(val)
 
-    def _talk_reply(self, _base, _key, val, _indent, _labels, _named,
-                    _children, specials):
-        specials["reply"] = self.value(val)
+    def _talk_reply(self, _base, _key, val, talk):
+        talk.specials["reply"] = self.value(val)
 
-    def _talk_do(self, _base, _key, val, _indent, _labels, _named, _children,
-                 specials):
-        specials["do"] = val
+    def _talk_do(self, _base, _key, val, talk):
+        talk.specials["do"] = val
 
-    def _talk_when(self, _base, _key, val, _indent, _labels, named, _children,
-                   _specials):
-        named.append(T.TALK_COND
-                     % transpile_exprlist(sym_text(val), {}, "talk when",
-                                          ctx=self.ctx)[0])
+    def _talk_when(self, _base, _key, val, talk):
+        talk.named.append(T.TALK_COND
+                          % transpile_exprlist(sym_text(val), {}, "talk when",
+                                               ctx=self.ctx)[0])
 
-    def _talk_goto(self, _base, _key, val, _indent, _labels, named, _children,
-                   _specials):
-        named.append(T.TALK_NEXT % sym_text(val).lstrip('#'))
+    def _talk_goto(self, _base, _key, val, talk):
+        talk.named.append(T.TALK_NEXT % sym_text(val).lstrip('#'))
 
-    def _talk_flag(self, base, _key, val, _indent, _labels, named, _children,
-                   _specials):
+    def _talk_flag(self, base, _key, val, talk):
         if is_true(val):
-            named.append(T.ASSIGN_TRUE % base)
+            talk.named.append(T.ASSIGN_TRUE % base)
 
-    def _talk_option(self, _base, _key, val, indent, labels, _named,
-                     children, _specials):
-        children.append(self.talk_table(val, indent + IND, labels))
+    def _talk_option(self, _base, _key, val, talk):
+        talk.children.append(self.talk_table(val, talk.indent + IND,
+                                             talk.labels))
 
-    def _talk_item(self, key, val, indent, labels, named, children, specials):
+    def _talk_item(self, key, val, talk):
         base, _ = parse_key(key)
         handler = TALK_FORMS.get(base)
         if handler is not None:
-            getattr(self, handler)(base, key, val, indent, labels, named,
-                                   children, specials)
+            getattr(self, handler)(base, key, val, talk)
         elif key.startswith("label ") and isinstance(val, Block):
-            labels.append((key[6:].strip(), val))
+            talk.labels.append((key[6:].strip(), val))
         else:
-            named.append(T.ASSIGN % (base, self.body(val, key, indent + IND)))
+            talk.named.append(T.ASSIGN
+                              % (base, self.body(val, key, talk.indent + IND)))
 
     def talk(self, block, name, base):
         fi = base + IND
@@ -803,7 +803,7 @@ class Emitter:
             raise Error(M.ON_MUST_NAME_EVENT)
         if _EVENT_KEY_RE.match(key):
             return self.on(_one_item_block(key, val), "", ref + ".")
-        self._check_impl_prefix(base)
+        self._check_phase_prefix(base)
         if base == "dict":
             if not isinstance(val, (Data, Raw)):
                 raise Error(M.IMPL_DICT_MUST_BE_TABLE % t)
@@ -814,13 +814,6 @@ class Emitter:
         if "," in base:
             raise Error(M.COMMA_KEY_NEEDS_PHASE)
         return [T.DOT_ASSIGN % (ref, base, self.body(val, key))]
-
-    def _check_impl_prefix(self, base):
-        if re.match(r"^[a-z]+_", base):
-            return
-        if any(p.strip() in self.ctx.event_names for p in base.split(",")):
-            raise Error(M.EVENT_NEEDS_PHASE_PREFIX
-                        % base)
 
     def const(self, block):
         return [T.CONST % (key, self.value(val))
