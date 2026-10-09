@@ -5,7 +5,7 @@ keep their tokens. Leaves are still parsed by the expression engine (via
 their canonical text), so code and error text stay as before; narrowing
 walks the tree instead of matching regexes on text.
 """
-from .expr import lex_lua
+from .lex import lex_lua
 
 
 class Leaf:
