@@ -1,1 +1,1 @@
-mise: error: line 5: fn noun expects 0..2 argument(s), got 3 in logic:6: s : noun ( 'им' , 1 , 2 )
+mise: error: line 5: fn noun expects 0..2 argument(s), got 3 in logic:6: s : noun ( им , 1 , 2 )

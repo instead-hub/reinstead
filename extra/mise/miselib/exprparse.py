@@ -267,17 +267,25 @@ class ExprEmit:
             return self._union_str_arg(tok, exp, val, alts)
         return self._scalar_str_arg(tok, exp, val)
 
+    def _enum_expected(self, exp):
+        """Is `exp` an enum type or a union that cannot take a string?"""
+        if not exp:
+            return False
+        alts = union_parts(exp) or [base(exp)]
+        if "str" in alts or "any" in alts:
+            return False
+        return any(alt and alt in self.ctx.types for alt in alts)
+
     def _union_str_arg(self, tok, exp, val, alts):
         if "str" in alts or "any" in alts:
             return tok
         for alt in alts:
-            if alt in self.ctx.types:
-                if not type_value_error(self.ctx, alt, val):
-                    return tok
-            elif alt == "event" and val in self.ctx.event_names:
+            if alt == "event" and val in self.ctx.event_names:
                 return tok
-            elif alt == "obj" and val in self.ctx.ids:
+            if alt == "obj" and val in self.ctx.ids:
                 return "_'%s'" % val
+        if any(alt in self.ctx.types for alt in alts):
+            self.terr(M.ENUM_VALUES_BARE % val)
         self.terr(M.EXPECTED_GOT_STR_VAL % (exp, val))
 
     def _str_arg_obj(self, _tok, val):
@@ -294,11 +302,8 @@ class ExprEmit:
         handler = STR_ARG_FORMS.get(exp)
         if handler is not None:
             return getattr(self, handler)(tok, val)
-        if exp in self.ctx.types:
-            msg = type_value_error(self.ctx, exp, val)
-            if msg:
-                self.terr(msg)
-            return tok
+        if base(exp) in self.ctx.types:
+            self.terr(M.ENUM_VALUES_BARE % val)
         err = STR_ARG_ERRORS.get(exp)
         if err is not None:
             self.terr(err)
@@ -363,17 +368,14 @@ class ExprEmit:
         self.err(M.UNEXPECTED % val)
 
     def _primary_str(self, val):
+        s = self.strval(val)
         if self.expected == "obj":
-            self.terr(M.STRINGS_NOT_OBJECTS
-                      % self.strval(val))
+            self.terr(M.STRINGS_NOT_OBJECTS % s)
         if self.expected == "event":
-            self.err(M.EVENT_NAMES_BARE
-                     % self.strval(val))
-        if self.expected in self.ctx.types:
-            msg = type_value_error(self.ctx, self.expected, self.strval(val))
-            if msg:
-                self.terr(msg)
-        return Lit(val, "str", val=self.strval(val))
+            self.err(M.EVENT_NAMES_BARE % s)
+        if self._enum_expected(self.expected):
+            self.terr(M.ENUM_VALUES_BARE % s)
+        return Lit(val, "str", val=s)
 
     def _primary_paren(self):
         self.expected = None
@@ -398,7 +400,7 @@ class ExprEmit:
             msg = type_value_error(self.ctx, self.expected, val)
             if msg:
                 self.terr(msg)
-            return Lit(lua_str(val), "str", val=val)
+            return Lit(lua_str(val), self.expected, val=val)
         if val in self.ctx.event_names:
             return _event_lit(val)
         owners = self.ctx.enum_values.get(val)
@@ -618,7 +620,7 @@ class ExprEmit:
             return False
         if k == "name" and v not in S.KEYWORDS:
             return True
-        if k == "op" and v in ("#", "-"):
+        if k == "op" and v in ("#", "-", "{"):
             return True
         return k == "num"
 
@@ -698,6 +700,8 @@ class ExprEmit:
             self.err(M.STRINGS_NOT_OBJECTS
                      % (node.val,))
         self.check(node.t, plist[0][1], node.code)
+        if self.peek()[0] == "op" and self.peek()[1] == "{":
+            return self._method_table_call(node, nv, plist, ret, variadic)
         if self._method_bare(plist, variadic):
             return Call(fn_call(self.ctx, nv, [node.code]), ret)
         if self._method_tail(plist, variadic):
@@ -725,7 +729,7 @@ class ExprEmit:
             msg = type_value_error(self.ctx, pt, nm)
             if msg:
                 self.terr(msg)
-            return Lit(lua_str(nm), "str", nm)
+            return Lit(lua_str(nm), pt, nm)
         if pt == "event" and nm in self.ctx.event_names:
             return _event_lit(nm)
         arg = self.name_ref(nm, zero_call=True)
@@ -738,6 +742,18 @@ class ExprEmit:
         pt = plist[1][1]
         arg = self._tail_value(nm, pt)
         self.check(arg.t, pt, arg.code)
+        return Call(fn_call(self.ctx, nv, [node.code, arg.code]), ret)
+
+    def _method_table_call(self, node, nv, plist, ret, variadic):
+        """`s:fn { ... }` — a table literal as the sole argument (Lua-style)."""
+        self.next()
+        exp = plist[1][1] if len(plist) > 1 else None
+        self.expected = exp
+        arg = self.list_literal()
+        self.expected = None
+        if exp is not None:
+            self.check(arg.t, exp, arg.code)
+        self.check_arity(nv, plist[1:], variadic, 1)
         return Call(fn_call(self.ctx, nv, [node.code, arg.code]), ret)
 
     def _bare_sig(self, name):

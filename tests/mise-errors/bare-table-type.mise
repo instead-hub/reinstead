@@ -1,0 +1,12 @@
+name: t
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+
+fn one(x: num): |
+  pass
+
+fn f(): |
+  one { 1 }

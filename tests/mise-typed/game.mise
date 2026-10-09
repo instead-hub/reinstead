@@ -6,31 +6,36 @@ class Box:
   attrs: container
   weight: 0
 
-fn label(w: obj, n: str|num?, nn: num?) -> str: |
+fn label(w: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str: |
   if n and nn:
     return w:noun(n, nn)
   if n:
     return w:noun(n)
   return w:noun()
 
-fn label2(w: obj, n: num?|str) -> str: |
+fn label2(w: obj, n: case|num) -> str: |
   return w:noun(n)
+
+fn first_str(t: tbl[str]) -> str: |
+  return t[1]
 
 fn on_take(s: Box): |
   if s.weight + 1 > 0:
     say [[тяжёлый]]
   say(label(s))
-  say(label(s, 'им'))
+  say(label(s, им))
   say(label(s, вн))
   say(s:noun(вн))
   say(s:noun(зв))
-  say(s:noun('рд,2'))
-  say(s:noun 'им')
+  say(s:noun({ рд, 2 }))
+  say(s:noun { рд, 2 })
+  say(s:noun(им))
   say(s:noun({ вн, 2 }))
   say(s:noun({ пр, мн }))
-  say(s:noun({ 'тв', 2 }))
+  say(s:noun({ тв, 2 }))
   say(s:noun({}))
   say(s:Noun({ рд, 2 }, 1))
+  say(first_str { [[a]], [[b]] })
   local h = { вн, мн }
   say(s:noun(h))
   local w = inv()[1]

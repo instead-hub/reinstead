@@ -44,7 +44,7 @@ class Arrow:
 class NPC:
   attrs: animate
   life_Answer,Ask,AskTo,AskFor,Tell: |
-    say('Введите просто "говорить с ', s:noun({ 'тв' }), '".')
+    say('Введите просто "говорить с ', s:noun({ тв }), '".')
 
 setup:
   dsc: [[^Пример простой игры на Inform

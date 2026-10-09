@@ -1,0 +1,1 @@
+mise: error: enum values are bare, not quoted ('light') in logic:9: say ( s : has ( 'light' ) )

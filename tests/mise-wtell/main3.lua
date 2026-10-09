@@ -82,7 +82,7 @@ Arrow = Class {
 
 NPC = Class {
   ["life_Answer,Ask,AskTo,AskFor,Tell"] = function(s)
-    p('Введите просто "говорить с ', s:noun_hint(({ 'тв' })), '".')
+    p('Введите просто "говорить с ', s:noun_hint(({ "тв" })), '".')
   end;
 }:attr 'animate'
 

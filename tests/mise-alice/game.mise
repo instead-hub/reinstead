@@ -38,7 +38,7 @@ event Reflect:
     if w == player:
       say Алисы
     else:
-      say(w:noun 'рд')
+      say(w:noun(рд))
     say ' в зеркале выглядит '
     if where(player) == mantelpiece:
       say слишком уж расплывчатым и размытым.
@@ -135,11 +135,11 @@ class Kitten:
   attrs: animate
   other_kitten: none
   life Kiss: |
-    say('Алиса чмокнула ', s:noun('вн', 1), [[ в носик,
+    say('Алиса чмокнула ', s:noun(вн, 1), [[ в носик,
          и тот взглянул на нее сконфуженно, но довольно.]])
   life Attack: Разве можно напасть на такое крохотное и беззащитное создание!
   on Show: |
-    say(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun 'рд', '.')
+    say(s:Noun(1), ', протянув лапку, опасливо дотронулся до ', w:noun(рд), '.')
   before Touch, Rub: |
     say(s:Noun(1), ' в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.')
 Kitten white_kitten:
@@ -191,11 +191,11 @@ impl Drawing_Room:
       pass
     if w and not inside(w, mantelpiece):
       say 'Отсюда трудно дотянуться до '
-      say(w:noun 'рд', '.')
+      say(w:noun(рд), '.')
       stop
     if wh and not inside(wh, mantelpiece):
       say 'Отсюда трудно дотянуться до '
-      say(w:noun 'рд', '.')
+      say(w:noun(рд), '.')
       stop
     pass
 
@@ -252,7 +252,7 @@ impl armchair:
     local loc = where(player)
     if loc:
       if loc ~= Drawing_Room:
-        say('Для начала необходимо покинуть ', loc:noun 'вн', '.')
+        say('Для начала необходимо покинуть ', loc:noun(вн), '.')
         stop
     if have white_kitten or have black_kitten:
       say Только не с котенком в руках!
@@ -394,18 +394,18 @@ impl Kitten:
     if w ~= red_queen and w ~= worsted:
       if event() == ThrowAt:
         w:move Drawing_Room
-        say('Алиса бросила ', w:noun 'вн', ' на пол, и ', s:noun(1))
+        say('Алиса бросила ', w:noun(вн), ' на пол, и ', s:noun(1))
       else:
         say(s:Noun(1))
-      say(' рассматривает ', w:noun 'вн', ' с озадаченным видом.')
+      say(' рассматривает ', w:noun(вн), ' с озадаченным видом.')
       stop
-    say('Алиса бросила ', w:noun 'вн', ' на пол. Немедленно ')
+    say('Алиса бросила ', w:noun(вн), ' на пол. Немедленно ')
     append(s:noun(1))
     if have(s):
       say ', выскользнув из ее рук,'
     w:move Drawing_Room
     s:move Drawing_Room
-    append(' бросился за ', w:noun 'тв')
+    append(' бросился за ', w:noun(тв))
     if w == worsted:
       worsted.sputan = true
       s.state = WOOL_STATE
@@ -420,7 +420,7 @@ impl Kitten:
       stop
     s.state = HELD_STATE
     s:move player
-    say('Алиса взяла на руки ', s:noun 'вн', '. Ну что за прелестное создание!')
+    say('Алиса взяла на руки ', s:noun(вн), '. Ну что за прелестное создание!')
 
   after Drop: |
     s.state = CHAIR_STATE
@@ -431,7 +431,7 @@ impl Kitten:
     s.state = CHAIR_STATE
     local p = where(s)
     if p:
-      append(s:Noun(1), ', спрыгнув с ', p:noun 'рд')
+      append(s:Noun(1), ', спрыгнув с ', p:noun(рд))
     s:move Drawing_Room
     say ', ловко приземлился на полу и убежал прочь.'
 
@@ -498,7 +498,7 @@ impl Kitten:
           say ' обежал вокруг '
         when n == 5:
           say ' ткнул '
-        append(s.other_kitten:noun 'вн')
+        append(s.other_kitten:noun(вн))
         when n == 2:
           say ' и они вместе покатились по полу.'
         when n == 4:

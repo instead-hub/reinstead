@@ -1,0 +1,1 @@
+mise: error: expected num, got tbl[num]: ({ 1 }) in logic:12: one { 1 }

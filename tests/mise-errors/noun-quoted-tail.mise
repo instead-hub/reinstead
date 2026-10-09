@@ -2,5 +2,8 @@ name: t
 lang: ru
 include: stdlib
 
+obj box:
+  words: коробка
+
 fn f(s: obj): |
-  s:noun(им, 1, 2)
+  s:noun 'рд'

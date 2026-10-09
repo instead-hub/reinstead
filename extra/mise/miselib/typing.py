@@ -378,11 +378,6 @@ def _tbl_ok(ctx, t, inner_exp, recurse):
     return recurse(ctx, inner_t, inner_exp)
 
 
-def _rule_enum_str(ctx, t, exp):
-    """An enum or `str` value where an enum or `str` is expected."""
-    return exp in ctx.types and t in ("str", exp)
-
-
 def _rule_str_enum(ctx, t, exp):
     """An enum value where a string is expected."""
     return t in ctx.types and exp == "str"
@@ -406,7 +401,6 @@ def _rule_fn(_ctx, t, exp):
 
 # the named-type compatibility rules, tried in order
 SCALAR_RULES = (
-    _rule_enum_str,
     _rule_str_enum,
     _rule_class,
     _rule_obj_class,

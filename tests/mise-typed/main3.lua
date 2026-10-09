@@ -18,22 +18,28 @@ local function fn_label2(w, n)
   return w:noun_hint(n)
 end
 
+local function fn_first_str(t)
+  return t[1]
+end
+
 local function fn_on_take(s)
   if s.weight + 1 > 0 then
     p([[тяжёлый]])
   end
   p(fn_label(s))
-  p(fn_label(s, 'им'))
+  p(fn_label(s, "им"))
   p(fn_label(s, "вн"))
   p(s:noun_hint("вн"))
   p(s:noun_hint("зв"))
-  p(s:noun_hint('рд,2'))
-  p(s:noun_hint('им'))
+  p(s:noun_hint(({ "рд", 2 })))
+  p(s:noun_hint(({ "рд", 2 })))
+  p(s:noun_hint("им"))
   p(s:noun_hint(({ "вн", 2 })))
   p(s:noun_hint(({ "пр", "мн" })))
-  p(s:noun_hint(({ 'тв', 2 })))
+  p(s:noun_hint(({ "тв", 2 })))
   p(s:noun_hint(({})))
   p(s:Noun_hint(({ "рд", 2 }), 1))
+  p(fn_first_str(({ [[a]], [[b]] })))
   local h = ({ "вн", "мн" })
   p(s:noun_hint(h))
   local w = inv()[1]
