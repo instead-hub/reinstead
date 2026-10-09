@@ -255,15 +255,11 @@ def _check_for_var(name, pt, where, ctx):
                         % (where, name, canon))
 
 
-def _for_bounds(parts, env, where, ctx):
-    codes = []
-    for p in parts:
-        c, ct = transpile_exprlist(p, env, where, None, ctx)
-        if ct and ct[0] not in ("num", "any"):
-            raise LintError(M.FOR_BOUND_MUST_BE_NUM
-                            % (where, ct[0]))
-        codes.append(c)
-    return codes
+def _for_bound(p, env, where, ctx):
+    code, t = transpile_exprlist(p, env, where, None, ctx)
+    if t and t[0] not in ("num", "any"):
+        raise LintError(M.FOR_BOUND_MUST_BE_NUM % (where, t[0]))
+    return code
 
 
 def transpile_for(header, env, where, ctx):
@@ -276,10 +272,8 @@ def transpile_for(header, env, where, ctx):
         raise LintError(M.BAD_FOR_HEADER % (where, header))
     name, pt, start_expr = m.group(1), m.group(2), m.group(3)
     _check_for_var(name, pt, where, ctx)
-    start, st = transpile_exprlist(start_expr, env, where, None, ctx)
-    if st and st[0] not in ("num", "any"):
-        raise LintError(M.FOR_BOUND_MUST_BE_NUM % (where, st[0]))
-    codes = [start] + _for_bounds(parts[1:], env, where, ctx)
+    start = _for_bound(start_expr, env, where, ctx)
+    codes = [start] + [_for_bound(p, env, where, ctx) for p in parts[1:]]
     return ("%s = %s" % (name, ", ".join(codes)), {name: "num"})
 
 def expr_like(s, env, ctx):

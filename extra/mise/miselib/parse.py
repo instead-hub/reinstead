@@ -4,6 +4,12 @@ from .common import *
 from .logicparse import parse_logic
 from . import messages as M
 
+def _is_list_item(lines, j, indent):
+    """Is line `j` an indented `- ` list item below `indent`?"""
+    return (j < len(lines) and lines[j][1] > indent
+            and re.match(r"^-\s", lines[j][0].strip()))
+
+
 def _list_value(lines, pos, ind, text, recurse):
     """Parse one list item; return `(item, consumed)`."""
     rest = text[1:].strip()
@@ -15,8 +21,7 @@ def _list_value(lines, pos, ind, text, recurse):
             return item, lnxt - pos
         return parse_scalar(rest, pos + 1, textmode=True), 1
     j = skip_blank(lines, pos + 1)
-    if j < len(lines) and lines[j][1] > ind and re.match(
-            r"^-\s", lines[j][0].strip()):
+    if _is_list_item(lines, j, ind):
         sub, snxt = recurse(lines, j, lines[j][1])
         return sub, snxt - pos
     parse_error(pos + 1, M.EMPTY_LIST_ITEM)
@@ -68,8 +73,7 @@ def pipe_value(lines, i, indent, tag):
 
 def _block_child(lines, pos, indent, key, recurse):
     j = skip_blank(lines, pos + 1)
-    if (j < len(lines) and re.match(r"^-\s", lines[j][0].strip())
-            and lines[j][1] > indent):
+    if _is_list_item(lines, j, indent):
         sub, cnxt = parse_list(lines, j, lines[j][1])
         return sub, cnxt - pos
     if j < len(lines) and lines[j][1] > indent:

@@ -485,6 +485,14 @@ class Emitter:
             lines.append(T.ASSIGN % (mpname, self.handler(val, prm, "")))
         return "\n".join(lines)
 
+    def _event_handler_key(self, block):
+        """First handler key (`on X`/`before X`/`after X`) of a declaration."""
+        for key, _val in block.items:
+            base_key, _params = parse_key(key)
+            if re.match(r"^(on|before|after)(\s|$)", base_key):
+                return base_key
+        return None
+
     def verb_fields(self, block, required):
         """Shared `words`/`patterns` fields of verb and extend verb."""
         label = "verb" if required else "extend"
@@ -520,11 +528,10 @@ class Emitter:
         elif not (isinstance(tag, Bool) and tag.s == "false"):
             fields.append(self.value(tag))
         fields += self.verb_fields(block, required=True)
-        for key, _val in block.items:
-            base_key, _params = parse_key(key)
-            if re.match(r"^(on|before|after)(\s|$)", base_key):
-                raise Error(M.VERB_DECLARED_EVENT_NOW
-                            % (ident or "?", base_key, ident or "?"))
+        base_key = self._event_handler_key(block)
+        if base_key is not None:
+            raise Error(M.VERB_DECLARED_EVENT_NOW
+                        % (ident or "?", base_key, ident or "?"))
         extra = self.verb_extra(block)
         return T.VERB % (base, ", ".join(fields),
                                     (", " + ", ".join(extra)) if extra else "")
@@ -535,11 +542,10 @@ class Emitter:
         fields = [lua_str(ident)] + self.verb_fields(block, required=False)
         if len(fields) == 1:
             raise Error(M.EXTEND_NEEDS_WORDS_OR_PATTERNS)
-        for key, _val in block.items:
-            base_key, _params = parse_key(key)
-            if re.match(r"^(on|before|after)(\s|$)", base_key):
-                raise Error(M.EXTEND_DECLARED_EVENT_NOW
-                            % (ident, base_key, ident.lstrip("#")))
+        base_key = self._event_handler_key(block)
+        if base_key is not None:
+            raise Error(M.EXTEND_DECLARED_EVENT_NOW
+                        % (ident, base_key, ident.lstrip("#")))
         extra = self.verb_extra(block)
         ctor = "VerbExtendWord" if block.get("words") is not None \
             else "VerbExtend"

@@ -158,6 +158,11 @@ def _event_lit(val):
     return Lit("'%s'" % val, "event", val=val)
 
 
+def _arg_call(kind, val):
+    """A token that starts a call argument list (`"str"` or `(`)."""
+    return kind == "str" or (kind == "op" and val == "(")
+
+
 class ExprEmit:
     def __init__(self, toks, env, where, ctx):
         self.toks = toks
@@ -621,14 +626,14 @@ class ExprEmit:
                 return getattr(self, handler)(node), False
         if self._is_bare_call(node, k, v):
             return self.postfix_bare_call(node), False
-        if k == "str" or (k == "op" and v == "("):
+        if _arg_call(k, v):
             return self.postfix_arg_call(node), False
         return node, True
 
     def postfix(self, node):
         while True:
             k, v = self.peek()
-            if not (k == "str" or (k == "op" and v == "(")):
+            if not _arg_call(k, v):
                 node = self.autocall(node)
             node, done = self._postfix_step(node, k, v)
             if done:
@@ -701,7 +706,7 @@ class ExprEmit:
     def _method_bare(self, plist, variadic):
         nk, nv2 = self.peek()
         return (not variadic and len(plist) == 1
-                and not (nk == "str" or (nk == "op" and nv2 == "(")))
+                and not _arg_call(nk, nv2))
 
     def _method_tail(self, plist, variadic):
         if variadic or len(plist) != 2:
