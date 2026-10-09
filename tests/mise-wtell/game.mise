@@ -310,12 +310,12 @@ impl stallholder:
 
   life_Talk: |
     s.times_spoken_to += 1
-    if s.times_spoken_to == 1:
+    when s.times_spoken_to == 1:
       score_up()
       say Ты тепло благодаришь Хельгу за яблоко.
-    elseif s.times_spoken_to == 2:
+    when s.times_spoken_to == 2:
       say "Ещё увидимся!"
-    else:
+    default:
       pass
 
 impl mid_square:
@@ -328,14 +328,14 @@ impl mid_square:
         say [[^"Хорошего дня".^]]
         pass
       s.warnings_count += 1
-      if s.warnings_count == 1:
+      when s.warnings_count == 1:
         say [[Солдат преграждает тебе дорогу.^^
 "Эй ты, сноб, забыл хорошие манеры? Как насчёт того, чтобы поклониться шляпе фогта?"]]
-      elseif s.warnings_count == 2:
+      when s.warnings_count == 2:
         say [["Я тебя знаю, ты Телль, мятежник, не правда ли?
 Ладно, мы не хотим начинать тут драку, так что будь хорошим мальчиком,
 отдай честь этой чёртовой шляпе, в третий раз я просить не буду".]]
-      else:
+      default:
         say [["Ладно, {$fmt u|господин} Телль, у вас серьёзные неприятности.
 Я вежливо попросил, но вы оказались слишком гордым
 и слишком глупым. Думаю, фогт захочет с вами немного побеседовать".^^

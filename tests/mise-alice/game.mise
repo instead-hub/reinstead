@@ -258,9 +258,9 @@ impl armchair:
       say Только не с котенком в руках!
       stop
     local k = none
-    if white_kitten.state == CHAIR_STATE:
+    when white_kitten.state == CHAIR_STATE:
       k = white_kitten
-    elseif black_kitten.state == CHAIR_STATE:
+    when black_kitten.state == CHAIR_STATE:
       k = black_kitten
     if k ~= none:
       say [[Начав двигать кресло, Алиса обнаружила, что ]]
@@ -364,11 +364,11 @@ impl worsted:
 
 impl Kitten:
   dsc: |
-    if s.state == QUEEN_STATE:
+    when s.state == QUEEN_STATE:
       say('^', s:Noun(1), ' играет с Черной Королевой.')
-    elseif s.state == WOOL_STATE:
+    when s.state == WOOL_STATE:
       say('^', s:Noun(1), ' играет с клубком шерсти.')
-    elseif s.state == CHAIR_STATE:
+    when s.state == CHAIR_STATE:
       if s.seen:
         stop
       if s.other_kitten.state == CHAIR_STATE:
@@ -377,7 +377,7 @@ impl Kitten:
         stop
       say(s:Noun(1), ' резвится на коврике рядом с креслом.')
       stop
-    else:
+    default:
       stop
 
   description: |
@@ -441,83 +441,83 @@ impl Kitten:
     if not s.this_kittens_turn or rnd(3) == 2:
       stop
     say(s:Noun(1))
-    if s.state == HELD_STATE:
+    when s.state == HELD_STATE:
       local n = rnd(5)
-      if n == 1:
+      when n == 1:
         say ' жалобно мяукнул.'
-      elseif n == 2:
+      when n == 2:
         say ' тихо мурлыкнул.'
-      elseif n == 3:
+      when n == 3:
         say ' удовлетворенно промурлыкал что-то.'
-      elseif n == 4:
+      when n == 4:
         say ' потерся ушками о руку Алисы.'
-      elseif n == 5:
+      when n == 5:
         s:move Drawing_Room
         s.state = CHAIR_STATE
         say ' спрыгнул на пол, ловко выскользнув из Алисиных рук.'
       stop
-    elseif s.state == QUEEN_STATE:
+    when s.state == QUEEN_STATE:
       local n = rnd(5)
-      if n == 1:
+      when n == 1:
         say ' ткнул Черную Королеву лапкой.'
-      elseif n == 2:
+      when n == 2:
         say ' оставив на время игру, сидит с подчеркнуто невинным видом.'
-      elseif n == 3:
+      when n == 3:
         say ' катает бедную Королеву туда-сюда по полу.'
-      elseif n == 4:
+      when n == 4:
         say ' кончил умываться и осматривается по сторонам.'
-      elseif n == 5:
+      when n == 5:
         say [[ взял Черную Королеву, укусил, и начал яростно трясти,
              чтобы убедиться, что с ней покончено.]]
       stop
-    elseif s.state == WOOL_STATE:
+    when s.state == WOOL_STATE:
       worsted.sputan = true
       local n = rnd(5)
-      if n == 1:
+      when n == 1:
         say ' ткнул клубок шерсти лапкой.'
-      elseif n == 2:
+      when n == 2:
         say ' покатил клубок по полу, преследуя его по пятам.'
-      elseif n == 3:
+      when n == 3:
         say ' сцепился с клубком в жестокой схватке.'
-      elseif n == 4:
+      when n == 4:
         say [[ прыгнул на клубок сверху,
               и окончательно запутался в мешанине шерстяных нитей.]]
-      elseif n == 5:
+      when n == 5:
         say ' прервав игру, чешет себя за ушами.'
       stop
-    elseif s.state == CHAIR_STATE:
+    when s.state == CHAIR_STATE:
       if s.other_kitten.state == CHAIR_STATE and rnd(2) == 1:
         local n = rnd(5)
-        if n == 1:
+        when n == 1:
           say ' преследует '
-        elseif n == 2:
+        when n == 2:
           say ' прыгнул на '
-        elseif n == 3:
+        when n == 3:
           say ' умывает лапкой '
-        elseif n == 4:
+        when n == 4:
           say ' обежал вокруг '
-        elseif n == 5:
+        when n == 5:
           say ' ткнул '
         append(s.other_kitten:noun 'вн')
-        if n == 2:
+        when n == 2:
           say ' и они вместе покатились по полу.'
-        elseif n == 4:
+        when n == 4:
           say ' и бросился за ним.'
-        elseif n == 5:
+        when n == 5:
           say ' лапкой.'
-        else:
+        default:
           say '.'
         stop
       local n = rnd(5)
-      if n == 1:
+      when n == 1:
         say ' гоняет по полу комок пыли.'
-      elseif n == 2:
+      when n == 2:
         say ' катается по полу.'
-      elseif n == 3:
+      when n == 3:
         say ' сидит и тщательно вылизывает свой хвост.'
-      elseif n == 4:
+      when n == 4:
         say ' трется головой о ножки кресла.'
-      elseif n == 5:
+      when n == 5:
         say ' гоняется за своим хвостом.' 
 
 ending theend:
