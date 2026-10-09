@@ -154,6 +154,10 @@ class Call(Node):
     pass
 
 
+def _event_lit(val):
+    return Lit("'%s'" % val, "event", val=val)
+
+
 class ExprEmit:
     def __init__(self, toks, env, where, ctx):
         self.toks = toks
@@ -182,6 +186,10 @@ class ExprEmit:
         _, v = self.next()
         if v != val:
             self.err("expected %r, got %r" % (val, v))
+
+    def expect_eof(self):
+        if self.peek()[0] != "eof":
+            self.err("unexpected %r" % self.peek()[1])
 
     def err(self, msg):
         raise LintError(M.IN_MESSAGE % (
@@ -386,7 +394,7 @@ class ExprEmit:
                 self.terr(msg)
             return Lit(lua_str(val), "str", val=val)
         if val in self.ctx.event_names:
-            return Lit("'%s'" % val, "event", val=val)
+            return _event_lit(val)
         owners = self.ctx.enum_values.get(val)
         if owners:
             return self._primary_enum(val, owners)
@@ -400,7 +408,7 @@ class ExprEmit:
 
     def _primary_event(self, val):
         if val in self.ctx.event_names:
-            return Lit("'%s'" % val, "event", val=val)
+            return _event_lit(val)
         self.err("unknown event %r" % val)
 
     def _list_elem(self):
@@ -715,7 +723,7 @@ class ExprEmit:
                 self.terr(msg)
             return Lit(lua_str(nm), "str", nm)
         if pt == "event" and nm in self.ctx.event_names:
-            return Lit("'%s'" % nm, "event", nm)
+            return _event_lit(nm)
         arg = self.name_ref(nm, zero_call=True)
         if arg is None:
             self.err("unknown name %r" % nm)

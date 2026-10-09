@@ -163,12 +163,11 @@ def attach_mixins(block, ctx, into, collect):
         collect(bdef, ctx, into)
 
 
-def _collect_nested(block, ctx, collect):
-    """Field maps of declarations inside a with/inside block."""
-    for kind, ident, nv in _nested_decls(block):
-        fields = dict(ctx.fields.get(kind, {}))
-        collect(nv, ctx, fields, ident)
-        ctx.fields[ident] = fields
+def _reject_bare_str(base, val, t):
+    """A bare string field value must be a declared name or a `use`."""
+    if (base is not None and isinstance(val, Bare) and t == "str"
+            and not S.USE_RE.match(val.s.strip())):
+        raise Error(M.FIELD_STRING_VALUES_QUOTED % (val.s, base))
 
 
 def _collect_field(ctx, into, owner, key, val):
@@ -177,9 +176,7 @@ def _collect_field(ctx, into, owner, key, val):
     if base is None:
         return
     t = literal_type(ctx, val, refs=True)
-    if (isinstance(val, Bare) and t == "str"
-            and not S.USE_RE.match(val.s.strip())):
-        raise Error(M.FIELD_STRING_VALUES_QUOTED % (val.s, base))
+    _reject_bare_str(base, val, t)
     prop = ctx.props.get(base)
     if prop is not None:
         into[base] = check_prop_value(ctx, owner, base, prop, val, t)
@@ -195,6 +192,14 @@ def collect_block_fields(block, ctx, into, owner=None):
             _collect_nested(val, ctx, collect_block_fields)
             continue
         _collect_field(ctx, into, owner, key, val)
+
+
+def _collect_nested(block, ctx, collect):
+    """Field maps of declarations inside a with/inside block."""
+    for kind, ident, nv in _nested_decls(block):
+        fields = dict(ctx.fields.get(kind, {}))
+        collect(nv, ctx, fields, ident)
+        ctx.fields[ident] = fields
 
 
 def _collect_class(info, val, class_defs, _mixin_defs):
@@ -289,9 +294,7 @@ def _check_bare_field(ctx, use_props, owner, key, val):
     """Validate one non-mixin field of an impl/setup/hero block."""
     base = field_base(key, val, ctx)
     t = literal_type(ctx, val, refs=True)
-    if (base is not None and isinstance(val, Bare) and t == "str"
-            and not S.USE_RE.match(val.s.strip())):
-        raise Error(M.FIELD_STRING_VALUES_QUOTED % (val.s, base))
+    _reject_bare_str(base, val, t)
     prop = ctx.props.get(base) if (use_props and base) else None
     if prop is not None:
         check_prop_value(ctx, owner, base, prop, val, t)

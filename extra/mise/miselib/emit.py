@@ -12,15 +12,25 @@ from . import templates as T
 from . import messages as M
 
 
-
-
-
-
-
-
 def _pfx(kw):
     """Prefix for a handler keyword: `on` is the main-phase method."""
     return "" if kw == "on" else kw + "_"
+
+
+def _handler_prm(params, name):
+    """Parameter list of an event handler method."""
+    if params:
+        return params
+    return "s, ev, w, wh" if name in ("Any", "Default") else "s, w, wh"
+
+
+def _one_item_block(key, val):
+    block = Block()
+    block.items = [(key, val)]
+    return block
+
+
+_EVENT_KEY_RE = re.compile(r"^(on|life|before|after|post)\s+\S")
 
 
 def _group_years(names):
@@ -50,7 +60,7 @@ SETUP_FORMS = {
     "game": "_setup_nested",
     "on": "_setup_game_on",
     "dsc": "_setup_dsc_line",
-    "start": "_setup_start_lines",
+    "start": "_setup_start",
 }
 
 # the setup keys that expect a nested block
@@ -119,8 +129,7 @@ def _emit_event(em, name, block):
             raise Error(M.EVENT_MUST_BE_LOGIC_LUA % (name, key))
         mpname = {"on": "mp.", "before": "mp.before_",
                   "after": "mp.after_"}[base] + name
-        prm = params or ("s, ev, w, wh" if name in ("Any", "Default")
-                         else "s, w, wh")
+        prm = _handler_prm(params, name)
         lines.append(T.ASSIGN % (mpname, em.handler(val, prm, "")))
     return "\n".join(lines)
 
@@ -228,9 +237,7 @@ class Emitter:
             CURRENT_LINE[0] = block.line_at(i) or CURRENT_LINE[0]
             params, names = self._on_parts(key)
             for pfx, years in _group_years(names):
-                prm = params or ("s, ev, w, wh"
-                                 if years[0] in ("Any", "Default")
-                                 else "s, w, wh")
+                prm = _handler_prm(params, years[0])
                 src = self.handler(val, prm, indent)
                 if len(years) > 1 and not target:
                     out.append(T.INDEX_KEY
@@ -393,10 +400,8 @@ class Emitter:
     def _obj_field(self, key, val, ident, fi):
         if key in OBJ_SKIP_KEYS:
             return []
-        if re.match(r"^(on|life|before|after|post)\s+\S", key):
-            one = Block()
-            one.items = [(key, val)]
-            return self.on(one, fi)
+        if _EVENT_KEY_RE.match(key):
+            return self.on(_one_item_block(key, val), fi)
         fbase, params = parse_key(key)
         if fbase == "on":
             raise Error(M.ON_MUST_NAME_EVENT)
@@ -668,7 +673,7 @@ class Emitter:
         prev = self.ctx.current_owner
         self.ctx.current_owner = name
         try:
-            body = self.obj(block, None, "", "Class", [], parent)
+            body = self._obj(block, None, "", "Class", [], parent)
         finally:
             self.ctx.current_owner = prev
         return T.ASSIGN % (name, body)
@@ -725,7 +730,7 @@ class Emitter:
                 out.append(T.FIELD_BARE % (target, hk, self.body(hv, hk)))
         return out
 
-    def _setup_start(self, val):
+    def _setup_start(self, _key, val):
         sb = self._start_body(val)
         return ["function start(load)", sb, "end"]
 
@@ -754,9 +759,6 @@ class Emitter:
 
     def _setup_dsc_line(self, _key, val):
         return [T.GAME_DSC % self.body(val, "dsc")]
-
-    def _setup_start_lines(self, _key, val):
-        return self._setup_start(val)
 
     def setup(self, block):
         lines = self._setup_fmt(block)
@@ -799,10 +801,8 @@ class Emitter:
         base, _ = parse_key(key)
         if base == "on":
             raise Error(M.ON_MUST_NAME_EVENT)
-        if re.match(r"^(on|life|before|after|post)\s+\S", key):
-            one = Block()
-            one.items = [(key, val)]
-            return self.on(one, "", ref + ".")
+        if _EVENT_KEY_RE.match(key):
+            return self.on(_one_item_block(key, val), "", ref + ".")
         self._check_impl_prefix(base)
         if base == "dict":
             if not isinstance(val, (Data, Raw)):

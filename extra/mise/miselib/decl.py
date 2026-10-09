@@ -31,9 +31,8 @@ def classify(key):
         return "skip", None
     if "'" in key or '"' in key:
         raise Error(M.QUOTES_ARE_NOT_ALLOWED_DECLARATIONS % key)
-    simple = _classify_simple(key)
-    if simple is not None:
-        return simple
+    if key in SIMPLE_KINDS:
+        return SIMPLE_KINDS[key], None
     tagged = _classify_tagged(key)
     if tagged is not None:
         return tagged
@@ -50,14 +49,6 @@ SIMPLE_KINDS = {
     "extend refs": "extend_refs",
     "props": "props",
 }
-
-
-def _classify_simple(key):
-    """Plain keyword and reserved-tag kinds, else None."""
-    kind = SIMPLE_KINDS.get(key)
-    if kind is None:
-        return None
-    return kind, None
 
 
 def _class_kind(_key, m):

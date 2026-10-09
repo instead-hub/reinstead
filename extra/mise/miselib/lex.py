@@ -39,10 +39,7 @@ def _lex_long_string(text, i, _n):
     return ("str", text[i:j + 2]), j + 2
 
 
-def _lex_number(text, i, n):
-    c = text[i]
-    if not (c.isdigit() or (c == "." and i + 1 < n and text[i + 1].isdigit())):
-        return None
+def _lex_number(text, i, _n):
     m = re.match(r"(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?", text[i:])
     return ("num", m.group(0)), i + m.end()
 
@@ -53,13 +50,9 @@ def _lex_ident(text, i, pattern):
 
 
 def _lex_name(text, i, _n):
-    c = text[i]
-    if c.isalpha() or c == "_":
-        return _lex_ident(text, i, r"[^\W\d]\w*")
-    if c == "~" and i + 1 < len(text) and (text[i + 1].isalpha()
-                                           or text[i + 1] == "_"):
+    if text[i] == "~":
         return _lex_ident(text, i, r"~[^\W\d]\w*")
-    return None
+    return _lex_ident(text, i, r"[^\W\d]\w*")
 
 
 def _lex_op(text, i):

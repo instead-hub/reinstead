@@ -76,8 +76,7 @@ def transpile_exprlist(text, env, where, expected=None, ctx=None):
         return raw
     p = ExprEmit(lex_lua(text), env, where, ctx)
     code, types = p.exprlist(expected)
-    if p.peek()[0] != "eof":
-        p.err("unexpected %r" % p.peek()[1])
+    p.expect_eof()
     if expected and types:
         p.check(types[0], expected, code)
     return code, types
@@ -94,19 +93,25 @@ def _local_names(p):
     return names
 
 
-def _local_values(p, names, types):
+def _values(p):
     codes = []
-    idx = 0
+    types = []
     while True:
         p.expected = None
         node = p.expr()
         p.expected = None
         codes.append(node.code)
-        if idx < len(types):
-            types[idx] = node.t
-        idx += 1
+        types.append(node.t)
         if not p.accept(","):
             break
+    return codes, types
+
+
+def _local_values(p, names, types):
+    codes, vals = _values(p)
+    for i, t in enumerate(vals):
+        if i < len(types):
+            types[i] = t
     return "local %s = %s" % (", ".join(names), ", ".join(codes))
 
 
@@ -116,8 +121,7 @@ def _stmt_local(p, env):
     types = ["any"] * len(names)
     code = (_local_values(p, names, types) if p.accept("=")
             else "local " + ", ".join(names))
-    if p.peek()[0] != "eof":
-        p.err("unexpected %r" % p.peek()[1])
+    p.expect_eof()
     for n, t in zip(names, types):
         env[n] = "any" if t == "nil" else t
     return code
@@ -132,22 +136,6 @@ def _stmt_op(p):
         p.next()
         return v1 + "="
     return None
-
-
-def _assign_values(p):
-    codes = []
-    types = []
-    while True:
-        p.expected = None
-        node = p.expr()
-        p.expected = None
-        codes.append(node.code)
-        types.append(node.t)
-        if not p.accept(","):
-            break
-    if p.peek()[0] != "eof":
-        p.err("unexpected %r" % p.peek()[1])
-    return codes, types
 
 
 def _check_env_assign(lhs, types, env, ctx, where):
@@ -173,7 +161,8 @@ def _check_field_assign(lhs, types, ctx, where):
 
 
 def _stmt_assign(p, lhs, op, env, where, ctx):
-    codes, types = _assign_values(p)
+    codes, types = _values(p)
+    p.expect_eof()
     _check_env_assign(lhs, types, env, ctx, where)
     _check_field_assign(lhs, types, ctx, where)
     lhs_code = lhs.raw if (isinstance(lhs, Field) and lhs.ref) else lhs.code
@@ -185,8 +174,7 @@ def _stmt_assign(p, lhs, op, env, where, ctx):
 
 def _stmt_break(p, _env):
     p.next()
-    if p.peek()[0] != "eof":
-        p.err("unexpected %r" % p.peek()[1])
+    p.expect_eof()
     return "break"
 
 
@@ -211,8 +199,7 @@ def _stmt_expr(p, env, where, ctx):
     op = _stmt_op(p)
     if op is not None:
         return _stmt_assign(p, lhs, op, env, where, ctx)
-    if p.peek()[0] != "eof":
-        p.err("unexpected %r" % p.peek()[1])
+    p.expect_eof()
     _check_stmt_lhs(lhs, ctx, p)
     return lhs.code
 

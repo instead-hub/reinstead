@@ -51,7 +51,7 @@ def _return_expr(st, env, where, ctx):
     return code, rtype
 
 
-def _emit_return(st, indent, env, where, ret, ret_name, ctx):
+def _emit_return(st, indent, env, ret, ret_name, where, ctx):
     code, rtype = _return_expr(st, env, where, ctx)
     src = (st[1] or "").strip()
     if (ret and ret != "any" and src not in ("", "false", "nil")
@@ -62,24 +62,28 @@ def _emit_return(st, indent, env, where, ret, ret_name, ctx):
     return [T.RETURN % (indent, (" " + code) if code else "")]
 
 
-def _emit_for(st, indent, env, ret, ret_name, where, ctx, recurse):
+def _emit_stmt(st, indent, env, _ret, _ret_name, where, ctx):
+    return [indent + transpile_stmt(st[1], env, where, ctx=ctx)]
+
+
+def _emit_for(st, indent, env, ret, ret_name, where, ctx):
     header, vars_ = transpile_for(st[1], env, where, ctx=ctx)
     out = [T.FOR % (indent, header)]
     child = dict(env)
     child.update(vars_)
-    out.extend(recurse(st[2], indent + IND, child, ret, ret_name, ctx=ctx))
+    out.extend(emit_logic(st[2], indent + IND, child, ret, ret_name, ctx=ctx))
     out.append(indent + "end")
     return out
 
 
-def _emit_branches(branches, indent, env, ret, ret_name, where, ctx, recurse):
+def _emit_branches(branches, indent, env, ret, ret_name, where, ctx):
     out = []
     for idx, (cond, body) in enumerate(branches):
         code, eenv = transpile_cond(cond, env, where, ctx)
         out.append(T.THEN % (
             indent, "if" if idx == 0 else "elseif", code))
-        out.extend(recurse(body, indent + IND, eenv, ret,
-                           ret_name, ctx=ctx))
+        out.extend(emit_logic(body, indent + IND, eenv, ret,
+                              ret_name, ctx=ctx))
     return out
 
 
@@ -90,40 +94,24 @@ def _else_env(branches, env):
     return eenv
 
 
-def _emit_if(st, indent, env, ret, ret_name, where, ctx, recurse):
+def _emit_if(st, indent, env, ret, ret_name, where, ctx):
     branches, else_body = st[1], st[2]
-    out = _emit_branches(branches, indent, env, ret, ret_name, where, ctx,
-                         recurse)
+    out = _emit_branches(branches, indent, env, ret, ret_name, where, ctx)
     if else_body is not None:
         out.append(indent + "else")
-        out.extend(recurse(else_body, indent + IND,
-                           _else_env(branches, env), ret, ret_name, ctx=ctx))
+        out.extend(emit_logic(else_body, indent + IND,
+                              _else_env(branches, env), ret, ret_name,
+                              ctx=ctx))
     out.append(indent + "end")
     return out
 
 
-def _logic_return(st, indent, env, ret, ret_name, where, ctx, _recurse):
-    return _emit_return(st, indent, env, where, ret, ret_name, ctx)
-
-
-def _logic_stmt(st, indent, env, _ret, _ret_name, where, ctx, _recurse):
-    return [indent + transpile_stmt(st[1], env, where, ctx=ctx)]
-
-
-def _logic_for(st, indent, env, ret, ret_name, where, ctx, recurse):
-    return _emit_for(st, indent, env, ret, ret_name, where, ctx, recurse)
-
-
-def _logic_if(st, indent, env, ret, ret_name, where, ctx, recurse):
-    return _emit_if(st, indent, env, ret, ret_name, where, ctx, recurse)
-
-
 # the emitters of the logic statements
 LOGIC_FORMS = {
-    "return": _logic_return,
-    "stmt": _logic_stmt,
-    "for": _logic_for,
-    "if": _logic_if,
+    "return": _emit_return,
+    "stmt": _emit_stmt,
+    "for": _emit_for,
+    "if": _emit_if,
 }
 
 
@@ -136,6 +124,5 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
         where = ("logic:%d" % lno) if lno else "logic"
         form = LOGIC_FORMS.get(kind)
         if form is not None:
-            out.extend(form(st, indent, env, ret, ret_name, where, ctx,
-                            emit_logic))
+            out.extend(form(st, indent, env, ret, ret_name, where, ctx))
     return out
