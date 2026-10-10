@@ -32,6 +32,8 @@ Door = Class({
   end;
 }, door):attr 'open'
 
+--"мочь"
+
 Path = Class {
   walk_to = 'none';
   ["before_Walk,Enter"] = function(s, w, wh)
@@ -46,7 +48,7 @@ Path = Class {
       p(d)
       return
     end
-    p('Ты можешь пойти в ', _(s.walk_to):noun_hint("вн"), '.')
+    p('{#Me} {#word/мочь,нст,#me} пойти в ', _(s.walk_to):noun_hint("вн"), '.')
   end;
   default_Event = "Walk";
 }:attr 'scenery,enterable'
