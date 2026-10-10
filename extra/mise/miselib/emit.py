@@ -470,7 +470,7 @@ class Emitter:
                 raise Error(M.DICT_MUST_BE_TABLE_LITERAL
                             % (ident or "?"))
             tail += T.DICT % self.value(d)
-        if block.get("disabled"):
+        if is_true(block.get("disabled")):
             tail += ":disable()"
         return tail
 
@@ -808,6 +808,9 @@ class Emitter:
             if not isinstance(val, (Data, Raw)):
                 raise Error(M.IMPL_DICT_MUST_BE_TABLE % t)
             return [T.IMPL_DICT % (ref, self.value(val))]
+        if base == "disabled":
+            return [T.IMPL_DISABLE % ref if is_true(val)
+                    else T.IMPL_ENABLE % ref]
         if key.startswith("var "):
             name = parse_key(key[4:])[0]
             return [T.DOT_ASSIGN % (ref, name, self.body(val, name))]

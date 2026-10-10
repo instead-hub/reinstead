@@ -75,7 +75,8 @@ atom      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
    ошибка, и comma-ключ в impl требует фазы.
    Спец-ключи со своей эмиссией: with/inside (вложенные декларации или
    список ссылок), words (-> -"..."), attrs (-> :attr), dict (-> :dict),
-   disabled (-> :disable()); text — строка или `-`-список страниц.
+   disabled true/false (-> :disable(), в impl :disable()/:enable());
+   text — строка или `-`-список страниц.
    Остальные движковые поля типизированы в props: *)
 
 fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]

@@ -209,7 +209,8 @@ transpile (main loop) обход корневых элементов → Emitter
   `CURRENT_LINE` — по строке ключа).
 - `obj`/`decl` — объекты и классы-экземпляры: `words`, `attrs`
   (с проверкой enum `attr`), `dict` → `:dict {...}` в tail, вложенные
-  `with`/`inside`, пресеты (`PRESETS`), `:attr`/`:disable()`.
+  `with`/`inside`, пресеты (`PRESETS`), `:attr`/`:disable()`
+  (`disabled:` — строго `true|false`; в `impl` даёт `:disable()`/`:enable()`).
 - `cls`/`obj` — owner-контекст `ctx.current_owner` (класс или именованный
   объект) на время эмиссии тела: даёт типизацию `s.field` в
   обработчиках.

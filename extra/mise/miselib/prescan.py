@@ -168,6 +168,12 @@ def _reject_bare_str(base, val, t):
         raise Error(M.FIELD_STRING_VALUES_QUOTED % (val.s, base))
 
 
+def _check_disabled(val):
+    """The `disabled` special key accepts only boolean values."""
+    if not isinstance(val, Bool):
+        raise Error(M.DISABLED_MUST_BE_BOOL)
+
+
 def _collect_field(ctx, into, owner, key, val):
     """Store the typed value of one regular field."""
     base = field_base(key, val, ctx)
@@ -189,6 +195,8 @@ def collect_block_fields(block, ctx, into, owner=None):
         if key in ("with", "inside") and isinstance(val, Block):
             _collect_nested(val, ctx, collect_block_fields)
             continue
+        if key == "disabled":
+            _check_disabled(val)
         _collect_field(ctx, into, owner, key, val)
 
 
@@ -304,6 +312,9 @@ def _walk_fields(ctx, block, use_props=False, owner=None):
         CURRENT_LINE[0] = block.line_at(n)
         if field_key == "mixin":
             _check_mixin_names(ctx, field_val)
+            continue
+        if field_key == "disabled":
+            _check_disabled(field_val)
             continue
         _check_bare_field(ctx, use_props, owner, field_key, field_val)
 

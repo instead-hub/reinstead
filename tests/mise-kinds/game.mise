@@ -135,6 +135,18 @@ obj relic:
 obj key:
   words: ключ
 
+obj mirror:
+  words: зеркало
+  disabled: false
+  with:
+    obj shard:
+      words: осколок
+      disabled: true
+
+class Ghost:
+  words: призрак
+  disabled: true
+
 obj casket:
   words: шкатулка
   attrs: lockable, locked
@@ -149,6 +161,15 @@ verb Probe:
     say [[Подсказка.]]
   patterns:
     - {noun}/вн : Probe
+
+impl Ghost:
+  disabled: false
+
+impl relic:
+  disabled: true
+
+impl key:
+  disabled: false
 
 impl game:
   dict: { ["зал/вн"] = "зал" }
