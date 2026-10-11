@@ -92,56 +92,42 @@ def _skip_quoted(text, i, naive=False):
         i += 1
     return i
 
-def split_key(text):
+def _scan_depth(s, i, opens, closes, naive=False):
+    """Yield (index, char, depth) skipping quoted runs."""
     depth = 0
-    i = 0
-    while i < len(text):
-        c = text[i]
+    while i < len(s):
+        c = s[i]
         if c in "\"'":
-            i = _skip_quoted(text, i)
+            i = _skip_quoted(s, i, naive)
             continue
-        if c in "([{":
+        if c in opens:
             depth += 1
-        elif c in ")]}":
+        elif c in closes:
             depth -= 1
-        elif c == ":" and depth == 0:
-            return text[:i], text[i + 1:]
+        yield i, c, depth
         i += 1
+
+def split_key(text):
+    for i, c, depth in _scan_depth(text, 0, "([{", ")]}"):
+        if c == ":" and depth == 0:
+            return text[:i], text[i + 1:]
     return None, None
 
 def parse_error(line, msg):
     raise Error(M.LINE_PREFIX % (line, msg))
 
-def _copy_quoted(s, i, out):
-    """Append the quoted section starting at `i` to `out`; return its end."""
-    quote = s[i]
-    out.append(quote)
-    i += 1
-    while i < len(s):
-        c = s[i]
-        out.append(c)
-        if c == "\\" and i + 1 < len(s):
-            out.append(s[i + 1])
-            i += 1
-        elif c == quote:
-            return i + 1
-        i += 1
-    return i
-
 def strip_comment(s):
-    out = []
     i = 0
     while i < len(s):
         c = s[i]
         if c in "\"'":
-            i = _copy_quoted(s, i, out)
+            i = _skip_quoted(s, i)
             continue
         if c == "#" and (i == 0 or s[i - 1] in " \t") and (
                 i + 1 >= len(s) or s[i + 1] in " \t"):
-            break
-        out.append(c)
+            return s[:i].rstrip()
         i += 1
-    return "".join(out).rstrip()
+    return s.rstrip()
 
 def parse_string(s, line):
     quote = s[0]
@@ -187,22 +173,8 @@ def parse_scalar(s, line, textmode=False):
 
 def _list_cuts(s):
     """Indices of top-level commas in `s` (outside quotes/brackets)."""
-    cuts = []
-    depth = 0
-    i = 0
-    while i < len(s):
-        c = s[i]
-        if c in "\"'":
-            i = _skip_quoted(s, i, True)
-            continue
-        if c in "([{":
-            depth += 1
-        elif c in ")]}":
-            depth -= 1
-        elif c == "," and depth == 0:
-            cuts.append(i)
-        i += 1
-    return cuts
+    return [i for i, c, depth in _scan_depth(s, 0, "([{", ")]}", naive=True)
+            if c == "," and depth == 0]
 
 def split_list(s):
     cuts = _list_cuts(s)

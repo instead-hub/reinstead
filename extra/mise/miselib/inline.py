@@ -2,39 +2,19 @@
 import re
 
 from .common import *
+from .common import _scan_depth
 from . import messages as M
 from . import patterns as P
 
 _CALLEE = P.LUA_NAME + r"(?:\." + P.LUA_NAME + r")*(?::" + P.LUA_NAME + r")?"
 
 
-def _skip_string(text, i):
-    """Index after the quoted run starting at text[i]."""
-    quote = text[i]
-    i += 1
-    while i < len(text) and text[i] != quote:
-        if text[i] == "\\":
-            i += 1
-        i += 1
-    return i + 1
-
-
 def _call_end(text):
     """Index of the `)` closing the call at the first `(`, or None."""
-    depth = 0
-    i = text.index("(")
-    while i < len(text):
-        c = text[i]
-        if c in "\"'":
-            i = _skip_string(text, i)
-            continue
-        if c == "(":
-            depth += 1
-        elif c == ")":
-            depth -= 1
-            if depth == 0:
-                return i
-        i += 1
+    start = text.index("(")
+    for i, c, depth in _scan_depth(text, start, "(", ")"):
+        if c == ")" and depth == 0:
+            return i
     return None
 
 
