@@ -560,7 +560,7 @@ props:
 | `visits` | `(obj) -> num` | `visits(w)` |
 | `event` | `() -> event?` | `mp.event` |
 | `rnd` | `(...) -> num` | `rnd(...)` |
-| `xaction` | `(event, obj)` | `mp:xaction` |
+| `xaction` | `(event, ...: obj)` | `mp:xaction` |
 | `daemonStart` | `(obj)` | `DaemonStart(w)` |
 | `daemonStop` | `(obj)` | `DaemonStop(w)` |
 | `enable` | `(obj)` | `enable(w)` |
@@ -579,10 +579,12 @@ props:
 | `isa` | `(obj, str) -> bool` | класс объекта (`s:isa Kitten`) |
 
 Дополнительные тонкие обёртки над API (все inline):
-`subaction(ev, ...)`, `runmethods(тип, метод, ...)`,
+`subaction(ev: event, ...: obj)`, `xaction(ev: event, ...: obj)`,
+`walkback(w: obj?)`, `push(w: obj, ww: obj?)`,
+`runmethods(тип, метод, ...)`,
 `runorval(w, имя, ...)`, `check_touch()`, `check_worn(w)`,
 `offerslight(w)`, `visible_scope(where) -> obj?`, `inroom(w)`,
-`getDaemons() -> tbl[obj]`, `cls_prompt()`, `gram(s) -> tbl`, `access(s)`,
+`getDaemons() -> list`, `cls_prompt()`, `gram(s) -> tbl`, `access(s)`,
 `xevent() -> event?`.
 
 Игровые обёртки удобно добавлять в `stdlib.mise` по мере надобности.

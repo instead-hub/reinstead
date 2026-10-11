@@ -114,10 +114,10 @@ fn append(text: str|num|bool|obj|event, ...: str|num|bool|obj|event): |lua
 fn rnd(n: num) -> num: |lua
   return rnd(n)
 
-fn xaction(ev: event, ...): |lua
+fn xaction(ev: event, ...: obj): |lua
   mp:xaction(ev, ...)
 
-fn subaction(ev: event, ...): |lua
+fn subaction(ev: event, ...: obj): |lua
   mp:subaction(ev, ...)
 
 fn daemonStart(w: obj): |lua
@@ -233,8 +233,8 @@ fn multi_alias(s: obj) -> num: |lua
 fn gram(s: obj) -> tbl: |lua
   return s:gram()
 
-fn walkback(...): |lua
-  walkback(...)
+fn walkback(w: obj?): |lua
+  walkback(w)
 
 fn remove(w: obj): |lua
   remove(w)
@@ -245,8 +245,8 @@ fn add(w: list, wh: obj): |lua
 fn del(w: list, wh: obj): |lua
   w:del(wh)
 
-fn push(w: any): |lua
-  push(w)
+fn push(w: obj, ww: obj?): |lua
+  push(w, ww)
 
 fn from() -> obj: |lua
   return from()
