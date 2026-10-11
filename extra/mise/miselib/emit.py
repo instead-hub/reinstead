@@ -71,6 +71,7 @@ TALK_FORMS = {
     "say": "_talk_dsc",
     "reply": "_talk_reply",
     "do": "_talk_do",
+    "onempty": "_talk_onempty",
     "when": "_talk_when",
     "goto": "_talk_goto",
     "always": "_talk_flag",
@@ -608,6 +609,12 @@ class Emitter:
 
     def _talk_do(self, _base, _key, val, talk):
         talk.specials["do"] = val
+
+    def _talk_onempty(self, base, key, val, talk):
+        if not isinstance(val, (Logic, Lua)) and self.use_name(val) is None:
+            raise Error(M.EXPECTED_LOGIC_LUA_BLOCK)
+        talk.named.append(T.ASSIGN
+                          % (base, self.body(val, key, talk.indent + IND)))
 
     def _talk_when(self, _base, _key, val, talk):
         talk.named.append(T.TALK_COND

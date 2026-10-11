@@ -47,6 +47,19 @@ talk разговор_с_гидом:
     do: |
       met = true
       walkout()
+  option:
+    ask: Расспросить
+    reply: -- О чём?
+    option:
+      ask: О погоде
+      reply: -- Ветрено.
+    option:
+      ask: О работе
+      reply: -- Тяжело.
+    onempty: |
+      say -- Гид угрюмо молчит.
+      met = true
+      walkout()
   label финал:
     say: -- Продолжение следует.
     option:

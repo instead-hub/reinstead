@@ -580,7 +580,8 @@ props:
 
 Дополнительные тонкие обёртки над API (все inline):
 `subaction(ev: event, ...: obj)`, `xaction(ev: event, ...: obj)`,
-`walkback(w: obj?)`, `push(w: obj, ww: obj?)`,
+`walkback(w: obj?)`, `push(w: obj, ww: obj?)`, `pop(w: obj?, ww: obj?)`,
+`empty(w: obj?) -> bool`,
 `runmethods(what: phase, meth: event, ...: obj)` (фазы —
 `after`/`before`/`life`/`post` из `type phase`),
 `runorval(w, имя, ...)`, `check_touch()`, `check_worn(w)`,
@@ -905,6 +906,7 @@ talk Разговор_с_Мариной:
 | `ask:` / `say:` | текст варианта (`dsc`) |
 | `reply:` | ответ при выборе (текстовый `act`) |
 | `do:` | действие (`act`-функция; логика или `|lua`) |
+| `onempty:` | обработчик пустой фразы (`function(s)`; логика, `|lua` или `use`) |
 | `when:` | условие доступности (`cond`) |
 | `always: true` | не закрывать фразу после выбора |
 | `hidden: true`, `only: true` | как в phr |
