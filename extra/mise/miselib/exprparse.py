@@ -468,17 +468,16 @@ class ExprEmit:
     def list_literal(self):
         """`{ e1, ... }` -> Lua table, type `tbl[elem types]`."""
         elem = self._list_elem()
-        codes, types = [], []
+        nodes = []
         if not self.accept("}"):
             while True:
-                node = self._list_item(elem)
-                codes.append(node.code)
-                if node.t not in types:
-                    types.append(node.t)
+                nodes.append(self._list_item(elem))
                 if not self.accept(","):
                     break
             self.expect("}")
-        code = "({ %s })" % ", ".join(codes) if codes else "({})"
+        code = ("({ %s })" % ", ".join(node.code for node in nodes)
+                if nodes else "({})")
+        types = dict.fromkeys(node.t for node in nodes)
         return Node(code, self._list_type(types, elem))
 
     def _unary_op(self, fmt, t):
