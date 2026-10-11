@@ -30,7 +30,7 @@ def _no_paren_kind(plist, variadic, rest, env, ctx):
         if expr_cont(rest):
             return None
         return "str" if not expr_like(rest, env, ctx) else "typed"
-    if not variadic and plist[0][1] != "str":
+    if not variadic and not type_ok(ctx, "str", plist[0][1]):
         return None
     return "str" if not expr_like(rest, env, ctx) else "typed"
 
@@ -43,7 +43,7 @@ def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
     except LintError as e:
         if isinstance(e, TypeCheckError):
             raise
-        if plist and plist[0][1] == "str":
+        if plist and type_ok(ctx, "str", plist[0][1]):
             return fn_call(ctx, name, [lua_str(rest)]), ["str"]
         raise
     check_arity(name, plist, variadic, len(types))

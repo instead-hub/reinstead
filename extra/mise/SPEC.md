@@ -567,9 +567,9 @@ props:
 | `seen` | `(obj) -> obj?` | `seen(w)` |
 | `noun` | `(obj, tbl[case\|gram]\|case\|num?, num?) -> str` | `s:noun({ падеж, ... })` |
 | `Noun` | `(obj, tbl[case\|gram]\|case\|num?, num?) -> str` | `s:Noun(...)` (с заглавной) |
-| `say` | `(str, ...)` | `p(...)` |
+| `say` | `(str\|num\|bool\|obj\|event, ...)` | `p(...)` |
 | `line` | `(...)` | `pn(...)` |
-| `append` | `(str, ...)` | `pr(...)` |
+| `append` | `(str\|num\|bool\|obj\|event, ...)` | `pr(...)` |
 | `for_plural` | `(obj, fn(w: obj))` | `s:for_plural(f)` |
 | `trace` | `(obj, fn(w: obj))` | `mp:trace(w, f)` |
 | `isa` | `(obj, str) -> bool` | класс объекта (`s:isa Kitten`) |
