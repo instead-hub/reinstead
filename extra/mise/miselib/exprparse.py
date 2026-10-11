@@ -684,8 +684,8 @@ class ExprEmit:
         self.expected = None
         idx = self.expr()
         self.expect("]")
-        ti = tbl_inner(bt) if bt else None
-        t = ti if ti else "any"
+        inner = tbl_inner(bt) if bt else None
+        t = inner or ("obj" if bt == "list" else "any")
         return Index("%s[%s]" % (node.code, idx.code), t)
 
     def postfix_method(self, node):

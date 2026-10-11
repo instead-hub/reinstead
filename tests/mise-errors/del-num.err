@@ -1,0 +1,1 @@
+mise: error: expected obj, got num: 3 in logic:9: del ( inv ( ) , 3 )

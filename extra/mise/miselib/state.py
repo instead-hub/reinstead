@@ -6,7 +6,7 @@ KEYWORDS = {
     "when", "default",
 }
 
-TYPES = {"obj", "str", "num", "bool", "any", "event", "tbl", "fn"}
+TYPES = {"obj", "str", "num", "bool", "any", "event", "tbl", "list", "fn"}
 
 PARAM_TYPES = {
     "s": "obj", "w": "obj", "wh": "obj", "ev": "event", "to": "any",

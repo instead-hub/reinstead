@@ -313,6 +313,7 @@ class Prop:
         self.alts = []
         self.has_ref = self.has_reflist = False
         self.has_str = self.has_num = self.has_bool = self.has_tbl = False
+        self.has_list = False
         self.has_event = False
         self.tbl_elem = None
         self.fn = None
@@ -340,6 +341,8 @@ class Prop:
             self.has_bool = True
         elif c == "tbl":
             self.has_tbl = True
+        elif c == "list":
+            self.has_list = True
         elif tbl_inner(base(c)):
             self.has_tbl = True
             self.tbl_elem = tbl_inner(base(c))
@@ -429,7 +432,7 @@ def type_ok(ctx, t, exp):
     if exp_alts is not None:
         return any(type_ok(ctx, t, alt) for alt in exp_alts)
     if exp == "tbl":
-        return t == "tbl" or tbl_inner(t) is not None
+        return t == "tbl" or t == "list" or tbl_inner(t) is not None
     inner_exp = tbl_inner(exp)
     if inner_exp is not None:
         return _tbl_ok(ctx, t, inner_exp, type_ok)

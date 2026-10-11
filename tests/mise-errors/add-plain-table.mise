@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+
+fn f(t: tbl, w: obj): |
+  add(t, w)

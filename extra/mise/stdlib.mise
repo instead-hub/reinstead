@@ -32,7 +32,7 @@ props:
   when_closed: str | bool | fn(s: obj) -> str
   when_on: str | bool | fn(s: obj) -> str
   when_off: str | bool | fn(s: obj) -> str
-  scope: tbl[ref] | fn(s: obj, w: tbl[ref])
+  scope: list | fn(s: obj, w: list)
   found_in: ref | tbl[ref] | fn(s: obj) -> bool
   door_to: ref | fn(s: obj) -> ref
   talk_to: ref | fn(s: obj) -> ref
@@ -138,7 +138,7 @@ fn place(w: obj): |lua
 fn isDaemon(w: obj) -> bool: |lua
   return isDaemon(w)
 
-fn getDaemons() -> tbl[obj]: |lua
+fn getDaemons() -> list: |lua
   return getDaemons()
 
 fn disabled(w: obj) -> bool: |lua
@@ -170,7 +170,7 @@ fn drop(w: obj): |lua
 fn content(w: obj): |lua
   mp:content(w)
 
-fn inv() -> tbl[obj]: |lua
+fn inv() -> list: |lua
   return inv()
 
 fn len(v: tbl) -> num: `#v`
@@ -238,6 +238,12 @@ fn walkback(...): |lua
 
 fn remove(w: obj): |lua
   remove(w)
+
+fn add(w: list, wh: obj): |lua
+  w:add(wh)
+
+fn del(w: list, wh: obj): |lua
+  w:del(wh)
 
 fn push(w: any): |lua
   push(w)

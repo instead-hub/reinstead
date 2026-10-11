@@ -173,6 +173,9 @@ def _prop_list(ctx, prop, val, where):
     if prop.has_reflist:
         check_ref_list(ctx, where, val)
         return "tbl", False
+    if prop.has_list:
+        check_ref_list(ctx, where, val)
+        return "list", False
     if prop.has_tbl:
         if prop.tbl_elem:
             for it in val:
@@ -198,7 +201,7 @@ def check_prop_value(ctx, owner, base, prop, val, t):
     if isinstance(val, Nil):
         return "nil", False
     if isinstance(val, Data):
-        return "tbl", False
+        return ("list" if prop.has_list else "tbl"), False
     if isinstance(val, (Logic, Lua)):
         if prop.fn is None:
             raise Error(M.EXPECTED_GOT_FUNCTION % (where, prop.text))

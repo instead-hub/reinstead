@@ -1,0 +1,35 @@
+name: scope
+lang: ru
+include: stdlib
+
+setup:
+  start: |
+    player:move hall
+
+room hall:
+  words: зал
+  dsc: [[Зал.]]
+  scope: |
+    add(w, coin)
+    w:add(star)
+    add(w, moon)
+    del(w, moon)
+
+room kitchen:
+  words: кухня
+  dsc: [[Кухня.]]
+
+obj coin:
+  words: монета
+  description: [[Золотая монета.]]
+  found_in: kitchen
+
+obj star:
+  words: звезда
+  description: [[Бумажная звезда.]]
+  found_in: kitchen
+
+obj moon:
+  words: луна
+  description: [[Картонная луна.]]
+  found_in: kitchen

@@ -60,7 +60,7 @@ param     ::= IDENT [ ":" type ] | "..."   (* хвостовой T?-параме
                                               не передавать при вызове *)
 type      ::= atom [ "?" ] { "|" atom [ "?" ] }
 atom      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
-            | "tbl" [ "[" type "]" ]
+            | "tbl" [ "[" type "]" ] | "list"
             | "fn" "(" [ type { "," type } ] ")" [ "->" type ]
             | "nil" | IDENT
 (* IDENT — перечисление из type или имя класса; "?" — optional: T или nil;
