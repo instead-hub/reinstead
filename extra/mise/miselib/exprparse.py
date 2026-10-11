@@ -35,6 +35,21 @@ def fn_name(name):
     return "fn_" + name
 
 
+def expr_list(parser, expected=None):
+    """Parse a comma-separated expression list; return (codes, types)."""
+    codes = []
+    types = []
+    while True:
+        parser.expected = expected
+        node = parser.expr()
+        parser.expected = None
+        codes.append(node.code)
+        types.append(node.t)
+        if not parser.accept(","):
+            break
+    return codes, types
+
+
 _SIMPLE_ARG = re.compile(P.LUA_NAME + r"|\d+(?:\.\d+)?|'[^']*'")
 _TYPE_VALUE_RE = re.compile(r"~?[A-Za-z_][\w-]*")
 _UINT_RE = re.compile(r"\d+(\.\d+)?")
@@ -208,16 +223,7 @@ class ExprEmit:
             msg, self.where, " ".join(t[1] for t in self.toks[:-1])))
 
     def exprlist(self, expected=None):
-        codes = []
-        types = []
-        while True:
-            self.expected = expected
-            node = self.expr()
-            self.expected = None
-            codes.append(node.code)
-            types.append(node.t)
-            if not self.accept(","):
-                break
+        codes, types = expr_list(self, expected)
         return ", ".join(codes), types
 
     def check_arity(self, name, plist, variadic, n):
@@ -520,9 +526,6 @@ class ExprEmit:
             self.check_fn_ref(nv, sig, self.expected)
         return Node(code, sig)
 
-    def or_expr(self):
-        return self.bin_expr(self.and_expr, ("or",), "any")
-
     def and_expr(self):
         return self.bin_expr(self.cmp_expr, ("and",), "any")
 
@@ -575,7 +578,7 @@ class ExprEmit:
         return self.bin_expr(self.unary, ops, t, check)
 
     def expr(self):
-        return self.or_expr()
+        return self.bin_expr(self.and_expr, ("or",), "any")
 
     def owner_ref(self, node):
         """`s` bound to obj or a class type (owner-typed field access)."""

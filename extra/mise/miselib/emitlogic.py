@@ -1,5 +1,5 @@
 from .common import *
-from .condast import Leaf, leaf_text, narrow_assume, narrow_cond, parse_cond
+from .condast import Leaf, narrow_assume, narrow_cond, parse_cond
 from .typing import type_ok
 from .expr import transpile_exprlist, transpile_stmt, transpile_for
 from . import templates as T
@@ -28,17 +28,14 @@ def _emit_or(parts, env, where, ctx, emit):
 
 def cond_emit(node, env, where, ctx):
     if isinstance(node, Leaf):
-        code, _ = transpile_exprlist(leaf_text(node), env, where, None, ctx=ctx)
+        code, _ = transpile_exprlist(
+            " ".join(t[1] for t in node.toks), env, where, None, ctx=ctx)
         out = dict(env)
         out.update(narrow_assume(node, env, False) or {})
         return code, out
     if node.op == "and":
         return _emit_and(node.parts, dict(env), where, ctx, cond_emit)
     return _emit_or(node.parts, env, where, ctx, cond_emit)
-
-
-def transpile_cond(cond, env, where, ctx):
-    return cond_emit(parse_cond(cond), dict(env), where, ctx)
 
 
 def _return_expr(st, env, where, ctx):
@@ -81,7 +78,7 @@ def _emit_for(st, indent, env, ret, ret_name, where, ctx):
 def _emit_branches(branches, indent, env, ret, ret_name, where, ctx):
     out = []
     for idx, (cond, body) in enumerate(branches):
-        code, eenv = transpile_cond(cond, env, where, ctx)
+        code, eenv = cond_emit(parse_cond(cond), dict(env), where, ctx)
         out.append(T.THEN % (
             indent, "if" if idx == 0 else "elseif", code))
         out.extend(emit_logic(body, indent + IND, eenv, ret,

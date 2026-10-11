@@ -78,13 +78,13 @@ def parse_key(key):
     m = _KEY_RE.match(key)
     return m.group(1).strip(), m.group(2)
 
-def _skip_quoted(text, i):
+def _skip_quoted(text, i, naive=False):
     """Return the index after the quoted section starting at `i`."""
     quote = text[i]
     i += 1
     while i < len(text):
         c = text[i]
-        if c == "\\":
+        if not naive and c == "\\":
             i += 2
             continue
         if c == quote:
@@ -185,16 +185,6 @@ def parse_scalar(s, line, textmode=False):
         return Num(s)
     return Text(s) if textmode else Bare(s)
 
-def _skip_quoted_naive(s, i):
-    """Return the index after a quoted section, ignoring backslashes."""
-    quote = s[i]
-    i += 1
-    while i < len(s):
-        if s[i] == quote:
-            return i + 1
-        i += 1
-    return i
-
 def _list_cuts(s):
     """Indices of top-level commas in `s` (outside quotes/brackets)."""
     cuts = []
@@ -203,7 +193,7 @@ def _list_cuts(s):
     while i < len(s):
         c = s[i]
         if c in "\"'":
-            i = _skip_quoted_naive(s, i)
+            i = _skip_quoted(s, i, True)
             continue
         if c in "([{":
             depth += 1

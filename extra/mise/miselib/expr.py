@@ -5,7 +5,8 @@ from . import state as S
 from .common import *
 from .lex import lex_lua
 from .typing import canon_type, type_error, type_ok
-from .exprparse import Call, ExprEmit, Field, Index, Ref, check_arity, fn_call
+from .exprparse import (Call, ExprEmit, Field, Index, Ref, check_arity,
+                        expr_list, fn_call)
 from . import messages as M
 from . import patterns as P
 
@@ -94,22 +95,8 @@ def _local_names(p):
     return names
 
 
-def _values(p):
-    codes = []
-    types = []
-    while True:
-        p.expected = None
-        node = p.expr()
-        p.expected = None
-        codes.append(node.code)
-        types.append(node.t)
-        if not p.accept(","):
-            break
-    return codes, types
-
-
 def _local_values(p, names, types):
-    codes, vals = _values(p)
+    codes, vals = expr_list(p)
     for i, t in enumerate(vals):
         if i < len(types):
             types[i] = t
@@ -162,7 +149,7 @@ def _check_field_assign(lhs, types, ctx, where):
 
 
 def _stmt_assign(p, lhs, op, env, where, ctx):
-    codes, types = _values(p)
+    codes, types = expr_list(p)
     p.expect_eof()
     _check_env_assign(lhs, types, env, ctx, where)
     _check_field_assign(lhs, types, ctx, where)

@@ -56,10 +56,6 @@ def parse_cond(text):
     return _and(parts[0])
 
 
-def leaf_text(node):
-    return " ".join(t[1] for t in node.toks)
-
-
 def _narrow_simple(toks):
     """(name, want_nil) for `x`, `x == nil` or `not x`, else None."""
     if len(toks) == 1 and toks[0][0] == "name":
