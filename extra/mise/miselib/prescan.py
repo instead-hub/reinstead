@@ -178,6 +178,8 @@ def _collect_field(ctx, into, owner, key, val):
     """Store the typed value of one regular field."""
     base = field_base(key, val, ctx)
     if base is None:
+        if key == "disabled":
+            _check_disabled(val)
         return
     t = literal_type(ctx, val, refs=True)
     _reject_bare_str(base, val, t)
@@ -195,8 +197,6 @@ def collect_block_fields(block, ctx, into, owner=None):
         if key in ("with", "inside") and isinstance(val, Block):
             _collect_nested(val, ctx, collect_block_fields)
             continue
-        if key == "disabled":
-            _check_disabled(val)
         _collect_field(ctx, into, owner, key, val)
 
 
@@ -299,6 +299,9 @@ def _check_mixin_names(ctx, value):
 def _check_bare_field(ctx, use_props, owner, key, val):
     """Validate one non-mixin field of an impl/setup/hero block."""
     base = field_base(key, val, ctx)
+    if key == "disabled":
+        _check_disabled(val)
+        return
     t = literal_type(ctx, val, refs=True)
     _reject_bare_str(base, val, t)
     prop = ctx.props.get(base) if (use_props and base) else None
@@ -312,9 +315,6 @@ def _walk_fields(ctx, block, use_props=False, owner=None):
         CURRENT_LINE[0] = block.line_at(n)
         if field_key == "mixin":
             _check_mixin_names(ctx, field_val)
-            continue
-        if field_key == "disabled":
-            _check_disabled(field_val)
             continue
         _check_bare_field(ctx, use_props, owner, field_key, field_val)
 
