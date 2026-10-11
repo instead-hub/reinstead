@@ -187,8 +187,19 @@ def _split_param(p):
     return p, "any"
 
 
+def _repeat_type(name, p, known):
+    """Canonical type of a `...: T` tail; `any` when untyped."""
+    tail = p[3:].lstrip()
+    if tail.startswith(":"):
+        tail = tail[1:].strip()
+    if not tail:
+        return "any"
+    _check_type(name, known, tail, "...")
+    return canon_type(known, tail)
+
+
 def _fn_params(name, params, known):
-    """`(a: T, ...)` text -> (plist, variadic)."""
+    """`(a: T, ...: T)` text -> (plist, variadic type)."""
     if params is None:
         return [("s", "obj"), ("w", "obj"), ("wh", "obj")], False
     plist = []
@@ -196,10 +207,10 @@ def _fn_params(name, params, known):
         return plist, False
     parts = split_types(params)
     for idx, p in enumerate(parts):
-        if p == "...":
+        if p.startswith("..."):
             if idx != len(parts) - 1:
                 raise Error(M.FN_MUST_BE_LAST_PARAMETER % name)
-            return plist, True
+            return plist, _repeat_type(name, p, known)
         pn, pt = _split_param(p)
         if not P.DSL_RE.fullmatch(pn):
             raise Error(M.FN_BAD_PARAMETER % (name, pn))

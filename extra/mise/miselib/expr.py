@@ -51,6 +51,10 @@ def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
         if not type_ok(ctx, t, pt):
             raise TypeCheckError(M.FN_ARGUMENT_EXPECTS_GOT
                                  % (name, pn, pt, t))
+    for i, t in enumerate(types[len(plist):], len(plist) + 1):
+        if not type_ok(ctx, t, variadic or "any"):
+            raise TypeCheckError(M.FN_ARGUMENT_EXPECTS_GOT
+                                 % (name, i, variadic, t))
     return fn_call(ctx, name, [code]), [ret]
 
 

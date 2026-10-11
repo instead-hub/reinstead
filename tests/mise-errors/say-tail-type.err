@@ -1,0 +1,1 @@
+mise: error: expected bool|event|num|obj|str, got tbl[]: ({}) in logic:7: say ( 'x' , { } )

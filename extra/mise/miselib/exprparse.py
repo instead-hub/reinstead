@@ -320,7 +320,7 @@ class ExprEmit:
         exp = expected_list[0] if expected_list else None
         return [self.str_arg(tok[1], exp)], 1
 
-    def arglist(self, expected_list):
+    def arglist(self, expected_list, repeat=None):
         if self.peek()[0] == "str":
             return self._str_arglist(expected_list)
         self.expect("(")
@@ -329,7 +329,8 @@ class ExprEmit:
         if not self.accept(")"):
             while True:
                 exp = (expected_list[n]
-                       if expected_list and n < len(expected_list) else None)
+                       if expected_list and n < len(expected_list)
+                       else repeat or None)
                 self.expected = exp
                 node = self.expr()
                 self.expected = None
@@ -708,7 +709,7 @@ class ExprEmit:
             return Call(fn_call(self.ctx, nv, [node.code]), ret)
         if self._method_tail(plist, variadic):
             return self._method_tail_call(node, nv, plist, ret)
-        codes, n = self.arglist([pt for _pn, pt in plist[1:]])
+        codes, n = self.arglist([pt for _pn, pt in plist[1:]], variadic)
         self.check_arity(nv, plist[1:], variadic, n)
         return Call(fn_call(self.ctx, nv, [node.code] + codes), ret)
 
@@ -800,7 +801,7 @@ class ExprEmit:
 
     def _sig_arg_call(self, name):
         plist, rt, variadic = self.ctx.fn_sigs[name]
-        codes, n = self.arglist([pt for _pn, pt in plist])
+        codes, n = self.arglist([pt for _pn, pt in plist], variadic)
         self.check_arity(name, plist, variadic, n)
         return fn_call(self.ctx, name, codes), rt
 

@@ -396,6 +396,10 @@ obj Кабель:
 - тело-выражение в бэктиках — inline: `fn len(v: tbl) -> num: `#v``
   подставляется в место вызова (в скобках) и не эмитится; параметр не
   должен встречаться больше одного раза, `...` и `use` запрещены;
+- хвостовой `...` — 0+ аргументов; его можно типизировать: `...: T` —
+  каждый хвостовой аргумент проверяется против `T`
+  (`fn say(text: str|num|bool|obj|event, ...: str|num|bool|obj|event)`);
+  без типа `...` хвост не проверяется;
 - типы: `obj` (объект/комната/тег), `str`, `num`, `bool`, `any`,
   `event` (событие движка/игры), `tbl` (таблица), `tbl[T]` (таблица со
   значениями типа `T`; `tbl[any]` ≡ `tbl`), `list` (движковый список
@@ -567,9 +571,9 @@ props:
 | `seen` | `(obj) -> obj?` | `seen(w)` |
 | `noun` | `(obj, tbl[case\|gram]\|case\|num?, num?) -> str` | `s:noun({ падеж, ... })` |
 | `Noun` | `(obj, tbl[case\|gram]\|case\|num?, num?) -> str` | `s:Noun(...)` (с заглавной) |
-| `say` | `(str\|num\|bool\|obj\|event, ...)` | `p(...)` |
-| `line` | `(...)` | `pn(...)` |
-| `append` | `(str\|num\|bool\|obj\|event, ...)` | `pr(...)` |
+| `say` | `(str\|num\|bool\|obj\|event, ...: str\|num\|bool\|obj\|event)` | `p(...)` |
+| `line` | `(...: str\|num\|bool\|obj\|event)` | `pn(...)` |
+| `append` | `(str\|num\|bool\|obj\|event, ...: str\|num\|bool\|obj\|event)` | `pr(...)` |
 | `for_plural` | `(obj, fn(w: obj))` | `s:for_plural(f)` |
 | `trace` | `(obj, fn(w: obj))` | `mp:trace(w, f)` |
 | `isa` | `(obj, str) -> bool` | класс объекта (`s:isa Kitten`) |

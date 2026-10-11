@@ -56,8 +56,9 @@ kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
    поля-ссылки объявлены в props: (ref/tbl[ref]), свои — через refs: *)
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
-param     ::= IDENT [ ":" type ] | "..."   (* хвостовой T?-параметр можно
-                                              не передавать при вызове *)
+param     ::= IDENT [ ":" type ] | "..." [ ":" type ]
+            (* хвостовой T?-параметр можно не передавать при вызове;
+               "..." — 0+ аргументов, "...: T" проверяет каждый из них *)
 type      ::= atom [ "?" ] { "|" atom [ "?" ] }
 atom      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
             | "tbl" [ "[" type "]" ] | "list"
