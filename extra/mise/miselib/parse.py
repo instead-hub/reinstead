@@ -135,6 +135,9 @@ def parse_block(lines, i, indent, text_values=False):
     pos = i
     while pos < len(lines):
         raw, ind = lines[pos]
+        if not raw.strip():
+            pos += 1
+            continue
         if ind < indent:
             break
         if ind > indent:

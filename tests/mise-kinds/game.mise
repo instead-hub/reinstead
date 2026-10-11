@@ -19,16 +19,21 @@ extend refs:
 
 setup:
   fmt: verbose
+
   take: statue
+
   game:
     hint_verbs: { "#Look" }
+
   hero:
     words: ты
+
   start: |
     player:move hall
 
 story intro:
   dsc: [[Пролог.]]
+
   after Enter: |
     say [[История началась.]]
 

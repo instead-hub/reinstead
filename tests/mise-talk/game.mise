@@ -25,9 +25,11 @@ obj guide:
 
 talk разговор_с_гидом:
   intro: [[-- Здравствуйте, путник.]]
+
   option:
     when: not met
     ask: Что тут случилось?
+
     reply: -- Обвал в шахте.
     option:
       ask: Кто виноват?
@@ -53,12 +55,15 @@ talk разговор_с_гидом:
   option:
     ask: Расспросить
     reply: -- О чём?
+
     option:
       ask: О погоде
       reply: -- Ветрено.
+
     option:
       ask: О работе
       reply: -- Тяжело.
+
     onempty: |
       say -- Гид угрюмо молчит.
       met = true
@@ -80,6 +85,7 @@ talk разговор_с_гидом:
     when: use знакомы
     ask: Знакомы ли мы?
     reply: -- Похоже, да.
+
   label финал:
     say: -- Продолжение следует.
     option:
