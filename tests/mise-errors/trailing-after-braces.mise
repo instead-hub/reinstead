@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+room hall:
+  words: зал
+  dict: { ["зал"] = "зал" } лишнее

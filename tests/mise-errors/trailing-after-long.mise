@@ -1,0 +1,7 @@
+name: t
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+  description: [[Стыковка завершена.]] -- читаешь ты.

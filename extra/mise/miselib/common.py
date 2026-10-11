@@ -158,10 +158,19 @@ HANDLER_KEYS = ("on", "before", "after", "post")
 
 def parse_scalar(s, line, textmode=False):
     s = s.strip()
-    if s.startswith("`") and s.endswith("`") and len(s) > 1:
-        return Raw(s[1:-1])
+    if s.startswith("`"):
+        stop = s.find("`", 1)
+        if stop == -1:
+            parse_error(line, M.TRAILING_VALUE % s)
+        junk = s[stop + 1:].strip()
+        if junk:
+            parse_error(line, M.TRAILING_VALUE % junk)
+        return Raw(s[1:stop])
     if s.startswith(("'", '"')):
-        val, _ = parse_string(s, line)
+        val, end = parse_string(s, line)
+        tail = s[end:].strip()
+        if tail:
+            parse_error(line, M.TRAILING_VALUE % tail)
         return Text(val)
     if s in ("true", "false"):
         return Bool(s)
@@ -224,6 +233,30 @@ def balanced_expr(text):
         i += 1
     return depth == 0
 
+def balanced_end(text):
+    """Index after the first balanced bracket run, else None."""
+    depth = 0
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if c in "\"'":
+            i = _skip_quoted(text, i)
+            continue
+        if text.startswith("[[", i):
+            skip = _long_skip(text, i)
+            if skip < 0:
+                return None
+            i += skip
+            continue
+        if c in "{[(":
+            depth += 1
+        elif c in "}])":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    return None
+
 def read_bracket(lines, i, first, line_no):
     text = first
     while not balanced_expr(text):
@@ -231,6 +264,11 @@ def read_bracket(lines, i, first, line_no):
         if i >= len(lines):
             parse_error(line_no, M.UNTERMINATED_BRACES)
         text += "\n" + lines[i][0]
+    end = balanced_end(text)
+    tail = text[end:].strip() if end is not None else ""
+    if tail:
+        parse_error(line_no + text[:end].count("\n"),
+                    M.TRAILING_VALUE % tail)
     return Data(text), i + 1
 
 def long_balanced(text):
@@ -267,13 +305,21 @@ def read_long(lines, i, first, line_no):
     close = "]" + opener.group(1) + "]"
     content = first[opener.end():]
     if close in content:
-        return Text(content[:content.index(close)]), i + 1
+        stop = content.index(close)
+        junk = content[stop + len(close):].strip()
+        if junk:
+            parse_error(line_no, M.TRAILING_VALUE % junk)
+        return Text(content[:stop]), i + 1
     body = [content] if content else [""]
     i += 1
     while i < len(lines):
         raw, _ind = lines[i]
         if close in raw:
-            body.append(raw[:raw.index(close)])
+            at = raw.index(close)
+            extra = raw[at + len(close):].strip()
+            if extra:
+                parse_error(i + 1, M.TRAILING_VALUE % extra)
+            body.append(raw[:at])
             first_line = body[0]
             rest = textwrap.dedent("\n".join(body[1:]))
             return Text(first_line + ("\n" + rest if rest else "")), i + 1
