@@ -131,6 +131,10 @@ obj relic:
     - garden
   word: |
     return 'реликвия'
+  on Use: |
+    say [[Применили.]]
+  on AskTo: |
+    say [[Попросили.]]
 
 obj key:
   words: ключ

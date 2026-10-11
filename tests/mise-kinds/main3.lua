@@ -197,6 +197,12 @@ obj {
   word = function(s)
     return 'реликвия'
   end;
+  Use = function(s, w, wh)
+    p([[Применили.]])
+  end;
+  AskTo = function(s, w, wh)
+    p([[Попросили.]])
+  end;
 }:disable()
 
 obj {
