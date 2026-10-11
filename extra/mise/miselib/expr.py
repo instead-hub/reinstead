@@ -6,7 +6,7 @@ from .common import *
 from .lex import lex_lua
 from .typing import canon_type, type_error, type_ok
 from .exprparse import (Call, ExprEmit, Field, Index, Ref, check_arity,
-                        expr_list, fn_call)
+                        expr_list, fn_call, min_args)
 from . import messages as M
 from . import patterns as P
 
@@ -198,7 +198,7 @@ def _stmt_expr(p, env, where, ctx):
 
 def transpile_stmt(text, env, where, ctx):
     s = text.strip()
-    if s in ctx.fn_sigs and not ctx.fn_sigs[s][0]:
+    if s in ctx.fn_sigs and min_args(ctx.fn_sigs[s][0]) == 0:
         return fn_call(ctx, s, [])
     raw = no_paren_call(text, env, where, ctx)
     if raw is not None:

@@ -611,11 +611,19 @@ class ExprEmit:
         return None
 
     def autocall(self, node):
+        if not (isinstance(node, Ref) and not node.obj
+                and node.name in self.ctx.fn_sigs):
+            return node
+        plist, ret, _v = self.ctx.fn_sigs[node.name]
+        if min_args(plist) == 0:
+            return Call(fn_call(self.ctx, node.name, []), ret)
+        return node
+
+    def check_value(self, node):
+        """A bare inline fn has no wrapper to take its value."""
         if (isinstance(node, Ref) and not node.obj
-                and node.name in self.ctx.fn_sigs
-                and not self.ctx.fn_sigs[node.name][0]):
-            node = Call(fn_call(self.ctx, node.name, []),
-                        self.ctx.fn_sigs[node.name][1])
+                and node.name in self.ctx.inline):
+            self.err(M.FN_MUST_BE_CALLED % node.name)
         return node
 
     def _is_bare_call(self, node, k, v):
@@ -641,11 +649,11 @@ class ExprEmit:
     def postfix(self, node):
         while True:
             k, v = self.peek()
-            if not _arg_call(k, v):
+            if not _arg_call(k, v) and not self._is_bare_call(node, k, v):
                 node = self.autocall(node)
             node, done = self._postfix_step(node, k, v)
             if done:
-                return node
+                return self.check_value(node)
 
     def postfix_dot(self, node):
         self.next()

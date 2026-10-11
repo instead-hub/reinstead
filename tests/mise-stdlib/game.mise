@@ -46,6 +46,7 @@ fn probe(w: obj, t: tbl, ev: event): |
   gram(w)
   walkback()
   walkback(w)
+  walkback
   remove(w)
   add(inv(), w)
   del(inv(), w)
@@ -59,8 +60,12 @@ fn probe(w: obj, t: tbl, ev: event): |
   push(w, w)
   pop()
   pop(w)
+  pop
   empty()
   empty(w)
+  empty
+  if empty:
+    say(0)
   check_held(w)
   check_live(w)
   check_touch()
