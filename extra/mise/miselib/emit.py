@@ -73,7 +73,7 @@ TALK_FORMS = {
     "do": "_talk_do",
     "onempty": "_talk_onempty",
     "when": "_talk_when",
-    "goto": "_talk_goto",
+    "next": "_talk_next",
     "always": "_talk_flag",
     "hidden": "_talk_flag",
     "only": "_talk_flag",
@@ -616,12 +616,21 @@ class Emitter:
         talk.named.append(T.ASSIGN
                           % (base, self.body(val, key, talk.indent + IND)))
 
-    def _talk_when(self, _base, _key, val, talk):
+    def _talk_when(self, base, _key, val, talk):
+        if isinstance(val, Bool):
+            talk.named.append(T.TALK_COND % val.s)
+            return
+        if isinstance(val, (Logic, Lua)) or self.use_name(val) is not None:
+            talk.named.append(T.ASSIGN
+                              % ("cond", self.make_body(val, "s",
+                                                        talk.indent + IND,
+                                                        None, "bool", base)))
+            return
         talk.named.append(T.TALK_COND
                           % transpile_exprlist(sym_text(val), {}, "talk when",
                                                ctx=self.ctx)[0])
 
-    def _talk_goto(self, _base, _key, val, talk):
+    def _talk_next(self, _base, _key, val, talk):
         talk.named.append(T.TALK_NEXT % sym_text(val).lstrip('#'))
 
     def _talk_flag(self, base, _key, val, talk):

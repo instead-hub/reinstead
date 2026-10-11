@@ -910,10 +910,10 @@ talk Разговор_с_Мариной:
 | `reply:` | ответ при выборе (текстовый `act`) |
 | `do:` | действие (`act`-функция; логика или `|lua`) |
 | `onempty:` | обработчик пустой фразы (`function(s)`; логика, `|lua` или `use`) |
-| `when:` | условие доступности (`cond`) |
+| `when:` | условие доступности (`cond`): выражение, `true`/`false`, логика, `\|lua` или `use` (fn `-> bool`) |
 | `always: true` | не закрывать фразу после выбора |
 | `hidden: true`, `only: true` | как в phr |
-| `goto: имя` | переход `next = '#имя'` |
+| `next: имя` | переход `next = '#имя'` |
 | `label имя:` | фраза-метка (вне дерева, крепится к dlg) |
 | `option:` (вложенно) | дочерние варианты |
 
@@ -1036,7 +1036,7 @@ talk Разговор_с_Мариной:
 - `tests/mise-alice/game.mise` — классы с демонами (`rnd`), поля-ссылки
   с `_(...)`, `extend #Exam`;
 - `tests/mise-talk/game.mise` — `talk:` (intro/option/reply/do/when/
-  goto/always/hidden/only/label) с golden-транскриптом движка;
+  next/always/hidden/only/label) с golden-транскриптом движка;
 - `tests/mise-kinds/game.mise` — пресеты `door`/`story`/`scenery`,
   фазы `on/life/before/after/post`, `type`/`extend type`/`extend refs`,
   `inside`/`dict`/`disabled`, поля `setup` (hero/game/take/fmt), `verb`

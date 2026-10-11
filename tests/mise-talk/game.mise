@@ -6,6 +6,9 @@ global:
   met: false
   q1: 0
 
+fn знакомы(s: obj) -> bool: |
+  return met
+
 setup:
   start: |
     player:move hall
@@ -40,7 +43,7 @@ talk разговор_с_гидом:
     option:
       only: true
       ask: Только один раз
-      goto: финал
+      next: финал
   option:
     always: true
     say: Я скоро вернусь.
@@ -60,6 +63,23 @@ talk разговор_с_гидом:
       say -- Гид угрюмо молчит.
       met = true
       walkout()
+  option:
+    when: true
+    ask: Всегда доступно
+    reply: -- Да, всегда.
+  option:
+    when: false
+    ask: Никогда
+    reply: -- И не увидите.
+  option:
+    when: |
+      return met
+    ask: После знакомства
+    reply: -- Мы уже виделись.
+  option:
+    when: use знакомы
+    ask: Знакомы ли мы?
+    reply: -- Похоже, да.
   label финал:
     say: -- Продолжение следует.
     option:

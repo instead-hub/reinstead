@@ -4,6 +4,10 @@
 require "fmt"
 require "parser/mp-ru"
 
+local function fn_знакомы(s)
+  return met
+end
+
 obj {
   nam = "none";
 }
@@ -119,6 +123,28 @@ dlg {
         met = true
         walkout()
       end;
+    };
+    {
+      "Всегда доступно";
+      "-- Да, всегда.";
+      cond = function() return true end;
+    };
+    {
+      "Никогда";
+      "-- И не увидите.";
+      cond = function() return false end;
+    };
+    {
+      "После знакомства";
+      "-- Мы уже виделись.";
+      cond = function(s)
+        return met
+      end;
+    };
+    {
+      "Знакомы ли мы?";
+      "-- Похоже, да.";
+      cond = fn_знакомы;
     };
   };
   obj = {

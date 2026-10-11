@@ -118,7 +118,7 @@ talk_item   ::= "intro" ":" value
               | "label" IDENT ":" talk_option
 talk_option ::= NEWLINE INDENT { talk_field } DEDENT
 talk_field  ::= key ":" value
-(* talk_field: ask/say/reply/do/when/goto/always/hidden/only/option(рекурсия) *)
+(* talk_field: ask/say/reply/do/when/next/always/hidden/only/option(рекурсия) *)
 
 setup     ::= "setup" ":" block
 (* поля setup: dsc, fmt, take, hero, on, game, init, start *)

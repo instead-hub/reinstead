@@ -1,0 +1,12 @@
+name: t
+lang: ru
+include: stdlib
+
+global:
+  q: 0
+
+talk разговор:
+  option:
+    when: |
+      return q
+    ask: А?
