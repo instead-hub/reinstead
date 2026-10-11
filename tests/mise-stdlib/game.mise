@@ -6,9 +6,13 @@ room hall:
   words: зал
   dsc: [[Зал.]]
 
+fn describe(s: obj) -> str: |
+  return 'Ящик.'
+
 obj box:
   words: ящик
   attrs: container,open
+  description: use describe
 
 fn probe(w: obj, t: tbl, ev: event): |
   hasnt(w, open)

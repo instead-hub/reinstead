@@ -139,7 +139,7 @@ class Emitter:
             raise Error(M.UNSUPPORTED_VALUE_CTX % (v, mode))
         return form(v, mode, self.ctx)
 
-    def check_use(self, name, prm, ret=None):
+    def check_use(self, name, prm, ret=None, label="event"):
         if name not in self.ctx.fn_sigs or not prm:
             return
         plist, fret, _v = self.ctx.fn_sigs[name]
@@ -154,9 +154,10 @@ class Emitter:
         mn = min_args(plist)
         if n < mn:
             if mn == len(plist):
-                raise Error(M.FN_TAKES_PARAMETERS_EVENT
-                            % (name, len(plist), n))
-            raise Error(M.FN_TAKES_AT_LEAST_PARAMETERS % (name, mn, n))
+                raise Error(M.FN_TAKES_PARAMETERS
+                            % (name, len(plist), label, n))
+            raise Error(M.FN_TAKES_AT_LEAST_PARAMETERS
+                        % (name, mn, label, n))
         if ret and fret and fret != "any" and not type_ok(self.ctx, fret, ret):
             raise Error(M.FN_RETURN_TYPE_EXPECTED
                         % (name, fret, ret))
@@ -191,7 +192,8 @@ class Emitter:
     def make_body(self, v, prm, indent, env=None, ret=None, ret_name=None):
         uname = self.use_name(v)
         if uname:
-            self.check_use(uname, prm, ret)
+            self.check_use(uname, prm, ret,
+                           "field" if ret_name else "event")
             return fn_name(uname)
         if isinstance(v, Lua):
             return self._lua_body(v, prm, indent)

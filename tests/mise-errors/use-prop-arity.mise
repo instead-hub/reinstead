@@ -1,0 +1,10 @@
+name: t
+lang: ru
+include: stdlib
+
+fn funct: |
+  return 'x'
+
+obj box:
+  words: коробка
+  description: use funct

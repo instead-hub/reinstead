@@ -4,6 +4,10 @@
 require "fmt"
 require "parser/mp-ru"
 
+local function fn_describe(s)
+  return 'Ящик.'
+end
+
 local function fn_probe(w, t, ev)
   w:hasnt("open")
   w:once('tag')
@@ -113,4 +117,5 @@ room {
 obj {
   -"ящик";
   nam = "box";
+  description = fn_describe;
 }:attr 'container,open'
