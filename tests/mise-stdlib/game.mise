@@ -68,7 +68,7 @@ fn probe(w: obj, t: tbl, ev: event): |
   lifeon(w)
   lifeoff(w)
   call_before(w, ev)
-  runmethods('obj', 'take')
+  runmethods(before, Take, w)
   runorval(w, 'inv')
   theme_name()
   pclr()

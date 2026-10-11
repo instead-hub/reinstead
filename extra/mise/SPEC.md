@@ -581,7 +581,8 @@ props:
 Дополнительные тонкие обёртки над API (все inline):
 `subaction(ev: event, ...: obj)`, `xaction(ev: event, ...: obj)`,
 `walkback(w: obj?)`, `push(w: obj, ww: obj?)`,
-`runmethods(тип, метод, ...)`,
+`runmethods(what: phase, meth: event, ...: obj)` (фазы —
+`after`/`before`/`life`/`post` из `type phase`),
 `runorval(w, имя, ...)`, `check_touch()`, `check_worn(w)`,
 `offerslight(w)`, `visible_scope(where) -> obj?`, `inroom(w)`,
 `getDaemons() -> list`, `cls_prompt()`, `gram(s) -> tbl`, `access(s)`,

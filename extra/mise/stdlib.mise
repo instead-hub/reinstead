@@ -73,6 +73,8 @@ type event:
   - Think, ThrowAt, ThrownAt, Tie, Touch, Transfer, Turn, Unlock, Use,
   - Wait, Wake, WakeOther, Walk, Wave, WaveHands, Wear, Yes
 
+type phase: after, before, life, post
+
 fn here() -> obj: |lua
   return here()
 
@@ -287,7 +289,7 @@ fn lifeoff(w: obj): |lua
 fn call_before(s: obj, ev: event): |lua
   return std.call(s, 'before_' .. ev)
 
-fn runmethods(what: str, meth: str, ...): |lua
+fn runmethods(what: phase, meth: event, ...: obj): |lua
   mp:runmethods(what, meth, ...)
 
 fn runorval(w: obj, name: str, ...) -> any: |lua
