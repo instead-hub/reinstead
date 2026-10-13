@@ -1,0 +1,10 @@
+name: t
+lang: ru
+include: stdlib
+
+obj штука:
+  words: ш
+  with:
+    obj ядро:
+      words: я
+    плохая строка

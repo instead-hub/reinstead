@@ -75,13 +75,27 @@ def pipe_value(lines, i, indent, tag):
         parse_error(body[m][2], M.TRAILING_LOGIC)
     return Logic(stmts), j
 
-def _block_child(lines, pos, indent, key, recurse):
+def _is_struct(key):
+    """Is the key a structural block rather than a value field?"""
+    return key.split(" ", 1)[0] in STRUCT_KEYS
+
+
+def _no_key_error(pos, logic):
+    """Report a line without `:`; hint at the enclosing logic block."""
+    if logic is not None:
+        parse_error(pos + 1, M.EXPECTED_KEY_VALUE_LOGIC % logic)
+    parse_error(pos + 1, M.EXPECTED_KEY_VALUE)
+
+
+def _block_child(lines, pos, indent, key, recurse, logic=None):
     j = skip_blank(lines, pos + 1)
     if _is_list_item(lines, j, indent):
         sub, cnxt = parse_list(lines, j, lines[j][1])
         return sub, cnxt - pos
     if j < len(lines) and lines[j][1] > indent:
-        node, bnxt = recurse(lines, j, lines[j][1], key in HANDLER_KEYS)
+        child = logic or ((key, pos + 1) if not _is_struct(key) else None)
+        node, bnxt = recurse(lines, j, lines[j][1], key in HANDLER_KEYS,
+                             child)
         return node, bnxt - pos
     return Block(), 1
 
@@ -130,7 +144,7 @@ def _block_value(lines, pos, indent, rest, text_values, key):
         return [parse_scalar(p, pos + 1) for p in parts], 1
     return parse_scalar(rest, pos + 1, tm), 1
 
-def parse_block(lines, i, indent, text_values=False):
+def parse_block(lines, i, indent, text_values=False, logic=None):
     blk = Block()
     pos = i
     while pos < len(lines):
@@ -148,10 +162,10 @@ def parse_block(lines, i, indent, text_values=False):
             continue
         key, rest = split_key(text)
         if key is None:
-            parse_error(pos + 1, M.EXPECTED_KEY_VALUE)
+            _no_key_error(pos, logic)
         key, rest = key.strip(), rest.strip()
         line_no = pos + 1
-        parsed = (_block_child(lines, pos, indent, key, parse_block)
+        parsed = (_block_child(lines, pos, indent, key, parse_block, logic)
                   if rest == ""
                   else _block_value(lines, pos, indent, rest, text_values,
                                     key))

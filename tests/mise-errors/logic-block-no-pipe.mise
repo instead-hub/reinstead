@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+obj штука:
+  words: ш
+  before Take:
+    if here == hall:
+      say Нельзя.

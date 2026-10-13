@@ -48,6 +48,8 @@ EXPECTED_GOT_STR = '%s: expected %s, got str'
 EXPECTED_GOT_STR_VAL = 'expected %s, got str %r'
 EXPECTED_GOT_USE = '%s: expected %s, got use'
 EXPECTED_KEY_VALUE = "expected 'key: value'"
+EXPECTED_KEY_VALUE_LOGIC = ("expected 'key: value' (a logic block starts "
+                            "with `|`: see '%s' on line %d)")
 EXPECTED_LOCAL_NAME = 'expected local name'
 EXPECTED_LOGIC_LUA_BLOCK = 'expected logic/lua block'
 EXPECTED_METHOD_NAME = 'expected method name'

@@ -156,6 +156,14 @@ TEXT_KEYS = {
 
 HANDLER_KEYS = ("on", "before", "after", "post")
 
+# keys whose block holds declarations or `key: value` fields; under any
+# other key an indented block is logic and must start with `|`
+STRUCT_KEYS = {
+    "obj", "scenery", "room", "door", "story", "ending", "class", "mixin",
+    "impl", "verb", "talk", "setup", "const", "global", "props", "refs",
+    "extend", "with", "option", "label", "hero", "game",
+}
+
 def parse_scalar(s, line, textmode=False):
     s = s.strip()
     if s.startswith("`"):
