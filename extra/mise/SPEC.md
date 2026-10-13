@@ -224,7 +224,7 @@ refs       — поля-ссылки (см. «Типы полей»)
 | `disabled: true\|false` | `:disable()`; `false` — ничего (в `impl` — `:enable()`) |
 | `on X:` | метод события: `X = function(s, w, wh)`; `on Open, Close:` → `["Open,Close"]` (у `Any`/`Default` — `s, ev, w`) |
 | `before/after/post/life X:` | `before_X`/`after_X`/`post_X`/`life_X`; событие без фазы — ошибка |
-| `with:` | вложенные декларации (`obj:`/`obj имя:`, в т.ч. автоименованные) **или** список ссылок (`obj = {...}`) |
+| `with:` | вложенные декларации (`obj:`/`obj имя:`) **или** список ссылок (`with: имя, имя`); определения и ссылки совмещаются двумя ключами `with:` (ссылки эмитятся первыми) |
 | `found_in: room1, room2` | где появляется объект |
 | `n_to/e_to/...`, `in_to`, `out_to`, `u_to`, `d_to` | переходы (значение — комната, дверь или логика/функция) |
 | `door_to`, `next_to`, `talk_to`, `with_key` | как в API |
@@ -253,6 +253,7 @@ obj камень:
     wear_item(s)
   before Pull, Transfer: |lua
     ...
+  with: рычаг
   with:
     obj ядро: ...
 ```
@@ -959,7 +960,7 @@ talk Разговор_с_Мариной:
   `type`/`extend type`, элементах списков — ошибка; имена — без
   пробелов и дефисов, `nam:` запрещён (имя = имя декларации);
 - дубликаты обычных деклараций запрещены (совпадать могут только теги);
-- `with`/`inside`/`found_in` и поля-ссылки (`n_to`, `door_to`,
+- `with`/`found_in` и поля-ссылки (`n_to`, `door_to`,
   `talk_to`, …) ссылаются на объявленные объекты; динамические цели
   задаются через `|lua`/бэктик;
 - голые значения в полях объектов/классов, `impl`, `setup`/`hero`/
@@ -1050,7 +1051,7 @@ talk Разговор_с_Мариной:
   next/always/hidden/only/label) с golden-транскриптом движка;
 - `tests/mise-kinds/game.mise` — пресеты `door`/`story`/`scenery`,
   фазы `on/life/before/after/post`, `type`/`extend type`/`extend refs`,
-  `inside`/`dict`/`disabled`, поля `setup` (hero/game/take/fmt), `verb`
+  `with`/`dict`/`disabled`, поля `setup` (hero/game/take/fmt), `verb`
   (tag/prio/hint);
 - `tests/mise-stdlib/game.mise` — вызов каждой функции stdlib.
 

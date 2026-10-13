@@ -52,7 +52,7 @@ kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
             | CLASS
 (* имена деклараций — только NAME (идентификатор/тег), кавычки запрещены;
    kind — пресет (obj/scenery/room/door/story/ending) или класс-экземпляр
-   (`Prop дерево:`); with/inside перечисляют голые NAME; встроенные
+   (`Prop дерево:`); with перечисляет голые NAME; встроенные
    поля-ссылки объявлены в props: (ref/tbl[ref]), свои — через refs: *)
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
@@ -74,7 +74,7 @@ atom      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
    on — метод события (X = function...), before/after/post/life — префикс
    ("after Put", "before Turn, Tune", "life Give, Show"); без фазы —
    ошибка, и comma-ключ в impl требует фазы.
-   Спец-ключи со своей эмиссией: with/inside (вложенные декларации или
+   Спец-ключи со своей эмиссией: with (вложенные декларации или
    список ссылок), words (-> -"..."), attrs (-> :attr), dict (-> :dict),
    disabled true/false (-> :disable(), в impl :disable()/:enable());
    text — строка или `-`-список страниц.

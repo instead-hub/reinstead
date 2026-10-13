@@ -4,4 +4,4 @@ include: stdlib
 
 room r:
   words: r
-  inside: "room"
+  with: "room"

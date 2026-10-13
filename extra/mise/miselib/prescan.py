@@ -88,7 +88,7 @@ def check_refs(root, ids):
         for i, (key, val) in enumerate(block.items):
             if key == "props":
                 continue
-            if key in ("with", "inside", "found_in"):
+            if key in ("with", "found_in"):
                 CURRENT_LINE[0] = block.line_at(i)
                 refs(key, val)
             for sub in _sub_blocks(val):
@@ -111,7 +111,7 @@ def scan_lua_defs(text, funcs, vars_):
     for m in re.finditer(r"^\s*(" + P.LUA_NAME + r")\s*=", text, re.M):
         vars_.add(m.group(1))
 
-FIELD_SKIP = {"words", "on", "inside", "with", "attrs", "disabled",
+FIELD_SKIP = {"words", "on", "with", "attrs", "disabled",
               "dict", "nam", "patterns", "pattern", "tag", "prio",
               "hint", "mixin"}
 
@@ -192,7 +192,7 @@ def collect_block_fields(block, ctx, into, owner=None):
     attach_mixins(block, ctx, into, collect_block_fields)
     for i, (key, val) in enumerate(block.items):
         CURRENT_LINE[0] = block.line_at(i)
-        if key in ("with", "inside") and isinstance(val, Block):
+        if key == "with" and isinstance(val, Block):
             _collect_nested(val, ctx, collect_block_fields)
             continue
         _collect_field(ctx, into, owner, key, val)

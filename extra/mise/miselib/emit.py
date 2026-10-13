@@ -81,7 +81,7 @@ TALK_FORMS = {
 }
 
 # the object keys emitted by their own helpers or nested constructs
-OBJ_SKIP_KEYS = ("words", "inside", "with", "attrs",
+OBJ_SKIP_KEYS = ("words", "with", "attrs",
                  "disabled", "dict", "before", "after", "post")
 
 
@@ -435,7 +435,7 @@ class Emitter:
         obj_items = []
         nested = []
         for key, val in block.items:
-            if key not in ("inside", "with"):
+            if key != "with":
                 continue
             if isinstance(val, Block):
                 nested.extend(self._nested_decls(val, fi + IND))

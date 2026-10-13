@@ -92,7 +92,7 @@ transpile (main loop) обход корневых элементов → Emitter
 7. `const`/`global` → `global_types` через `literal_type`.
 8. `_fnrefs` — имена из `&...` выкидываются из `inline`, кроме
    `expr` (expr-функцию нельзя использовать как обработчик).
-9. `check_refs` — `with`/`inside`/`found_in` сверяются с `ctx.ids`;
+9. `check_refs` — `with`/`found_in` сверяются с `ctx.ids`;
    прочие поля-ссылки (`ctx.ref_fields` из `refs:`) проверяет
    `Emitter.obj` через `check_ref_value(..., ctx.ids)`.
 
@@ -209,7 +209,7 @@ transpile (main loop) обход корневых элементов → Emitter
   `CURRENT_LINE` — по строке ключа).
 - `obj`/`decl` — объекты и классы-экземпляры: `words`, `attrs`
   (с проверкой enum `attr`), `dict` → `:dict {...}` в tail, вложенные
-  `with`/`inside`, пресеты (`PRESETS`), `:attr`/`:disable()`
+  `with`, пресеты (`PRESETS`), `:attr`/`:disable()`
   (`disabled:` — строго `true|false`; в `impl` даёт `:disable()`/`:enable()`).
 - `cls`/`obj` — owner-контекст `ctx.current_owner` (класс или именованный
   объект) на время эмиссии тела: даёт типизацию `s.field` в

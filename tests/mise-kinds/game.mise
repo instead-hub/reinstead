@@ -54,7 +54,7 @@ room hall:
   words: зал
   dsc: [[Большой зал.]]
   dict: { "зал" }
-  inside: sky
+  with: sky
   on Enter: |
     say [[Вы вошли.]]
   on Walk: |
