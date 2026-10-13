@@ -176,4 +176,5 @@ obj {
   nam = "note";
   before_Disrobe = "pass";
   description = "use heal";
+  scope = { "box", "note" };
 }

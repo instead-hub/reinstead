@@ -24,6 +24,7 @@ obj note:
   words: записка
   before Disrobe: 'pass'
   description: 'use heal'
+  scope: { box, note }
 
 fn probe(w: obj, t: tbl, ev: event): |
   time()

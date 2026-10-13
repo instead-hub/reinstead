@@ -149,6 +149,27 @@ def check_ref_list(ctx, where, val):
                         % (where, type(it).__name__.lower()))
 
 
+def _prop_table(ctx, owner, base, prop, val):
+    """A `{ ... }` literal: raw Lua for tbl, name strings for list/tbl[ref]."""
+    where = ("%s.%s" % (owner, base)) if owner else base
+    if prop.has_list or prop.has_reflist:
+        val.s = _ref_table(ctx, where, val.s)
+        return ("list" if prop.has_list else "tbl"), False
+    if prop.has_tbl:
+        return "tbl", False
+    raise Error(M.EXPECTED_GOT % (where, prop.text, "table"))
+
+
+def _ref_table(ctx, where, text):
+    """Canonical `{ "name", ... }` of a list/tbl[ref] table literal."""
+    s = text.strip()
+    inner = s[1:-1] if s.startswith("{") and s.endswith("}") else s
+    items = [parse_scalar(p, CURRENT_LINE[0] or 0) for p in split_list(inner)]
+    check_ref_list(ctx, where, items)
+    names = ", ".join(lua_str(it.s.strip()) for it in items)
+    return "{ %s }" % names if names else "{}"
+
+
 def _prop_bare(prop, where, t):
     if prop.has_event and t == "event":
         return "event", False
@@ -197,7 +218,7 @@ def check_prop_value(ctx, owner, base, prop, val, t):
     if isinstance(val, Nil):
         return "nil", False
     if isinstance(val, Data):
-        return ("list" if prop.has_list else "tbl"), False
+        return _prop_table(ctx, owner, base, prop, val)
     if isinstance(val, (Logic, Lua, FnRef)):
         if prop.fn is None:
             raise Error(M.EXPECTED_GOT_FUNCTION % (where, prop.text))
