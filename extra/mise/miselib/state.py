@@ -24,6 +24,7 @@ class Ctx:
         self.event_names = set()
         self.ref_fields = set()
         self.props = {}
+        self.scoped = {}
         self.prop_params = {}
         self.inline = {}
         self.types = {}

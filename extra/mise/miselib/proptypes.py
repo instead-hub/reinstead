@@ -97,36 +97,66 @@ def collect_types(root, ctx):
     return ctx.types
 
 
-def _register_prop(ctx, known, name, tval):
+# scopes of `props <scope>:` and their engine parents (most specific first)
+PROP_SCOPES = {
+    "option": ("obj",),
+    "talk": ("room", "obj"),
+}
+
+
+def prop_of(ctx, scope, name):
+    """Prop of a scope (then its parents), else the global one."""
+    if scope is None:
+        return ctx.props.get(name)
+    for kind in (scope,) + PROP_SCOPES[scope]:
+        prop = ctx.scoped.get(kind, {}).get(name)
+        if prop is not None:
+            return prop
+    return ctx.props.get(name)
+
+
+def _register_prop(ctx, known, name, tval, into):
     """Validate and register one `props:` entry."""
     if not P.DSL_RE.fullmatch(name):
         raise Error(M.BAD_PROP_NAME % name)
-    if name in ctx.props:
+    if name in into:
         raise Error(M.DUPLICATE_PROP + name)
     if not isinstance(tval, (Bare, Text)):
         raise Error(M.PROPS_NEEDS_TYPE % name)
     prop = Prop(tval.s, known)
-    ctx.props[name] = prop
+    into[name] = prop
     if prop.names:
         ctx.prop_params[name] = prop.names
     if prop.has_ref or prop.has_reflist:
         ctx.ref_fields.add(name)
 
 
+def _scope_map(ctx, scope):
+    if scope not in PROP_SCOPES:
+        raise Error(M.PROPS_SCOPE_UNSUPPORTED % scope)
+    return ctx.scoped.setdefault(scope, {})
+
+
 def register_props(root, ctx):
-    """`props:` -> typed engine properties (refs, handlers, text/fn)."""
+    """`props:`/`props <scope>:` -> typed engine properties."""
     ctx.props = {}
+    ctx.scoped = {}
     ctx.prop_params = {}
     known = S.TYPES | set(ctx.types) | {"ref", "nil"}
     for i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(i)
-        if classify(key)[0] != "props":
+        kind, info = classify(key)
+        if kind != "props":
             continue
         if not isinstance(val, Block):
             raise Error(M.PROPS_MUST_BE_BLOCK)
+        scopes = [None] if info is None else info
+        into = [ctx.props if s is None else _scope_map(ctx, s)
+                for s in scopes]
         for j, (name, tval) in enumerate(val.items):
             CURRENT_LINE[0] = val.line_at(j) or CURRENT_LINE[0]
-            _register_prop(ctx, known, name, tval)
+            for target in into:
+                _register_prop(ctx, known, name, tval, target)
 
 
 def _check_ref_name(ctx, where, name):

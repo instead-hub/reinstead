@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+talk разговор:
+  option:
+    ask: |
+      return 5
+    reply: -- Да.

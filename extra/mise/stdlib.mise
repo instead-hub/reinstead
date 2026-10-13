@@ -28,7 +28,6 @@ props:
   enter: fn(s: obj, w: obj)
   exit: fn(s: obj, w: obj)
   each_turn: fn(s: obj)
-  onempty: fn(s: obj)
   when_open: str | bool | fn(s: obj) -> str
   when_closed: str | bool | fn(s: obj) -> str
   when_on: str | bool | fn(s: obj) -> str
@@ -63,6 +62,14 @@ props:
   gfx: str | fn(s: obj) -> str
   word: str | fn(s: obj) -> str
   raw_word: str | fn(s: obj) -> str
+
+props option:
+  intro: str | fn(s: obj) -> str
+  ask: str | fn(s: obj) -> str
+  say: str | fn(s: obj) -> str
+  reply: str | fn(s: obj) -> str
+  onempty: fn(s: obj)
+  when: bool | fn(s: obj) -> bool
 
 type event:
   - Answer, Any, Ask, AskFor, AskTo, Attack, Blow, Burn, Buy, Climb, Close,

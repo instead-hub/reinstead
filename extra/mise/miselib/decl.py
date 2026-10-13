@@ -87,6 +87,10 @@ def _extend_kind(_key, m):
     return "extend", "#" + m.group(1)
 
 
+def _props_kind(_key, m):
+    return "props", [s.strip() for s in m.group(1).split(",")]
+
+
 # the tagged top-level forms in lookup order: a compiled pattern and the
 # builder of its (kind, info)
 TAGGED_FORMS = (
@@ -98,6 +102,7 @@ TAGGED_FORMS = (
     (re.compile(r"^type\s+([a-z_]\w*)$"), _type_kind),
     (re.compile(r"^extend\s+type\s+([a-z_]\w*)$"), _extend_type_kind),
     (re.compile(r"^extend\s+#(" + P.DSL_NAME + r")$", re.UNICODE), _extend_kind),
+    (re.compile(r"^props\s+([a-z_]\w*(?:\s*,\s*[a-z_]\w*)*)$"), _props_kind),
 )
 
 # the prefixes of those forms that must carry a name

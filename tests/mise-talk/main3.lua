@@ -23,6 +23,14 @@ local function fn_знакомы(s)
   return met
 end
 
+local function fn_ask_text(s)
+  return 'Вопрос от fn?'
+end
+
+local function fn_reply_text(s)
+  return '-- Ответ от fn.'
+end
+
 obj {
   nam = "none";
 }
@@ -181,6 +189,23 @@ dlg {
       "-- И это правда.";
       cond = function(s)
         return met and true
+      end;
+    };
+    {
+      function(s)
+        return 'Вопрос из блока?'
+      end;
+      "-- Ответ из блока.";
+    };
+    {
+      fn_ask_text;
+      fn_reply_text;
+    };
+    {
+      "С действием?";
+      function(s)
+        p(fn_reply_text(s))
+        p([[-- Что-то произошло.]])
       end;
     };
   };

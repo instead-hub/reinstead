@@ -5,6 +5,7 @@ from .common import *
 from .emitlogic import emit_logic
 from .decl import (PRESETS, check_ref_value, decl_key,
                    is_true, mixin_bodies, sym_text)
+from .proptypes import prop_of
 from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import transpile_exprlist
 from .exprparse import fn_name, min_args
@@ -208,9 +209,9 @@ class Emitter:
                                     ret_name, ctx=self.ctx))
         return T.FUNC_IND % (prm, body, indent + "end")
 
-    def body(self, v, key, indent=""):
+    def body(self, v, key, indent="", scope=None):
         base, params = parse_key(key)
-        prop = self.ctx.props.get(base)
+        prop = prop_of(self.ctx, scope, base)
         prm = params or (prop.names if prop else None) or "s"
         env = None if params else (prop.env if prop else None)
         ret = None
@@ -558,12 +559,35 @@ class Emitter:
 
     def talk_act(self, reply, do, indent):
         if do is None:
-            return reply
+            return self._talk_reply_value(reply, indent)
         body = self._talk_body(do, indent)
+        head = self._talk_reply_head(reply, indent)
+        return [T.FN_S % indent] + head + body + [T.END % indent]
+
+    def _talk_reply_value(self, reply, indent):
+        """The act of a phrase whose only action is the reply."""
         if reply is None:
-            return [T.FN_S % indent] + body + [T.END % indent]
-        act = [T.FN_S % indent, T.P_CALL % (indent + IND, reply)]
-        return act + body + [T.END % indent]
+            return None
+        return self.body(reply, "reply", indent, scope="option")
+
+    def _talk_reply_head(self, reply, indent):
+        """`p(...)` line(s) printing the reply before the `do` body."""
+        if reply is None:
+            return []
+        if isinstance(reply, FnRef):
+            name = self.body(reply, "reply", indent, scope="option")
+            return [T.P_CALL % (indent + IND, name + "(s)")]
+        if isinstance(reply, (Logic, Lua)):
+            code = self.body(reply, "reply", indent + IND, scope="option")
+            return [T.P_CALL % (indent + IND, "(%s)(s)" % code)]
+        return [T.P_CALL % (indent + IND, self.value(reply))]
+
+    def _talk_lines(self, indent, text):
+        """Lines of one value (maybe a multi-line function) plus `;`."""
+        parts = text.split("\n")
+        parts[0] = indent + parts[0]
+        parts[-1] += ";"
+        return parts
 
     def _talk_body(self, do, indent):
         if isinstance(do, Logic):
@@ -582,14 +606,14 @@ class Emitter:
         if tag:
             lines.append(T.LIST_ITEM % (indent + IND, tag))
         if talk.specials["dsc"] is not None:
-            lines.append(T.LINE % (indent + IND, talk.specials["dsc"]))
+            lines.extend(self._talk_lines(indent + IND, talk.specials["dsc"]))
         act = self.talk_act(talk.specials["reply"], talk.specials["do"],
                             indent + IND)
         if isinstance(act, list):
             lines.extend(act)
             lines[-1] += ";"
         elif act is not None:
-            lines.append(T.LINE % (indent + IND, act))
+            lines.extend(self._talk_lines(indent + IND, act))
         for ch in talk.children:
             lines.extend(ch)
             lines[-1] += ";"
@@ -598,11 +622,12 @@ class Emitter:
         lines.append(T.CLOSE % indent)
         return lines
 
-    def _talk_dsc(self, _base, _key, val, talk):
-        talk.specials["dsc"] = self.value(val)
+    def _talk_dsc(self, _base, key, val, talk):
+        talk.specials["dsc"] = self.body(val, key, talk.indent + IND,
+                                         scope="option")
 
     def _talk_reply(self, _base, _key, val, talk):
-        talk.specials["reply"] = self.value(val)
+        talk.specials["reply"] = val
 
     def _talk_do(self, _base, _key, val, talk):
         talk.specials["do"] = val
@@ -611,17 +636,18 @@ class Emitter:
         if not isinstance(val, (Logic, Lua, FnRef)):
             raise Error(M.EXPECTED_LOGIC_LUA_BLOCK)
         talk.named.append(T.ASSIGN
-                          % (base, self.body(val, key, talk.indent + IND)))
+                          % (base, self.body(val, key, talk.indent + IND,
+                                             scope="option")))
 
-    def _talk_when(self, base, _key, val, talk):
+    def _talk_when(self, _base, key, val, talk):
         if isinstance(val, Bool):
             talk.named.append(T.TALK_COND % val.s)
             return
         if isinstance(val, (Logic, Lua, FnRef)):
             talk.named.append(T.ASSIGN
-                              % ("cond", self.make_body(val, "s",
-                                                        talk.indent + IND,
-                                                        None, "bool", base)))
+                              % ("cond", self.body(val, key,
+                                                   talk.indent + IND,
+                                                   scope="option")))
             return
         talk.named.append(T.TALK_COND
                           % transpile_exprlist(sym_text(val), {"s": "obj"},
@@ -649,7 +675,8 @@ class Emitter:
         else:
             talk.named.append(T.ASSIGN
                               % (self._talk_key(base),
-                                 self.body(val, key, talk.indent + IND)))
+                                 self.body(val, key, talk.indent + IND,
+                                           scope="option")))
 
     def _talk_key(self, base):
         """A free talk field must be a plain Lua name (engine field)."""
@@ -666,7 +693,8 @@ class Emitter:
             CURRENT_LINE[0] = block.line_at(_i)
             b, _ = parse_key(key)
             if key == "intro":
-                root.append(self.value(val))
+                root.append(self.body(val, "intro", fi + IND,
+                                      scope="option"))
             elif b == "option":
                 root.append(self.talk_table(val, fi + IND, labels))
             elif key.startswith("label ") and isinstance(val, Block):
@@ -676,14 +704,14 @@ class Emitter:
         lines = [T.DLG % base, T.DLG_NAM % (fi, name)]
         for key, val in fields:
             lines.append(T.FIELD % (fi, self._talk_key(key),
-                                    self.body(val, key, fi)))
+                                    self.body(val, key, fi, scope="talk")))
         lines.append(T.PHR % fi)
         for r in root:
             if isinstance(r, list):
                 lines.extend(r)
                 lines[-1] += ";"
             else:
-                lines.append(T.LINE % (fi + IND, r))
+                lines.extend(self._talk_lines(fi + IND, r))
         lines.append(T.OBJ_CLOSE % fi)
         if labels:
             lines.append(T.OBJ_OPEN % fi)

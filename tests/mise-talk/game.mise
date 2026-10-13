@@ -9,6 +9,12 @@ global:
 fn знакомы(s: obj) -> bool: |
   return met
 
+fn ask_text(s: obj) -> str: |
+  return 'Вопрос от fn?'
+
+fn reply_text(s: obj) -> str: |
+  return '-- Ответ от fn.'
+
 setup:
   start: |
     player:move hall
@@ -96,6 +102,21 @@ talk разговор_с_гидом:
       return met and true
     ask: Проверка and
     reply: -- И это правда.
+
+  option:
+    ask: |
+      return 'Вопрос из блока?'
+    reply: -- Ответ из блока.
+
+  option:
+    ask: &ask_text
+    reply: &reply_text
+
+  option:
+    ask: С действием?
+    reply: &reply_text
+    do: |
+      say [[-- Что-то произошло.]]
 
   label финал:
     say: -- Продолжение следует.
