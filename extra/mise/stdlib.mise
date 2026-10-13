@@ -82,6 +82,9 @@ fn here() -> obj: |lua
 fn player() -> obj: |lua
   return me()
 
+fn time(t: num?) -> num: |lua
+  return time(t)
+
 fn has(s: obj, a: attr) -> bool: |lua
   return s:has(a)
 

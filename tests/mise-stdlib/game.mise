@@ -15,6 +15,9 @@ obj box:
   description: use describe
 
 fn probe(w: obj, t: tbl, ev: event): |
+  time()
+  time(5)
+  say(time())
   hasnt(w, open)
   once_tag(w, 'tag')
   once(w)

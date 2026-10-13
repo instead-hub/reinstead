@@ -540,6 +540,7 @@ props:
 |---|---|---|
 | `here` | `() -> obj` | текущая комната |
 | `player` | `() -> obj` | игрок (`me()`) |
+| `time` | `(num?) -> num` | `game:time` — время игры; с аргументом установить (вернёт прежнее) |
 | `has` | `(obj, attr) -> bool` | `s:has` |
 | `hasnt` | `(obj, attr) -> bool` | `s:hasnt` |
 | `move` | `(obj, obj)` | `move(s, where)` |

@@ -9,6 +9,9 @@ local function fn_describe(s)
 end
 
 local function fn_probe(w, t, ev)
+  time()
+  time(5)
+  p(time())
   w:hasnt("open")
   w:once('tag')
   w:once()
