@@ -4,11 +4,27 @@
 require "fmt"
 require "parser/mp-en"
 
+local function fn_way_dsc(s, w)
+  return s:This() .. ' {#first} {#present/#first,lead} to ' .. w:noun_hint() .. '.'
+end
+
+local function fn_path_dsc(w)
+  return '{#Me} can go to ' .. w:noun_hint() .. '.'
+end
+
 obj {
   nam = "none";
 }
 
 Door = Class({
+  walk_to = 'none';
+  description = function(s)
+    if here() == _(s.from) then
+      p(fn_way_dsc(s, _(s.to)))
+    elseif here() == _(s.to) then
+      p(fn_way_dsc(s, _(s.from)))
+    end
+  end;
   from = 'none';
   to = 'none';
   door_to = function(s)
@@ -20,9 +36,7 @@ Door = Class({
     end
     return false
   end;
-}, door):attr 'open'
-
---"мочь"
+}, door):attr 'static'
 
 Path = Class {
   walk_to = 'none';
@@ -38,7 +52,7 @@ Path = Class {
       p(d)
       return
     end
-    p('{#Me} {#word/мочь,нст,#me} пойти в ', _(s.walk_to):noun_hint("вн"), '.')
+    p(fn_path_dsc(_(s.walk_to)))
   end;
   default_Event = "Walk";
 }:attr 'scenery,enterable'

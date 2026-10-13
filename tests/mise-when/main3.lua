@@ -4,6 +4,21 @@
 require "fmt"
 require "parser/mp-ru"
 
+local function fn_where_prep(w)
+  if w:has("supporter") then
+    return 'на'
+  end
+  return 'в'
+end
+
+local function fn_way_dsc(s, w)
+  return s:This() .. ' {#first} {#word/вести,Г,нст,#first} ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+end
+
+local function fn_path_dsc(w)
+  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+end
+
 local function fn_pick(s)
   if ((((function(o) local m = getmetatable(s) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G[("Tree")])))) then
     return [[дерево]]
@@ -19,6 +34,14 @@ obj {
 }
 
 Door = Class({
+  walk_to = 'none';
+  description = function(s)
+    if here() == _(s.from) then
+      p(fn_way_dsc(s, _(s.to)))
+    elseif here() == _(s.to) then
+      p(fn_way_dsc(s, _(s.from)))
+    end
+  end;
   from = 'none';
   to = 'none';
   door_to = function(s)
@@ -30,9 +53,7 @@ Door = Class({
     end
     return false
   end;
-}, door):attr 'open'
-
---"мочь"
+}, door):attr 'static'
 
 Path = Class {
   walk_to = 'none';
@@ -48,10 +69,14 @@ Path = Class {
       p(d)
       return
     end
-    p('{#Me} {#word/мочь,нст,#me} пойти в ', _(s.walk_to):noun_hint("вн"), '.')
+    p(fn_path_dsc(_(s.walk_to)))
   end;
   default_Event = "Walk";
 }:attr 'scenery,enterable'
+
+--"вести"
+
+--"мочь"
 
 Tree = Class {
 }:attr 'scenery'

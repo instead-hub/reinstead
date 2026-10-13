@@ -4,7 +4,7 @@ import sys
 from . import state as S
 from .common import *
 from .parse import parse_source
-from .prescan import apply_includes, prescan
+from .prescan import apply_includes, prescan, resolve_lang_includes
 from .decl import classify, parse_fn_sig
 from .emit import Emitter
 from .emitlogic import emit_logic
@@ -170,6 +170,7 @@ def transpile(src, src_dir=""):
     em = Emitter(ctx)
     CURRENT_LINE[0] = None
     root = parse_source(src)
+    resolve_lang_includes(root, ctx)
     apply_includes(root, ctx)
     prescan(root, ctx)
     header, body, reqs = _body_items(ctx, em, root)

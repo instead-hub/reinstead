@@ -396,12 +396,41 @@ def scan_required(name, ctx):
             return f.read()
     return None
 
-def find_include(name, ctx):
-    for base in (ctx.src_dir, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))):
+def _include_path(name, ctx):
+    """Path of `name.mise` in the game or the mise source dir, else None."""
+    for base in (ctx.src_dir,
+                 os.path.dirname(os.path.dirname(os.path.abspath(__file__)))):
         path = os.path.join(base, name + ".mise")
         if os.path.exists(path):
             return path
-    raise Error(M.INCLUDE_NOT_FOUND + name)
+    return None
+
+def find_include(name, ctx):
+    path = _include_path(name, ctx)
+    if path is None:
+        raise Error(M.INCLUDE_NOT_FOUND + name)
+    return path
+
+def _lang_include(v, lang, ctx):
+    """Use `name-<lang>.mise` for `name` when that variant exists."""
+    name = v.s if hasattr(v, "s") else str(v)
+    if _include_path(name + "-" + lang, ctx):
+        return Bare(name + "-" + lang)
+    return v
+
+def _resolve_item(key, val, lang, ctx):
+    """Rewrite a single item: an include gets its language variant."""
+    if key != "include":
+        return val
+    vals = val if isinstance(val, list) else [val]
+    return [_lang_include(v, lang, ctx) for v in vals]
+
+def resolve_lang_includes(root, ctx):
+    """Language variants of the game's own includes (stdlib -> stdlib-ru)."""
+    meta = root.get("lang")
+    lang = meta.s if hasattr(meta, "s") else "ru"
+    root.items = [(k, _resolve_item(k, v, lang, ctx)) for k, v in root.items]
+    return root
 
 def _include_one(name, ctx, seen, extra, extra_lines, recurse):
     """Parse one included file; append its items and lines."""

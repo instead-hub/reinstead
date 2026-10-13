@@ -57,7 +57,8 @@ lua:
 - `lang: ru|en` — какая языковая прослойка подключается (`parser/mp-ru`/`mp-en`).
 - `fmt: dash, quotes` — флаги `fmt.*`.
 - `require: snd` — дополнительные `require`.
-- `include: stdlib` — подключить общую библиотеку `fn` (см. ниже).
+- `include: stdlib` — подключить общую библиотеку `fn` (см. ниже);
+  если рядом есть `<имя>-<lang>.mise` (`stdlib-ru.mise`), берётся он.
 - `event Имя:` — объявление события (и, при желании, его действия, см. ниже).
 - `const:` — объявления `const 'имя' (значение)` (read-only, не сохраняются).
 - `global:` — объявления `global 'имя' (значение)` (сохраняются в сейвах).
@@ -499,7 +500,12 @@ obj Кабель:
 
 ## Стандартная библиотека
 
-`include: stdlib` подключает `extra/mise/stdlib.mise`:
+`include: stdlib` подключает `extra/mise/stdlib.mise` — языково-нейтральную
+часть (props/типы/события, инлайн-обёртки, `none`, классы `Door`/`Path`).
+Языковой текст классов — в `stdlib-<lang>.mise` (по `lang:` автоматически
+подключается `stdlib-ru.mise`/`stdlib-en.mise` через тот же
+`include: stdlib`): там `fn way_dsc(s: obj, w: obj) -> str` (дверь ведёт
+в `w`), `fn path_dsc(w: obj) -> str` и слова словаря (`--"..."`).
 
 ## Свойства (`props:`)
 
@@ -593,7 +599,8 @@ props:
 `getDaemons() -> list`, `cls_prompt()`, `gram(s) -> tbl`, `access(s)`,
 `xevent() -> event?`.
 
-Игровые обёртки удобно добавлять в `stdlib.mise` по мере надобности.
+Игровые обёртки удобно добавлять в `stdlib.mise`, а языковой текст — в
+`stdlib-<lang>.mise`.
 `include: stdlib` также добавляет пустой объект `none` — заглушку
 «ничего» для объектных переменных (`local o = none`), невидимую парсеру
 (имя занято: своё `obj none:` объявить нельзя).

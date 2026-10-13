@@ -227,8 +227,17 @@ fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str: |lua
 fn Noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str: |lua
   return s:Noun_hint(n, nn)
 
-fn it(s: obj) -> str: |lua
+fn It(s: obj) -> str: |lua
   return s:It()
+
+fn it(s: obj) -> str: |lua
+  return s:it()
+
+fn This(s: obj) -> str: |lua
+  return s:This()
+
+fn this(s: obj) -> str: |lua
+  return s:this()
 
 fn hint(s: obj, h: str): |lua
   s:hint(h)
@@ -322,7 +331,13 @@ fn music(name: str, ...): |lua
   snd.music(name, ...)
 
 class Door(door):
-  attrs: open
+  attrs: static
+  walk_to: none
+  description: |
+    when here == s.from:
+      say(way_dsc(s, s.to))
+    when here == s.to:
+      say(way_dsc(s, s.from))
   from: none
   to: none
   door_to: |
@@ -333,9 +348,6 @@ class Door(door):
     pass
 
 fn desc(s: obj) -> str?: `s.desc`
-
-lua: |lua
-  --"мочь"
 
 class Path:
   attrs: scenery, enterable
@@ -349,5 +361,5 @@ class Path:
     if d:
       say d
       stop
-    say('{#Me} {#word/мочь,нст,#me} пойти в ', noun(s.walk_to, вн), '.')
+    say(path_dsc(s.walk_to))
   default_Event: Walk
