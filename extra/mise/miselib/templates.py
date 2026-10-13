@@ -39,7 +39,7 @@ LIST_ITEM = "%s'%s';"
 FN_S = '%sfunction(s)'
 P_CALL = '%sp(%s)'
 END = '%send'
-TALK_COND = 'cond = function() return %s end'
+TALK_COND = 'cond = function(s) return %s end'
 TALK_NEXT = "next = '#%s'"
 DLG = '%sdlg {'
 DLG_NAM = "%snam = '%s';"

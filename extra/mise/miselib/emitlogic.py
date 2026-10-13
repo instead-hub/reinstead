@@ -53,7 +53,8 @@ def _return_expr(st, env, where, ctx):
 def _emit_return(st, indent, env, ret, ret_name, where, ctx):
     code, rtype = _return_expr(st, env, where, ctx)
     src = (st[1] or "").strip()
-    if (ret and ret != "any" and src not in ("", "false", "nil")
+    if (ret and ret != "any" and rtype != "any"
+            and src not in ("", "false", "nil")
             and not type_ok(ctx, rtype, ret)):
         c = ("fn %s" % ret_name) if ret_name else "logic"
         raise LintError(M.RETURN_TYPE_EXPECTED

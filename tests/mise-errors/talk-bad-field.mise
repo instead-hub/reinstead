@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+talk разговор:
+  option:
+    when(s) -> bool: |
+      return true
+    ask: А?

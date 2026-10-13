@@ -527,7 +527,7 @@ class ExprEmit:
         return Node(code, sig)
 
     def and_expr(self):
-        return self.bin_expr(self.cmp_expr, ("and",), "any")
+        return self.bin_expr(self.cmp_expr, ("and",), None)
 
     def _cmp_expected(self, node, op):
         if op not in ("==", "~="):
@@ -555,6 +555,7 @@ class ExprEmit:
         return node
 
     def bin_expr(self, sub, ops, t, check_num=False):
+        """Binary levels; `t=None` is `and`/`or`: `bool` for two bools."""
         node = sub()
         while self.peek()[1] in ops:
             op = self.next()[1]
@@ -562,7 +563,9 @@ class ExprEmit:
             if check_num:
                 self.check(node.t, "num", node.code)
                 self.check(rhs.t, "num", rhs.code)
-            node = Node("%s %s %s" % (node.code, op, rhs.code), t)
+            both = node.t == "bool" and rhs.t == "bool"
+            node = Node("%s %s %s" % (node.code, op, rhs.code),
+                        "bool" if t is None and both else (t or "any"))
         return node
 
     def concat_expr(self):
@@ -578,7 +581,7 @@ class ExprEmit:
         return self.bin_expr(self.unary, ops, t, check)
 
     def expr(self):
-        return self.bin_expr(self.and_expr, ("or",), "any")
+        return self.bin_expr(self.and_expr, ("or",), None)
 
     def owner_ref(self, node):
         """`s` bound to obj or a class type (owner-typed field access)."""

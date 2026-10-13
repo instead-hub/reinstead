@@ -122,7 +122,7 @@ dlg {
         only = true;
         next = '#финал';
       };
-      cond = function() return not met end;
+      cond = function(s) return not met end;
     };
     {
       "Я скоро вернусь.";
@@ -152,12 +152,12 @@ dlg {
     {
       "Всегда доступно";
       "-- Да, всегда.";
-      cond = function() return true end;
+      cond = function(s) return true end;
     };
     {
       "Никогда";
       "-- И не увидите.";
-      cond = function() return false end;
+      cond = function(s) return false end;
     };
     {
       "После знакомства";
@@ -170,6 +170,18 @@ dlg {
       "Знакомы ли мы?";
       "-- Похоже, да.";
       cond = fn_знакомы;
+    };
+    {
+      "Проверка s";
+      "-- s на месте.";
+      cond = function(s) return not s:has("open") end;
+    };
+    {
+      "Проверка and";
+      "-- И это правда.";
+      cond = function(s)
+        return met and true
+      end;
     };
   };
   obj = {

@@ -86,6 +86,17 @@ talk разговор_с_гидом:
     ask: Знакомы ли мы?
     reply: -- Похоже, да.
 
+  option:
+    when: not s:has(open)
+    ask: Проверка s
+    reply: -- s на месте.
+
+  option:
+    when: |
+      return met and true
+    ask: Проверка and
+    reply: -- И это правда.
+
   label финал:
     say: -- Продолжение следует.
     option:

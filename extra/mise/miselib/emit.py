@@ -575,7 +575,8 @@ class Emitter:
 
     def talk_table(self, oblock, indent, labels, tag=None):
         talk = _Talk(indent, labels)
-        for key, val in oblock.items:
+        for _i, (key, val) in enumerate(oblock.items):
+            CURRENT_LINE[0] = oblock.line_at(_i)
             self._talk_item(key, val, talk)
         lines = [T.OPEN % indent]
         if tag:
@@ -623,7 +624,8 @@ class Emitter:
                                                         None, "bool", base)))
             return
         talk.named.append(T.TALK_COND
-                          % transpile_exprlist(sym_text(val), {}, "talk when",
+                          % transpile_exprlist(sym_text(val), {"s": "obj"},
+                                               "talk when",
                                                ctx=self.ctx)[0])
 
     def _talk_next(self, _base, _key, val, talk):
@@ -646,14 +648,22 @@ class Emitter:
             talk.labels.append((key[6:].strip(), val))
         else:
             talk.named.append(T.ASSIGN
-                              % (base, self.body(val, key, talk.indent + IND)))
+                              % (self._talk_key(base),
+                                 self.body(val, key, talk.indent + IND)))
+
+    def _talk_key(self, base):
+        """A free talk field must be a plain Lua name (engine field)."""
+        if not re.fullmatch(P.LUA_NAME, base):
+            raise Error(M.TALK_BAD_FIELD % base)
+        return base
 
     def talk(self, block, name, base):
         fi = base + IND
         labels = []
         root = []
         fields = []
-        for key, val in block.items:
+        for _i, (key, val) in enumerate(block.items):
+            CURRENT_LINE[0] = block.line_at(_i)
             b, _ = parse_key(key)
             if key == "intro":
                 root.append(self.value(val))
@@ -665,7 +675,8 @@ class Emitter:
                 fields.append((key, val))
         lines = [T.DLG % base, T.DLG_NAM % (fi, name)]
         for key, val in fields:
-            lines.append(T.FIELD % (fi, key, self.body(val, key, fi)))
+            lines.append(T.FIELD % (fi, self._talk_key(key),
+                                    self.body(val, key, fi)))
         lines.append(T.PHR % fi)
         for r in root:
             if isinstance(r, list):
