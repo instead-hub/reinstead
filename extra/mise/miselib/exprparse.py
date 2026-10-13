@@ -713,17 +713,17 @@ class ExprEmit:
         self.check(node.t, plist[0][1], node.code)
         if self.peek()[0] == "op" and self.peek()[1] == "{":
             return self._method_table_call(node, nv, plist, ret, variadic)
-        if self._method_bare(plist, variadic):
-            return Call(fn_call(self.ctx, nv, [node.code]), ret)
         if self._method_tail(plist, variadic):
             return self._method_tail_call(node, nv, plist, ret)
+        if self._method_bare(plist, variadic):
+            return Call(fn_call(self.ctx, nv, [node.code]), ret)
         codes, n = self.arglist([pt for _pn, pt in plist[1:]], variadic)
         self.check_arity(nv, plist[1:], variadic, n)
         return Call(fn_call(self.ctx, nv, [node.code] + codes), ret)
 
     def _method_bare(self, plist, variadic):
         nk, nv2 = self.peek()
-        return (not variadic and len(plist) == 1
+        return (not variadic and min_args(plist[1:]) == 0
                 and not _arg_call(nk, nv2))
 
     def _method_tail(self, plist, variadic):
@@ -734,7 +734,7 @@ class ExprEmit:
                 and nv2 not in ("nil", "true", "false"))
 
     def _tail_value(self, nm, pt):
-        if pt == "str":
+        if base(pt) == "str":
             return Lit(lua_str(nm), "str", nm)
         if pt in self.ctx.types:
             msg = type_value_error(self.ctx, pt, nm)

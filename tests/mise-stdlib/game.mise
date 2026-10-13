@@ -31,8 +31,10 @@ fn probe(w: obj, t: tbl, ev: event): |
   time(5)
   say(time())
   hasnt(w, open)
-  once_tag(w, 'tag')
+  once(w, 'tag')
   once(w)
+  w:once tag
+  w:once
   subaction(ev)
   subaction(ev, w, w)
   xaction(ev, w)

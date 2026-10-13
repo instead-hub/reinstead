@@ -560,8 +560,7 @@ props:
 | `walk` | `(obj)` | `walk(where)` |
 | `walkin` | `(obj)` | `walkin(where)` |
 | `compass_dir` | `(obj) -> direction?` | `mp:compass_dir` |
-| `once_tag` | `(obj, str) -> bool` | `s:once(tag)` |
-| `once` | `(obj) -> bool` | `s:once()` |
+| `once` | `(obj, str?) -> bool` | `s:once(tag)` — один раз (с тегом) |
 | `take` | `(obj)` | `take(w)` |
 | `drop` | `(obj)` | `drop(w)` |
 | `content` | `(obj)` | `mp:content(w)` |

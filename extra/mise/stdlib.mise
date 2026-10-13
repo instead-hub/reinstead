@@ -102,11 +102,8 @@ fn inside(w: obj, x: obj) -> bool: |lua
 
 fn compass_dir(w: obj) -> direction?: `mp:compass_dir(w) or nil`
 
-fn once_tag(s: obj, t: str) -> bool: |lua
+fn once(s: obj, t: str?) -> bool: |lua
   return s:once(t)
-
-fn once(s: obj) -> bool: |lua
-  return s:once()
 
 fn say(text: str|num|bool|obj|event, ...: str|num|bool|obj|event): |lua
   p(text, ...)
