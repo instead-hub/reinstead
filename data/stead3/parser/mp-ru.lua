@@ -611,6 +611,18 @@ function mp:myself(_, hint)
   return ww
 end
 
+function mp:this(w, hint)
+  hint = hint or ''
+  if w:hint'plural' then
+    return mp.mrd:noun(-"эти/"..hint)
+  elseif w:hint'neuter' then
+    return mp.mrd:noun(-"это/"..hint)
+  elseif w:hint'female' then
+    return mp.mrd:noun(-"эта/"..hint)
+  end
+  return mp.mrd:noun(-"этот/"..hint)
+end
+
 function mp:it(w, hint)
   hint = hint or ''
   if w:hint'plural' then

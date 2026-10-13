@@ -3218,6 +3218,34 @@ function mp:It(w, hint)
   return mp.mrd.lang.cap(t)
 end
 
+--- Return a demonstrative pronoun for the object.
+-- This is language-dependent.
+-- @param hint pronoun case
+-- @see mp:this
+function std.obj:this(hint)
+  if mp.this then
+    return mp:this(self, hint)
+  else
+    if self:hint'plural' then
+      return 'these'
+    else
+      return "this"
+    end
+  end
+end
+
+function std.obj:This(hint)
+  local t = self:this(hint)
+  return mp.mrd.lang.cap(t)
+end
+
+--- Return a demonstrative pronoun for the object (capitalized).
+-- @see mp:this
+function mp:This(w, hint)
+  local t = self:this(w, hint)
+  return mp.mrd.lang.cap(t)
+end
+
 --- Return a pronoun for the object.
 -- This is language-dependent.
 -- @param hint pronoun case
