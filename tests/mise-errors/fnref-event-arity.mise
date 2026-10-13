@@ -2,9 +2,9 @@ name: t
 lang: ru
 include: stdlib
 
-fn f(s: obj) -> str: |
+fn funct(s: obj, w: obj, wh: obj, x: obj): |
   return 'x'
 
 room hall:
   words: зал
-  capacity: use f
+  on Enter: &funct

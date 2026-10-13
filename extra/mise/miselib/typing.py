@@ -500,6 +500,7 @@ LITERAL_TYPES = {
     Text: "str",
     Data: "tbl",
     Bare: _bare_type,
+    FnRef: "fn",
     Raw: _raw_type,
 }
 

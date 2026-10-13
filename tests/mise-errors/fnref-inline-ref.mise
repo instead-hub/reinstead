@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+fn twice() -> num: `2`
+
+obj x:
+  words: х
+  capacity: &twice

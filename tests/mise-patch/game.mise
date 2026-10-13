@@ -16,9 +16,9 @@ impl box:
       say [[взяли]]
   on Take: |
     say [[метод]]
-  after Drop: use helper
-  on Wait: use helper
-  on Open, Close: use helper
-  after Any: use helper
-  on Any: use helper
-  on Default: use helper
+  after Drop: use &helper
+  on Wait: use &helper
+  on Open, Close: use &helper
+  after Any: use &helper
+  on Any: use &helper
+  on Default: use &helper

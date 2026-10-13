@@ -15,4 +15,4 @@ Crate crate:
   words: ящик
 
 impl crate:
-  before Take: use on_take
+  before Take: &on_take

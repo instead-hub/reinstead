@@ -7,6 +7,7 @@ from . import patterns as P
 
 _LIST_ITEM_RE = re.compile(r"^-\s")
 _LIST_MARK_RE = re.compile(r"^-(\s|$)")
+_FNREF_RE = re.compile(r"^&([\w.+-]+)$")
 
 def _is_list_item(lines, j, indent):
     """Is line `j` an indented `- ` list item below `indent`?"""
@@ -136,6 +137,9 @@ VALUE_FORMS = (
 
 def _block_value(lines, pos, indent, rest, text_values, key):
     tm = text_values or key in TEXT_KEYS
+    m = _FNREF_RE.match(rest)
+    if m:
+        return FnRef(m.group(1)), 1
     for matches, read in VALUE_FORMS:
         if matches(rest, tm):
             return read(lines, pos, indent, rest, tm)

@@ -163,18 +163,15 @@ class Emitter:
             raise Error(M.FN_RETURN_TYPE_EXPECTED
                         % (name, fret, ret))
 
-    def use_name(self, v):
-        if isinstance(v, (Text, Bare)):
-            m = S.USE_RE.match(v.s.strip())
-            if m:
-                name = m.group(1)
-                if name not in self.ctx.fns:
-                    raise Error(M.UNKNOWN_FN + name)
-                if name in self.ctx.inline:
-                    raise Error(M.INLINE_FN_CANNOT_BE_USED
-                                % name)
-                return name
-        return None
+    def ref_name(self, v):
+        """Emitted name of an `&name` value: a DSL fn or a lua: function."""
+        if v.s in self.ctx.fn_sigs:
+            if v.s in self.ctx.inline:
+                raise Error(M.INLINE_FN_CANNOT_BE_USED % v.s)
+            return fn_name(v.s)
+        if v.s in self.ctx.funcs:
+            return v.s
+        raise Error(M.UNKNOWN_FN_REF % v.s)
 
     def param_env(self, params, name=None):
         if name and name in self.ctx.fn_sigs:
@@ -191,11 +188,10 @@ class Emitter:
         return env
 
     def make_body(self, v, prm, indent, env=None, ret=None, ret_name=None):
-        uname = self.use_name(v)
-        if uname:
-            self.check_use(uname, prm, ret,
+        if isinstance(v, FnRef):
+            self.check_use(v.s, prm, ret,
                            "field" if ret_name else "event")
-            return fn_name(uname)
+            return self.ref_name(v)
         if isinstance(v, Lua):
             return self._lua_body(v, prm, indent)
         if isinstance(v, Logic):
@@ -223,7 +219,7 @@ class Emitter:
         return self.make_body(v, prm, indent, env, ret, base)
 
     def handler(self, val, prm, indent):
-        if isinstance(val, (Text, Bare)) and val.s.strip() == "pass":
+        if isinstance(val, Bare) and val.s.strip() == "pass":
             return "function() return false end"
         return self.make_body(val, prm, indent)
 
@@ -611,7 +607,7 @@ class Emitter:
         talk.specials["do"] = val
 
     def _talk_onempty(self, base, key, val, talk):
-        if not isinstance(val, (Logic, Lua)) and self.use_name(val) is None:
+        if not isinstance(val, (Logic, Lua, FnRef)):
             raise Error(M.EXPECTED_LOGIC_LUA_BLOCK)
         talk.named.append(T.ASSIGN
                           % (base, self.body(val, key, talk.indent + IND)))
@@ -620,7 +616,7 @@ class Emitter:
         if isinstance(val, Bool):
             talk.named.append(T.TALK_COND % val.s)
             return
-        if isinstance(val, (Logic, Lua)) or self.use_name(val) is not None:
+        if isinstance(val, (Logic, Lua, FnRef)):
             talk.named.append(T.ASSIGN
                               % ("cond", self.make_body(val, "s",
                                                         talk.indent + IND,

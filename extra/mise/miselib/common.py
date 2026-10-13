@@ -32,6 +32,9 @@ class Logic:
 class Bare(Val):
     pass
 
+class FnRef(Val):
+    pass
+
 class Num(Val):
     pass
 

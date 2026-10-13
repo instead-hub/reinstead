@@ -160,8 +160,20 @@ room {
   dsc = "Зал.";
 }
 
+function lua_probe(s, w, wh)
+  return false
+end
+
 obj {
   -"ящик";
   nam = "box";
   description = fn_describe;
+  before_Take = lua_probe;
 }:attr 'container,open'
+
+obj {
+  -"записка";
+  nam = "note";
+  before_Disrobe = "pass";
+  description = "use heal";
+}

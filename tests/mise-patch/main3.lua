@@ -87,10 +87,10 @@ end;
 _'box'.Take = function(s, w, wh)
   p([[метод]])
 end;
-_'box'.after_Drop = fn_helper;
-_'box'.Wait = fn_helper;
-_'box'.Open = fn_helper;
-_'box'.Close = fn_helper;
-_'box'.after_Any = fn_helper;
-_'box'.Any = fn_helper;
-_'box'.Default = fn_helper;
+_'box'.after_Drop = "use &helper";
+_'box'.Wait = "use &helper";
+_'box'.Open = "use &helper";
+_'box'.Close = "use &helper";
+_'box'.after_Any = "use &helper";
+_'box'.Any = "use &helper";
+_'box'.Default = "use &helper";

@@ -127,7 +127,7 @@ obj relic:
   words: реликвия
   mood: tired
   disabled: true
-  daemon: use tick
+  daemon: &tick
   when_open: [[Открыто.]]
   help: [[Подсказка.]]
   disp: [[Реликвия.]]

@@ -58,7 +58,6 @@ syn match misePipe /|\s*$/
 syn match misePipeLua /|lua\s*$/
 syn match miseLogicKw /^\s*\zs\%(if\|elseif\|else\|when\|default\|for\|local\|return\|break\|stop\|pass\)\ze\%(\s\|$\|:\)/
 syn keyword miseLogicOp and or not in
-syn match miseUse /\<use\s\+\zs\w\+/
 syn match miseFnRef /&\w\+/
 
 " --- ссылки: #тег ---
@@ -89,7 +88,6 @@ hi def link misePipe         Special
 hi def link misePipeLua      Special
 hi def link miseLogicKw      Statement
 hi def link miseLogicOp      Operator
-hi def link miseUse          Special
 hi def link miseFnRef        Function
 hi def link miseTag          Tag
 hi def link miseTodo         Todo

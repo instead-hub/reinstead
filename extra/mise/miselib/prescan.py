@@ -1,7 +1,6 @@
 import os
 import re
 
-from . import state as S
 from .common import *
 from .parse import parse_source
 from .decl import classify, mixin_bodies, parse_fn_sig
@@ -162,9 +161,8 @@ def attach_mixins(block, ctx, into, collect):
 
 
 def _reject_bare_str(base, val, t):
-    """A bare string field value must be a declared name or a `use`."""
-    if (base is not None and isinstance(val, Bare) and t == "str"
-            and not S.USE_RE.match(val.s.strip())):
+    """A bare string field value must be a declared name."""
+    if base is not None and isinstance(val, Bare) and t == "str":
         raise Error(M.FIELD_STRING_VALUES_QUOTED % (val.s, base))
 
 
@@ -500,19 +498,17 @@ def _register_globals(root, ctx):
     return names
 
 
-def _use_refs(root):
+def _fnrefs(root):
     refs = set()
 
-    def _walk_use(block):
+    def _walk_fnrefs(block):
         for _k, v in block.items:
-            if isinstance(v, (Text, Bare)):
-                m = S.USE_RE.match(v.s.strip())
-                if m:
-                    refs.add(m.group(1))
+            if isinstance(v, FnRef):
+                refs.add(v.s)
             for sub in _sub_blocks(v):
-                _walk_use(sub)
+                _walk_fnrefs(sub)
 
-    _walk_use(root)
+    _walk_fnrefs(root)
     return refs
 
 
@@ -534,7 +530,7 @@ def prescan(root, ctx):
     ctx.vars = game_vars | const_names
     ctx.funcs = fn_names | game_funcs | {"_"}
     ctx.fns = fn_names
-    for n in _use_refs(root):
+    for n in _fnrefs(root):
         desc = ctx.inline.get(n)
         if desc and desc[0] != "expr":
             del ctx.inline[n]

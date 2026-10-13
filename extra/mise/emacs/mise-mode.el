@@ -92,15 +92,13 @@
     (,(concat "^[ \t]*" mise--phases "[ \t]+"
               "\\([A-Z][[:word:]_]*\\(?:[ \t]*,[ \t]*[A-Z][[:word:]_]*\\)*\\)")
      (1 font-lock-function-name-face))
-    ;; the name of an event, an implementation or a "use" reference
+    ;; the name of an event, an implementation or an "&name" reference
     (,(concat "^[ \t]*event[ \t]+\\([A-Z][[:word:]_]*\\)")
      (1 font-lock-function-name-face))
     (,(concat "^[ \t]*impl[ \t]+\\([^ \t:\n]+\\)")
      (1 font-lock-function-name-face))
     (,(concat "^[ \t]*extend[ \t]+\\(refs\\|type\\)\\_>")
      (1 font-lock-keyword-face))
-    (,(concat "\\_<use[ \t]+\\(" mise--name "\\)")
-     (1 font-lock-function-name-face))
     ;; a function value "&name"
     (,(concat "&" mise--name) . font-lock-function-name-face)
     ;; a type after ":" "," "(" "|" "[" "]" or "->"

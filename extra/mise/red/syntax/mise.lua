@@ -116,8 +116,8 @@ local function type_(ctx, txt, i)
   end
 end
 
--- the names after "event", "impl", "use" and the phase words; the
--- whole comma-separated event list is one match
+-- the names after "event", "impl" and the phase words; the whole
+-- comma-separated event list is one match
 local function named(ctx, txt, i)
   local c = txt[i]
   if not c or c == '\n' or c == ':' or scheme.rule.isspace(c) then
@@ -128,13 +128,6 @@ local function named(ctx, txt, i)
     return
   end
   local w = word(txt, scheme.rule.skip(txt, p, -1, '[%w_]') + 1)
-  if w == 'use' then
-    local j = scheme.rule.skip(txt, i, 1, '[%w_]')
-    if j > i then
-      return j - i
-    end
-    return
-  end
   if not afterword(txt, i, w) then
     return
   end

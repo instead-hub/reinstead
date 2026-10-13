@@ -9,10 +9,21 @@ room hall:
 fn describe(s: obj) -> str: |
   return 'Ящик.'
 
+lua: |lua
+  function lua_probe(s, w, wh)
+    return false
+  end
+
 obj box:
   words: ящик
   attrs: container,open
-  description: use describe
+  description: &describe
+  before Take: &lua_probe
+
+obj note:
+  words: записка
+  before Disrobe: 'pass'
+  description: 'use heal'
 
 fn probe(w: obj, t: tbl, ev: event): |
   time()

@@ -57,7 +57,7 @@ transpile (main loop) обход корневых элементов → Emitter
 
 Константы: `TYPES` (примитивы: obj/str/num/bool/any/event/tbl),
 `PARAM_TYPES` (типы обработчиков по имени параметра: `s/w/wh` → obj и
-т.п.), `KEYWORDS`, `USE_RE`.
+т.п.), `KEYWORDS`.
 
 ## Prescan (`prescan.py`, `proptypes.py`, `inline.py`)
 
@@ -80,17 +80,17 @@ transpile (main loop) обход корневых элементов → Emitter
 4. `ctx.ref_fields` — `refs:`/`extend refs:`; `event_names` —
    значения типа `event` (stdlib) + `event X:`.
 5. `collect_game_defs`/`scan_required` — поиск функций/переменных в
-   `|lua` и подключаемых Lua-файлах (чтобы `fn` и `use` не конфликтовали
-   с игровым кодом).
+   `|lua` и подключаемых Lua-файлах (чтобы `fn` и `&`-ссылки не
+   конфликтовали с игровым кодом).
 6. Цикл по `fn`:
    - `parse_fn_sig(key, set(ctx.types) | ctx.classes)` — сигнатура
      (типы, классы, `T?`, `...`);
    - inline-эвристики: `Raw`-тело → expr; вариадическое Lua-тело и
      `adapter_callee` → call/meth; одиночный вызов (`wrapper_template`) →
-     wrap. Повторное использование параметра, `...`, `fn_` и `use`
+     wrap. Повторное использование параметра, `...` и `fn_`
      запрещают инлайн.
 7. `const`/`global` → `global_types` через `literal_type`.
-8. `walk_use` — имена из `use ...` выкидываются из `inline`, кроме
+8. `_fnrefs` — имена из `&...` выкидываются из `inline`, кроме
    `expr` (expr-функцию нельзя использовать как обработчик).
 9. `check_refs` — `with`/`inside`/`found_in` сверяются с `ctx.ids`;
    прочие поля-ссылки (`ctx.ref_fields` из `refs:`) проверяет
@@ -109,8 +109,8 @@ transpile (main loop) обход корневых элементов → Emitter
 
 Всё инлайнится на месте вызова и **не эмитится**; `fn_call` — единая
 точка диспатча. Проверки аргументов идут по `fn_sigs` до подстановки.
-Если inline-функцию упомянули в `use`, её вызовы не инлайнятся, а тело
-эмитится как обычная `fn_`-функция (кроме `expr` — ошибка).
+Если inline-функцию упомянули в `&`-ссылке, её вызовы не инлайнятся,
+а тело эмитится как обычная `fn_`-функция (кроме `expr` — ошибка).
 
 Функции с хвостовыми optional-параметрами инлайнятся только как адаптер
 (`call`/`meth`, `adapter_callee(..., full=True)` — тело пересылает все

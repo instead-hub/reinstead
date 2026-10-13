@@ -1,5 +1,3 @@
-import re
-
 KEYWORDS = {
     "return", "not", "and", "or", "if", "elseif", "while", "until", "in",
     "then", "else", "do", "local", "function", "end", "break", "repeat",
@@ -12,9 +10,6 @@ PARAM_TYPES = {
     "s": "obj", "w": "obj", "wh": "obj", "ev": "event", "to": "any",
     "f": "any", "load": "bool",
 }
-
-USE_RE = re.compile(r"^use\s+([\w.+-]+)$")
-
 
 class Ctx:
     """Per-transpile state: ids, signatures, vars, events, source dir."""

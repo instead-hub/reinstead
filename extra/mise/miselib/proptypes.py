@@ -149,11 +149,7 @@ def check_ref_list(ctx, where, val):
                         % (where, type(it).__name__.lower()))
 
 
-def _prop_bare(prop, val, where, t):
-    if S.USE_RE.match(val.s.strip()):
-        if prop.fn is None:
-            raise Error(M.EXPECTED_GOT_USE % (where, prop.text))
-        return "any", False
+def _prop_bare(prop, where, t):
     if prop.has_event and t == "event":
         return "event", False
     if prop.has_ref and t == "obj":
@@ -202,12 +198,12 @@ def check_prop_value(ctx, owner, base, prop, val, t):
         return "nil", False
     if isinstance(val, Data):
         return ("list" if prop.has_list else "tbl"), False
-    if isinstance(val, (Logic, Lua)):
+    if isinstance(val, (Logic, Lua, FnRef)):
         if prop.fn is None:
             raise Error(M.EXPECTED_GOT_FUNCTION % (where, prop.text))
         return "any", False
     if isinstance(val, Bare):
-        return _prop_bare(prop, val, where, t)
+        return _prop_bare(prop, where, t)
     if isinstance(val, Text):
         return _prop_text(prop, val, where)
     if isinstance(val, list):
