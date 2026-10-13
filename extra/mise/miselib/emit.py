@@ -5,7 +5,7 @@ from .common import *
 from .emitlogic import emit_logic
 from .decl import (PRESETS, check_ref_value, decl_key,
                    is_true, mixin_bodies, sym_text)
-from .proptypes import prop_of
+from .proptypes import prop_of, prop_scope
 from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import transpile_exprlist
 from .exprparse import fn_name, min_args
@@ -263,12 +263,13 @@ class Emitter:
             raise Error(M.EVENT_NEEDS_PHASE_PREFIX % name)
         return name, pfx
 
-    def obj(self, block, ident, base, ctor, preset, parent=None):
+    def obj(self, block, ident, base, ctor, preset, parent=None, scope=None):
         prev = self.ctx.current_owner
         if ident:
             self.ctx.current_owner = ident
         try:
-            return self._obj(block, ident, base, ctor, preset, parent)
+            return self._obj(block, ident, base, ctor, preset, parent,
+                             scope or prop_scope(self.ctx, ident))
         finally:
             self.ctx.current_owner = prev
 
@@ -304,7 +305,7 @@ class Emitter:
             merged.items.append((k, bv))
             merged.lines.append(block.line_at(i))
 
-    def _obj(self, block, ident, base, ctor, preset, parent=None):
+    def _obj(self, block, ident, base, ctor, preset, parent=None, scope=None):
         block = self.expand_mixins(block)
         fi = base + IND
         lines = [T.CTOR_OPEN_PARENT % (base, ctor) if parent
@@ -317,7 +318,7 @@ class Emitter:
             CURRENT_LINE[0] = block.line("text")
             raise Error(M.TEXT_SET_ONCE_USE_LIST
                         % (self.ctx.current_owner or ident or "?"))
-        self._obj_fields(block, ident, fi, lines)
+        self._obj_fields(block, ident, fi, lines, scope)
         self._obj_nested(block, fi, lines)
         lines.append(self._obj_tail(block, ident, base, parent, attrs))
         return "\n".join(lines)
@@ -381,12 +382,12 @@ class Emitter:
                 out.append(x.s)
         return out
 
-    def _obj_fields(self, block, ident, fi, lines):
+    def _obj_fields(self, block, ident, fi, lines, scope=None):
         for _i, (key, val) in enumerate(block.items):
             CURRENT_LINE[0] = block.line_at(_i)
-            lines.extend(self._obj_field(key, val, ident, fi))
+            lines.extend(self._obj_field(key, val, ident, fi, scope))
 
-    def _obj_field(self, key, val, ident, fi):
+    def _obj_field(self, key, val, ident, fi, scope=None):
         if key in OBJ_SKIP_KEYS:
             return []
         if _EVENT_KEY_RE.match(key):
@@ -398,7 +399,7 @@ class Emitter:
         if not params:
             self._check_ref_value(ident, key, val, fbase)
         try:
-            rendered = self.body(val, key, fi)
+            rendered = self.body(val, key, fi, scope=scope)
         except Error as e:
             raise Error(M.FIELD_MESSAGE % (ident, key, e))
         if "," in fbase:
@@ -414,7 +415,7 @@ class Emitter:
                 raise Error(M.EVENT_NEEDS_PHASE_PREFIX % part)
 
     def _check_ref_value(self, ident, key, val, fbase):
-        prop = self.ctx.props.get(fbase)
+        prop = prop_of(self.ctx, prop_scope(self.ctx, ident), fbase)
         for part in (p.strip() for p in fbase.split(",")):
             if part in self.ctx.ref_fields:
                 check_ref_value(ident or "?", key, val, self.ctx.ids,
@@ -727,7 +728,8 @@ class Emitter:
         prev = self.ctx.current_owner
         self.ctx.current_owner = name
         try:
-            body = self._obj(block, None, "", "Class", [], parent)
+            body = self._obj(block, None, "", "Class", [], parent,
+                             prop_scope(self.ctx, name))
         finally:
             self.ctx.current_owner = prev
         return T.ASSIGN % (name, body)
@@ -748,10 +750,10 @@ class Emitter:
             return getattr(self, method)(block, ident, base)
         if kind not in PRESETS:
             if P.CLASS_RE.fullmatch(kind):
-                return self.obj(block, ident, base, kind, [])
+                return self.obj(block, ident, base, kind, [], scope=kind)
             raise Error(M.UNKNOWN_KIND + kind)
         ctor, preset = PRESETS[kind]
-        return self.obj(block, ident, base, ctor, preset)
+        return self.obj(block, ident, base, ctor, preset, scope=kind)
 
     def _setup_fmt(self, block):
         fmt = block.get("fmt")
@@ -869,7 +871,9 @@ class Emitter:
             return [T.DOT_ASSIGN % (ref, name, self.body(val, name))]
         if "," in base:
             raise Error(M.COMMA_KEY_NEEDS_PHASE)
-        return [T.DOT_ASSIGN % (ref, base, self.body(val, key))]
+        return [T.DOT_ASSIGN % (ref, base, self.body(val, key,
+                                                     scope=prop_scope(
+                                                         self.ctx, t)))]
 
     def const(self, block):
         return [T.CONST % (key, self.value(val))

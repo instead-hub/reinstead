@@ -105,12 +105,15 @@ obj {
   -"небо";
   nam = "sky";
   dsc = "Небо в облаках.";
+  room_note = "не комната";
 }:attr 'scenery'
 
 room {
   -"зал";
   nam = "hall";
   dsc = "Большой зал.";
+  room_note = 1;
+  obj_note = 2;
   Enter = function(s, w, wh)
     p([[Вы вошли.]])
   end;

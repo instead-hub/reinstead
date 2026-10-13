@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+props door:
+  door_note: num
+
+class Door(door):
+  door_note: 'строка'

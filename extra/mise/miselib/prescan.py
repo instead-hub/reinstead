@@ -5,8 +5,8 @@ from .common import *
 from .parse import parse_source
 from .decl import classify, mixin_bodies, parse_fn_sig
 from .inline import _inline_fn
-from .proptypes import (check_prop_value, collect_types,
-                       register_events, register_props,
+from .proptypes import (check_prop_value, collect_types, prop_of,
+                       prop_scope, register_events, register_props,
                        register_refs)
 from .typing import literal_type
 from . import messages as M
@@ -181,7 +181,7 @@ def _collect_field(ctx, into, owner, key, val):
         return
     t = literal_type(ctx, val, refs=True)
     _reject_bare_str(base, val, t)
-    prop = ctx.props.get(base)
+    prop = prop_of(ctx, prop_scope(ctx, owner), base)
     if prop is not None:
         into[base] = check_prop_value(ctx, owner, base, prop, val, t)
         return
@@ -260,15 +260,21 @@ def _collect_decl_fields(root, ctx):
             ctx.fields[info[1]] = fields
 
 
-def collect_field_types(root, ctx):
-    ctx.fields = {}
+def collect_classes(root, ctx):
+    """Class/mixin definitions: names, parents and bodies."""
     class_defs = {}
     mixin_defs = {}
     _collect_defs(root, class_defs, mixin_defs)
+    ctx.class_defs = class_defs
     ctx.mixin_defs = mixin_defs
     ctx.class_parents = {n: info[0] for n, info in class_defs.items()}
     ctx.classes = set(class_defs)
-    _collect_mixin_fields(ctx, mixin_defs)
+
+
+def collect_field_types(root, ctx):
+    ctx.fields = {}
+    class_defs = ctx.class_defs
+    _collect_mixin_fields(ctx, ctx.mixin_defs)
     done = set()
 
     def resolve(cls_name):
@@ -302,7 +308,8 @@ def _check_bare_field(ctx, use_props, owner, key, val):
         return
     t = literal_type(ctx, val, refs=True)
     _reject_bare_str(base, val, t)
-    prop = ctx.props.get(base) if (use_props and base) else None
+    prop = prop_of(ctx, prop_scope(ctx, owner), base) if (
+        use_props and base) else None
     if prop is not None:
         check_prop_value(ctx, owner, base, prop, val, t)
 
@@ -515,6 +522,7 @@ def _fnrefs(root):
 def prescan(root, ctx):
     ctx.fns = set()
     collect_types(root, ctx)
+    collect_classes(root, ctx)
     ids = collect_ids(root)
     ctx.ids = set(ids)
     ctx.id_kind = ids

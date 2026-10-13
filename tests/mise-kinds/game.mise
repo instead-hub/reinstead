@@ -8,6 +8,12 @@ fn tick(s: obj): |
 props:
   treasure: ref | fn(s: obj)
 
+props obj:
+  obj_note: num
+
+props room:
+  room_note: num
+
 type mood:
   - calm, angry
 
@@ -50,10 +56,13 @@ obj sky:
   words: небо
   attrs: scenery
   dsc: [[Небо в облаках.]]
+  room_note: 'не комната'
 
 room hall:
   words: зал
   dsc: [[Большой зал.]]
+  room_note: 1
+  obj_note: 2
   dict: { "зал" }
   with: sky
   on Enter: |

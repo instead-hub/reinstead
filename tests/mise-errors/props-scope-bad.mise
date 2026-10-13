@@ -2,5 +2,5 @@ name: t
 lang: ru
 include: stdlib
 
-props obj:
+props nosuch:
   extra: str

@@ -1,0 +1,10 @@
+name: t
+lang: ru
+include: stdlib
+
+props room:
+  room_note: num
+
+room r:
+  words: зал
+  room_note: 'строка'

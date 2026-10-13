@@ -1,0 +1,9 @@
+name: t
+lang: ru
+include: stdlib
+
+props Note:
+  note_num: num
+
+class Note:
+  note_num: 'строка'

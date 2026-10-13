@@ -101,7 +101,8 @@ TAGGED_FORMS = (
     (re.compile(r"^type\s+([a-z_]\w*)$"), _type_kind),
     (re.compile(r"^extend\s+type\s+([a-z_]\w*)$"), _extend_type_kind),
     (re.compile(r"^extend\s+#(" + P.DSL_NAME + r")$", re.UNICODE), _extend_kind),
-    (re.compile(r"^props\s+([a-z_]\w*(?:\s*,\s*[a-z_]\w*)*)$"), _props_kind),
+    (re.compile(r"^props\s+([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)$"),
+     _props_kind),
 )
 
 # the prefixes of those forms that must carry a name

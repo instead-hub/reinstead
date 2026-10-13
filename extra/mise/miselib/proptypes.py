@@ -99,16 +99,53 @@ def collect_types(root, ctx):
 
 # scopes of `props <scope>:` and their engine parents (most specific first)
 PROP_SCOPES = {
-    "option": ("obj",),
+    "obj": (),
+    "room": ("obj",),
+    "door": ("obj",),
+    "story": ("room", "obj"),
+    "ending": ("room", "obj"),
     "talk": ("room", "obj"),
+    "option": ("obj",),
+    "hero": ("obj",),
+    "game": ("obj",),
 }
+
+
+def _scope_parent(ctx, kind):
+    """The next scope up: an engine or class parent, else None."""
+    if kind in PROP_SCOPES:
+        parents = PROP_SCOPES[kind]
+        return parents[0] if parents else None
+    if kind in ctx.class_parents:
+        return ctx.class_parents[kind] or "obj"
+    return None
+
+
+def scope_chain(ctx, scope):
+    """A scope and its engine/class parents, most specific first."""
+    chain = []
+    kind = scope
+    while kind and kind not in chain:
+        chain.append(kind)
+        kind = _scope_parent(ctx, kind)
+    return chain
+
+
+def prop_scope(ctx, owner):
+    """The props scope of an owner name (declaration id or kind)."""
+    if not owner:
+        return None
+    kind = ctx.id_kind.get(owner, owner)
+    if kind in PROP_SCOPES or kind in ctx.class_parents:
+        return kind
+    return None
 
 
 def prop_of(ctx, scope, name):
     """Prop of a scope (then its parents), else the global one."""
     if scope is None:
         return ctx.props.get(name)
-    for kind in (scope,) + PROP_SCOPES[scope]:
+    for kind in scope_chain(ctx, scope):
         prop = ctx.scoped.get(kind, {}).get(name)
         if prop is not None:
             return prop
@@ -132,7 +169,7 @@ def _register_prop(ctx, known, name, tval, into):
 
 
 def _scope_map(ctx, scope):
-    if scope not in PROP_SCOPES:
+    if scope not in PROP_SCOPES and scope not in ctx.classes:
         raise Error(M.PROPS_SCOPE_UNSUPPORTED % scope)
     return ctx.scoped.setdefault(scope, {})
 
