@@ -158,9 +158,6 @@ room {
   found_in = function(s)
     return false
   end;
-  door_to = function(s)
-    return false
-  end;
   when_open = function(s)
     return false
   end;
@@ -182,8 +179,6 @@ room {
 door {
   -"ворота";
   nam = "gate";
-  d_to = 'hall';
-  n_to = 'garden';
 }
 
 Door {
@@ -200,6 +195,7 @@ room {
   -"сад";
   nam = "garden";
   dsc = "Тихий сад.";
+  d_to = 'hall';
   home_to = 'hall';
   scope = { "statue", "relic" };
   default_Event = "Exam";

@@ -86,7 +86,7 @@ def check_refs(root, ids):
 
     def _walk_refs(block):
         for i, (key, val) in enumerate(block.items):
-            if key == "props":
+            if key == "props" or key.startswith("props "):
                 continue
             if key in ("with", "found_in"):
                 CURRENT_LINE[0] = block.line_at(i)

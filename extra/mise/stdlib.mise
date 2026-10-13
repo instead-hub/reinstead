@@ -12,7 +12,7 @@ type case: им, рд, дт, вн, тв, пр, зв
 
 type gram: ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
 
-props:
+props obj:
   daemon: fn(s: obj)
   description: str | bool | fn(s: obj) -> str
   dsc: str | bool | fn(s: obj) -> str
@@ -21,12 +21,6 @@ props:
   inside_dsc: str | bool | fn(s: obj) -> str
   init_dsc: str | bool | fn(s: obj) -> str
   dark_dsc: str | bool | fn(s: obj) -> str
-  cant_go: str | bool | fn(s: obj, to: direction) -> str
-  compass_look: fn(s: obj, to: direction)
-  onenter: fn(s: obj, w: obj)
-  onexit: fn(s: obj, w: obj)
-  enter: fn(s: obj, w: obj)
-  exit: fn(s: obj, w: obj)
   each_turn: fn(s: obj)
   when_open: str | bool | fn(s: obj) -> str
   when_closed: str | bool | fn(s: obj) -> str
@@ -34,12 +28,24 @@ props:
   when_off: str | bool | fn(s: obj) -> str
   scope: list | fn(s: obj, w: list)
   found_in: ref | tbl[ref] | fn(s: obj) -> bool
-  door_to: ref | fn(s: obj) -> ref
   talk_to: ref | fn(s: obj) -> ref
   with_key: ref | fn(s: obj) -> ref
-  from: ref
-  to: ref
   walk_to: ref
+  default_Event: event | fn(s: obj) -> event
+  capacity: num | fn(s: obj) -> num
+  disp: str | fn(s: obj) -> str
+  help: str | fn(s: obj) -> str
+  gfx: str | fn(s: obj) -> str
+  word: str | fn(s: obj) -> str
+  raw_word: str | fn(s: obj) -> str
+
+props room:
+  cant_go: str | bool | fn(s: obj, to: direction) -> str
+  compass_look: fn(s: obj, to: direction)
+  onenter: fn(s: obj, w: obj)
+  onexit: fn(s: obj, w: obj)
+  enter: fn(s: obj, w: obj)
+  exit: fn(s: obj, w: obj)
   n_to: ref | fn(s: obj) -> ref
   ne_to: ref | fn(s: obj) -> ref
   e_to: ref | fn(s: obj) -> ref
@@ -54,14 +60,14 @@ props:
   out_to: ref | fn(s: obj) -> ref
   prev_to: ref | fn(s: obj) -> ref
   next_to: ref | fn(s: obj) -> ref
-  default_Event: event | fn(s: obj) -> event
-  capacity: num | fn(s: obj) -> num
-  disp: str | fn(s: obj) -> str
+
+props door:
+  from: ref
+  to: ref
+  door_to: ref | fn(s: obj) -> ref
+
+props story:
   text: str | tbl[str] | fn(s: obj, n: num) -> str
-  help: str | fn(s: obj) -> str
-  gfx: str | fn(s: obj) -> str
-  word: str | fn(s: obj) -> str
-  raw_word: str | fn(s: obj) -> str
 
 props option:
   intro: str | fn(s: obj) -> str

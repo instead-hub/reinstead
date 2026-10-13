@@ -516,16 +516,28 @@ obj Кабель:
 Движковые свойства объявляются в stdlib типизированно:
 
 ```
-props:
+props obj:
   scope: list | fn(s: obj, w: list)
-  n_to: ref | fn(s: obj) -> ref
   dsc: str | bool | fn(s: obj) -> str
   default_Event: event | fn(s: obj) -> event
   capacity: num | fn(s: obj) -> num
   gfx: str | fn(s: obj) -> str
-  text: str | tbl[str] | fn(s: obj, n: num) -> str
   word: str | fn(s: obj) -> str
+
+props room:
+  n_to: ref | fn(s: obj) -> ref
+
+props door:
+  door_to: ref | fn(s: obj) -> ref
+
+props story:
+  text: str | tbl[str] | fn(s: obj, n: num) -> str
 ```
+
+Так разложены и стандартные пропсы: общие движковые поля — в `props obj:`
+(их видят все объекты), направления и `enter`/`exit`/`cant_go`/
+`compass_look` — в `props room:`, `from`/`to`/`door_to` — в `props door:`,
+`text` — в `props story:`, поля фразы диалога — в `props option:`.
 
 - `ref` — голое имя объявленного объекта (`n_to: зал`); `tbl[ref]` —
   список таких имён; `list` — движковый список имён (`scope: лампа,

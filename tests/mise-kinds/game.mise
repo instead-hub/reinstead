@@ -94,8 +94,6 @@ room hall:
     pass
   found_in: |
     pass
-  door_to: |
-    pass
   when_open: |
     pass
   when_closed: |
@@ -108,8 +106,6 @@ room hall:
 
 door gate:
   words: ворота
-  d_to: hall
-  n_to: garden
 
 Door gate2:
   words: калитка
@@ -121,6 +117,7 @@ Door gate2:
 room garden:
   words: сад
   dsc: [[Тихий сад.]]
+  d_to: hall
   home_to: hall
   scope:
     - statue
