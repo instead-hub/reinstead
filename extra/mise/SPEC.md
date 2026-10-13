@@ -193,8 +193,7 @@ o:attr 'open'        # ошибка: возможно nil
 ## Декларации
 
 ```
-obj        — обычный объект
-scenery    — объект с атрибутом scenery
+obj        — обычный объект (декорация — `attrs: scenery`)
 room       — комната
 door       — дверь
 story      — cutscene
@@ -212,7 +211,7 @@ refs       — поля-ссылки (см. «Типы полей»)
 это и есть имя объекта в движке (`nam`), отдельного поля `nam:` нет.
 Повторяющиеся имена допустимы **только для тегов** (`obj #окно:` в разных
 комнатах); два обычных `obj кухня:` — ошибка компиляции. Имя можно не
-указывать (`obj:`, `scenery:` и т.п.) — тогда `nam` не задаётся
+указывать (`obj:`, `room:` и т.п.) — тогда `nam` не задаётся
 (автоименованный объект).
 
 Общие поля:
@@ -1067,7 +1066,7 @@ talk Разговор_с_Мариной:
   с `_(...)`, `extend #Exam`;
 - `tests/mise-talk/game.mise` — `talk:` (intro/option/reply/do/when/
   next/always/hidden/only/label) с golden-транскриптом движка;
-- `tests/mise-kinds/game.mise` — пресеты `door`/`story`/`scenery`,
+- `tests/mise-kinds/game.mise` — пресеты `door`/`story`/`ending`,
   фазы `on/life/before/after/post`, `type`/`extend type`/`extend refs`,
   `with`/`dict`/`disabled`, поля `setup` (hero/game/take/fmt), `verb`
   (tag/prio/hint);

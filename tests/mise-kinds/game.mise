@@ -46,8 +46,9 @@ story prologue:
 story epilogue:
   text: [[Конец.]]
 
-scenery sky:
+obj sky:
   words: небо
+  attrs: scenery
   dsc: [[Небо в облаках.]]
 
 room hall:

@@ -11,7 +11,6 @@ _DECL_KEY_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*)(?:\s+([\w#.+-]+))?$")
 
 PRESETS = {
     "obj": ("obj", []),
-    "scenery": ("obj", ["scenery"]),
     "room": ("room", []),
     "door": ("door", []),
     "story": ("cutscene", []),

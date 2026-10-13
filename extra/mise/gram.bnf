@@ -48,10 +48,10 @@ vars      ::= ("const" | "global") ":" block
 
 (* ---------- декларации объектов ---------- *)
 decl      ::= kind [ NAME ] ":" block
-kind      ::= "obj" | "scenery" | "room" | "door" | "story" | "ending"
+kind      ::= "obj" | "room" | "door" | "story" | "ending"
             | CLASS
 (* имена деклараций — только NAME (идентификатор/тег), кавычки запрещены;
-   kind — пресет (obj/scenery/room/door/story/ending) или класс-экземпляр
+   kind — пресет (obj/room/door/story/ending) или класс-экземпляр
    (`Prop дерево:`); with перечисляет голые NAME; встроенные
    поля-ссылки объявлены в props: (ref/tbl[ref]), свои — через refs: *)
 block     ::= NEWLINE INDENT { field } DEDENT
