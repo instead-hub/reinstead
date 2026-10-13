@@ -295,6 +295,17 @@ transpile (main loop) обход корневых элементов → Emitter
   (`TYPE_FORMS`/`DEFS_FORMS`/`BARE_FORMS`) → `Emitter`/`transpile`
   (`DECL_FORMS`, `SETUP_FORMS`, `TALK_FORMS`, …) → `SPEC.md`/`gram.bnf`.
 
+## Идеи (обсуждали, не делали)
+
+- Свести все конструкции (`obj/room/door/story/ending/talk/option/verb/
+  impl/setup`) к единому механизму «структура → Lua»: дескриптор
+  конструкта `{ctor, attrs, scope, child, key_emitters}` + реестр
+  эмиттеров спец-ключей, `PRESETS`/`DECL_FORMS`/`TALK_FORMS` — данные.
+  Полную макро-систему (пользовательские шаблоны генерации) решили не
+  делать: расширяемость уже даёт `class` + скоуп-пропсы, а шаблоны
+  усложнят диагностику. Возможный минимальный сахар — `preset имя(база)`
+  (база + фиксированные поля/атрибуты + скоуп).
+
 ## Тесты
 
 `tests/run-mise-tests.sh` — транспиляция всех `tests/mise-*` и `cmp` с
