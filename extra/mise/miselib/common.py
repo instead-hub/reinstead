@@ -220,33 +220,23 @@ def _long_skip(text, i):
         return -1
     return j + len(close) - i
 
-def balanced_expr(text):
-    depth = 0
-    i = 0
-    n = len(text)
-    while i < n:
-        c = text[i]
-        if c in "\"'":
-            i = _skip_quoted(text, i)
-            continue
-        if text.startswith("[[", i):
-            skip = _long_skip(text, i)
-            if skip == -1:
-                return False
-            i += skip
-            continue
-        if c in "{[(":
-            depth += 1
-        elif c in "}])":
-            depth -= 1
-            if depth < 0:
-                return False
-        i += 1
-    return depth == 0
+def _bracket_delta(c):
+    """+1 for an opener, -1 for a closer, 0 otherwise."""
+    if c in "{[(":
+        return 1
+    if c in "}])":
+        return -1
+    return 0
 
-def balanced_end(text):
-    """Index after the first balanced bracket run, else None."""
+def _scan_brackets(text):
+    """Scan `text`: (ends, depth, closed).
+
+    `ends` holds the index after every bracket run closed back to zero,
+    `depth` is the final depth, `closed` is False on an unterminated
+    `[[...]]` or a closing bracket without an opener.
+    """
     depth = 0
+    ends = []
     i = 0
     while i < len(text):
         c = text[i]
@@ -256,26 +246,29 @@ def balanced_end(text):
         if text.startswith("[[", i):
             skip = _long_skip(text, i)
             if skip < 0:
-                return None
+                return ends, depth, False
             i += skip
             continue
-        if c in "{[(":
-            depth += 1
-        elif c in "}])":
-            depth -= 1
-            if depth == 0:
-                return i + 1
+        delta = _bracket_delta(c)
+        depth += delta
+        if depth < 0:
+            return ends, depth, False
+        if depth == 0 and delta < 0:
+            ends.append(i + 1)
         i += 1
-    return None
+    return ends, depth, True
 
 def read_bracket(lines, i, first, line_no):
     text = first
-    while not balanced_expr(text):
+    while True:
+        ends, depth, closed = _scan_brackets(text)
+        if closed and depth == 0:
+            break
         i += 1
         if i >= len(lines):
             parse_error(line_no, M.UNTERMINATED_BRACES)
         text += "\n" + lines[i][0]
-    end = balanced_end(text)
+    end = ends[0] if ends else None
     tail = text[end:].strip() if end is not None else ""
     if tail:
         parse_error(line_no + text[:end].count("\n"),
