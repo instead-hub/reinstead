@@ -49,11 +49,14 @@ vars      ::= ("const" | "global") ":" block
 (* ---------- декларации объектов ---------- *)
 decl      ::= kind [ NAME ] ":" block
 kind      ::= "obj" | "room" | "door" | "story" | "ending"
-            | CLASS
+            | PRESET | CLASS
 (* имена деклараций — только NAME (идентификатор/тег), кавычки запрещены;
-   kind — пресет (obj/room/door/story/ending) или класс-экземпляр
+   kind — встроенный вид, пресет (`path тропа:`) или класс-экземпляр
    (`Prop дерево:`); with перечисляет голые NAME; встроенные
    поля-ссылки объявлены в props: (ref/tbl[ref]), свои — через refs: *)
+preset    ::= "preset" PRESET "(" PRESET ")" ":" block
+(* блок пресета: только attrs: (голые имена); база — вид или пресет;
+   имя становится скоупом props: *)
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
 param     ::= IDENT [ ":" type ] | "..." [ ":" type ]

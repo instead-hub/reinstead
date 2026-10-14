@@ -266,7 +266,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | поля `talk` | `TALK_FORMS` | emit.py |
 | ключи объекта, эмитящиеся отдельно | `OBJ_SKIP_KEYS` | emit.py |
 | вид декларации в `classify` | `SIMPLE_KINDS`, `TAGGED_FORMS`+`TAGGED_NAMES` | constructs.py |
-| пресеты объявлений и скоупы пропсов | `PRESETS`, `prop_scopes` | constructs.py |
+| пресеты объявлений и скоупы пропсов | `Presets` (`PRESETS`), `scopes()` | constructs.py |
 | регистрация `type`/`extend_type` | `TYPE_FORMS` | proptypes.py |
 | сбор class/mixin | `DEFS_FORMS` | prescan.py |
 | проверка bare-имён | `BARE_FORMS` | prescan.py |
@@ -305,10 +305,11 @@ transpile (main loop) обход корневых элементов → Emitter
 
 ## Идеи (обсуждали, не делали)
 
-- Реестр конструкций (`constructs.py`) — сделан (Phase 1). Осталось:
-  - `preset имя(база)` в DSL — конструкция добавляется игрой:
-    база + фиксированные атрибуты + свой скоуп пропсов; регистр
-    динамический (по компиляции), `classify`/`prop_scopes` читают его;
+- Реестр конструкций (`constructs.py`) и `preset имя(база)` в DSL —
+  сделаны: база + фиксированные атрибуты + свой скоуп пропсов; реестр
+  `Presets` сбрасывается на каждую компиляцию (`collect_presets`), затем
+  `classify`/`prop_scopes`/`emit` читают его. Осталось:
+  - фиксированные *поля* в пресете (сейчас только `attrs`);
   - реестр `key_emitters` для спец-ключей (`words`/`attrs`/`dict`/
     `disabled`/`with`/обработчики), чтобы эмиссия поля тоже была данными.
   Полную макро-систему (пользовательские шаблоны генерации) решили не

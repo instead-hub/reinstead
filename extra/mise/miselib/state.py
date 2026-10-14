@@ -25,6 +25,7 @@ class Ctx:
         self.ref_fields = set()
         self.props = {}
         self.scoped = {}
+        self.prop_scopes = {}
         self.prop_params = {}
         self.inline = {}
         self.types = {}

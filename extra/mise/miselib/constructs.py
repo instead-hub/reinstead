@@ -67,6 +67,10 @@ def _props_kind(_key, m):
     return "props", [s.strip() for s in m.group(1).split(",")]
 
 
+def _preset_kind(_key, m):
+    return "preset", (m.group(1), m.group(2))
+
+
 # the tagged top-level forms in lookup order: a compiled pattern and the
 # builder of its (kind, info)
 TAGGED_FORMS = (
@@ -80,6 +84,7 @@ TAGGED_FORMS = (
     (re.compile(r"^extend\s+#(" + P.DSL_NAME + r")$", re.UNICODE), _extend_kind),
     (re.compile(r"^props\s+([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)$"),
      _props_kind),
+    (re.compile(r"^preset\s+([a-z_]\w*)\(([a-z_]\w*)\)$"), _preset_kind),
 )
 
 # the prefixes of those forms that must carry a name
@@ -120,7 +125,7 @@ def _classify_decl(key):
         return "unknown", None
     if kind in ("verb", "talk"):
         return kind, ident
-    if kind in PRESETS or P.CLASS_RE.fullmatch(kind):
+    if PRESETS.get(kind) or P.CLASS_RE.fullmatch(kind):
         return "decl", (kind, ident)
     return "unknown", (kind, ident)
 
@@ -159,8 +164,7 @@ class Preset:
         self.scope = scope
         self.parent = parent
 
-
-PRESETS = {
+BUILTIN_PRESETS = {
     "obj": Preset("obj", "obj"),
     "room": Preset("room", "room", parent="obj"),
     "door": Preset("door", "door", parent="obj"),
@@ -177,12 +181,41 @@ STRUCT_SCOPES = {
 }
 
 
-def prop_scopes():
-    """Props scope -> its direct engine parent."""
-    scopes = {name: (parent,) for name, parent in STRUCT_SCOPES.items()}
-    for preset in PRESETS.values():
-        scopes[preset.scope] = (preset.parent,) if preset.parent else ()
-    return scopes
+class Presets:
+    """The runtime registry of object kinds: built-ins plus `preset`."""
+
+    __slots__ = ("_kinds",)
+
+    def __init__(self):
+        self._kinds = dict(BUILTIN_PRESETS)
+
+    def reset(self):
+        """Restore the built-ins before collecting a game's own."""
+        self._kinds = dict(BUILTIN_PRESETS)
+
+    def get(self, kind):
+        return self._kinds.get(kind)
+
+    def register(self, name, base, attrs):
+        """One `preset имя(база): attrs: ...` construct."""
+        if name in self._kinds:
+            raise Error(M.DUPLICATE_PRESET + name)
+        parent = self._kinds.get(base)
+        if parent is None:
+            raise Error(M.UNKNOWN_PRESET_BASE % (name, base))
+        self._kinds[name] = Preset(parent.ctor, name,
+                                   parent.attrs + tuple(attrs),
+                                   parent=parent.scope)
+
+    def scopes(self):
+        """Props scope -> its direct engine parent."""
+        scopes = {name: (parent,) for name, parent in STRUCT_SCOPES.items()}
+        for preset in self._kinds.values():
+            scopes[preset.scope] = (preset.parent,) if preset.parent else ()
+        return scopes
+
+
+PRESETS = Presets()
 
 
 # --- emission ---------------------------------------------------------
@@ -206,6 +239,7 @@ EMIT_ROUTES = {
     "extend": "decl",
     "talk": "decl",
     "props": "skip",
+    "preset": "skip",
     "type": "skip",
     "extend_type": "skip",
     "mixin": "skip",

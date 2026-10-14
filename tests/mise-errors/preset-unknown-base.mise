@@ -1,0 +1,6 @@
+name: t
+lang: ru
+include: stdlib
+
+preset x(nosuch):
+  attrs: scenery

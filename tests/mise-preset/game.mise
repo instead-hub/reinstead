@@ -1,0 +1,28 @@
+name: preset
+lang: ru
+include: stdlib
+
+preset path(obj):
+  attrs: scenery, enterable
+
+props path:
+  walk_to: ref
+
+preset darkroom(room):
+  attrs: ~light
+
+props darkroom:
+  hall_note: num
+
+room hall:
+  words: зал
+  dsc: [[Зал.]]
+
+path way:
+  words: тропа
+  walk_to: hall
+
+darkroom cellar:
+  words: подвал
+  dsc: [[Подвал.]]
+  hall_note: 1
