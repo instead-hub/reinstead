@@ -69,6 +69,14 @@ def _sub_blocks(val):
     return []
 
 
+def _walk_values(block):
+    """Yield every value under a block, depth-first."""
+    for _key, val in block.items:
+        yield val
+        for sub in _sub_blocks(val):
+            yield from _walk_values(sub)
+
+
 def _nested_decls(val):
     """Yield (kind, ident, block) of declarations inside with/inside."""
     for nk, nv in val.items:
@@ -386,15 +394,9 @@ def check_bare_names(root, ctx):
 def collect_game_defs(root):
     funcs = set()
     vars_ = set()
-
-    def _walk_defs(block):
-        for _key, val in block.items:
-            if isinstance(val, Lua):
-                scan_lua_defs(val.s, funcs, vars_)
-            for sub in _sub_blocks(val):
-                _walk_defs(sub)
-
-    _walk_defs(root)
+    for val in _walk_values(root):
+        if isinstance(val, Lua):
+            scan_lua_defs(val.s, funcs, vars_)
     return funcs, vars_
 
 def scan_required(name, ctx):
@@ -509,17 +511,7 @@ def _register_globals(root, ctx):
 
 
 def _fnrefs(root):
-    refs = set()
-
-    def _walk_fnrefs(block):
-        for _k, v in block.items:
-            if isinstance(v, FnRef):
-                refs.add(v.s)
-            for sub in _sub_blocks(v):
-                _walk_fnrefs(sub)
-
-    _walk_fnrefs(root)
-    return refs
+    return {v.s for v in _walk_values(root) if isinstance(v, FnRef)}
 
 
 def prescan(root, ctx):
