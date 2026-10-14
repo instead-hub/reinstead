@@ -305,6 +305,13 @@ def named_fn(text, known):
     return _named_params(known, parts[0]), _named_ret(known, parts[1].strip())
 
 
+ALT_FLAGS = {
+    "ref": "has_ref", "tbl[ref]": "has_reflist",
+    "str": "has_str", "num": "has_num", "bool": "has_bool",
+    "tbl": "has_tbl", "list": "has_list", "event": "has_event",
+}
+
+
 class Prop:
     """A typed engine property: `str`, `ref`, `tbl[ref]`, `fn(s: obj, ...)`."""
 
@@ -329,25 +336,12 @@ class Prop:
         if c is None:
             raise Error(M.PROPS_BAD_TYPE % (alt, self.text))
         self.alts.append(c)
-        if c == "ref":
-            self.has_ref = True
-        elif c == "tbl[ref]":
-            self.has_reflist = True
-        elif c == "str":
-            self.has_str = True
-        elif c == "num":
-            self.has_num = True
-        elif c == "bool":
-            self.has_bool = True
-        elif c == "tbl":
-            self.has_tbl = True
-        elif c == "list":
-            self.has_list = True
+        flag = ALT_FLAGS.get(c)
+        if flag:
+            setattr(self, flag, True)
         elif tbl_inner(base(c)):
             self.has_tbl = True
             self.tbl_elem = tbl_inner(base(c))
-        elif c == "event":
-            self.has_event = True
         elif c.startswith("fn(") and self.fn is None:
             self.fn = named_fn(alt, known)
 
