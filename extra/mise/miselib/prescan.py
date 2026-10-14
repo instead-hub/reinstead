@@ -3,7 +3,7 @@ import re
 
 from .common import *
 from .parse import parse_source
-from .constructs import PRESETS, classify
+from .constructs import RESERVED_KINDS, classify
 from .decl import mixin_bodies, parse_fn_sig
 from .inline import _inline_fn
 from .proptypes import (check_prop_value, collect_types, prop_of,
@@ -208,6 +208,8 @@ def _collect_nested(block, ctx, collect):
 
 
 def _collect_class(info, val, class_defs, _mixin_defs):
+    if info[0] in RESERVED_KINDS:
+        raise Error(M.CLASS_RESERVED_NAME % info[0])
     class_defs[info[0]] = (info[1], val)
 
 
@@ -259,35 +261,6 @@ def _collect_decl_fields(root, ctx):
             fields = dict(ctx.fields.get(info[0], {}))
             collect_block_fields(val, ctx, fields, info[1])
             ctx.fields[info[1]] = fields
-
-
-def _preset_attrs(name, block):
-    """The fixed `attrs:` of a `preset имя(база):` declaration."""
-    out = []
-    for j, (key, val) in enumerate(block.items):
-        CURRENT_LINE[0] = block.line_at(j) or CURRENT_LINE[0]
-        if key != "attrs":
-            raise Error(M.PRESET_BAD_KEY % (name, key))
-        for item in (val if isinstance(val, list) else [val]):
-            if isinstance(item, Text):
-                raise Error(M.ATTRS_QUOTES_ARE_NOT_ALLOWED % name)
-            if isinstance(item, Bare):
-                out.append(item.s)
-    return out
-
-
-def collect_presets(root, ctx):
-    """`preset имя(база):` -> the runtime presets and props scopes."""
-    PRESETS.reset()
-    for i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(i)
-        kind, info = classify(key)
-        if kind != "preset":
-            continue
-        if not isinstance(val, Block):
-            raise Error(M.PRESET_MUST_BE_BLOCK)
-        PRESETS.register(info[0], info[1], _preset_attrs(info[0], val))
-    ctx.prop_scopes = PRESETS.scopes()
 
 
 def collect_classes(root, ctx):

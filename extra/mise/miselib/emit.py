@@ -750,7 +750,7 @@ class Emitter:
             return getattr(self, method)(block, ident, base)
         preset = PRESETS.get(kind)
         if preset is None:
-            if P.CLASS_RE.fullmatch(kind):
+            if kind in self.ctx.classes:
                 return self.obj(block, ident, base, kind, [], scope=kind)
             raise Error(M.UNKNOWN_KIND + kind)
         return self.obj(block, ident, base, preset.ctor, list(preset.attrs),

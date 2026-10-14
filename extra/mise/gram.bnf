@@ -12,8 +12,8 @@ INDENT    ::= <увеличение отступа>
 DEDENT    ::= <уменьшение отступа>
 IDENT     ::= [A-Za-z_] { [A-Za-z0-9_] }
 LIDENT    ::= [a-z_] { [A-Za-z0-9_] }                 (* имя type/атрибута *)
-CLASS     ::= [A-Z] { [A-Za-z0-9_] }                 (* имя класса *)
-EVENT     ::= CLASS                                  (* имя события: Walk, Any *)
+CLASS     ::= [A-Za-z] { [A-Za-z0-9_] }              (* класс/миксин: любой регистр *)
+EVENT     ::= CLASS                                  (* имя события: как в движке (Walk, Any) *)
 NAME      ::= IDENT | "#" IDENT                     (* тег: #окно, #глаза_совы *)
 STRING    ::= '"' { <символ с escape \n \t \" \' \\> } '"'
             | "'" { <символ с escape \n \t \" \' \\> } "'"
@@ -39,7 +39,7 @@ include   ::= "include" ":" name_list
 require   ::= "require" ":" name_list
 evdecl    ::= "event" EVENT ":" block
 (* поля evdecl: on (mp.Event — действие), before/after (mp.before_/after_Event);
-   имя регистрируется автоматически; EVENT — CamelCase.
+   имя регистрируется автоматически; EVENT — как в движке (Walk, Any).
    event Any: / event Default: — глобальные правила для всех событий,
    параметры по умолчанию: s, ev, w, wh *)
 name_list ::= NAME { "," NAME }
@@ -49,14 +49,11 @@ vars      ::= ("const" | "global") ":" block
 (* ---------- декларации объектов ---------- *)
 decl      ::= kind [ NAME ] ":" block
 kind      ::= "obj" | "room" | "door" | "story" | "ending"
-            | PRESET | CLASS
+            | CLASS
 (* имена деклараций — только NAME (идентификатор/тег), кавычки запрещены;
-   kind — встроенный вид, пресет (`path тропа:`) или класс-экземпляр
-   (`Prop дерево:`); with перечисляет голые NAME; встроенные
-   поля-ссылки объявлены в props: (ref/tbl[ref]), свои — через refs: *)
-preset    ::= "preset" PRESET "(" PRESET ")" ":" block
-(* блок пресета: только attrs: (голые имена); база — вид или пресет;
-   имя становится скоупом props: *)
+   kind — вид (obj/room/door/story/ending) или класс-экземпляр
+   (`Prop дерево:`, `path тропа:`); with перечисляет голые NAME;
+   встроенные поля-ссылки объявлены в props: (ref/tbl[ref]), свои — refs: *)
 block     ::= NEWLINE INDENT { field } DEDENT
 field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
 param     ::= IDENT [ ":" type ] | "..." [ ":" type ]
@@ -87,6 +84,7 @@ fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
               [ "->" type ] ":" value
 (* value: блок |/|lua или inline-выражение в бэктиках (`#v`) *)
 class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
+(* имя класса — любого регистра; имена конструкций зарезервированы *)
 mixin     ::= "mixin" CLASS ":" block
 (* набор полей/обработчиков; привязка `mixin: A, B` в obj/class/impl *)
 refs      ::= ("refs" | "extend" "refs") ":" (name_list | list)

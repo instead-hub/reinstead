@@ -1,7 +1,7 @@
 """Types, `props:` and reference fields: registration and value checks."""
 from . import state as S
 from .common import *
-from .constructs import classify
+from .constructs import classify, prop_scopes
 from .typing import Prop, literal_type, type_ok
 from . import messages as M
 from . import patterns as P
@@ -97,10 +97,14 @@ def collect_types(root, ctx):
     return ctx.types
 
 
+# scopes of `props <scope>:` -> direct engine parent (see constructs.py)
+PROP_SCOPES = prop_scopes()
+
+
 def _scope_parent(ctx, kind):
     """The next scope up: an engine or class parent, else None."""
-    if kind in ctx.prop_scopes:
-        parents = ctx.prop_scopes[kind]
+    if kind in PROP_SCOPES:
+        parents = PROP_SCOPES[kind]
         return parents[0] if parents else None
     if kind in ctx.class_parents:
         return ctx.class_parents[kind] or "obj"
@@ -122,7 +126,7 @@ def prop_scope(ctx, owner):
     if not owner:
         return None
     kind = ctx.id_kind.get(owner, owner)
-    if kind in ctx.prop_scopes or kind in ctx.class_parents:
+    if kind in PROP_SCOPES or kind in ctx.class_parents:
         return kind
     return None
 
@@ -155,7 +159,7 @@ def _register_prop(ctx, known, name, tval, into):
 
 
 def _scope_map(ctx, scope):
-    if scope not in ctx.prop_scopes and scope not in ctx.classes:
+    if scope not in PROP_SCOPES and scope not in ctx.classes:
         raise Error(M.PROPS_SCOPE_UNSUPPORTED % scope)
     return ctx.scoped.setdefault(scope, {})
 

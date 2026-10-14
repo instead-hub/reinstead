@@ -1,14 +1,14 @@
-name: preset
+name: class
 lang: ru
 include: stdlib
 
-preset path(obj):
+class path(obj):
   attrs: scenery, enterable
 
 props path:
   walk_to: ref
 
-preset darkroom(room):
+class darkroom(room):
   attrs: ~light
 
 props darkroom:

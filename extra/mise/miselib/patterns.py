@@ -3,7 +3,8 @@ import re
 
 DSL_NAME = r"[^\W\d]\w*"
 LUA_NAME = r"[A-Za-z_]\w*"
-CLASS_NAME = r"[A-Z]\w*"
+# names of classes, mixins and events: any case (`Path x:`, `path x:`)
+CLASS_NAME = r"[A-Za-z]\w*"
 PARAM_REF = r"(?<![\w.])%s(?![\w])"
 
 DSL_RE = re.compile(DSL_NAME)
