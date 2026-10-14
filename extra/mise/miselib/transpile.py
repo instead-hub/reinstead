@@ -5,16 +5,13 @@ from . import state as S
 from .common import *
 from .parse import parse_source
 from .prescan import apply_includes, prescan, resolve_lang_includes
-from .decl import classify, parse_fn_sig
+from .constructs import EMIT_ROUTES, classify
+from .decl import parse_fn_sig
 from .emit import Emitter
 from .emitlogic import emit_logic
 from .exprparse import fn_name
 from . import templates as T
 from . import messages as M
-
-
-_SKIP_KINDS = ("skip", "type", "extend_type", "mixin",
-               "refs", "extend_refs", "props")
 
 
 def _as_list(v):
@@ -91,7 +88,7 @@ def _block_decl(em, _info, key, val):
     return em.decl(key, val, "")
 
 
-# the emitters of the non-fn top-level kinds
+# the emitters of the emission routes (see constructs.EMIT_ROUTES)
 DECL_FORMS = {
     "lua": _lua_decl,
     "class": _class_decl,
@@ -99,17 +96,14 @@ DECL_FORMS = {
     "setup": _setup_decl,
     "const": _const_decl,
     "global": _global_decl,
-    "event_decl": _event_decl,
+    "event": _event_decl,
     "decl": _block_decl,
-    "verb": _block_decl,
-    "extend": _block_decl,
-    "talk": _block_decl,
 }
 
 
-def _emit_decl(em, kind, key, val, info):
+def _emit_decl(em, route, key, val, info):
     """Emit one non-fn declaration; None means nothing to append."""
-    form = DECL_FORMS.get(kind)
+    form = DECL_FORMS.get(route)
     if form is None:
         raise Error(M.UNKNOWN_DECLARATION + key)
     return form(em, info, key, val)
@@ -125,8 +119,8 @@ def _add_fn(ctx, em, key, val, fn_body):
         fn_body.append(block)
 
 
-def _add_decl(em, kind, key, val, info, body):
-    chunk = _emit_decl(em, kind, key, val, info)
+def _add_decl(em, route, key, val, info, body):
+    chunk = _emit_decl(em, route, key, val, info)
     if chunk is not None:
         body.append(chunk)
 
@@ -139,16 +133,17 @@ def _body_items(ctx, em, root):
     for _i, (key, val) in enumerate(root.items):
         CURRENT_LINE[0] = root.line_at(_i)
         kind, info = classify(key)
-        if kind == "meta":
+        route = EMIT_ROUTES.get(kind)
+        if route == "meta":
             header.append(T.META % (key.title(), val.s))
-        elif kind in _SKIP_KINDS:
+        elif route == "skip":
             continue
-        elif kind == "require":
+        elif route == "require":
             reqs.extend(_require_text(val))
-        elif kind == "fn":
+        elif route == "fn":
             _add_fn(ctx, em, key, val, fn_body)
         else:
-            _add_decl(em, kind, key, val, info, body)
+            _add_decl(em, route, key, val, info, body)
     return header, fn_body + body, reqs
 
 

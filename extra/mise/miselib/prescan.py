@@ -3,7 +3,8 @@ import re
 
 from .common import *
 from .parse import parse_source
-from .decl import classify, mixin_bodies, parse_fn_sig
+from .constructs import classify
+from .decl import mixin_bodies, parse_fn_sig
 from .inline import _inline_fn
 from .proptypes import (check_prop_value, collect_types, prop_of,
                        prop_scope, register_events, register_props,

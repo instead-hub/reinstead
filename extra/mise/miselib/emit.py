@@ -3,8 +3,8 @@ import re
 from . import state as S
 from .common import *
 from .emitlogic import emit_logic
-from .decl import (PRESETS, check_ref_value, decl_key,
-                   is_true, mixin_bodies, sym_text)
+from .constructs import PRESETS, decl_key
+from .decl import check_ref_value, is_true, mixin_bodies, sym_text
 from .proptypes import prop_of, prop_scope
 from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import transpile_exprlist
@@ -748,12 +748,13 @@ class Emitter:
             if named and not ident:
                 raise Error(M.DECLARATION_NEEDS_NAME % kind)
             return getattr(self, method)(block, ident, base)
-        if kind not in PRESETS:
+        preset = PRESETS.get(kind)
+        if preset is None:
             if P.CLASS_RE.fullmatch(kind):
                 return self.obj(block, ident, base, kind, [], scope=kind)
             raise Error(M.UNKNOWN_KIND + kind)
-        ctor, preset = PRESETS[kind]
-        return self.obj(block, ident, base, ctor, preset, scope=kind)
+        return self.obj(block, ident, base, preset.ctor, list(preset.attrs),
+                        scope=kind)
 
     def _setup_fmt(self, block):
         fmt = block.get("fmt")

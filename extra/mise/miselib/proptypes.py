@@ -1,7 +1,7 @@
 """Types, `props:` and reference fields: registration and value checks."""
 from . import state as S
 from .common import *
-from .decl import classify
+from .constructs import classify, prop_scopes
 from .typing import Prop, literal_type, type_ok
 from . import messages as M
 from . import patterns as P
@@ -97,18 +97,8 @@ def collect_types(root, ctx):
     return ctx.types
 
 
-# scopes of `props <scope>:` and their engine parents (most specific first)
-PROP_SCOPES = {
-    "obj": (),
-    "room": ("obj",),
-    "door": ("obj",),
-    "story": ("room", "obj"),
-    "ending": ("room", "obj"),
-    "talk": ("room", "obj"),
-    "option": ("obj",),
-    "hero": ("obj",),
-    "game": ("obj",),
-}
+# scopes of `props <scope>:` -> direct engine parent (see constructs.py)
+PROP_SCOPES = prop_scopes()
 
 
 def _scope_parent(ctx, kind):

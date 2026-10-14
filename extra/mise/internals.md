@@ -249,16 +249,24 @@ transpile (main loop) обход корневых элементов → Emitter
 Ветвления «по виду» сведены в таблицы: новый вид — это запись в таблице
 плюс маленький обработчик, а не правка цепочки `if`.
 
+Главный реестр — `constructs.py`: как ключ распознаётся (`classify`),
+пресеты объектных видов (`PRESETS`: ctor + фикс. атрибуты + скоуп пропсов
++ движковый родитель), скоупы (`prop_scopes`) и маршруты эмиссии
+(`EMIT_ROUTES`: kind → `meta/skip/require/fn` или маршрут `DECL_FORMS`).
+Добавление конструкции — одна запись там плюс обработчик (если нужен
+новый маршрут).
+
 | Что | Таблица | Файл |
 |---|---|---|
 | вид значения → форма | `VALUE_FORMS` | emit.py |
 | форма `key: value` (предикат + reader) | `VALUE_FORMS` | parse.py |
-| вид объявления → эмиттер (и признак «нужно имя») | `DECL_FORMS` | emit.py, transpile.py |
+| вид объявления → маршрут эмиссии | `EMIT_ROUTES` | constructs.py |
+| маршрут эмиссии → эмиттер | `DECL_FORMS` | transpile.py |
 | ключи `setup` (и признак «нужен блок») | `SETUP_FORMS` | emit.py |
 | поля `talk` | `TALK_FORMS` | emit.py |
 | ключи объекта, эмитящиеся отдельно | `OBJ_SKIP_KEYS` | emit.py |
-| вид декларации в `classify` | `SIMPLE_KINDS`, `TAGGED_FORMS`+`TAGGED_NAMES` | decl.py |
-| пресеты объявлений | `PRESETS` | decl.py |
+| вид декларации в `classify` | `SIMPLE_KINDS`, `TAGGED_FORMS`+`TAGGED_NAMES` | constructs.py |
+| пресеты объявлений и скоупы пропсов | `PRESETS`, `prop_scopes` | constructs.py |
 | регистрация `type`/`extend_type` | `TYPE_FORMS` | proptypes.py |
 | сбор class/mixin | `DEFS_FORMS` | prescan.py |
 | проверка bare-имён | `BARE_FORMS` | prescan.py |
@@ -297,14 +305,15 @@ transpile (main loop) обход корневых элементов → Emitter
 
 ## Идеи (обсуждали, не делали)
 
-- Свести все конструкции (`obj/room/door/story/ending/talk/option/verb/
-  impl/setup`) к единому механизму «структура → Lua»: дескриптор
-  конструкта `{ctor, attrs, scope, child, key_emitters}` + реестр
-  эмиттеров спец-ключей, `PRESETS`/`DECL_FORMS`/`TALK_FORMS` — данные.
+- Реестр конструкций (`constructs.py`) — сделан (Phase 1). Осталось:
+  - `preset имя(база)` в DSL — конструкция добавляется игрой:
+    база + фиксированные атрибуты + свой скоуп пропсов; регистр
+    динамический (по компиляции), `classify`/`prop_scopes` читают его;
+  - реестр `key_emitters` для спец-ключей (`words`/`attrs`/`dict`/
+    `disabled`/`with`/обработчики), чтобы эмиссия поля тоже была данными.
   Полную макро-систему (пользовательские шаблоны генерации) решили не
   делать: расширяемость уже даёт `class` + скоуп-пропсы, а шаблоны
-  усложнят диагностику. Возможный минимальный сахар — `preset имя(база)`
-  (база + фиксированные поля/атрибуты + скоуп).
+  усложнят диагностику.
 
 ## Тесты
 
