@@ -62,6 +62,7 @@ local function fn_demo()
   local a, b = fn_minmax(1, 2), 9
   local c = fn_minmax(5, 6)
   local p, q = fn_swap(_'box')
+  local o, i = fn_where_list(_'box'):lookup(_'box')
   p(fn_minmax(7, 8))
 end
 

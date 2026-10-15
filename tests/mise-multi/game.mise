@@ -31,4 +31,5 @@ fn demo(): |
   local a, b = minmax(1, 2), 9
   local c = minmax(5, 6)
   local p, q = swap(box)
+  local o, i = lookup(where_list(box), box)
   p(minmax(7, 8))

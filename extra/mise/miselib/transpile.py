@@ -51,7 +51,7 @@ def _emit_fn(ctx, em, key, val):
         key, set(ctx.types) | ctx.classes)
     ctx.fns.add(name)
     if name in ctx.inline:
-        if len(ret) > 1:
+        if ctx.inline[name][0] == "expr" and len(ret) > 1:
             raise Error(M.FN_INLINE_MULTI % name)
         return None
     prm = _joined_params(plist, variadic)
