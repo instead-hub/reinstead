@@ -36,7 +36,7 @@ def _no_paren_kind(plist, variadic, rest, env, ctx):
 
 
 def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
-    plist, ret, variadic = sig
+    plist, rets, variadic = sig
     try:
         code, types = parse(
             rest, env, where, plist[0][1] if plist else None, ctx)
@@ -55,7 +55,7 @@ def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
         if not type_ok(ctx, t, variadic or "any"):
             raise TypeCheckError(M.FN_ARGUMENT_EXPECTS_GOT
                                  % (name, i, variadic, t))
-    return fn_call(ctx, name, [code]), [ret]
+    return fn_call(ctx, name, [code]), list(rets)
 
 
 def no_paren_call(text, env, where, ctx):
@@ -64,7 +64,7 @@ def no_paren_call(text, env, where, ctx):
     if not m or m.group(1) not in ctx.fn_sigs:
         return None
     name = m.group(1)
-    plist, ret, variadic = ctx.fn_sigs[name]
+    plist, rets, variadic = ctx.fn_sigs[name]
     rest = m.group(2).strip()
     if not rest or not (len(plist) == 1 or variadic):
         return None
@@ -73,7 +73,7 @@ def no_paren_call(text, env, where, ctx):
         return None
     if kind == "str":
         return fn_call(ctx, name, [lua_str(rest)]), ["str"]
-    return _typed_arg_form(name, (plist, ret, variadic), rest, env, where,
+    return _typed_arg_form(name, (plist, rets, variadic), rest, env, where,
                            ctx, transpile_exprlist)
 
 def transpile_exprlist(text, env, where, expected=None, ctx=None):

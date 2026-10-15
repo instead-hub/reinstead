@@ -35,18 +35,35 @@ def fn_name(name):
     return "fn_" + name
 
 
+def call_node(code, rets):
+    """A `Call` node that carries its declared return types for expansion."""
+    node = Call(code, rets[0] if rets else "any")
+    node.rts = rets
+    return node
+
+
 def expr_list(parser, expected=None):
-    """Parse a comma-separated expression list; return (codes, types)."""
-    codes = []
-    types = []
+    """Parse a comma-separated expression list; return (codes, types).
+
+    A trailing call that returns several values expands to all of them
+    (Lua semantics: only the last list element keeps extra results).
+    """
+    nodes = []
     while True:
         parser.expected = expected
         node = parser.expr()
         parser.expected = None
-        codes.append(node.code)
-        types.append(node.t)
+        nodes.append(node)
         if not parser.accept(","):
             break
+    codes = [n.code for n in nodes]
+    types = []
+    for i, n in enumerate(nodes):
+        rts = getattr(n, "rts", None)
+        if rts and i == len(nodes) - 1:
+            types.extend(rts)
+        else:
+            types.append(n.t)
     return codes, types
 
 
@@ -169,7 +186,7 @@ class Index(Node):
 
 
 class Call(Node):
-    pass
+    __slots__ = ("rts",)
 
 
 def _event_lit(val):
@@ -254,9 +271,14 @@ class ExprEmit:
         for i, ap in enumerate(aps[:len(eps)]):
             if not type_ok(self.ctx, eps[i], ap):
                 self.terr(M.CALLBACK_PARAM_TYPE % (name, i + 1, ap, eps[i]))
-        if eret is not None and not type_ok(self.ctx, aret or "any", eret):
-            self.terr(M.CALLBACK_RETURN
-                      % (name, aret or "any", eret))
+        self._check_callback_returns(name, aret, eret)
+
+    def _check_callback_returns(self, name, aret, eret):
+        if eret is None or not aret:
+            return
+        for a, e in zip(aret, eret):
+            if not type_ok(self.ctx, a, e):
+                self.terr(M.CALLBACK_RETURN % (name, a, e))
 
     def strval(self, tok):
         if tok.startswith("["):
@@ -602,11 +624,11 @@ class ExprEmit:
         if name in self.ctx.ids:
             return Ref("_'%s'" % name, "obj", name, obj=True)
         if name in self.ctx.fn_sigs:
-            plist, ret, _v = self.ctx.fn_sigs[name]
+            plist, rets, _v = self.ctx.fn_sigs[name]
             if not zero_call:
                 return Ref(fn_name(name), "fn", name)
             if not plist:
-                return Call(fn_call(self.ctx, name, []), ret)
+                return call_node(fn_call(self.ctx, name, []), rets)
         if funcs and name in self.ctx.funcs:
             return Ref(name, "fn", name)
         if name in self.ctx.vars:
@@ -617,9 +639,9 @@ class ExprEmit:
         if not (isinstance(node, Ref) and not node.obj
                 and node.name in self.ctx.fn_sigs):
             return node
-        plist, ret, _v = self.ctx.fn_sigs[node.name]
+        plist, rets, _v = self.ctx.fn_sigs[node.name]
         if min_args(plist) == 0:
-            return Call(fn_call(self.ctx, node.name, []), ret)
+            return call_node(fn_call(self.ctx, node.name, []), rets)
         return node
 
     def check_value(self, node):
@@ -707,7 +729,7 @@ class ExprEmit:
             self.err(M.EXPECTED_METHOD_NAME)
         if nv not in self.ctx.fn_sigs:
             self.err(M.METHOD_NOT_FN % nv)
-        plist, ret, variadic = self.ctx.fn_sigs[nv]
+        plist, rets, variadic = self.ctx.fn_sigs[nv]
         if not plist:
             self.err(M.FN_NO_RECEIVER % nv)
         if node.t == "str":
@@ -715,14 +737,14 @@ class ExprEmit:
                      % (node.val,))
         self.check(node.t, plist[0][1], node.code)
         if self.peek()[0] == "op" and self.peek()[1] == "{":
-            return self._method_table_call(node, nv, plist, ret, variadic)
+            return self._method_table_call(node, nv, plist, rets, variadic)
         if self._method_tail(plist, variadic):
-            return self._method_tail_call(node, nv, plist, ret)
+            return self._method_tail_call(node, nv, plist, rets)
         if self._method_bare(plist, variadic):
-            return Call(fn_call(self.ctx, nv, [node.code]), ret)
+            return call_node(fn_call(self.ctx, nv, [node.code]), rets)
         codes, n = self.arglist([pt for _pn, pt in plist[1:]], variadic)
         self.check_arity(nv, plist[1:], variadic, n)
-        return Call(fn_call(self.ctx, nv, [node.code] + codes), ret)
+        return call_node(fn_call(self.ctx, nv, [node.code] + codes), rets)
 
     def _method_bare(self, plist, variadic):
         nk, nv2 = self.peek()
@@ -751,14 +773,14 @@ class ExprEmit:
             self.err(M.UNKNOWN_NAME % nm)
         return arg
 
-    def _method_tail_call(self, node, nv, plist, ret):
+    def _method_tail_call(self, node, nv, plist, rets):
         nm = self.next()[1]
         pt = plist[1][1]
         arg = self._tail_value(nm, pt)
         self.check(arg.t, pt, arg.code)
-        return Call(fn_call(self.ctx, nv, [node.code, arg.code]), ret)
+        return call_node(fn_call(self.ctx, nv, [node.code, arg.code]), rets)
 
-    def _method_table_call(self, node, nv, plist, ret, variadic):
+    def _method_table_call(self, node, nv, plist, rets, variadic):
         """`s:fn { ... }` — a table literal as the sole argument (Lua-style)."""
         self.next()
         exp = plist[1][1] if len(plist) > 1 else None
@@ -768,16 +790,16 @@ class ExprEmit:
         if exp is not None:
             self.check(arg.t, exp, arg.code)
         self.check_arity(nv, plist[1:], variadic, 1)
-        return Call(fn_call(self.ctx, nv, [node.code, arg.code]), ret)
+        return call_node(fn_call(self.ctx, nv, [node.code, arg.code]), rets)
 
     def _bare_sig(self, name):
         if name not in self.ctx.fn_sigs:
             return None, "any", False
-        plist, rt, variadic = self.ctx.fn_sigs[name]
+        plist, rets, variadic = self.ctx.fn_sigs[name]
         if not plist:
             self.err(M.FN_NO_ARGUMENTS % name)
         self.check_arity(name, plist, variadic, 1)
-        return plist[0][1], rt, variadic
+        return plist[0][1], rets, variadic
 
     def _bare_typed_arg(self, exp, save):
         arg = self.unary()
@@ -797,10 +819,10 @@ class ExprEmit:
 
     def postfix_bare_call(self, node):
         name = node.name
-        exp, rt, variadic = self._bare_sig(name)
+        exp, rets, variadic = self._bare_sig(name)
         arg = self._bare_arg(exp, variadic)
         self.check(arg.t, exp, arg.code)
-        return Call(fn_call(self.ctx, name, [arg.code]), rt)
+        return call_node(fn_call(self.ctx, name, [arg.code]), rets)
 
     def _typed_arg_call(self, node, name, ft):
         params, ret = ft
@@ -808,13 +830,13 @@ class ExprEmit:
         if n != len(params):
             self.err(M.FN_ARGUMENT_COUNT
                      % (name, len(params), n))
-        return "%s(%s)" % (node.code, ", ".join(codes)), ret or "any"
+        return "%s(%s)" % (node.code, ", ".join(codes)), (ret if ret else ("any",))
 
     def _sig_arg_call(self, name):
-        plist, rt, variadic = self.ctx.fn_sigs[name]
+        plist, rets, variadic = self.ctx.fn_sigs[name]
         codes, n = self.arglist([pt for _pn, pt in plist], variadic)
         self.check_arity(name, plist, variadic, n)
-        return fn_call(self.ctx, name, codes), rt
+        return fn_call(self.ctx, name, codes), rets
 
     def _arg_call_parts(self, node, name):
         ft = fn_type_parts(node.t) if node.t else None
@@ -823,10 +845,10 @@ class ExprEmit:
         if name in self.ctx.fn_sigs:
             return self._sig_arg_call(name)
         codes, rt = self.call(name)
-        return "%s(%s)" % (node.code, ", ".join(codes)), rt
+        return "%s(%s)" % (node.code, ", ".join(codes)), (rt,)
 
     def postfix_arg_call(self, node):
         if not (isinstance(node, Ref) and not node.obj):
             self.err(M.CALL_FIELD_IN_LOGIC)
-        code, ret = self._arg_call_parts(node, node.name)
-        return Call(code, ret)
+        code, rets = self._arg_call_parts(node, node.name)
+        return call_node(code, rets)

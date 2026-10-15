@@ -46,7 +46,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | `ids` | имена объявленных объектов/тегов (`_'имя'`) |
 | `vars` | доступные имена (globals/const + Lua-локали из `require`) |
 | `funcs` | вызываемые имена: `fns` + игровые Lua-функции + `_` |
-| `fns`, `fn_sigs` | объявленные `fn`: имена и `(plist, ret, variadic)` |
+| `fns`, `fn_sigs` | объявленные `fn`: имена и `(plist, rets, variadic)`, где `rets` — кортеж типов возврата (`("any",)` без аннотации) |
 | `global_types` | типы `const:`/`global:` (выводятся `literal_type`) |
 | `event_names` | значения `type event` (stdlib) + `event X:` |
 | `inline` | inline-функции: `name -> (kind, payload)` (см. ниже) |
@@ -122,7 +122,8 @@ transpile (main loop) обход корневых элементов → Emitter
 ## Типы (`typing.py`)
 
 - `Prop`/`named_fn` — разбор типов свойств (`ref`, `tbl[ref]`, `list`,
-  `fn(s: obj) -> T`) и env тел; `Prop.ret` уходит в `emit_logic` через
+  `fn(s: obj) -> T`) и env тел; `Prop.ret` уходит в `emit_logic` (там
+  нормализуется в кортеж возвратов) через
   `body_type` (`ref`→`obj`, `tbl[ref]`→`tbl[obj]`); `base(t)` — база `T?`;
   `tbl_inner(t)` — внутренний тип `tbl[T]`
   (`""` у `tbl[]`, None у `tbl`); `split_union`/`union_parts` —
@@ -167,8 +168,9 @@ transpile (main loop) обход корневых элементов → Emitter
   `funcs` для primary);
   `primary` (литералы, имена, `_'id'`, `fn`, переменные, ожидаемые
   `event`/перечисления; голые значения enum/событий — по уникальности;
-  `return`/`stop` без значения и `false`/`nil` не проверяются по типу
-  возврата (`emit_logic`);
+  `return` проверяется по объявленному кортежу возвратов (число и типы
+  значений; `return` без значения и `false`/`nil` не проверяются), `stop` —
+  как `return false` (`emit_logic`);
   `{ e1, e2 }` — список: элементы под ожидаемый `tbl[T]`, тип
   `tbl[T1|T2...]`, пустой — `tbl[]`/`tbl[T]`; числовой литерал,
   объявленный значением enum-альтернативы (`2` ∈ `gram`), типизируется
@@ -189,8 +191,8 @@ transpile (main loop) обход корневых элементов → Emitter
 
 ## Логика (`emitlogic.py`)
 
-`emit_logic` обходит `Logic`: `return` (проверка возврата через
-`type_ok`), `stmt`, `for`, `if`. Условие разбирается `condast.py` в
+`emit_logic` обходит `Logic`: `return` (число и типы значений —
+через `_check_returns`), `stmt`, `for`, `if`. Условие разбирается `condast.py` в
 дерево `and`/`or` с листьями-срезами исходного текста (глубина,
 кавычки, `[[...]]`); `cond_emit` обходит дерево: листья уходят в
 обычный парсер выражений, а `narrow_assume` по токенам листа сужает

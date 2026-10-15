@@ -62,13 +62,14 @@ param     ::= IDENT [ ":" type ] | "..." [ ":" type ]
 type      ::= atom [ "?" ] { "|" atom [ "?" ] }
 atom      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
             | "tbl" [ "[" type "]" ] | "list"
-            | "fn" "(" [ type { "," type } ] ")" [ "->" type ]
+            | "fn" "(" [ type { "," type } ] ")" [ "->" type { "," type } ]
             | "nil" | IDENT
 (* IDENT — перечисление из type или имя класса; "?" — optional: T или nil;
    "|" — union: значение подходит под любую альтернативу (str|num);
    канонизация — сортировка альтернатив и один хвостовой "?";
    tbl[T] — значения-элементы типа T (tbl[any] ≡ tbl);
-   fn(...) -> T — подпись колбэка (имена параметров необязательны) *)
+   fn(...) -> T[, T …] — подпись колбэка (имена параметров необязательны;
+   return-список может быть много-значным) *)
 (* обработчики — "<фаза> <Event>", Event в движковом регистре (Walk, Enter,
    SwitchOn, ...; Any/Default — тоже события); фаза обязательна:
    on — метод события (X = function...), before/after/post/life — префикс
@@ -81,7 +82,7 @@ atom      ::= "obj" | "str" | "num" | "bool" | "any" | "event"
    Остальные движковые поля типизированы в props: *)
 
 fn        ::= "fn" IDENT [ "(" [ param { "," param } ] ")" ]
-              [ "->" type ] ":" value
+              [ "->" type { "," type } ] ":" value
 (* value: блок |/|lua или inline-выражение в бэктиках (`#v`) *)
 class     ::= "class" CLASS [ "(" IDENT ")" ] ":" block
 (* имя класса — любого регистра; имена конструкций зарезервированы *)

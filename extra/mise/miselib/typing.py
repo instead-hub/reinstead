@@ -1,4 +1,5 @@
 import re
+from itertools import accumulate
 
 from .common import *
 from . import messages as M
@@ -49,6 +50,31 @@ def union_parts(t):
 def split_types(text):
     """Split a comma list at top-level parentheses/brackets."""
     return [p for p in _split_top(text, ",") if p]
+
+
+def _param_events(text):
+    """Per-character (depth delta, close, arrow) events of a parameter list."""
+    return ((1 if c in "([" else -1 if c in ")]" else 0,
+             c in ")]",
+             c == "-" and i + 1 < len(text) and text[i + 1] == ">")
+            for i, c in enumerate(text))
+
+
+def _param_step(state, ev):
+    """Fold one event into the (depth, in-return-list) state."""
+    return (state[0] + ev[0], (state[1] or ev[2]) and not ev[1])
+
+
+def split_params(text):
+    """Split a `fn(...)` parameter list on top-level commas, but keep a
+    `-> T1, T2` return list (inside a nested fn type) as one parameter."""
+    states = [(0, False)] + list(accumulate(_param_events(text), _param_step))
+    cuts = [i for i, c in enumerate(text)
+            if c == "," and states[i] == (0, False)]
+    starts = [0] + [i + 1 for i in cuts]
+    ends = cuts + [len(text)]
+    return [text[a:b].strip() for a, b in zip(starts, ends)
+            if text[a:b].strip()]
 
 
 def _fn_split(t):
@@ -111,15 +137,23 @@ def _canon_ret(known, rest, recurse):
         return None
     if not rest.startswith("->"):
         return False
-    ret = recurse(known, rest[2:].strip())
-    return False if ret is None else ret
+    r = rest[2:].strip()
+    if not r:
+        return "any"
+    parts = []
+    for t in split_types(r):
+        c = recurse(known, t)
+        if c is None:
+            return False
+        parts.append(c)
+    return ",".join(parts)
 
 
 def _canon_fn(known, parts, opt, recurse):
     """`fn(...) -> T` -> (canonical body, optional flag) or (None, False)."""
     inner, rest = parts[0].strip(), parts[1].strip()
     ps = []
-    for part in split_types(inner):
+    for part in split_params(inner):
         pn, _, pt = part.partition(":")
         if pn.strip() == "...":
             return None, False
@@ -243,20 +277,24 @@ def canon_fn_sig(plist, ret, variadic=False):
     if variadic:
         ps.append("...")
     s = "fn(%s)" % ",".join(ps)
-    if ret and ret != "any":
-        s += "->" + ret
+    if ret:
+        rs = ret if isinstance(ret, (tuple, list)) else (ret,)
+        if rs != ("any",):
+            s += "->" + ",".join(rs)
     return s
 
 
 def fn_type_parts(t):
-    """Canonical `fn(...)->T` -> (params, ret|None), else None."""
+    """Canonical `fn(...)->T` -> (params, rets|None), else None."""
     parts = _fn_split(base(t) or "")
     if parts is None:
         return None
     inner, rest = parts
     if rest and not rest.startswith("->"):
         return None
-    return split_types(inner), (rest[2:] or None if rest else None)
+    r = rest[2:].strip() if rest else ""
+    rets = tuple(split_types(r)) if r else None
+    return split_params(inner), rets
 
 
 # the body view of the reference property types

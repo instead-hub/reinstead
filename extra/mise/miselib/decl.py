@@ -2,7 +2,7 @@ import re
 
 from . import state as S
 from .common import *
-from .typing import canon_type, split_types, type_error
+from .typing import canon_type, split_params, split_types, type_error
 from . import messages as M
 from . import patterns as P
 
@@ -78,7 +78,7 @@ def _fn_params(name, params, known):
     plist = []
     if not params.strip():
         return plist, False
-    parts = split_types(params)
+    parts = split_params(params)
     for idx, p in enumerate(parts):
         if p.startswith("..."):
             if idx != len(parts) - 1:
@@ -113,9 +113,12 @@ def parse_fn_sig(key, types=None):
     plist, variadic = _fn_params(name, params, known)
     _check_optional_order(name, plist)
     if ret_text is None:
-        return name, plist, "any", variadic
-    _check_type(name, known, ret_text, "return")
-    return name, plist, canon_type(known, ret_text), variadic
+        return name, plist, ("any",), variadic
+    rets = []
+    for rt in split_types(ret_text):
+        _check_type(name, known, rt, "return")
+        rets.append(canon_type(known, rt))
+    return name, plist, tuple(rets), variadic
 
 
 def check_ref_value(where, key, v, ids=None, allow_text=False, in_list=False):

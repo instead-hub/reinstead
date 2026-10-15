@@ -40,25 +40,35 @@ def cond_emit(node, env, where, ctx):
 
 def _return_expr(st, env, where, ctx):
     if not st[1]:
-        return "", "nil"
+        return "", []
     code, types = transpile_exprlist(st[1], env, where, None, ctx=ctx)
-    rtype = types[0] if types else "any"
     m = _QUOTED_LIT_RE.fullmatch(code)
     if m and (m.group(1) or m.group(2)) in ctx.ids:
         raise LintError(M.RETURN_OBJECT_NAME_WITHOUT_QUOTES % (where,
                         m.group(1) or m.group(2)))
-    return code, rtype
+    return code, types
 
 
-def _emit_return(st, indent, env, ret, ret_name, where, ctx):
-    code, rtype = _return_expr(st, env, where, ctx)
-    src = (st[1] or "").strip()
-    if (ret and ret != "any" and rtype != "any"
-            and src not in ("", "false", "nil")
-            and not type_ok(ctx, rtype, ret)):
+def _check_returns(rets, types, src, c, ctx):
+    """Raise LintError unless the returned values match the declared `rets`."""
+    if rets == ("any",) or src in ("", "false", "nil"):
+        return
+    if len(rets) == 1:
+        if types and not type_ok(ctx, types[0], rets[0]):
+            raise LintError(M.RETURN_TYPE_EXPECTED % (c, types[0], rets[0]))
+        return
+    if len(types) != len(rets):
+        raise LintError(M.FN_RETURN_ARITY % (c, len(types), len(rets)))
+    for t, r in zip(types, rets):
+        if not type_ok(ctx, t, r):
+            raise LintError(M.RETURN_TYPE_EXPECTED % (c, t, r))
+
+
+def _emit_return(st, indent, env, rets, ret_name, where, ctx):
+    code, types = _return_expr(st, env, where, ctx)
+    if rets != ("any",):
         c = ("fn %s" % ret_name) if ret_name else "logic"
-        raise LintError(M.RETURN_TYPE_EXPECTED
-                        % (c, rtype, ret))
+        _check_returns(rets, types, (st[1] or "").strip(), c, ctx)
     return [T.RETURN % (indent, (" " + code) if code else "")]
 
 
@@ -117,6 +127,7 @@ LOGIC_FORMS = {
 
 def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
     env = dict(env or {})
+    rets = ret if isinstance(ret, tuple) else ((ret,) if ret else ("any",))
     out = []
     for st in stmts:
         kind = st[0]
@@ -125,5 +136,5 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
         where = ("%s:%d" % (label or "logic", lno)) if lno else "logic"
         form = LOGIC_FORMS.get(kind)
         if form is not None:
-            out.extend(form(st, indent, env, ret, ret_name, where, ctx))
+            out.extend(form(st, indent, env, rets, ret_name, where, ctx))
     return out

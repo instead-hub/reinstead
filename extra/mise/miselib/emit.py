@@ -145,7 +145,7 @@ class Emitter:
     def check_use(self, name, prm, ret=None, label="event"):
         if name not in self.ctx.fn_sigs or not prm:
             return
-        plist, fret, _v = self.ctx.fn_sigs[name]
+        plist, frets, _v = self.ctx.fn_sigs[name]
         n = len(self.param_env(prm))
         pt = plist[0][1] if plist else None
         if pt in self.ctx.classes:
@@ -161,9 +161,10 @@ class Emitter:
                             % (name, len(plist), label, n))
             raise Error(M.FN_TAKES_AT_LEAST_PARAMETERS
                         % (name, mn, label, n))
-        if ret and fret and fret != "any" and not type_ok(self.ctx, fret, ret):
+        if ret and frets and frets != ("any",) \
+                and not type_ok(self.ctx, frets[0], ret):
             raise Error(M.FN_RETURN_TYPE_EXPECTED
-                        % (name, fret, ret))
+                        % (name, frets[0], ret))
 
     def ref_name(self, v):
         """Emitted name of an `&name` value: a DSL fn or a lua: function."""
