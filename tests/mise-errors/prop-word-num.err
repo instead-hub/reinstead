@@ -1,1 +1,1 @@
-mise: error: line 10: hall.word: expected str | fn(s: obj) -> str, got num
+mise: error: prop-word-num.mise:10: hall.word: expected str | fn(s: obj) -> str, got num

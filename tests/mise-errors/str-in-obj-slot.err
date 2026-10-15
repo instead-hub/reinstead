@@ -1,1 +1,1 @@
-mise: error: strings are not objects; use a bare name ('other') in logic:11: move ( box , 'other' )
+mise: error: strings are not objects; use a bare name ('other') in str-in-obj-slot.mise:11: move ( box , 'other' )

@@ -1,1 +1,1 @@
-mise: error: logic:6: for w: unknown type 'Nope'
+mise: error: for-bad-type.mise:6: for w: unknown type 'Nope'

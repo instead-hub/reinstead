@@ -1,1 +1,1 @@
-mise: error: line 5: fn f: return type is str, expected num
+mise: error: return-type.mise:5: fn f: return type is str, expected num

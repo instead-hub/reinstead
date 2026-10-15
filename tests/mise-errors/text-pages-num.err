@@ -1,1 +1,1 @@
-mise: error: line 6: s.text: expected str in list, got num
+mise: error: text-pages-num.mise:6: s.text: expected str in list, got num

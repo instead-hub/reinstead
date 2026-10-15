@@ -1,1 +1,1 @@
-mise: error: enum values are bare, not quoted ('light') in logic:9: say ( s : has ( 'light' ) )
+mise: error: enum values are bare, not quoted ('light') in attr-quoted.mise:9: say ( s : has ( 'light' ) )

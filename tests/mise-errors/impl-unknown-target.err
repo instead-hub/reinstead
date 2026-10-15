@@ -1,1 +1,1 @@
-mise: error: line 5: unknown impl target: nosuch
+mise: error: impl-unknown-target.mise:5: unknown impl target: nosuch

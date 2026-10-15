@@ -1,1 +1,1 @@
-mise: error: line 10: hall.daemon: expected fn(s: obj), got str
+mise: error: prop-fn-str.mise:10: hall.daemon: expected fn(s: obj), got str

@@ -1,1 +1,1 @@
-mise: error: line 10: hall.scope: expected list | fn(s: obj, w: list), got obj
+mise: error: prop-scope-single.mise:10: hall.scope: expected list | fn(s: obj, w: list), got obj

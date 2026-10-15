@@ -1,1 +1,1 @@
-mise: error: line 7: box.scope: unknown object reference 'nosuch'
+mise: error: reftable-unknown.mise:7: box.scope: unknown object reference 'nosuch'

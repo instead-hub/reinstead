@@ -1,1 +1,1 @@
-mise: error: line 7: event Default needs an on/life/before/after/post prefix
+mise: error: on-bare-default.mise:7: event Default needs an on/life/before/after/post prefix

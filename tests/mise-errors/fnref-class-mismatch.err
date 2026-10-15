@@ -1,1 +1,1 @@
-mise: error: line 18: fn on_take expects Box, not Crate
+mise: error: fnref-class-mismatch.mise:18: fn on_take expects Box, not Crate

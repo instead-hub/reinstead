@@ -1,1 +1,1 @@
-mise: error: line 6: unknown name 'нетакого' in field MODE (quote string values: [[...]]/"...")
+mise: error: const-unknown-name.mise:6: unknown name 'нетакого' in field MODE (quote string values: [[...]]/"...")

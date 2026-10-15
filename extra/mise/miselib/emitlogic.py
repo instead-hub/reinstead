@@ -121,7 +121,8 @@ def emit_logic(stmts, indent, env=None, ret=None, ret_name=None, ctx=None):
     for st in stmts:
         kind = st[0]
         lno = st[-1] if isinstance(st[-1], int) else None
-        where = ("logic:%d" % lno) if lno else "logic"
+        label = file_label(CURRENT_FILE[0]) if lno else None
+        where = ("%s:%d" % (label or "logic", lno)) if lno else "logic"
         form = LOGIC_FORMS.get(kind)
         if form is not None:
             out.extend(form(st, indent, env, ret, ret_name, where, ctx))

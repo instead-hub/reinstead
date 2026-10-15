@@ -1,1 +1,1 @@
-mise: error: line 10: r.room_note: expected num, got str
+mise: error: props-room-type.mise:10: r.room_note: expected num, got str

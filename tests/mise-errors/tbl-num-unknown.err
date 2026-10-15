@@ -1,1 +1,1 @@
-mise: error: expected case|gram, got num: 7 in logic:9: say ( s : noun ( { вн , 7 } ) )
+mise: error: expected case|gram, got num: 7 in tbl-num-unknown.mise:9: say ( s : noun ( { вн , 7 } ) )

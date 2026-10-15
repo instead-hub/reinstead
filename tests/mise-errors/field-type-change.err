@@ -1,1 +1,1 @@
-mise: error: logic:9: box.flag (bool) cannot take num
+mise: error: field-type-change.mise:9: box.flag (bool) cannot take num

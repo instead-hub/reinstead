@@ -1,1 +1,1 @@
-mise: error: line 8: expected 'key: value' (a logic block starts with `|`: see 'description' on line 7)
+mise: error: logic-block-no-pipe-value.mise:8: expected 'key: value' (a logic block starts with `|`: see 'description' on line 7)

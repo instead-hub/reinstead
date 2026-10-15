@@ -1,1 +1,1 @@
-mise: error: line 7: hall.gfx: expected str | fn(s: obj) -> str, got list
+mise: error: prop-gfx-list.mise:7: hall.gfx: expected str | fn(s: obj) -> str, got list

@@ -2,6 +2,7 @@ import os
 import re
 
 from .common import *
+from .cursor import at, use
 from .parse import parse_source
 from .constructs import RESERVED_KINDS, classify
 from .decl import mixin_bodies, parse_fn_sig
@@ -48,7 +49,7 @@ def collect_ids(root):
 
     def add_from(block):
         for i, (key, val) in enumerate(block.items):
-            CURRENT_LINE[0] = block.line_at(i)
+            at(block, i)
             hit = _decl_id(key)
             if hit is None:
                 continue
@@ -98,7 +99,7 @@ def check_refs(root, ids):
             if key == "props" or key.startswith("props "):
                 continue
             if key in ("with", "found_in"):
-                CURRENT_LINE[0] = block.line_at(i)
+                at(block, i)
                 refs(key, val)
             for sub in _sub_blocks(val):
                 _walk_refs(sub)
@@ -160,7 +161,7 @@ def attach_mixins(block, ctx, into, collect):
     if val is None:
         return
     seen = {}
-    for name, bdef in mixin_bodies(ctx, val, block.line("mixin")):
+    for name, bdef in mixin_bodies(ctx, val, use(block, "mixin")):
         for k, _bv in bdef.items:
             if k in seen:
                 raise Error(M.MIXIN_KEY_CONFLICT
@@ -200,7 +201,7 @@ def _collect_field(ctx, into, owner, key, val):
 def collect_block_fields(block, ctx, into, owner=None):
     attach_mixins(block, ctx, into, collect_block_fields)
     for i, (key, val) in enumerate(block.items):
-        CURRENT_LINE[0] = block.line_at(i)
+        at(block, i)
         if key == "with" and isinstance(val, Block):
             _collect_nested(val, ctx, collect_block_fields)
             continue
@@ -235,7 +236,7 @@ DEFS_FORMS = {
 def _collect_defs(root, class_defs, mixin_defs):
     """Scan top-level class and mixin definitions."""
     for i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(i)
+        at(root, i)
         kind, info = classify(key)
         if not isinstance(val, Block):
             continue
@@ -328,7 +329,7 @@ def _check_bare_field(ctx, use_props, owner, key, val):
 def _walk_fields(ctx, block, use_props=False, owner=None):
     """Validate the fields of one impl/setup/hero/const block."""
     for n, (field_key, field_val) in enumerate(block.items):
-        CURRENT_LINE[0] = block.line_at(n)
+        at(block, n)
         if field_key == "mixin":
             _check_mixin_names(ctx, field_val)
             continue
@@ -338,7 +339,7 @@ def _walk_fields(ctx, block, use_props=False, owner=None):
 def _walk_setup_fields(setup, ctx):
     """Validate hero/game blocks inside a setup block."""
     for j, (skey, sval) in enumerate(setup.items):
-        CURRENT_LINE[0] = setup.line_at(j)
+        at(setup, j)
         if skey in ("hero", "game") and isinstance(sval, Block):
             _walk_fields(ctx, sval, True, skey)
 
@@ -385,7 +386,7 @@ def check_bare_names(root, ctx):
     object, event or enum value; strings have to be quoted.
     """
     for i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(i)
+        at(root, i)
         if not isinstance(val, Block):
             continue
         _check_bare_block(key, val, ctx)
@@ -442,39 +443,43 @@ def resolve_lang_includes(root, ctx):
     root.items = [(k, _resolve_item(k, v, lang, ctx)) for k, v in root.items]
     return root
 
-def _include_one(name, ctx, seen, extra, extra_lines, recurse):
-    """Parse one included file; append its items and lines."""
+def _include_one(name, ctx, seen, extra, extra_lines, extra_srcs, recurse):
+    """Parse one included file; append its items, lines and sources."""
     if name in seen:
         return
     seen.add(name)
-    sub = parse_source(open(find_include(name, ctx),
-                            encoding="utf-8").read())
+    path = find_include(name, ctx)
+    sub = parse_source(open(path, encoding="utf-8").read(), path)
     recurse(sub, ctx, seen)
     extra.extend(sub.items)
     extra_lines.extend(sub.lines)
+    extra_srcs.extend(sub.srcs)
 
 
 def apply_includes(root, ctx, seen=None):
     seen = seen or set()
     extra = []
     extra_lines = []
+    extra_srcs = []
     for key, val in root.items:
         if key != "include":
             continue
         vals = val if isinstance(val, list) else [val]
         for v in vals:
             name = v.s if hasattr(v, "s") else str(v)
-            _include_one(name, ctx, seen, extra, extra_lines, apply_includes)
+            _include_one(name, ctx, seen, extra, extra_lines, extra_srcs,
+                         apply_includes)
     if extra:
         root.items = extra + root.items
         root.lines = extra_lines + root.lines
+        root.srcs = extra_srcs + root.srcs
     return root
 
 def _register_fns(root, ctx):
     ctx.fn_sigs = {}
     names = set()
     for _i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(_i)
+        at(root, _i)
         if classify(key)[0] != "fn":
             continue
         name, plist, ret, variadic = parse_fn_sig(
@@ -489,7 +494,7 @@ def _register_fns(root, ctx):
 
 def _register_requires(root, ctx, game_funcs, game_vars):
     for _i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(_i)
+        at(root, _i)
         if classify(key)[0] != "require":
             continue
         for v in (val if isinstance(val, list) else [val]):
@@ -502,7 +507,7 @@ def _register_globals(root, ctx):
     names = set()
     ctx.global_types = {}
     for _i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(_i)
+        at(root, _i)
         if classify(key)[0] in ("const", "global") and isinstance(val, Block):
             for k, v in val.items:
                 names.add(k)

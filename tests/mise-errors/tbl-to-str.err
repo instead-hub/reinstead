@@ -1,1 +1,1 @@
-mise: error: expected bool|event|num|obj|str, got tbl[case]: ({ "вн" }) in logic:9: say ( { вн } )
+mise: error: expected bool|event|num|obj|str, got tbl[case]: ({ "вн" }) in tbl-to-str.mise:9: say ( { вн } )

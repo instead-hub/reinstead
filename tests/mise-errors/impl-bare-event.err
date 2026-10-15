@@ -1,1 +1,1 @@
-mise: error: line 9: event Take needs an on/life/before/after/post prefix
+mise: error: impl-bare-event.mise:9: event Take needs an on/life/before/after/post prefix

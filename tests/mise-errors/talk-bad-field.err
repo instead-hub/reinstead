@@ -1,1 +1,1 @@
-mise: error: line 7: bad talk field 'when(s) -> bool'
+mise: error: talk-bad-field.mise:7: bad talk field 'when(s) -> bool'

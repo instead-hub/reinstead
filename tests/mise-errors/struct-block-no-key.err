@@ -1,1 +1,1 @@
-mise: error: line 10: expected 'key: value'
+mise: error: struct-block-no-key.mise:10: expected 'key: value'

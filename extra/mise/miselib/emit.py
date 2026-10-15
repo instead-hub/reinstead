@@ -2,6 +2,7 @@ import re
 
 from . import state as S
 from .common import *
+from .cursor import at, use
 from .emitlogic import emit_logic
 from .constructs import PRESETS, decl_key
 from .decl import check_ref_value, is_true, mixin_bodies, sym_text
@@ -227,7 +228,7 @@ class Emitter:
     def on(self, block, indent, target=""):
         out = []
         for i, (key, val) in enumerate(block.items):
-            CURRENT_LINE[0] = block.line_at(i) or CURRENT_LINE[0]
+            at(block, i)
             params, names = self._on_parts(key)
             for pfx, years in _group_years(names):
                 prm = _handler_prm(params, years[0])
@@ -278,7 +279,7 @@ class Emitter:
         val = block.get("mixin")
         if val is None:
             return block
-        CURRENT_LINE[0] = block.line("mixin") or CURRENT_LINE[0]
+        use(block, "mixin")
         own = {k for k, _ in block.items if k != "mixin"}
         merged = Block()
         seen = {}
@@ -297,6 +298,7 @@ class Emitter:
                 continue
             merged.items.append((k, bv))
             merged.lines.append(bdef.line_at(i))
+            merged.srcs.append(bdef.srcs[i] if i < len(bdef.srcs) else None)
 
     def _merge_own(self, merged, block):
         for i, (k, bv) in enumerate(block.items):
@@ -304,6 +306,7 @@ class Emitter:
                 continue
             merged.items.append((k, bv))
             merged.lines.append(block.line_at(i))
+            merged.srcs.append(block.srcs[i] if i < len(block.srcs) else None)
 
     def _obj(self, block, ident, base, ctor, preset, parent=None, scope=None):
         block = self.expand_mixins(block)
@@ -315,7 +318,7 @@ class Emitter:
         attrs = self._obj_attrs(block, ident, preset)
         ntext = sum(1 for k, _v in block.items if k == "text")
         if ntext > 1:
-            CURRENT_LINE[0] = block.line("text")
+            use(block, "text")
             raise Error(M.TEXT_SET_ONCE_USE_LIST
                         % (self.ctx.current_owner or ident or "?"))
         self._obj_fields(block, ident, fi, lines, scope)
@@ -327,7 +330,7 @@ class Emitter:
         words = block.get("words")
         if words is None:
             return
-        CURRENT_LINE[0] = block.line("words") or block.line("word")
+        use(block, "words") or use(block, "word")
         if isinstance(words, Text):
             lines.append(T.WORDS_ALIAS % fi % words.s)
         elif isinstance(words, Raw):
@@ -344,7 +347,7 @@ class Emitter:
 
     def _obj_nam(self, block, ident, fi, lines):
         if block.get("nam") is not None:
-            CURRENT_LINE[0] = block.line("nam")
+            use(block, "nam")
             raise Error(M.NAM_NOT_SUPPORTED)
         if ident:
             lines.append(T.NAM % (fi, lua_str(ident)))
@@ -353,7 +356,7 @@ class Emitter:
         attrs = list(preset)
         attrs.extend(self._extra_attrs(block, ident))
         if attrs and "attr" in self.ctx.types:
-            CURRENT_LINE[0] = block.line("attrs")
+            use(block, "attrs")
             for an in attrs:
                 msg = type_value_error(self.ctx, "attr", an)
                 if msg:
@@ -384,7 +387,7 @@ class Emitter:
 
     def _obj_fields(self, block, ident, fi, lines, scope=None):
         for _i, (key, val) in enumerate(block.items):
-            CURRENT_LINE[0] = block.line_at(_i)
+            at(block, _i)
             lines.extend(self._obj_field(key, val, ident, fi, scope))
 
     def _obj_field(self, key, val, ident, fi, scope=None):
@@ -401,7 +404,8 @@ class Emitter:
         try:
             rendered = self.body(val, key, fi, scope=scope)
         except Error as e:
-            raise Error(M.FIELD_MESSAGE % (ident, key, e))
+            label = ident or self.ctx.current_owner
+            raise Error(M.FIELD_MESSAGE % (label, key, e))
         if "," in fbase:
             return [T.INDEX_ASSIGN % (fi, fbase, rendered)]
         return [T.FIELD % (fi, fbase, rendered)]
@@ -418,7 +422,8 @@ class Emitter:
         prop = prop_of(self.ctx, prop_scope(self.ctx, ident), fbase)
         for part in (p.strip() for p in fbase.split(",")):
             if part in self.ctx.ref_fields:
-                check_ref_value(ident or "?", key, val, self.ctx.ids,
+                check_ref_value(ident or self.ctx.current_owner or "?", key,
+                                val, self.ctx.ids,
                                 allow_text=bool(prop and prop.has_reflist))
                 break
 
@@ -466,7 +471,7 @@ class Emitter:
             tail += T.ATTRS % ",".join(attrs)
         d = block.get("dict")
         if d is not None:
-            CURRENT_LINE[0] = block.line("dict")
+            use(block, "dict")
             if not isinstance(d, (Data, Raw)):
                 raise Error(M.DICT_MUST_BE_TABLE_LITERAL
                             % (ident or "?"))
@@ -601,7 +606,7 @@ class Emitter:
     def talk_table(self, oblock, indent, labels, tag=None):
         talk = _Talk(indent, labels)
         for _i, (key, val) in enumerate(oblock.items):
-            CURRENT_LINE[0] = oblock.line_at(_i)
+            at(oblock, _i)
             self._talk_item(key, val, talk)
         lines = [T.OPEN % indent]
         if tag:
@@ -691,7 +696,7 @@ class Emitter:
         root = []
         fields = []
         for _i, (key, val) in enumerate(block.items):
-            CURRENT_LINE[0] = block.line_at(_i)
+            at(block, _i)
             b, _ = parse_key(key)
             if key == "intro":
                 root.append(self.body(val, "intro", fi + IND,
@@ -847,7 +852,7 @@ class Emitter:
         try:
             lines = []
             for i, (key, val) in enumerate(block.items):
-                CURRENT_LINE[0] = block.line_at(i)
+                at(block, i)
                 lines.extend(self._impl_item(key, val, ref, t))
         finally:
             self.ctx.current_owner = prev

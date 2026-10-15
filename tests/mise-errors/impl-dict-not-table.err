@@ -1,1 +1,1 @@
-mise: error: line 6: impl game.dict: must be a table literal { ... }
+mise: error: impl-dict-not-table.mise:6: impl game.dict: must be a table literal { ... }

@@ -1,1 +1,1 @@
-mise: error: line 5: extend #Kick: before Kick is declared in 'event Kick:' now
+mise: error: extend-handler.mise:5: extend #Kick: before Kick is declared in 'event Kick:' now

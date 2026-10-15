@@ -178,13 +178,26 @@ def parse_block(lines, i, indent, text_values=False, logic=None):
         pos += consumed
     return blk, pos
 
-def parse_source(src):
+def _tag_src(node, path):
+    """Attach the parsed source name to every Block under `node`."""
+    if isinstance(node, Block):
+        node.srcs = [path] * len(node.items)
+        for _key, val in node.items:
+            _tag_src(val, path)
+    elif isinstance(node, list):
+        for val in node:
+            _tag_src(val, path)
+
+
+def parse_source(src, path=None):
+    PARSING_FILE[0] = path
     lines = []
     for raw in src.splitlines():
         lead = len(raw) - len(raw.lstrip(" \t"))
         ind = lead + raw[:lead].count("\t") * 3
         lines.append((raw, ind))
     blk, i = parse_block(lines, 0, 0)
+    _tag_src(blk, path)
     if i != len(lines):
         parse_error(i + 1, M.TRAILING_CONTENT)
     return blk

@@ -1,1 +1,1 @@
-mise: error: line 9: comma key needs a phase (on/life/before/after/post)
+mise: error: impl-comma-field.mise:9: comma key needs a phase (on/life/before/after/post)

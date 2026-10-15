@@ -1,1 +1,1 @@
-mise: error: line 7: fn ask: return type is num, expected str
+mise: error: ask-bad-ret.mise:7: fn ask: return type is num, expected str

@@ -1,1 +1,1 @@
-mise: error: line 7: unexpected text after value: '-- читаешь ты.'
+mise: error: trailing-after-string.mise:7: unexpected text after value: '-- читаешь ты.'

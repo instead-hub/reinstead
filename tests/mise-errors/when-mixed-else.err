@@ -1,1 +1,1 @@
-mise: error: line 8: use default: instead of else: in a when-chain
+mise: error: when-mixed-else.mise:8: use default: instead of else: in a when-chain

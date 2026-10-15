@@ -1,1 +1,1 @@
-mise: error: expected attr, got tbl[attr]: ({ "light" }) in logic:9: s : has { light }
+mise: error: expected attr, got tbl[attr]: ({ "light" }) in method-table-type.mise:9: s : has { light }

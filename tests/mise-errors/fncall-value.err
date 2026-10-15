@@ -1,1 +1,1 @@
-mise: error: expected obj, got num: 1 in logic:6: f ( 1 )
+mise: error: expected obj, got num: 1 in fncall-value.mise:6: f ( 1 )

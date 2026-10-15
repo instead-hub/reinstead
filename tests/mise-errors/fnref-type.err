@@ -1,1 +1,1 @@
-mise: error: expected bool|event|num|obj|str, got fn(obj): fn_mark in logic:11: say ( & mark )
+mise: error: expected bool|event|num|obj|str, got fn(obj): fn_mark in fnref-type.mise:11: say ( & mark )

@@ -1,1 +1,1 @@
-mise: error: line 10: hall.scope: unknown object reference 'nosuch'
+mise: error: scope-unknown-ref.mise:10: hall.scope: unknown object reference 'nosuch'

@@ -1,1 +1,1 @@
-mise: error: expected bool|event|num|obj|str, got tbl[]: ({}) in logic:7: say ( 'x' , { } )
+mise: error: expected bool|event|num|obj|str, got tbl[]: ({}) in say-tail-type.mise:7: say ( 'x' , { } )

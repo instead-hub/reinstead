@@ -1,1 +1,1 @@
-mise: error: logic:6: for variable i: expected num, got obj
+mise: error: for-num-type.mise:6: for variable i: expected num, got obj

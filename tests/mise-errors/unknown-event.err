@@ -1,1 +1,1 @@
-mise: error: unknown event 'Wearr' in logic:8: xaction ( Wearr )
+mise: error: unknown event 'Wearr' in unknown-event.mise:8: xaction ( Wearr )

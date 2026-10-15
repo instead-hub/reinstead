@@ -1,1 +1,1 @@
-mise: error: expected obj, got num: 5 in logic:9: subaction ( ev , 5 )
+mise: error: expected obj, got num: 5 in subaction-tail-type.mise:9: subaction ( ev , 5 )

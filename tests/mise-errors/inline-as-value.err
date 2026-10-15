@@ -1,1 +1,1 @@
-mise: error: fn say must be called with () in logic:7: say
+mise: error: fn say must be called with () in inline-as-value.mise:7: say

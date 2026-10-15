@@ -1,1 +1,1 @@
-mise: error: line 8: duplicate declaration: box
+mise: error: duplicate-decl.mise:8: duplicate declaration: box

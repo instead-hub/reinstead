@@ -1,1 +1,1 @@
-mise: error: event names are bare, not quoted ('Wear') in logic:8: xaction ( 'Wear' )
+mise: error: event names are bare, not quoted ('Wear') in quoted-event.mise:8: xaction ( 'Wear' )

@@ -3,6 +3,7 @@ import sys
 
 from . import state as S
 from .common import *
+from .cursor import at
 from .parse import parse_source
 from .prescan import apply_includes, prescan, resolve_lang_includes
 from .constructs import EMIT_ROUTES, classify
@@ -131,7 +132,7 @@ def _body_items(ctx, em, root):
     fn_body: list = []
     reqs: list = []
     for _i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(_i)
+        at(root, _i)
         kind, info = classify(key)
         route = EMIT_ROUTES.get(kind)
         if route == "meta":
@@ -160,11 +161,12 @@ def _prelude(root, header, reqs):
     return pre
 
 
-def transpile(src, src_dir=""):
+def transpile(src, src_dir="", src_path=None):
     ctx = S.Ctx(src_dir)
     em = Emitter(ctx)
     CURRENT_LINE[0] = None
-    root = parse_source(src)
+    CURRENT_FILE[0] = None
+    root = parse_source(src, src_path)
     resolve_lang_includes(root, ctx)
     apply_includes(root, ctx)
     prescan(root, ctx)
@@ -179,7 +181,7 @@ def main(argv):
         return 2
     with open(argv[1], encoding="utf-8") as f:
         src = f.read()
-    out = transpile(src, os.path.dirname(os.path.abspath(argv[1])))
+    out = transpile(src, os.path.dirname(os.path.abspath(argv[1])), argv[1])
     if "-o" in argv:
         with open(argv[argv.index("-o") + 1], "w", encoding="utf-8") as outf:
             outf.write(out)

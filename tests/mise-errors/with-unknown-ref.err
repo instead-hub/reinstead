@@ -1,1 +1,1 @@
-mise: error: line 7: unknown reference in with: other
+mise: error: with-unknown-ref.mise:7: unknown reference in with: other

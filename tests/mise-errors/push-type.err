@@ -1,1 +1,1 @@
-mise: error: expected obj?, got num: 5 in logic:9: push ( w , 5 )
+mise: error: expected obj?, got num: 5 in push-type.mise:9: push ( w , 5 )

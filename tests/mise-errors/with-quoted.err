@@ -1,1 +1,1 @@
-mise: error: line 7: with must list bare identifiers, not quoted strings (with)
+mise: error: with-quoted.mise:7: with must list bare identifiers, not quoted strings (with)

@@ -1,1 +1,1 @@
-mise: error: expected obj?, got num: 5 in logic:6: pop ( 5 )
+mise: error: expected obj?, got num: 5 in pop-type.mise:6: pop ( 5 )

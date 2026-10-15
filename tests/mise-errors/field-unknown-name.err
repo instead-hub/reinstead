@@ -1,1 +1,1 @@
-mise: error: line 7: unknown name 'нетакого' in field custom (quote string values: [[...]]/"...")
+mise: error: field-unknown-name.mise:7: unknown name 'нетакого' in field custom (quote string values: [[...]]/"...")

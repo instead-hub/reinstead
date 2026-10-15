@@ -1,1 +1,1 @@
-mise: error: line 9: disabled must be true or false
+mise: error: impl-disabled-not-bool.mise:9: disabled must be true or false

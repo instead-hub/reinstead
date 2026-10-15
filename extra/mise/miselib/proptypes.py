@@ -1,6 +1,7 @@
 """Types, `props:` and reference fields: registration and value checks."""
 from . import state as S
 from .common import *
+from .cursor import at
 from .constructs import classify, prop_scopes
 from .typing import Prop, literal_type, type_ok
 from . import messages as M
@@ -85,7 +86,7 @@ TYPE_FORMS = {
 def collect_types(root, ctx):
     ctx.types = {}
     for _i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(_i)
+        at(root, _i)
         kind, name = classify(key)
         form = TYPE_FORMS.get(kind)
         if form is not None:
@@ -171,7 +172,7 @@ def register_props(root, ctx):
     ctx.prop_params = {}
     known = S.TYPES | set(ctx.types) | {"ref", "nil"}
     for i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(i)
+        at(root, i)
         kind, info = classify(key)
         if kind != "props":
             continue
@@ -181,7 +182,7 @@ def register_props(root, ctx):
         into = [ctx.props if s is None else _scope_map(ctx, s)
                 for s in scopes]
         for j, (name, tval) in enumerate(val.items):
-            CURRENT_LINE[0] = val.line_at(j) or CURRENT_LINE[0]
+            at(val, j)
             for target in into:
                 _register_prop(ctx, known, name, tval, target)
 
@@ -299,7 +300,7 @@ def check_prop_value(ctx, owner, base, prop, val, t):
 def register_refs(root, ctx):
     ctx.ref_fields = set()
     for _i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(_i)
+        at(root, _i)
         kind, _info = classify(key)
         if kind not in ("refs", "extend_refs"):
             continue
@@ -316,7 +317,7 @@ def register_refs(root, ctx):
 def register_events(root, ctx):
     names = set(ctx.types.get("event", {}).get("values", []))
     for _i, (key, val) in enumerate(root.items):
-        CURRENT_LINE[0] = root.line_at(_i)
+        at(root, _i)
         kind, ident = classify(key)
         if kind == "event_decl" and isinstance(val, Block):
             names.add(ident)

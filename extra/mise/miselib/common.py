@@ -1,3 +1,4 @@
+import os
 import re
 import textwrap
 from . import messages as M
@@ -7,12 +8,21 @@ IND = "  "
 
 _KEY_RE = re.compile(r"^(.*?)(?:\(([^)]*)\))?$")
 _NUM_RE = re.compile(r"-?\d+(\.\d+)?")
+_LOC_RE = re.compile(r"\S+:\d+")
+
+
+def file_label(path):
+    """Short source name for diagnostics."""
+    return os.path.basename(path) if path else None
+
 
 class Error(Exception):
     def __init__(self, msg):
         line = CURRENT_LINE[0]
-        if line and "line " not in str(msg) and "logic:" not in str(msg):
-            msg = "line %d: %s" % (line, msg)
+        if line and "line " not in str(msg) and not _LOC_RE.search(str(msg)):
+            label = file_label(CURRENT_FILE[0])
+            msg = ("%s:%d: %s" % (label, line, msg) if label
+                   else "line %d: %s" % (line, msg))
         super().__init__(msg)
 
 class Val:
@@ -51,12 +61,15 @@ class Raw(Val):
     pass
 
 CURRENT_LINE = [None]
+CURRENT_FILE = [None]
+PARSING_FILE = [None]
 
 
 class Block:
     def __init__(self):
         self.items = []
         self.lines = []
+        self.srcs = []
 
     def add(self, key, val, line):
         self.items.append((key, val))
@@ -117,6 +130,9 @@ def split_key(text):
     return None, None
 
 def parse_error(line, msg):
+    label = file_label(PARSING_FILE[0])
+    if label:
+        raise Error("%s:%d: %s" % (label, line, msg))
     raise Error(M.LINE_PREFIX % (line, msg))
 
 def strip_comment(s):

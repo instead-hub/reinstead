@@ -1,1 +1,1 @@
-mise: error: line 5: fn f: ... must be the last parameter
+mise: error: repeat-not-last.mise:5: fn f: ... must be the last parameter

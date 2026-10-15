@@ -1,1 +1,1 @@
-mise: error: expected list, got tbl: t in logic:9: add ( t , w )
+mise: error: expected list, got tbl: t in add-plain-table.mise:9: add ( t , w )

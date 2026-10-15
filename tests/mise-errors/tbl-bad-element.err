@@ -1,1 +1,1 @@
-mise: error: expected case|gram, got obj: _'box' in logic:9: say ( s : noun ( { box } ) )
+mise: error: expected case|gram, got obj: _'box' in tbl-bad-element.mise:9: say ( s : noun ( { box } ) )

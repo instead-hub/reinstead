@@ -1,1 +1,1 @@
-mise: error: line 5: fn g: unknown type 'nope' for x
+mise: error: tbl-unknown-type.mise:5: fn g: unknown type 'nope' for x
