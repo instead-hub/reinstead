@@ -348,6 +348,7 @@ class Door(door):
       say(way_dsc(s, s.to))
     when here == s.to:
       say(way_dsc(s, s.from))
+    pass
   from: none
   to: none
   door_to: |
