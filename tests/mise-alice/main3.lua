@@ -516,7 +516,7 @@ _'mirror'.description = function(s)
 Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]])
 end
 _'mirror'.before_Any = function(s, ev, w, wh)
-  if (mp.event) ~= 'Exam' and (mp.event) ~= 'Reflect' and (mp.event) ~= 'Search' and (mp.event) ~= 'ThrownAt' and where(me()) ~= _'mantelpiece' then
+  if (mp.event or nil) ~= 'Exam' and (mp.event or nil) ~= 'Reflect' and (mp.event or nil) ~= 'Search' and (mp.event or nil) ~= 'ThrownAt' and where(me()) ~= _'mantelpiece' then
     p("Отсюда невозможно даже дотянуться до зеркала!")
     return
   end
@@ -612,7 +612,7 @@ Kitten.life_Talk = function(s, w, wh)
 end;
 Kitten.life_Give = function(s, w, wh)
   if w ~= _'red_queen' and w ~= _'worsted' then
-    if (mp.event) == 'ThrowAt' then
+    if (mp.event or nil) == 'ThrowAt' then
       move(w, _'Drawing_Room')
       p('Алиса бросила ', w:noun_hint("вн"), ' на пол, и ', s:noun_hint(1))
     else
@@ -640,7 +640,7 @@ Kitten.life_Give = function(s, w, wh)
 end;
 Kitten.life_ThrowAt = function(s, w, wh)
   if w ~= _'red_queen' and w ~= _'worsted' then
-    if (mp.event) == 'ThrowAt' then
+    if (mp.event or nil) == 'ThrowAt' then
       move(w, _'Drawing_Room')
       p('Алиса бросила ', w:noun_hint("вн"), ' на пол, и ', s:noun_hint(1))
     else

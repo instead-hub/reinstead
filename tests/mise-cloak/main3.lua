@@ -186,7 +186,7 @@ obj {
   ["before_Drop,PutOn"] = function(s, w, wh)
     if here() == _'cloakroom' then
       _'bar':attr("light")
-      if (mp.event) == 'PutOn' and not s.scored then
+      if (mp.event or nil) == 'PutOn' and not s.scored then
         s.scored = true
         score = score + (1)
       end

@@ -203,7 +203,7 @@ fn walkout(): |lua
 fn visits(w: obj) -> num: |lua
   return visits(w)
 
-fn event() -> event?: `mp.event`
+fn event() -> event?: `mp.event or nil`
 
 fn xevent() -> event?: `mp.xevent or nil`
 
