@@ -344,9 +344,6 @@ fn music(name: str, ...): |lua
   snd.music(name, ...)
 
 class Door(door):
-  ini: |
-    objs(s.from):add(s)
-    objs(s.to):add(s)
   attrs: static
   walk_to: none
   description: |

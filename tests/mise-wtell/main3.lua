@@ -40,10 +40,6 @@ obj {
 }
 
 Door = Class({
-  ini = function(s)
-    fn_objs(_(s.from)):add(s)
-    fn_objs(_(s.to)):add(s)
-  end;
   walk_to = 'none';
   description = function(s)
     if here() == _(s.from) then
