@@ -8,6 +8,12 @@ local function fn_objs(s)
   return s.obj
 end
 
+local function fn_where_list(w)
+  local list = {}
+  where(w, list)
+  return list
+end
+
 local function fn_where_prep(w)
   if w:has("supporter") then
     return 'на'
@@ -90,7 +96,7 @@ obj {
   -"коробка";
   nam = "box";
   Take = function(s, w, wh)
-    local o = seen('box')
+    local o = seen(_'box')
     if o then
       o:attr("seen")
       p(fn_pick(s))

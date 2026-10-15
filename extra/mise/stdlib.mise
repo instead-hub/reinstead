@@ -171,8 +171,8 @@ fn trace(s: obj, f: fn(w: obj)): |lua
 
 fn isa(s: obj, cls: str) -> bool: `(((function(o) local m = getmetatable(s) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G[cls])))`
 
-fn seen(w: any) -> obj?: |lua
-  return seen(w)
+fn seen(w: obj, wh: obj?) -> obj?: |lua
+  return seen(w, wh)
 
 fn walk(where: obj): |lua
   walk(where)
@@ -228,6 +228,11 @@ fn visible_scope(where: obj) -> obj?: |lua
 fn where(w: obj) -> obj?: |lua
   return where(w)
 
+fn where_list(w: obj) -> list: |lua
+  local list = {}
+  where(w, list)
+  return list
+
 fn inroom(w: obj) -> obj: |lua
   return inroom(w)
 
@@ -266,6 +271,9 @@ fn walkback(w: obj?): |lua
 
 fn remove(w: obj): |lua
   remove(w)
+
+fn lookup(w: list, wh: obj) -> obj?, num?: |lua
+  return w:lookup(wh)
 
 fn add(w: list, wh: obj): |lua
   w:add(wh)
