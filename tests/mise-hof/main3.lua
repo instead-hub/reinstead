@@ -4,6 +4,10 @@
 require "fmt"
 require "parser/mp-ru"
 
+local function fn_objs(s)
+  return s.obj
+end
+
 local function fn_where_prep(w)
   if w:has("supporter") then
     return 'на'
@@ -50,6 +54,10 @@ obj {
 }
 
 Door = Class({
+  ini = function(s)
+    fn_objs(_(s.from)):add(s)
+    fn_objs(_(s.to)):add(s)
+  end;
   walk_to = 'none';
   description = function(s)
     if here() == _(s.from) then
@@ -57,6 +65,7 @@ Door = Class({
     elseif here() == _(s.to) then
       p(fn_way_dsc(s, _(s.from)))
     end
+    return false
   end;
   from = 'none';
   to = 'none';

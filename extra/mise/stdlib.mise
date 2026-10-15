@@ -107,6 +107,9 @@ fn hasnt(s: obj, a: attr) -> bool: |lua
 fn move(s: obj, where: obj): |lua
   move(s, where)
 
+fn objs(s: obj) -> list: |lua
+  return s.obj
+
 fn attr(s: obj, a: attr): |lua
   s:attr(a)
 
@@ -341,6 +344,9 @@ fn music(name: str, ...): |lua
   snd.music(name, ...)
 
 class Door(door):
+  ini: |
+    objs(s.from):add(s)
+    objs(s.to):add(s)
   attrs: static
   walk_to: none
   description: |
