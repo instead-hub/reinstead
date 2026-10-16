@@ -251,13 +251,14 @@ class Emitter:
                 src = self.handler(val, prm, indent)
                 if len(years) > 1 and compact and target:
                     tgt = target.rstrip(".")
-                    cname = pfx + ",".join(years)
+                    cname = lua_str(pfx + ",".join(years))
                     out.append(T.INDEX_ASSIGN % (tgt, cname, src))
                     if expand:
                         out.append(T.FN_ALIASES % (tgt, cname))
                 elif len(years) > 1 and not target:
                     out.append(T.INDEX_KEY
-                               % (indent, pfx, ",".join(years), src))
+                               % (indent, lua_str(pfx + ",".join(years)),
+                                  src))
                 else:
                     out.extend(T.EVENT_ASSIGN
                                % (indent, target, pfx, year, src)
@@ -429,7 +430,7 @@ class Emitter:
             label = ident or self.ctx.current_owner
             raise Error(M.FIELD_MESSAGE % (label, key, e))
         if "," in fbase:
-            return [T.INDEX_ASSIGN % (fi, fbase, rendered)]
+            return [T.INDEX_ASSIGN % (fi, lua_str(fbase), rendered)]
         return [T.FIELD % (fi, fbase, rendered)]
 
     def _check_phase_prefix(self, base):
