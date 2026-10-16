@@ -1,4 +1,5 @@
 import re
+import difflib
 
 from . import state as S
 from .common import *
@@ -13,6 +14,20 @@ from .exprparse import fn_name, min_args
 from . import templates as T
 from . import messages as M
 from . import patterns as P
+
+
+VERB_KEYS = ("tag", "words", "patterns", "prio", "hint")
+EXTEND_KEYS = ("words", "patterns", "prio", "hint")
+
+
+def _check_verb_keys(label, ident, block, keys):
+    """Reject unknown fields in a `verb`/`extend` block."""
+    for k, _v in block.items:
+        if k in keys:
+            continue
+        near = difflib.get_close_matches(k, sorted(keys), 1, 0.6)
+        hint = " (did you mean %r?)" % near[0] if near else ""
+        raise Error(M.VERB_UNKNOWN_FIELD % (label, ident or "?", k, hint))
 
 
 def _pfx(kw):
@@ -534,6 +549,11 @@ class Emitter:
         return extra
 
     def verb(self, block, ident, base):
+        base_key = self._event_handler_key(block)
+        if base_key is not None:
+            raise Error(M.VERB_DECLARED_EVENT_NOW
+                        % (ident or "?", base_key, ident or "?"))
+        _check_verb_keys("verb", ident, block, VERB_KEYS)
         fields = []
         tag = block.get("tag")
         if tag is None:
@@ -541,10 +561,6 @@ class Emitter:
         elif not (isinstance(tag, Bool) and tag.s == "false"):
             fields.append(self.value(tag))
         fields += self.verb_fields(block, required=True)
-        base_key = self._event_handler_key(block)
-        if base_key is not None:
-            raise Error(M.VERB_DECLARED_EVENT_NOW
-                        % (ident or "?", base_key, ident or "?"))
         extra = self.verb_extra(block)
         return T.VERB % (base, ", ".join(fields),
                                     (", " + ", ".join(extra)) if extra else "")
@@ -552,13 +568,14 @@ class Emitter:
     def verb_extend(self, block, ident, base):
         if not ident:
             raise Error(M.EXTEND_NEEDS_VERB_TAG)
-        fields = [lua_str(ident)] + self.verb_fields(block, required=False)
-        if len(fields) == 1:
-            raise Error(M.EXTEND_NEEDS_WORDS_OR_PATTERNS)
         base_key = self._event_handler_key(block)
         if base_key is not None:
             raise Error(M.EXTEND_DECLARED_EVENT_NOW
                         % (ident, base_key, ident.lstrip("#")))
+        _check_verb_keys("extend", ident, block, EXTEND_KEYS)
+        fields = [lua_str(ident)] + self.verb_fields(block, required=False)
+        if len(fields) == 1:
+            raise Error(M.EXTEND_NEEDS_WORDS_OR_PATTERNS)
         extra = self.verb_extra(block)
         ctor = "VerbExtendWord" if block.get("words") is not None \
             else "VerbExtend"

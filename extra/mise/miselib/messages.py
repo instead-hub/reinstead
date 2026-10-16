@@ -169,5 +169,6 @@ UNTERMINATED_STRING_PLAIN = 'unterminated string'
 VARARGS_NOT_IN_LOGIC = '... is not allowed in logic; use |lua for varargs'
 VERB_DECLARED_EVENT_NOW = "verb %s: %s is declared in 'event %s:' now"
 VERB_WORDS_MUST_BE_QUOTED = 'verb words must be a quoted string'
+VERB_UNKNOWN_FIELD = '%s %s: unknown field %r%s'
 WORDS_LIST_ITEMS_STRINGS = 'words list items must be strings'
 WORDS_QUOTED_OR_LIST = 'words must be a quoted string or list'
