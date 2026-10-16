@@ -170,7 +170,7 @@ def register_props(root, ctx):
     ctx.props = {}
     ctx.scoped = {}
     ctx.prop_params = {}
-    known = S.TYPES | set(ctx.types) | {"ref", "nil"}
+    known = S.TYPES | set(ctx.types) | ctx.classes | {"ref", "nil"}
     for i, (key, val) in enumerate(root.items):
         at(root, i)
         kind, info = classify(key)

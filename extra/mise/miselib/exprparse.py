@@ -623,6 +623,11 @@ class ExprEmit:
             return Ref(name, self.env[name], name)
         if name in self.ctx.ids:
             return Ref("_'%s'" % name, "obj", name, obj=True)
+        exp = self.expected
+        if exp in self.ctx.types and exp != "event":
+            td = self.ctx.types.get(exp) or {}
+            if name in td.get("values", ()):
+                return Lit(lua_str(name), exp, name)
         if name in self.ctx.fn_sigs:
             plist, rets, _v = self.ctx.fn_sigs[name]
             if not zero_call:
@@ -646,10 +651,27 @@ class ExprEmit:
 
     def check_value(self, node):
         """A bare inline fn has no wrapper to take its value."""
-        if (isinstance(node, Ref) and not node.obj
-                and node.name in self.ctx.inline):
+        if not (isinstance(node, Ref) and not node.obj):
+            return node
+        if node.name in self.ctx.inline:
             self.err(M.FN_MUST_BE_CALLED % node.name)
+        self._check_fn_value(node)
         return node
+
+    def _check_fn_value(self, node):
+        """Reject a bare fn with required args where a value is expected."""
+        if node.name not in self.ctx.fn_sigs or self._fn_value_expected():
+            return
+        if min_args(self.ctx.fn_sigs[node.name][0]) > 0:
+            self.err(M.FN_VALUE_NEEDS_CALL % (node.name, node.name))
+
+    def _fn_value_expected(self):
+        """Is the current expected type a function (or `any`)?"""
+        exp = self.expected
+        if exp == "any":
+            return True
+        return bool(exp) and any(p == "fn" or p.startswith("fn(")
+                                 for p in (union_parts(exp) or [exp]))
 
     def _is_bare_call(self, node, k, v):
         if not (isinstance(node, Ref) and not node.obj):
