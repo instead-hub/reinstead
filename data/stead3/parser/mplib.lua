@@ -3050,30 +3050,39 @@ end
 
 local __oini = std.obj.__ini
 
-local function fn_aliases(wh)
-  local new = {}
-  for k, f in pairs(wh) do -- "before_Take,Drop..."
-    if (type(f) == 'function' or type(f) == 'string') and
-      type(k) == 'string' and k:find("[a-zA-Z]+,") then
-      local ss, ee = k:find("^[a-z]+_")
-      local pref = ''
-      local str = k
-      if ss then
-        pref = k:sub(1, ee);
-        if pref == 'before_' or pref == 'after_' or pref == 'post_' or pref == 'life_' then
-          str = k:sub(ee + 1)
-        else
-          pref = ''
-        end
-      end
-      local m = std.split(str, ",")
-      for _, v in ipairs(m) do
-        new[pref .. v] = f
-      end
+local function alias_one(wh, k, new)
+  local f = wh[k]
+  if not ((type(f) == 'function' or type(f) == 'string') and
+      type(k) == 'string' and k:find("[a-zA-Z]+,")) then
+    return
+  end
+  local ss, ee = k:find("^[a-z]+_")
+  local pref = ''
+  local str = k
+  if ss then
+    pref = k:sub(1, ee)
+    if pref == 'before_' or pref == 'after_' or pref == 'post_' or pref == 'life_' then
+      str = k:sub(ee + 1)
+    else
+      pref = ''
     end
   end
-  for k, v in pairs(new) do
-    wh[k] = v
+  for _, v in ipairs(std.split(str, ",")) do
+    new[pref .. v] = f
+  end
+end
+
+local function fn_aliases(wh, k)
+  local new = {}
+  if k then
+    alias_one(wh, k, new)
+  else
+    for key in pairs(wh) do
+      alias_one(wh, key, new)
+    end
+  end
+  for key, v in pairs(new) do
+    wh[key] = v
   end
 end
 

@@ -524,7 +524,7 @@ Kitten["life_Ask,Answer,Tell,Talk"] = function(s, w, wh)
 с таким умным видом, что она почти готова поверить,
 будто он понимает каждое ее слово.]])
 end;
-std.fn_aliases(Kitten);
+std.fn_aliases(Kitten, "life_Ask,Answer,Tell,Talk");
 Kitten["life_Give,ThrowAt"] = function(s, w, wh)
   if w ~= _'red_queen' and w ~= _'worsted' then
     if (mp.event or nil) == 'ThrowAt' then
@@ -553,7 +553,7 @@ Kitten["life_Give,ThrowAt"] = function(s, w, wh)
   end
   p('.')
 end;
-std.fn_aliases(Kitten);
+std.fn_aliases(Kitten, "life_Give,ThrowAt");
 Kitten.before_Take = function(s, w, wh)
   if have(_(s.other_kitten)) then
     p("Двух котят сразу Алисе ни за что не удержать!")
@@ -577,7 +577,7 @@ Kitten["after_Transfer,PutOn,Insert"] = function(s, w, wh)
   move(s, _'Drawing_Room')
   p(', ловко приземлился на полу и убежал прочь.')
 end;
-std.fn_aliases(Kitten);
+std.fn_aliases(Kitten, "after_Transfer,PutOn,Insert");
 Kitten.daemon = function(s)
   s.seen = false
   s.this_kittens_turn = not s.this_kittens_turn

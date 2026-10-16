@@ -241,7 +241,7 @@ class Emitter:
             return "function() return false end"
         return self.make_body(val, prm, indent)
 
-    def on(self, block, indent, target="", compact=False):
+    def on(self, block, indent, target="", compact=False, expand=False):
         out = []
         for i, (key, val) in enumerate(block.items):
             at(block, i)
@@ -250,9 +250,11 @@ class Emitter:
                 prm = _handler_prm(params, years[0])
                 src = self.handler(val, prm, indent)
                 if len(years) > 1 and compact and target:
-                    out.append(T.INDEX_ASSIGN
-                               % (target.rstrip("."),
-                                  pfx + ",".join(years), src))
+                    tgt = target.rstrip(".")
+                    cname = pfx + ",".join(years)
+                    out.append(T.INDEX_ASSIGN % (tgt, cname, src))
+                    if expand:
+                        out.append(T.FN_ALIASES % (tgt, cname))
                 elif len(years) > 1 and not target:
                     out.append(T.INDEX_KEY
                                % (indent, pfx, ",".join(years), src))
@@ -892,11 +894,9 @@ class Emitter:
             # a class table is finalized by Class() right away, so its
             # later "before_A,B" keys need an explicit fn_aliases pass;
             # object tables init at game start and expand on their own
-            out = self.on(_one_item_block(key, val), "", ref + ".",
-                          compact=True)
-            if t in self.ctx.classes and "," in parse_key(key)[0]:
-                out.append(T.FN_ALIASES % ref)
-            return out
+            return self.on(_one_item_block(key, val), "", ref + ".",
+                           compact=True,
+                           expand=t in self.ctx.classes)
         self._check_phase_prefix(base)
         if base == "dict":
             if not isinstance(val, (Data, Raw)):
