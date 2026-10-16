@@ -351,22 +351,25 @@ fn tiny() -> bool: `instead.tiny`
 fn music(name: str, ...): |lua
   snd.music(name, ...)
 
+fn door_next(s: obj, w: obj) -> obj?: |
+  local l = where_list(s)
+  local _, i = lookup(l, w)
+  if i and len(l) > 1:
+    return l[i % len(l) + 1]
+  pass
+
 class Door(door):
   attrs: static
   walk_to: none
   description: |
-    when here == s.from:
-      say(way_dsc(s, s.to))
-    when here == s.to:
-      say(way_dsc(s, s.from))
+    local n = door_next(s, here())
+    if n:
+      say(way_dsc(s, n))
     pass
-  from: none
-  to: none
   door_to: |
-    if here == s.from:
-      return s.to
-    if here == s.to:
-      return s.from
+    local n = door_next(s, here())
+    if n:
+      return n
     pass
 
 fn desc(s: obj) -> str?: `s.desc`

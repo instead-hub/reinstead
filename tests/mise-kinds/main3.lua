@@ -14,6 +14,15 @@ local function fn_where_list(w)
   return list
 end
 
+local function fn_door_next(s, w)
+  local l = fn_where_list(s)
+  local _, i = l:lookup(w)
+  if i and (#l) > 1 then
+    return l[i % (#l) + 1]
+  end
+  return false
+end
+
 local function fn_where_prep(w)
   if w:has("supporter") then
     return 'на'
@@ -40,21 +49,16 @@ obj {
 Door = Class({
   walk_to = 'none';
   description = function(s)
-    if here() == _(s.from) then
-      p(fn_way_dsc(s, _(s.to)))
-    elseif here() == _(s.to) then
-      p(fn_way_dsc(s, _(s.from)))
+    local n = fn_door_next(s, here())
+    if n then
+      p(fn_way_dsc(s, n))
     end
     return false
   end;
-  from = 'none';
-  to = 'none';
   door_to = function(s)
-    if here() == _(s.from) then
-      return _(s.to)
-    end
-    if here() == _(s.to) then
-      return _(s.from)
+    local n = fn_door_next(s, here())
+    if n then
+      return n
     end
     return false
   end;
