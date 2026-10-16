@@ -890,10 +890,13 @@ class Emitter:
             raise Error(M.ON_MUST_NAME_EVENT)
         if _EVENT_KEY_RE.match(key):
             # a class table is finalized by Class() right away, so its
-            # later "before_A,B" keys are never expanded (fn_aliases);
-            # object tables init at game start and do expand them
-            return self.on(_one_item_block(key, val), "", ref + ".",
-                           compact=t not in self.ctx.classes)
+            # later "before_A,B" keys need an explicit fn_aliases pass;
+            # object tables init at game start and expand on their own
+            out = self.on(_one_item_block(key, val), "", ref + ".",
+                          compact=True)
+            if t in self.ctx.classes and "," in parse_key(key)[0]:
+                out.append(T.FN_ALIASES % ref)
+            return out
         self._check_phase_prefix(base)
         if base == "dict":
             if not isinstance(val, (Data, Raw)):

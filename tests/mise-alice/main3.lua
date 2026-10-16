@@ -519,27 +519,13 @@ Kitten.description = function(s)
 и намного симпатичней ей, чем непослушный и непоседливый ]])
   p(_(s.other_kitten):noun_hint(), '.')
 end
-Kitten.life_Ask = function(s, w, wh)
+Kitten["life_Ask,Answer,Tell,Talk"] = function(s, w, wh)
   p(s:Noun_hint(1), [[, шевеля усами, смотрит на Алису
 с таким умным видом, что она почти готова поверить,
 будто он понимает каждое ее слово.]])
 end;
-Kitten.life_Answer = function(s, w, wh)
-  p(s:Noun_hint(1), [[, шевеля усами, смотрит на Алису
-с таким умным видом, что она почти готова поверить,
-будто он понимает каждое ее слово.]])
-end;
-Kitten.life_Tell = function(s, w, wh)
-  p(s:Noun_hint(1), [[, шевеля усами, смотрит на Алису
-с таким умным видом, что она почти готова поверить,
-будто он понимает каждое ее слово.]])
-end;
-Kitten.life_Talk = function(s, w, wh)
-  p(s:Noun_hint(1), [[, шевеля усами, смотрит на Алису
-с таким умным видом, что она почти готова поверить,
-будто он понимает каждое ее слово.]])
-end;
-Kitten.life_Give = function(s, w, wh)
+std.fn_aliases(Kitten);
+Kitten["life_Give,ThrowAt"] = function(s, w, wh)
   if w ~= _'red_queen' and w ~= _'worsted' then
     if (mp.event or nil) == 'ThrowAt' then
       move(w, _'Drawing_Room')
@@ -567,34 +553,7 @@ Kitten.life_Give = function(s, w, wh)
   end
   p('.')
 end;
-Kitten.life_ThrowAt = function(s, w, wh)
-  if w ~= _'red_queen' and w ~= _'worsted' then
-    if (mp.event or nil) == 'ThrowAt' then
-      move(w, _'Drawing_Room')
-      p('Алиса бросила ', w:noun_hint("вн"), ' на пол, и ', s:noun_hint(1))
-    else
-      p(s:Noun_hint(1))
-    end
-    p(' рассматривает ', w:noun_hint("вн"), ' с озадаченным видом.')
-    return
-  end
-  p('Алиса бросила ', w:noun_hint("вн"), ' на пол. Немедленно ')
-  pr(s:noun_hint(1))
-  if have(s) then
-    p(', выскользнув из ее рук,')
-  end
-  move(w, _'Drawing_Room')
-  move(s, _'Drawing_Room')
-  pr(' бросился за ', w:noun_hint("тв"))
-  if w == _'worsted' then
-    _'worsted'.sputan = true
-    s.state = WOOL_STATE
-    pr(', мгновенно превратив его в дикую путаницу')
-  else
-    s.state = QUEEN_STATE
-  end
-  p('.')
-end;
+std.fn_aliases(Kitten);
 Kitten.before_Take = function(s, w, wh)
   if have(_(s.other_kitten)) then
     p("Двух котят сразу Алисе ни за что не удержать!")
@@ -609,7 +568,7 @@ Kitten.after_Drop = function(s, w, wh)
   move(s, _'Drawing_Room')
   p(s:Noun_hint(1), ', выскользнув из рук Алисы, убежал прочь.')
 end;
-Kitten.after_Transfer = function(s, w, wh)
+Kitten["after_Transfer,PutOn,Insert"] = function(s, w, wh)
   s.state = CHAIR_STATE
   local p = where(s)
   if p then
@@ -618,24 +577,7 @@ Kitten.after_Transfer = function(s, w, wh)
   move(s, _'Drawing_Room')
   p(', ловко приземлился на полу и убежал прочь.')
 end;
-Kitten.after_PutOn = function(s, w, wh)
-  s.state = CHAIR_STATE
-  local p = where(s)
-  if p then
-    pr(s:Noun_hint(1), ', спрыгнув с ', p:noun_hint("рд"))
-  end
-  move(s, _'Drawing_Room')
-  p(', ловко приземлился на полу и убежал прочь.')
-end;
-Kitten.after_Insert = function(s, w, wh)
-  s.state = CHAIR_STATE
-  local p = where(s)
-  if p then
-    pr(s:Noun_hint(1), ', спрыгнув с ', p:noun_hint("рд"))
-  end
-  move(s, _'Drawing_Room')
-  p(', ловко приземлился на полу и убежал прочь.')
-end;
+std.fn_aliases(Kitten);
 Kitten.daemon = function(s)
   s.seen = false
   s.this_kittens_turn = not s.this_kittens_turn

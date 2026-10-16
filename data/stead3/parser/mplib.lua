@@ -3077,6 +3077,10 @@ local function fn_aliases(wh)
   end
 end
 
+-- expand "before_A,B" keys of a table patched after its construction
+-- (e.g. `impl Kitten:` in mise)
+std.fn_aliases = fn_aliases
+
 std.obj.for_plural = function(s, fn)
   fn = fn or function() end
   if not s:hint'plural' then
