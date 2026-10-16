@@ -425,7 +425,8 @@ class Emitter:
             if part in self.ctx.ref_fields:
                 check_ref_value(ident or self.ctx.current_owner or "?", key,
                                 val, self.ctx.ids,
-                                allow_text=bool(prop and prop.has_reflist))
+                                allow_text=bool(prop and (prop.has_reflist
+                                                         or prop.has_list)))
                 break
 
     def _obj_nested(self, block, fi, lines):

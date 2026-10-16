@@ -26,7 +26,7 @@ props obj:
   when_closed: str | bool | fn(s: obj) -> str
   when_on: str | bool | fn(s: obj) -> str
   when_off: str | bool | fn(s: obj) -> str
-  scope: list | fn(s: obj, w: list)
+  scope: ref | list | fn(s: obj, w: list)
   found_in: ref | tbl[ref] | fn(s: obj) -> bool
   talk_to: ref | fn(s: obj) -> ref
   with_key: ref | fn(s: obj) -> ref
