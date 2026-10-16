@@ -276,17 +276,7 @@ Verb { '#Untangle', "размот/ать,распут/ать", "{noun}/вн : Un
 
 Verb { '#Touch2', "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/", "{noun}/вн : Touch" }
 
-_'Drawing_Room'.before_Exit = function(s, w, wh)
-  if where(me()) ~= _'mantelpiece' then
-    return false
-  end
-  if (mp:compass_dir(w) or nil) == "d_to" or (mp:compass_dir(w) or nil) == "out_to" or w == s then
-    p("Таким путем вряд ли удастся спуститься с каминной полки!")
-    return
-  end
-  return false
-end;
-_'Drawing_Room'.before_Walk = function(s, w, wh)
+_'Drawing_Room'["before_Exit,Walk"] = function(s, w, wh)
   if where(me()) ~= _'mantelpiece' then
     return false
   end
@@ -328,23 +318,7 @@ _'red_queen'.after_Take = function(s, w, wh)
   end
   return false
 end;
-_'red_queen'.after_PutOn = function(s, w, wh)
-  if w == _'chess_board' then
-    p([[В гордом одиночестве на шахматной доске, Черная Королева --
-самодержавная повелительница 32 белых и 32 черных клеток.]])
-    return
-  end
-  return false
-end;
-_'red_queen'.after_Transfer = function(s, w, wh)
-  if w == _'chess_board' then
-    p([[В гордом одиночестве на шахматной доске, Черная Королева --
-самодержавная повелительница 32 белых и 32 черных клеток.]])
-    return
-  end
-  return false
-end;
-_'red_queen'.after_Insert = function(s, w, wh)
+_'red_queen'["after_PutOn,Transfer,Insert"] = function(s, w, wh)
   if w == _'chess_board' then
     p([[В гордом одиночестве на шахматной доске, Черная Королева --
 самодержавная повелительница 32 белых и 32 черных клеток.]])
@@ -385,40 +359,7 @@ _'armchair'.description = function(s)
   end
   return false
 end
-_'armchair'.before_Push = function(s, w, wh)
-  local loc = where(me())
-  if loc then
-    if loc ~= _'Drawing_Room' then
-      p('Для начала необходимо покинуть ', loc:noun_hint("вн"), '.')
-      return
-    end
-  end
-  if have(_'white_kitten') or have(_'black_kitten') then
-    p("Только не с котенком в руках!")
-    return
-  end
-  local k = _'none'
-  if _'white_kitten'.state == CHAIR_STATE then
-    k = _'white_kitten'
-  elseif _'black_kitten'.state == CHAIR_STATE then
-    k = _'black_kitten'
-  end
-  if k ~= _'none' then
-    p([[Начав двигать кресло, Алиса обнаружила, что ]])
-    p(k:noun_hint(1))
-    p([[ находится прямо на его пути. Хорошо, что она заметила это
-вовремя -- а то могла бы просто раздавить бедное создание!]])
-    return
-  end
-  if s.moved then
-    s.moved = false
-    p("Алиса отодвинула кресло дальше от камина.")
-    return
-  end
-  s.moved = true
-  p("Алиса придвинула кресло ближе к камину.")
-end;
-_'armchair'.before_Pull = function(s, w, wh)
+_'armchair'["before_Push,Pull"] = function(s, w, wh)
   local loc = where(me())
   if loc then
     if loc ~= _'Drawing_Room' then
@@ -458,7 +399,7 @@ _'mantelpiece'.description = function(s)
 чтобы на ней можно было стоять без риска.]])
   return false
 end
-_'mantelpiece'.before_Enter = function(s, w, wh)
+_'mantelpiece'["before_Enter,Climb"] = function(s, w, wh)
   if where(me()) == s then
     p("Но Алиса уже на ней!")
     return
@@ -478,34 +419,7 @@ _'mantelpiece'.before_Enter = function(s, w, wh)
   move(me(), _'mantelpiece')
   p("Алиса ловко вскарабкалась на каминную полку.")
 end;
-_'mantelpiece'.before_Climb = function(s, w, wh)
-  if where(me()) == s then
-    p("Но Алиса уже на ней!")
-    return
-  end
-  if where(me()) ~= _'armchair' then
-    p("Каминная полка слишком высоко, чтобы до нее достать.")
-    return
-  end
-  if not _'armchair'.moved then
-    p("Отсюда невозможно дотянуться до каминной полки!")
-    return
-  end
-  if (#(inv())) > 0 then
-    p("Для этого руки должны быть свободны!")
-    return
-  end
-  move(me(), _'mantelpiece')
-  p("Алиса ловко вскарабкалась на каминную полку.")
-end;
-_'mantelpiece'.before_Receive = function(s, w, wh)
-  if where(me()) ~= s and (where(me()) ~= _'armchair' or not _'armchair'.moved) then
-    p("Полка слишком высоко, за пределами досягаемости.")
-    return
-  end
-  return false
-end;
-_'mantelpiece'.before_LetGo = function(s, w, wh)
+_'mantelpiece'["before_Receive,LetGo"] = function(s, w, wh)
   if where(me()) ~= s and (where(me()) ~= _'armchair' or not _'armchair'.moved) then
     p("Полка слишком высоко, за пределами досягаемости.")
     return

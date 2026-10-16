@@ -241,7 +241,7 @@ class Emitter:
             return "function() return false end"
         return self.make_body(val, prm, indent)
 
-    def on(self, block, indent, target=""):
+    def on(self, block, indent, target="", compact=False):
         out = []
         for i, (key, val) in enumerate(block.items):
             at(block, i)
@@ -249,7 +249,11 @@ class Emitter:
             for pfx, years in _group_years(names):
                 prm = _handler_prm(params, years[0])
                 src = self.handler(val, prm, indent)
-                if len(years) > 1 and not target:
+                if len(years) > 1 and compact and target:
+                    out.append(T.INDEX_ASSIGN
+                               % (target.rstrip("."),
+                                  pfx + ",".join(years), src))
+                elif len(years) > 1 and not target:
                     out.append(T.INDEX_KEY
                                % (indent, pfx, ",".join(years), src))
                 else:
@@ -885,7 +889,11 @@ class Emitter:
         if base == "on":
             raise Error(M.ON_MUST_NAME_EVENT)
         if _EVENT_KEY_RE.match(key):
-            return self.on(_one_item_block(key, val), "", ref + ".")
+            # a class table is finalized by Class() right away, so its
+            # later "before_A,B" keys are never expanded (fn_aliases);
+            # object tables init at game start and do expand them
+            return self.on(_one_item_block(key, val), "", ref + ".",
+                           compact=t not in self.ctx.classes)
         self._check_phase_prefix(base)
         if base == "dict":
             if not isinstance(val, (Data, Raw)):

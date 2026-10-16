@@ -104,8 +104,7 @@ _'box'.Take = function(s, w, wh)
 end;
 _'box'.after_Drop = "use &helper";
 _'box'.Wait = "use &helper";
-_'box'.Open = "use &helper";
-_'box'.Close = "use &helper";
+_'box'["Open,Close"] = "use &helper";
 _'box'.after_Any = "use &helper";
 _'box'.Any = "use &helper";
 _'box'.Default = "use &helper";
