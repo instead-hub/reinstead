@@ -11,7 +11,7 @@ end
 local function fn_where_list(w)
   local list = {}
   where(w, list)
-  return list
+  return std.list(list)
 end
 
 local function fn_door_next(s, w)

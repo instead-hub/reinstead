@@ -231,7 +231,7 @@ fn where(w: obj) -> obj?: |lua
 fn where_list(w: obj) -> list: |lua
   local list = {}
   where(w, list)
-  return list
+  return std.list(list)
 
 fn inroom(w: obj) -> obj: |lua
   return inroom(w)
