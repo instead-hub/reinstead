@@ -15,6 +15,9 @@ fn ask_text(s: obj) -> str: |
 fn reply_text(s: obj) -> str: |
   return '-- Ответ от fn.'
 
+fn act_say(s: obj): |
+  say [[-- Что-то произошло.]]
+
 setup:
   start: |
     player:move hall
@@ -115,8 +118,7 @@ talk разговор_с_гидом:
   option:
     ask: С действием?
     reply: &reply_text
-    do: |
-      say [[-- Что-то произошло.]]
+    do: &act_say
 
   label финал:
     say: -- Продолжение следует.

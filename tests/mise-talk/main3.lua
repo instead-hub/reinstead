@@ -50,6 +50,10 @@ local function fn_reply_text(s)
   return '-- Ответ от fn.'
 end
 
+local function fn_act_say(s)
+  p([[-- Что-то произошло.]])
+end
+
 obj {
   nam = "none";
 }
@@ -220,7 +224,7 @@ dlg {
       "С действием?";
       function(s)
         p(fn_reply_text(s))
-        p([[-- Что-то произошло.]])
+        fn_act_say(s)
       end;
     };
   };

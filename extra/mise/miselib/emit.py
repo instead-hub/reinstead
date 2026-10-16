@@ -620,6 +620,9 @@ class Emitter:
                               ctx=self.ctx)
         if isinstance(do, Lua):
             return [reindent(do.s, indent + IND)]
+        if isinstance(do, FnRef):
+            name = self.body(do, "do", indent, scope="option")
+            return [indent + IND + "%s(s)" % name]
         raise Error(M.EXPECTED_LOGIC_LUA_BLOCK)
 
     def talk_table(self, oblock, indent, labels, tag=None):
