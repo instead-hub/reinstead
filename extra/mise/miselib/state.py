@@ -23,6 +23,7 @@ class Ctx:
         self.global_types = {}
         self.event_names = set()
         self.ref_fields = set()
+        self.field_names = set()
         self.props = {}
         self.scoped = {}
         self.prop_params = {}

@@ -4,6 +4,7 @@ import re
 
 from . import state as S
 from .common import *
+from .constructs import ENGINE_FIELDS
 from .typing import (base, canon_fn_sig, fn_type_parts, tbl_inner, type_ok,
                      type_value_error, union_parts)
 from . import messages as M
@@ -717,11 +718,19 @@ class ExprEmit:
         info = (self.ctx.fields.get(recv, {}).get(nv)
                 if recv is not None else None)
         t = info[0] if info else "any"
+        if info is None:
+            self._check_field_read(nv)
         if info and info[1]:
             return Field("_(%s)" % raw, t, recv=recv, fname=nv,
                          ref=True, raw=raw)
-        return Field(raw, t, recv=recv if info else None,
-                     fname=nv if info else None)
+        return Field(raw, t, recv=recv, fname=nv)
+
+    def _check_field_read(self, name):
+        """Reject reads of a name declared nowhere (likely a typo)."""
+        if (name.startswith("__") or name in ENGINE_FIELDS
+                or name in self.ctx.field_names):
+            return
+        self.err(M.UNKNOWN_FIELD_READ % (name, name))
 
     def _dot_recv(self, node):
         if isinstance(node, Ref) and node.obj:

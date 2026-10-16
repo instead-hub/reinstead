@@ -4,7 +4,7 @@ import re
 from .common import *
 from .cursor import at, use
 from .parse import parse_source
-from .constructs import RESERVED_KINDS, classify
+from .constructs import RESERVED_KINDS, ENGINE_FIELDS, classify
 from .decl import mixin_bodies, parse_fn_sig
 from .inline import _inline_fn
 from .proptypes import (check_prop_value, collect_types, prop_of,
@@ -272,6 +272,22 @@ def _collect_decl_fields(root, ctx):
             ctx.fields[info[1]] = fields
 
 
+def collect_field_names(root, ctx):
+    """Names used as field keys anywhere (for the field-assignment check)."""
+    names = set(ctx.props) | set(ENGINE_FIELDS) | set(ctx.ref_fields)
+    for props in ctx.scoped.values():
+        names |= set(props)
+
+    def walk(block):
+        for key, val in block.items:
+            names.add(parse_key(key)[0])
+            for sub in _sub_blocks(val):
+                walk(sub)
+
+    walk(root)
+    ctx.field_names = names
+
+
 def collect_classes(root, ctx):
     """Class/mixin definitions: names, parents and bodies."""
     class_defs = {}
@@ -530,6 +546,7 @@ def prescan(root, ctx):
     register_events(root, ctx)
     register_props(root, ctx)
     collect_field_types(root, ctx)
+    collect_field_names(root, ctx)
     check_bare_names(root, ctx)
     game_funcs, game_vars = collect_game_defs(root)
     fn_names = _register_fns(root, ctx)

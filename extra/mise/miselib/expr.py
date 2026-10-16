@@ -4,6 +4,7 @@ import re
 from . import state as S
 from .common import *
 from .lex import lex_lua
+from .constructs import ENGINE_FIELDS
 from .typing import canon_type, type_error, type_ok
 from .exprparse import (Call, ExprEmit, Field, Index, Ref, check_arity,
                         expr_list, fn_call, min_args)
@@ -142,10 +143,18 @@ def _check_env_assign(lhs, types, env, ctx, where):
 
 
 def _check_field_assign(lhs, types, ctx, where):
-    if not (isinstance(lhs, Field) and lhs.recv in ctx.fields
-            and lhs.fname in ctx.fields[lhs.recv] and types):
+    if not (isinstance(lhs, Field) and lhs.fname):
         return
-    old = ctx.fields[lhs.recv][lhs.fname][0]
+    if lhs.fname in ENGINE_FIELDS:
+        raise LintError(M.ENGINE_FIELD_READONLY % (where, lhs.fname))
+    if not lhs.fname.startswith("__") and lhs.fname not in ctx.field_names:
+        raise LintError(M.UNKNOWN_FIELD % (where, lhs.fname, lhs.fname))
+    if not types or lhs.recv not in ctx.fields:
+        return
+    info = ctx.fields[lhs.recv].get(lhs.fname)
+    if info is None:
+        return
+    old = info[0]
     new = types[0]
     if old != "any" and new != "any" and not type_ok(ctx, new, old):
         raise LintError(M.METHOD_CANNOT_TAKE

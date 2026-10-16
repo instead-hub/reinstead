@@ -168,6 +168,9 @@ PRESETS = {
     "ending": Preset("gameover", "ending", parent="room"),
 }
 
+# engine fields that already exist on objects and cannot be assigned
+ENGINE_FIELDS = frozenset({"nam", "tag", "obj", "way", "lifes"})
+
 # names a class cannot take: they already name a construct or a meta key
 RESERVED_KINDS = (frozenset(PRESETS) | frozenset(SIMPLE_KINDS)
                   | frozenset(META_KEYS) | frozenset(SKIP_KEYS)
