@@ -31,7 +31,7 @@
   (concat "\\_<\\(?:" (mapconcat #'regexp-quote words "\\|") "\\)\\_>"))
 
 (defconst mise--declarations
-  (mise--words '("obj" "scenery" "room" "door" "story" "ending" "class"
+  (mise--words '("obj" "room" "door" "story" "ending" "class"
                  "mixin" "verb" "talk" "setup" "impl" "props" "refs"
                  "const" "global" "event" "type" "extend" "fn" "lua"))
   "The section declarations of the mise language.")
@@ -51,7 +51,7 @@
   "The phases of the mise event handlers.")
 
 (defconst mise--types
-  (mise--words '("obj" "str" "num" "bool" "any" "event" "tbl" "ref"
+  (mise--words '("obj" "str" "num" "bool" "any" "event" "tbl" "list" "ref"
                  "fn"))
   "The value types of the mise language.")
 

@@ -35,15 +35,15 @@ syn keyword miseNil nil
 
 " --- типы (аннотации, props, `->`); контекстно, чтобы не спорить с `obj:`/`event:` ---
 syn match miseArrow /->/
-syn match miseType /[:,(|[\]]\s*\zs\%(obj\|str\|num\|bool\|any\|event\|tbl\|ref\|fn\)\>/
-syn match miseType /\%(->\s*\)\@<=\%(obj\|str\|num\|bool\|any\|event\|tbl\|ref\|fn\)\>/
+syn match miseType /[:,(|[\]]\s*\zs\%(obj\|str\|num\|bool\|any\|event\|tbl\|list\|ref\|fn\)\>/
+syn match miseType /\%(->\s*\)\@<=\%(obj\|str\|num\|bool\|any\|event\|tbl\|list\|ref\|fn\)\>/
 
 " --- ключи полей (до деклараций: спец-ключи и секции важнее) ---
 syn match miseKey /^\s*\zs\w\+\ze\s*[:(]/
 syn match miseSpecialKey /^\s*\zs\%(words\|word\|attrs\|dict\|disabled\|with\|inside\|text\|found_in\)\ze\s*[:(]/
 
 " --- декларации и секции (в начале строки) ---
-syn match miseDecl /^\s*\zs\%(obj\|scenery\|room\|door\|story\|ending\|class\|mixin\|verb\|talk\|setup\|impl\|props\|refs\|const\|global\|event\|type\|extend\|fn\|lua\)\>\ze\%(\s\|:\|$\)/
+syn match miseDecl /^\s*\zs\%(obj\|room\|door\|story\|ending\|class\|mixin\|verb\|talk\|setup\|impl\|props\|refs\|const\|global\|event\|type\|extend\|fn\|lua\)\>\ze\%(\s\|:\|$\)/
 syn match miseDirective /^\s*\zs\%(name\|version\|author\|info\|lang\|fmt\|include\|require\)\ze\s*:/
 syn match miseDecl2 /\%(^\s*extend\s\+\)\@<=\%(refs\|type\)\>/
 syn match miseImplTarget /\%(^\s*impl\s\+\)\@<=[^[:space:]:]\+/

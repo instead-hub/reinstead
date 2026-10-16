@@ -6,7 +6,7 @@ local scheme = require "red/scheme"
 
 -- the section declarations of the line start
 local decl = {
-  obj = true, scenery = true, room = true, door = true, story = true,
+  obj = true, room = true, door = true, story = true,
   ending = true, class = true, mixin = true, verb = true, talk = true,
   setup = true, impl = true, props = true, refs = true, const = true,
   global = true, event = true, type = true, extend = true, fn = true,
@@ -34,7 +34,7 @@ local phase = {
 -- the value types
 local types = {
   obj = true, str = true, num = true, bool = true, any = true,
-  event = true, tbl = true, ref = true, fn = true,
+  event = true, tbl = true, list = true, ref = true, fn = true,
 }
 
 -- the word starting at i (an empty string when there is none)
