@@ -49,4 +49,5 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 ## Workflow
 
 - Work on branch `opencode`, commits authored as `opencode <opencode@localhost>`; do not commit without explicit confirmation.
+- Revizor: use sprints (`start`/`check`) for refactorings only. When developing a new feature, run `report` (the current quality state) — a feature adds code, so the raw sprint parameters legitimately grow.
 - Comments in `data/stead3/parser/` are English.
