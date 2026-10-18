@@ -41,6 +41,10 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 - Words: `obj { -"камень,валун"; ... }` — comma = aliases, `|` = separate names, `/` = grammatical hints (`-"пёс,собака/мр,од,жив"`).
 - Attributes are set with `:attr 'container,open'`; a plain field `container = true` does NOT set an attribute.
 - Rooms are lit by default; `:attr '~light'` makes a room dark.
+- `scenery` objects' `dsc` is skipped in the room panorama (`mplib.lua: not v:has'scenery'`): put the state line in the room's `dsc`, or make the object `static`.
+- A `container,open` object's examine goes to its contents: the `switchable` state line is not printed and contents are listed via their `dsc`. For a state line on examine, drop `open` (`inside` needs only `container`) and handle insertion in a `before` hook.
+- `pass` at the end of a `description` block means "unhandled" and the engine appends its nothing-special line; use `stop` (or no trailing statement). Exception: `switchable`/`openable` objects, where `pass` lets the engine print the state line.
+- Rooms get `before_LetGo` (source) / `after_LetIn` (destination) via `mp:runmethods_here`; `onexit` is not the hook for this (its `stop`/`pass` are inverted).
 
 ## Workflow
 
