@@ -365,16 +365,89 @@ def _tail_maps(args):
     return plain, shifted
 
 
+def _verb_sig(text):
+    """(event, args) of one engine pattern, else (None, None)."""
+    pat, sep, ev = text.rpartition(":")
+    if not sep:
+        return None, None
+    ev = ev.strip()
+    if ev.endswith(" reverse"):
+        ev = ev[:-8].strip()
+    if not P.DSL_RE.fullmatch(ev):
+        return None, None
+    toks = [t.lstrip("~+?") for t in pat.split()]
+    nouns = sum(1 for t in toks
+                if t.startswith(("{noun}", "{noun_obj}", "{compass")))
+    return ev, ["obj"] * nouns + (["str"] if "*" in toks else [])
+
+
+def _add_verb_sig(sigs, ev, args):
+    """Fold one pattern signature: the longest types, the minimal length."""
+    cur = sigs.get(ev)
+    if cur is None:
+        sigs[ev] = [args, len(args)]
+        return
+    types, mn = cur
+    long = args if len(args) > len(types) else types
+    if any(t != long[i] for i, t in enumerate(args[:len(long)])):
+        del sigs[ev]
+        return
+    sigs[ev] = [long, min(mn, len(args))]
+
+
+def _add_verb_patterns(sigs, pats):
+    """Fold the `patterns` value of one `verb`/`extend` into `sigs`."""
+    for p in (pats if isinstance(pats, list) else [pats]):
+        if isinstance(p, (Text, Bare)):
+            ev, args = _verb_sig(p.s)
+            if ev is not None:
+                _add_verb_sig(sigs, ev, args)
+
+
+def register_verbs(root):
+    """Event signatures derived from `verb`/`extend` patterns."""
+    sigs = {}
+    for _i, _kind, _info, _key, val in top_items(root, ("verb", "extend")):
+        pats = val.get("patterns") if isinstance(val, Block) else None
+        if pats is not None:
+            _add_verb_patterns(sigs, pats)
+    return {ev: tuple(t + "?" if i >= mn else t
+                      for i, t in enumerate(types))
+            for ev, (types, mn) in sigs.items()}
+
+
+def _union_type(a, b):
+    """Union of two positional types; None means the argument is absent."""
+    opt = a is None or b is None or "?" in (a or "") or "?" in (b or "")
+    alts = sorted({(a or "").rstrip("?"), (b or "").rstrip("?")} - {""})
+    return "|".join(alts) + ("?" if opt else "")
+
+
+def _merge_args(derived, table):
+    """Widen `type event:` signatures with the verb-derived ones."""
+    out = dict(table)
+    for ev, args in derived.items():
+        if ev not in table:
+            out[ev] = args
+            continue
+        old = table[ev]
+        out[ev] = tuple(_union_type(args[i] if i < len(args) else None,
+                                    old[i] if i < len(old) else None)
+                        for i in range(max(len(args), len(old))))
+    return out
+
+
 def register_events(root, ctx):
     """Event names and the `type event:` handler signatures."""
     td = ctx.types.get("event", {})
-    names = set(td.get("values", []))
+    derived = register_verbs(root)
+    names = set(td.get("values", [])) | set(derived)
     for i, _kind, ident, _key, val in top_items(root, ("event_decl",)):
         at(root, i)
         if isinstance(val, Block):
             names.add(ident)
     ctx.event_names = names
-    ctx.event_args = dict(td.get("args", {}))
+    ctx.event_args = _merge_args(derived, td.get("args", {}))
     ctx.life_args = dict(td.get("life_args", {}))
     ctx.event_tails = _tail_maps(ctx.event_args)
     ctx.life_tails = _tail_maps(ctx.life_args)

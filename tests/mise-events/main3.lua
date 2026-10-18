@@ -91,6 +91,10 @@ Path = Class {
 
 --"мочь"
 
+Verb { '#Zap', "зажиг/ать", "{noun}/вн : Zap", "частота|канал : Zap" }
+
+Verb { '#Whisper', "шеп/тать,нашёптыв/ать", "{noun}/дт * : Whisper" }
+
 pl["before_Take,Drop"] = "Тебе нельзя.";
 std.fn_aliases(pl, "before_Take,Drop");
 game["before_Open,Close"] = "Не сейчас.";
@@ -162,6 +166,9 @@ obj {
   before_Consult = function(s, text)
     p(fn_text_of(text))
   end;
+  before_Whisper = function(s, w, wh)
+    p(fn_text_of(w))
+  end;
 }
 
 obj {
@@ -174,6 +181,11 @@ obj {
 
 _'game'.before_Tell = function(s, w, wh)
   p(fn_text_of(wh))
+end;
+_'game'.before_Zap = function(s, w, wh)
+  if w then
+    w:has("scenery")
+  end
 end;
 
 mp.Ask = function(s, w, wh)

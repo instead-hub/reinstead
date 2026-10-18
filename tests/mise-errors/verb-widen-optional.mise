@@ -1,0 +1,16 @@
+name: t
+lang: ru
+include: stdlib
+
+extend #Drop:
+  patterns:
+    - {noun}/вн : PutOn
+
+room r:
+  words: комната
+  with: x
+
+obj x:
+  words: вещь
+  before PutOn: |
+    w:has scenery

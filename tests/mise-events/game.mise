@@ -8,6 +8,17 @@ fn text_of(t: str) -> str: |
 fn reply_text(s: obj, text: str) -> str: |
   return text
 
+verb Zap:
+  words: зажиг/ать
+  patterns:
+    - {noun}/вн : Zap
+    - частота|канал : Zap
+
+verb Whisper:
+  words: шеп/тать,нашёптыв/ать
+  patterns:
+    - {noun}/дт * : Whisper
+
 setup:
   hero:
     on:
@@ -55,6 +66,8 @@ obj z:
   before AskFor: &reply_text
   before Consult(s, text): |
     say text_of(text)
+  before Whisper: |
+    say text_of(w)
 
 obj npc:
   words: сторож
@@ -65,6 +78,9 @@ obj npc:
 impl game:
   before Tell: |
     say text_of(wh)
+  before Zap: |
+    if w:
+      w:has scenery
 
 event Ask:
   on: |

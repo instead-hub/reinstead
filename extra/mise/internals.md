@@ -86,7 +86,10 @@ transpile (main loop) обход корневых элементов → Emitter
    затем `check_bare_names` сверяет голые значения тем же правилом в
    `impl`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
 4. `ctx.ref_fields` — `refs:`/`extend refs:`; `event_names` —
-   значения типа `event` (stdlib) + `event X:`; блок `type event:` даёт
+   значения типа `event` (stdlib) + `event X:` + имена из паттернов
+   `verb`/`extend` (`register_verbs`/`_verb_sig`: `{noun}` → obj, `*` →
+   str, отсутствие слота → `?`; сигнатуры объединяются с таблицей,
+   `_merge_args` — union типов); блок `type event:` даёт
    ещё `args`/`life_args` (позиционные типы a1..an; `life Имя:` —
    life-фаза; проверяются `canon_type`/`type_error`, неизвестное имя и
    дубликат — ошибка), а `register_events` переносит их в
@@ -303,6 +306,7 @@ transpile (main loop) обход корневых элементов → Emitter
 | вид объявления → маршрут эмиссии | `EMIT_ROUTES` | constructs.py |
 | маршрут эмиссии → эмиттер | `DECL_FORMS` | transpile.py |
 | сигнатуры обработчиков (`type event:`) | `_event_groups`, `_event_arg_types` | proptypes.py |
+| сигнатуры из паттернов `verb`/`extend` | `register_verbs`, `_verb_sig`, `_merge_args` | proptypes.py |
 | получатель → сдвиг аргументов обработчика | `handler_env` | emit.py |
 | карты хвостов для сужения по событию | `_tail_maps`, `TAILS`, `_narrow_event` | proptypes.py, condast.py |
 | ключи `setup` (и признак «нужен блок») | `SETUP_FORMS` | emit.py |
