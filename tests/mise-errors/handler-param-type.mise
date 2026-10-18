@@ -1,0 +1,12 @@
+name: t
+lang: ru
+include: stdlib
+
+room r:
+  words: комната
+  with: x
+
+obj x:
+  words: вещь
+  before Cut(s, w: obj?): |
+    say Режу.

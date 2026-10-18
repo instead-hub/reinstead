@@ -58,24 +58,20 @@ def parse_cond(text):
 
 # env key carrying the event-tail types of the current handler (narrowing)
 TAILS = object()
-_EVENT_CALL = [("name", "event"), ("op", "("), ("op", ")")]
 
 
 def _narrow_event(toks):
     """Event name of `ev == X` / `X == ev` / `event() == X` / `X == event()`."""
-    if len(toks) == 3 and toks[1] == ("op", "=="):
-        if toks[0] == ("name", "ev") and toks[2][0] == "name":
-            return toks[2][1]
-        if toks[2] == ("name", "ev") and toks[0][0] == "name":
-            return toks[0][1]
+    call = [("op", "("), ("op", ")")]
+    head = toks[1:3] == call
+    if head or toks[-2:] == call:
+        toks = ([("name", "ev")] + toks[3:] if head
+                else toks[:-2] + [("name", "ev")])
+    if len(toks) != 3 or toks[1] != ("op", "=="):
         return None
-    if len(toks) != 5:
-        return None
-    if (toks[3] == ("op", "==") and toks[:3] == _EVENT_CALL
-            and toks[4][0] == "name"):
-        return toks[4][1]
-    if (toks[1] == ("op", "==") and toks[2:] == _EVENT_CALL
-            and toks[0][0] == "name"):
+    if toks[0] == ("name", "ev") and toks[2][0] == "name":
+        return toks[2][1]
+    if toks[2] == ("name", "ev") and toks[0][0] == "name":
         return toks[0][1]
     return None
 

@@ -1,0 +1,1 @@
+mise: error: handler-param-type.mise:11: parameter types are not allowed in handler keys ('s, w: obj?'); use `type event:` or `props:`

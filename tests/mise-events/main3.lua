@@ -42,6 +42,10 @@ local function fn_text_of(t)
   return t
 end
 
+local function fn_reply_text(s, text)
+  return text
+end
+
 obj {
   nam = "none";
 }
@@ -104,6 +108,7 @@ room {
     'x';
     'npc';
     'y';
+    'z';
   };
 }
 
@@ -147,6 +152,15 @@ obj {
     else
       return false
     end
+  end;
+}
+
+obj {
+  -"штуковина";
+  nam = "z";
+  before_AskFor = fn_reply_text;
+  before_Consult = function(s, text)
+    p(fn_text_of(text))
   end;
 }
 

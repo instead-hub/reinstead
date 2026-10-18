@@ -1,0 +1,15 @@
+name: t
+lang: ru
+include: stdlib
+
+fn text_of(t: str) -> str: |
+  return t
+
+room r:
+  words: комната
+  with: x
+
+obj x:
+  words: вещь
+  before Take(s, text): |
+    say text_of(text)

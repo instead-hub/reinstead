@@ -1,5 +1,6 @@
 import re
 import difflib
+from itertools import chain, repeat
 
 from . import state as S
 from .common import *
@@ -163,29 +164,36 @@ class Emitter:
             raise Error(M.UNSUPPORTED_VALUE_CTX % (v, mode))
         return form(v, mode, self.ctx)
 
-    def check_use(self, name, prm, ret=None, label="event"):
+    def check_use(self, name, prm, ret=None, label="event", env=None):
         if name not in self.ctx.fn_sigs or not prm:
             return
         plist, frets, _v = self.ctx.fn_sigs[name]
-        n = len(self.param_env(prm))
-        pt = plist[0][1] if plist else None
-        if pt in self.ctx.classes:
-            owner = self.ctx.current_owner
-            kind = self.ctx.id_kind.get(owner, owner)
-            if not kind or not class_le(self.ctx, kind, pt):
-                raise Error(M.FN_EXPECTS_NOT_KIND
-                            % (name, pt, kind or owner or "?"))
+        names = self.param_env(prm)
+        env = env or names
+        n = len(names)
         mn = min_args(plist)
         if n < mn:
-            if mn == len(plist):
-                raise Error(M.FN_TAKES_PARAMETERS
-                            % (name, len(plist), label, n))
-            raise Error(M.FN_TAKES_AT_LEAST_PARAMETERS
-                        % (name, mn, label, n))
-        if ret and frets and frets != ("any",) \
-                and not type_ok(self.ctx, frets[0], ret):
+            exact = mn == len(plist)
+            raise Error((M.FN_TAKES_PARAMETERS % (name, len(plist), label, n))
+                        if exact else
+                        (M.FN_TAKES_AT_LEAST_PARAMETERS
+                         % (name, mn, label, n)))
+        self._check_use_args(name, plist, env, names)
+        if ret and frets[0] != "any" and not type_ok(self.ctx, frets[0], ret):
             raise Error(M.FN_RETURN_TYPE_EXPECTED
                         % (name, frets[0], ret))
+
+    def _check_use_args(self, name, plist, env, names):
+        """Class owner and parameter types of a `&fn` handler reference."""
+        pt = plist[0][1] if plist else None
+        kind = self.ctx.id_kind.get(self.ctx.current_owner,
+                                    self.ctx.current_owner)
+        if pt in self.ctx.classes and not class_le(self.ctx, kind, pt):
+            raise Error(M.FN_EXPECTS_NOT_KIND % (name, pt, kind or "?"))
+        for (pn, ft), pn2 in zip(plist, names):
+            t = env.get(pn2, "any")
+            if not type_ok(self.ctx, t, ft):
+                raise Error(M.FN_REF_PARAM % (name, pn, ft, t))
 
     def ref_name(self, v):
         """Emitted name of an `&name` value: a DSL fn or a lua: function."""
@@ -214,7 +222,7 @@ class Emitter:
     def make_body(self, v, prm, indent, env=None, ret=None, ret_name=None):
         if isinstance(v, FnRef):
             self.check_use(v.s, prm, ret,
-                           "field" if ret_name else "event")
+                           "field" if ret_name else "event", env)
             return self.ref_name(v)
         if isinstance(v, Lua):
             return self._lua_body(v, prm, indent)
@@ -248,12 +256,13 @@ class Emitter:
         return self.make_body(val, prm, indent, env)
 
     def handler_env(self, years, pfx, owner, prm):
-        """Parameter types of an event handler, from `type event:`.
+        """Positional parameter types of an event handler, from `type event:`.
 
-        The engine binds a1 to `s` only for the acted-upon object; rooms
-        and engine modules (game, mp) get the arguments unshifted. A comma
-        key is typed only when all its events share the same arguments;
-        `ev == X` / `event() == X` narrow the tail to the event's types.
+        `s`, then `ev` for Any/Default, then the event arguments (`w`, `wh`),
+        so explicit parameter names are free. The engine binds a1 to `s`
+        only for the acted-upon object; rooms and engine modules (game, mp)
+        get the arguments unshifted. A comma key is typed only when all its
+        events share the arguments; `ev == X`/`event() == X` narrow the tail.
         """
         life = pfx == "life_"
         table = self.ctx.life_args if life else self.ctx.event_args
@@ -263,10 +272,12 @@ class Emitter:
             kind = self.ctx.class_parents[kind]
         shifted = owner not in (None, "mp", "game") and kind not in ROOM_KINDS
         tails = (self.ctx.life_tails if life else self.ctx.event_tails)[shifted]
-        env = self.param_env(prm)
-        env[TAILS] = tails
+        names = self.param_env(prm)
+        seq = ["obj"] + (["event"] if years[0] in ("Any", "Default") else [])
         if args is not None and len(set(map(table.get, years))) == 1:
-            env.update(tails.get(years[0], {}))
+            seq += tails.get(years[0], {}).values()
+        env = dict(zip(names, chain(seq, repeat("obj"))))
+        env[TAILS] = tails
         return env
 
     def on(self, block, indent, target="", compact=False, expand=False,

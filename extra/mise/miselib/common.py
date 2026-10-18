@@ -92,7 +92,11 @@ class Block:
 
 def parse_key(key):
     m = _KEY_RE.match(key)
-    return m.group(1).strip(), m.group(2)
+    params = m.group(2)
+    # `fn` headers carry types; handler keys must use bare names
+    if params and ":" in params and not key.startswith("fn "):
+        raise Error(M.PARAM_TYPES_NOT_ALLOWED % params)
+    return m.group(1).strip(), params
 
 def _skip_quoted(text, i, naive=False):
     """Return the index after the quoted section starting at `i`."""

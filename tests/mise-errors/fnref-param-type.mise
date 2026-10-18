@@ -1,0 +1,10 @@
+name: t
+lang: ru
+include: stdlib
+
+fn take_text(s: obj, w: str): |
+  say w
+
+obj x:
+  words: вещь
+  before Take: &take_text

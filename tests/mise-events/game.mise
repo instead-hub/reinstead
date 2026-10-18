@@ -5,6 +5,9 @@ include: stdlib
 fn text_of(t: str) -> str: |
   return t
 
+fn reply_text(s: obj, text: str) -> str: |
+  return text
+
 setup:
   hero:
     on:
@@ -14,7 +17,7 @@ setup:
 
 room r:
   words: комната
-  with: x, npc, y
+  with: x, npc, y, z
   before Consult: |
     say text_of(wh)
 
@@ -46,6 +49,12 @@ obj y:
         w:has scenery
     default:
       pass
+
+obj z:
+  words: штуковина
+  before AskFor: &reply_text
+  before Consult(s, text): |
+    say text_of(text)
 
 obj npc:
   words: сторож
