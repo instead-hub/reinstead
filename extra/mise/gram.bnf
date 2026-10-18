@@ -55,8 +55,12 @@ kind      ::= "obj" | "room" | "door" | "story" | "ending"
    (`Prop дерево:`, `path тропа:`); with перечисляет голые NAME;
    встроенные поля-ссылки объявлены в props: (ref/tbl[ref]), свои — refs: *)
 block     ::= NEWLINE INDENT { field } DEDENT
-field     ::= key [ "(" [ param { "," param } ] ")" ] ":" value
+field     ::= key [ "(" [ hparam { "," hparam } ] ")" ] ":" value
+hparam    ::= IDENT | "..."
+(* параметры ключа-обработчика — только имена; типы берутся из
+   type event:/props:, `before Cut(s, w: obj?)` — ошибка *)
 param     ::= IDENT [ ":" type ] | "..." [ ":" type ]
+(* параметры fn (и типов fn(...) в props:) — с типами *)
             (* хвостовой T?-параметр можно не передавать при вызове;
                "..." — 0+ аргументов, "...: T" проверяет каждый из них *)
 type      ::= atom [ "?" ] { "|" atom [ "?" ] }
@@ -99,11 +103,16 @@ props     ::= "props" ":" block
 
 verb      ::= "verb" CLASS ":" block
 (* поля verb: tag, words, patterns (список "- ..."), prio, hint;
-   действия/обработчики — только в evdecl ("event ...") *)
+   паттерны регистрируют событие (правая часть) и выводят типы его
+   аргументов ({noun}/{noun_obj}/{compass*} → obj, */~* → str,
+   отсутствие слота в части паттернов → "?"); сигнатуры объединяются
+   с type event: (union); действия/обработчики — только в evdecl
+   ("event ...") *)
 
 extend    ::= "extend" "#" IDENT ":" block
 (* поля extend: words, patterns, prio, hint;
-   words: -> VerbExtendWord, только patterns: -> VerbExtend *)
+   words: -> VerbExtendWord, только patterns: -> VerbExtend;
+   паттерны расширяют сигнатуры событий так же, как в verb *)
 
 custom_type ::= ("type" LIDENT | "extend" "type" LIDENT) ":"
                 (name_list | list | block)
@@ -115,7 +124,8 @@ custom_type ::= ("type" LIDENT | "extend" "type" LIDENT) ":"
    значение — позиционные типы аргументов a1..an (пустое — неизвестны),
    строка `life Имя, ...: типы` — аргументы life-фазы (s — персонаж);
    имена life-строк должны быть объявлены выше; extend type event
-   добавляет события и их сигнатуры тем же блоком *)
+   добавляет события и их сигнатуры тем же блоком; сигнатуры event
+   объединяются (union) с выведенными из паттернов verb/extend *)
 
 talk        ::= "talk" NAME ":" NEWLINE INDENT { talk_item } DEDENT
 talk_item   ::= "intro" ":" value

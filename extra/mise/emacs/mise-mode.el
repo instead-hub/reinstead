@@ -115,8 +115,14 @@
     ("\\(?:^\\|[^[:alnum:]_]\\)\\([-+]?[0-9]+\\(?:\\.[0-9]+\\)?\\)\\_>"
      (1 font-lock-constant-face))
     (,mise--todos . font-lock-warning-face)
-    ;; a field key: at the line start, a word followed by ":" or "("
-    (,(concat "^[ \t]*\\(" mise--name "\\)[ \t]*[:(]")
+    ;; a verb pattern: a "{slot}" and the event name after ":"
+    ("{\\(?:" mise--name "\\)}" . font-lock-builtin-face)
+    (,(concat "^[ \t]*-[ \t].*:[ \t]+\\(" mise--name "\\)"
+              "[ \t]*\\(?:reverse\\)?[ \t]*$")
+     (1 font-lock-function-name-face))
+    ;; a field key: at the line start, a word (or a comma list) and ":"/"("
+    (,(concat "^[ \t]*\\(" mise--name
+              "\\(?:[ \t]*,[ \t]*" mise--name "\\)*\\)[ \t]*[:(]")
      (1 font-lock-variable-name-face)))
   "Font-lock expressions of `mise-mode'.")
 

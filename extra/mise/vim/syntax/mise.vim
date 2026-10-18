@@ -39,7 +39,7 @@ syn match miseType /[:,(|[\]]\s*\zs\%(obj\|str\|num\|bool\|any\|event\|tbl\|list
 syn match miseType /\%(->\s*\)\@<=\%(obj\|str\|num\|bool\|any\|event\|tbl\|list\|ref\|fn\)\>/
 
 " --- ключи полей (до деклараций: спец-ключи и секции важнее) ---
-syn match miseKey /^\s*\zs\w\+\ze\s*[:(]/
+syn match miseKey /^\s*\zs\w\+\%(\s*,\s*\w\+\)*\ze\s*[:(]/
 syn match miseSpecialKey /^\s*\zs\%(words\|word\|attrs\|dict\|disabled\|with\|inside\|text\|found_in\)\ze\s*[:(]/
 
 " --- декларации и секции (в начале строки) ---
@@ -60,6 +60,10 @@ syn match miseLogicKw /^\s*\zs\%(if\|elseif\|else\|when\|default\|for\|local\|re
 syn keyword miseLogicOp and or not in
 syn match miseFnRef /&\w\+/
 
+" --- паттерны verb/extend: слоты и имя события ---
+syn match misePatternSlot /{[a-z_0-9]\+}/
+syn match misePatternEvent /^\s*-\s.*:\s*\zs\u\w\+\ze\%(\s\+reverse\)\?\s*$/
+
 " --- ссылки: #тег ---
 syn match miseTag /\%(^\|\s\)\zs#[^[:space:]:,()|{}[\].#]\+/
 syn keyword miseTodo TODO FIXME XXX
@@ -76,6 +80,8 @@ hi def link miseNil          Constant
 hi def link miseType         Type
 hi def link miseArrow        Operator
 hi def link miseKey          Identifier
+hi def link misePatternSlot  Special
+hi def link misePatternEvent Function
 hi def link miseSpecialKey   Type
 hi def link miseDecl         Keyword
 hi def link miseDirective    PreProc

@@ -86,7 +86,8 @@ local function linekw(ctx, txt, i)
   end
 end
 
--- a field key: at the line start, a word followed by ":" or "("
+-- a field key: at the line start, a word (or a comma list of words)
+-- followed by ":" or "("
 local function key(ctx, txt, i)
   if not txt[i] or not txt[i]:find('[%w_]') or
     not scheme.rule.bol(txt, i, '[ \t]') then
@@ -94,8 +95,52 @@ local function key(ctx, txt, i)
   end
   local j = scheme.rule.skip(txt, i, 1, '[%w_]')
   local k = scheme.rule.skipspace(txt, j, 1)
+  while txt[k] == ',' do
+    local m = scheme.rule.skipspace(txt, k + 1, 1)
+    if not txt[m] or not txt[m]:find('[%w_]') then
+      break
+    end
+    j = scheme.rule.skip(txt, m, 1, '[%w_]')
+    k = scheme.rule.skipspace(txt, j, 1)
+  end
   if txt[k] == ':' or txt[k] == '(' then
     return j - i
+  end
+end
+
+
+-- a "{slot}" of a verb pattern
+local function slot(ctx, txt, i)
+  if txt[i] ~= '{' then
+    return
+  end
+  local j = scheme.rule.skip(txt, i + 1, 1, '[%w_]')
+  if j > i + 1 and txt[j] == '}' then
+    return j - i + 1
+  end
+end
+
+
+-- the event name at the end of a verb pattern: "- ... : Cut [reverse]"
+local function pat_event(ctx, txt, i)
+  if txt[i] ~= ':' then
+    return
+  end
+  local bol = scheme.rule.linebegin(txt, i)
+  if txt[scheme.rule.skipspace(txt, bol, 1)] ~= '-' then
+    return
+  end
+  local j = scheme.rule.skipspace(txt, i + 1, 1)
+  if not txt[j] or not txt[j]:find('%u') then
+    return
+  end
+  local k = scheme.rule.skip(txt, j, 1, '[%w_]')
+  local m = scheme.rule.skipspace(txt, k, 1)
+  if word(txt, m) == 'reverse' then
+    m = scheme.rule.skipspace(txt, m + 7, 1)
+  end
+  if not txt[m] or txt[m] == '\n' then
+    return m - i
   end
 end
 
@@ -235,6 +280,8 @@ local col = {
     { linekw, col = scheme.keyword },
     { "true", "false", "nil", col = scheme.keyword, word = true },
     { key, col = scheme.lib },
+    { slot, col = scheme.special or scheme.lib },
+    { pat_event, col = scheme.lib },
     { type_, col = scheme.lib },
     { named, col = scheme.lib },
     { fnref, col = scheme.lib },
