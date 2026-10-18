@@ -56,6 +56,30 @@ def parse_cond(text):
     return _and(parts[0])
 
 
+# env key carrying the event-tail types of the current handler (narrowing)
+TAILS = object()
+_EVENT_CALL = [("name", "event"), ("op", "("), ("op", ")")]
+
+
+def _narrow_event(toks):
+    """Event name of `ev == X` / `X == ev` / `event() == X` / `X == event()`."""
+    if len(toks) == 3 and toks[1] == ("op", "=="):
+        if toks[0] == ("name", "ev") and toks[2][0] == "name":
+            return toks[2][1]
+        if toks[2] == ("name", "ev") and toks[0][0] == "name":
+            return toks[0][1]
+        return None
+    if len(toks) != 5:
+        return None
+    if (toks[3] == ("op", "==") and toks[:3] == _EVENT_CALL
+            and toks[4][0] == "name"):
+        return toks[4][1]
+    if (toks[1] == ("op", "==") and toks[2:] == _EVENT_CALL
+            and toks[0][0] == "name"):
+        return toks[0][1]
+    return None
+
+
 def _narrow_simple(toks):
     """(name, want_nil) for `x`, `x == nil` or `not x`, else None."""
     if len(toks) == 1 and toks[0][0] == "name":
@@ -74,6 +98,11 @@ def narrow_assume(node, env, negate):
     """Type narrowing implied by `node` being false (negate=True) / true."""
     if not isinstance(node, Leaf):
         return {}
+    tails = env.get(TAILS)
+    if tails and not negate:
+        ev = _narrow_event(node.toks)
+        if ev is not None:
+            return dict(tails.get(ev, {}))
     found = _narrow_simple(node.toks)
     if found is None:
         return {}

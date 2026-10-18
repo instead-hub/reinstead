@@ -16,6 +16,8 @@ from .common import Error
 
 META_KEYS = ("name", "version", "author", "info")
 SKIP_KEYS = ("lang", "fmt", "include")
+STATIC_KINDS = (dict.fromkeys(META_KEYS, "meta")
+                | dict.fromkeys(SKIP_KEYS, "skip"))
 
 _DECL_KEY_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*)(?:\s+([\w#.+-]+))?$")
 
@@ -101,6 +103,7 @@ def _need_tagged_name(key):
     for pat, msg in TAGGED_NAMES:
         if pat.match(key):
             raise Error(msg % key)
+    return None
 
 
 def _classify_tagged(key):
@@ -108,7 +111,8 @@ def _classify_tagged(key):
     for pat, build in TAGGED_FORMS:
         m = pat.match(key)
         if m:
-            return build(key, m)
+            kind, info = build(key, m)
+            return kind, info
     _need_tagged_name(key)
     return None
 
@@ -132,18 +136,28 @@ def classify(key):
     class | fn | impl | verb | extend | talk | decl | unknown.
     info: class -> (name, parent), decl -> (kind, ident), others -> ident.
     """
-    if key in META_KEYS:
-        return "meta", None
-    if key in SKIP_KEYS:
-        return "skip", None
+    static = STATIC_KINDS.get(key)
+    if static is not None:
+        return static, None
     if "'" in key or '"' in key:
         raise Error(M.QUOTES_ARE_NOT_ALLOWED_DECLARATIONS % key)
     if key in SIMPLE_KINDS:
         return SIMPLE_KINDS[key], None
     tagged = _classify_tagged(key)
     if tagged is not None:
-        return tagged
-    return _classify_decl(key)
+        return tagged[0], tagged[1]
+    kind, info = _classify_decl(key)
+    return kind, info
+
+
+def top_items(root, kinds):
+    """(index, kind, info, key, val) of the root items of these kinds."""
+    out = []
+    for i, (key, val) in enumerate(root.items):
+        kind, info = classify(key)
+        if kind in kinds:
+            out.append((i, kind, info, key, val))
+    return out
 
 
 # --- object kinds -----------------------------------------------------

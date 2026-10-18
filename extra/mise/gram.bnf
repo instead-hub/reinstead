@@ -106,13 +106,16 @@ extend    ::= "extend" "#" IDENT ":" block
    words: -> VerbExtendWord, только patterns: -> VerbExtend *)
 
 custom_type ::= ("type" LIDENT | "extend" "type" LIDENT) ":"
-                (name_list | list)
+                (name_list | list | block)
 (* значения — голые имена (или числа, напр. 2) без пробелов; кавычки запрещены; пустой type —
    ошибка; extend type с неизвестным именем — ошибка; ведущий элемент "~"
    в type включает отрицания (~X проверяется как X); длинный список —
    `-`-строки, в элементе списка тоже можно через запятую; в stdlib так
-   объявлены attr/direction/case/gram/event (значения event — имена
-   событий) *)
+   объявлены attr/direction/case/gram; у event — только блок `имена: типы`:
+   значение — позиционные типы аргументов a1..an (пустое — неизвестны),
+   строка `life Имя, ...: типы` — аргументы life-фазы (s — персонаж);
+   имена life-строк должны быть объявлены выше; extend type event
+   добавляет события и их сигнатуры тем же блоком *)
 
 talk        ::= "talk" NAME ":" NEWLINE INDENT { talk_item } DEDENT
 talk_item   ::= "intro" ":" value

@@ -1,0 +1,62 @@
+name: events
+lang: ru
+include: stdlib
+
+fn text_of(t: str) -> str: |
+  return t
+
+setup:
+  hero:
+    on:
+      before Take, Drop: Тебе нельзя.
+  on:
+    before Open, Close: Не сейчас.
+
+room r:
+  words: комната
+  with: x, npc, y
+  before Consult: |
+    say text_of(wh)
+
+obj x:
+  words: вещь
+  before AskFor: |
+    say text_of(w)
+  before Cut: |
+    if w:
+      w:has scenery
+    say Режешь.
+
+obj y:
+  words: штука
+  before Cut, Dig: |
+    if w:
+      w:has scenery
+    say Режешь.
+  before Take, AskFor: |
+    when event() == AskFor:
+      say text_of(w)
+    default:
+      pass
+  before Any: |
+    when ev == Ask:
+      say text_of(w)
+    when ev == Cut:
+      if w:
+        w:has scenery
+    default:
+      pass
+
+obj npc:
+  words: сторож
+  attrs: animate
+  life Ask: |
+    say text_of(w)
+
+impl game:
+  before Tell: |
+    say text_of(wh)
+
+event Ask:
+  on: |
+    say text_of(wh)

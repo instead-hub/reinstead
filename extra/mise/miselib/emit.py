@@ -4,6 +4,7 @@ import difflib
 from . import state as S
 from .common import *
 from .cursor import at, use
+from .condast import TAILS
 from .emitlogic import emit_logic
 from .constructs import PRESETS, decl_key
 from .decl import check_ref_value, is_true, mixin_bodies, sym_text
@@ -17,6 +18,9 @@ from . import patterns as P
 
 
 VERB_KEYS = ("tag", "words", "patterns", "prio", "hint")
+
+# engine parents whose instances the engine calls as a room, not as an object
+ROOM_KINDS = frozenset({"room", "cutscene", "gameover"})
 EXTEND_KEYS = ("words", "patterns", "prio", "hint")
 
 
@@ -35,11 +39,13 @@ def _pfx(kw):
     return "" if kw == "on" else kw + "_"
 
 
+# the default parameter list of an event handler, by event name
+HANDLER_PRMS = {"Any": "s, ev, w, wh", "Default": "s, ev, w, wh"}
+
+
 def _handler_prm(params, name):
     """Parameter list of an event handler method."""
-    if params:
-        return params
-    return "s, ev, w, wh" if name in ("Any", "Default") else "s, w, wh"
+    return params or HANDLER_PRMS.get(name, "s, w, wh")
 
 
 def _one_item_block(key, val):
@@ -236,34 +242,60 @@ class Emitter:
             ret = body_type(prop.ret)
         return self.make_body(v, prm, indent, env, ret, base)
 
-    def handler(self, val, prm, indent):
+    def handler(self, val, prm, indent, env=None):
         if isinstance(val, Bare) and val.s.strip() == "pass":
             return "function() return false end"
-        return self.make_body(val, prm, indent)
+        return self.make_body(val, prm, indent, env)
 
-    def on(self, block, indent, target="", compact=False, expand=False):
+    def handler_env(self, years, pfx, owner, prm):
+        """Parameter types of an event handler, from `type event:`.
+
+        The engine binds a1 to `s` only for the acted-upon object; rooms
+        and engine modules (game, mp) get the arguments unshifted. A comma
+        key is typed only when all its events share the same arguments;
+        `ev == X` / `event() == X` narrow the tail to the event's types.
+        """
+        life = pfx == "life_"
+        table = self.ctx.life_args if life else self.ctx.event_args
+        args = table.get(years[0])
+        kind = self.ctx.id_kind.get(owner, owner)
+        while kind in self.ctx.class_parents:
+            kind = self.ctx.class_parents[kind]
+        shifted = owner not in (None, "mp", "game") and kind not in ROOM_KINDS
+        tails = (self.ctx.life_tails if life else self.ctx.event_tails)[shifted]
+        env = self.param_env(prm)
+        env[TAILS] = tails
+        if args is not None and len(set(map(table.get, years))) == 1:
+            env.update(tails.get(years[0], {}))
+        return env
+
+    def on(self, block, indent, target="", compact=False, expand=False,
+           owner=None):
+        own = owner if owner is not None else self.ctx.current_owner
         out = []
         for i, (key, val) in enumerate(block.items):
             at(block, i)
             params, names = self._on_parts(key)
             for pfx, years in _group_years(names):
                 prm = _handler_prm(params, years[0])
-                src = self.handler(val, prm, indent)
-                if len(years) > 1 and compact and target:
-                    tgt = target.rstrip(".")
-                    cname = lua_str(pfx + ",".join(years))
-                    out.append(T.INDEX_ASSIGN % (tgt, cname, src))
-                    if expand:
-                        out.append(T.FN_ALIASES % (tgt, cname))
-                elif len(years) > 1 and not target:
-                    out.append(T.INDEX_KEY
-                               % (indent, lua_str(pfx + ",".join(years)),
-                                  src))
-                else:
-                    out.extend(T.EVENT_ASSIGN
-                               % (indent, target, pfx, year, src)
-                               for year in years)
+                src = self.handler(val, prm, indent,
+                                   self.handler_env(years, pfx, own, prm))
+                out.extend(self._on_lines(pfx, years, src, indent, target,
+                                          compact, expand))
         return out
+
+    def _on_lines(self, pfx, years, src, indent, target, compact, expand):
+        """The emitted key(s) of one handler: a single event or a comma key."""
+        if len(years) == 1:
+            return [T.EVENT_ASSIGN % (indent, target, pfx, years[0], src)]
+        cname = lua_str(pfx + ",".join(years))
+        if not target:
+            return [T.INDEX_KEY % (indent, cname, src)]
+        tgt = target.rstrip(".")
+        lines = [T.INDEX_ASSIGN % (tgt, cname, src)]
+        if expand or not compact:
+            lines.append(T.FN_ALIASES % (tgt, cname))
+        return lines
 
     def _on_parts(self, key):
         base, params = parse_key(key)
@@ -517,7 +549,9 @@ class Emitter:
             mpname = {"on": "mp.", "before": "mp.before_",
                       "after": "mp.after_"}[base] + name
             prm = _handler_prm(params, name)
-            lines.append(T.ASSIGN % (mpname, self.handler(val, prm, "")))
+            env = self.handler_env([name], "", "mp", prm)
+            lines.append(T.ASSIGN
+                         % (mpname, self.handler(val, prm, "", env)))
         return "\n".join(lines)
 
     def _event_handler_key(self, block):
@@ -815,7 +849,8 @@ class Emitter:
         out = []
         for hk, hv in val.items:
             if hk == "on":
-                out.extend(self.on(hv, "", target))
+                own = "pl" if key == "hero" else "game"
+                out.extend(self.on(hv, "", target, owner=own))
             elif key == "hero" and hk == "words":
                 out.append(T.HERO_WORD % hv.s)
             else:
@@ -847,7 +882,7 @@ class Emitter:
         return out
 
     def _setup_game_on(self, _key, val):
-        return self.on(val, "", "game.")
+        return self.on(val, "", "game.", owner="game")
 
     def _setup_dsc_line(self, _key, val):
         return [T.GAME_DSC % self.body(val, "dsc")]
@@ -897,7 +932,7 @@ class Emitter:
             # object tables init at game start and expand on their own
             return self.on(_one_item_block(key, val), "", ref + ".",
                            compact=True,
-                           expand=t in self.ctx.classes)
+                           expand=t in self.ctx.classes, owner=t)
         self._check_phase_prefix(base)
         if base == "dict":
             if not isinstance(val, (Data, Raw)):

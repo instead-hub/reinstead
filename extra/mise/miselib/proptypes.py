@@ -2,8 +2,9 @@
 from . import state as S
 from .common import *
 from .cursor import at
-from .constructs import classify, prop_scopes
-from .typing import Prop, literal_type, type_ok
+from .constructs import prop_scopes, top_items
+from .typing import (Prop, canon_type, fn_type_parts, literal_type,
+                     type_error, type_ok)
 from . import messages as M
 from . import patterns as P
 
@@ -41,36 +42,85 @@ def _type_value(name, x):
         raise Error(M.TYPE_QUOTES_ARE_NOT_ALLOWED % name)
     if not isinstance(x, (Bare, Num)):
         raise Error(M.TYPE_EXPECTED_BARE_VALUES % name)
-    if not P.NONSPACE_RE.fullmatch(x.s):
+    if not P.NONSPACE_RE.fullmatch(x.s) or ":" in x.s:
         raise Error(M.TYPE_BAD_VALUE % (name, x.s))
     return x.s
+
+
+def _event_arg_types(ctx, name, val):
+    """Argument types of one `type event:` group (empty value = none)."""
+    if isinstance(val, Block):
+        return ()
+    known = S.TYPES | set(ctx.types) | ctx.classes | {"nil"}
+    text = ",".join(v.s for v in _type_atoms(val))
+    sig = canon_type(known, "fn(%s)" % text)
+    if sig is None:
+        raise Error(M.TYPE_ARGS_MESSAGE % (name, text,
+                                           type_error(known, text)))
+    return tuple(fn_type_parts(sig)[0])
+
+
+def _event_groups(ctx, name, block, td):
+    """`type event:` block -> values, event args and `life` args.
+
+    A `life Names: types` group gives the life-phase arguments; its
+    names must be declared before it (earlier in the block or in the
+    base type).
+    """
+    if not block.items:
+        raise Error(M.TYPE_NO_VALUES % name)
+    if name != "event":
+        raise Error(M.TYPE_ARGS_ONLY_EVENT % name)
+    for i, (group, types) in enumerate(block.items):
+        at(block, i)
+        life = group.startswith("life ")
+        group = group.removeprefix("life ")
+        args = _event_arg_types(ctx, name, types)
+        target = (td["args"], td["life_args"])[life]
+        for ev in group.split(","):
+            ev = ev.strip()
+            if ev in target:
+                raise Error(M.TYPE_ARGS_DUPLICATE % (name, ev))
+            if life and ev not in td["values"]:
+                raise Error(M.TYPE_ARGS_UNKNOWN % (name, ev))
+            td["values"].append(ev)
+            target[ev] = args
+    td["values"] = list(dict.fromkeys(td["values"]))
 
 
 def _new_type(ctx, name, val):
     if name in ctx.types:
         raise Error(M.DUPLICATE_TYPE + name)
+    td = {"values": [], "negate": False, "args": {}, "life_args": {}}
     if isinstance(val, Block):
+        _event_groups(ctx, name, val, td)
+    elif name == "event":
+        raise Error(M.TYPE_EVENT_BLOCK)
+    else:
+        atoms = list(_type_atoms(val))
+        negate = _is_negation(name, atoms)
+        rest = atoms[1:] if negate else atoms
+        td["values"] = [_type_value(name, x) for x in rest]
+        td["negate"] = negate
+    if not td["values"]:
         raise Error(M.TYPE_NO_VALUES % name)
-    atoms = list(_type_atoms(val))
-    negate = _is_negation(name, atoms)
-    rest = atoms[1:] if negate else atoms
-    vals = [_type_value(name, x) for x in rest]
-    if not vals:
-        raise Error(M.TYPE_NO_VALUES % name)
-    ctx.types[name] = {"values": vals, "negate": negate}
+    ctx.types[name] = td
 
 
 def _extend_type(ctx, name, val):
     if name not in ctx.types:
         raise Error(M.EXTEND_TYPE_UNKNOWN_TYPE % name)
-    if isinstance(val, Block):
-        raise Error(M.EXTEND_TYPE_NO_VALUES % name)
     td = ctx.types[name]
+    if isinstance(val, Block):
+        _event_groups(ctx, name, val, td)
+        return
+    if name == "event":
+        raise Error(M.TYPE_EVENT_BLOCK)
     for x in _type_atoms(val):
         if (isinstance(x, Text) or not isinstance(x, (Bare, Num))
                 or x.s == "~"):
             raise Error(M.EXTEND_TYPE_EXPECTED_BARE_VALUES % name)
-        if not P.NONSPACE_RE.fullmatch(x.s):
+        if not P.NONSPACE_RE.fullmatch(x.s) or ":" in x.s:
             raise Error(M.EXTEND_TYPE_BAD_VALUE % (name, x.s))
         if x.s not in td["values"]:
             td["values"].append(x.s)
@@ -85,12 +135,9 @@ TYPE_FORMS = {
 
 def collect_types(root, ctx):
     ctx.types = {}
-    for _i, (key, val) in enumerate(root.items):
-        at(root, _i)
-        kind, name = classify(key)
-        form = TYPE_FORMS.get(kind)
-        if form is not None:
-            form(ctx, name, val)
+    for i, kind, name, _key, val in top_items(root, ("type", "extend_type")):
+        at(root, i)
+        TYPE_FORMS[kind](ctx, name, val)
     ctx.enum_values = {}
     for _tname, td in ctx.types.items():
         for _v in td["values"]:
@@ -171,11 +218,8 @@ def register_props(root, ctx):
     ctx.scoped = {}
     ctx.prop_params = {}
     known = S.TYPES | set(ctx.types) | ctx.classes | {"ref", "nil"}
-    for i, (key, val) in enumerate(root.items):
+    for i, _kind, info, _key, val in top_items(root, ("props",)):
         at(root, i)
-        kind, info = classify(key)
-        if kind != "props":
-            continue
         if not isinstance(val, Block):
             raise Error(M.PROPS_MUST_BE_BLOCK)
         scopes = [None] if info is None else info
@@ -245,12 +289,9 @@ def _prop_text(prop, val, where):
 
 
 def _prop_list(ctx, prop, val, where):
-    if prop.has_reflist:
+    if prop.has_reflist or prop.has_list:
         check_ref_list(ctx, where, val)
-        return "tbl", False
-    if prop.has_list:
-        check_ref_list(ctx, where, val)
-        return "list", False
+        return ("list" if prop.has_list else "tbl"), False
     if prop.has_tbl:
         if prop.tbl_elem:
             for it in val:
@@ -262,6 +303,11 @@ def _prop_list(ctx, prop, val, where):
     raise Error(M.EXPECTED_GOT_LIST % (where, prop.text))
 
 
+# prop values with a constant result and the scalar ones: type -> spec
+PROP_CONSTS = {Raw: ("any", False), Nil: ("nil", False)}
+PROP_SCALARS = {Num: ("num", "has_num"), Bool: ("bool", "has_bool")}
+
+
 def _prop_scalar(prop, kind, flag, where):
     if getattr(prop, flag):
         return kind, False
@@ -271,10 +317,9 @@ def _prop_scalar(prop, kind, flag, where):
 def check_prop_value(ctx, owner, base, prop, val, t):
     """Validate a prop field value; returns (type, is_ref)."""
     where = ("%s.%s" % (owner, base)) if owner else base
-    if isinstance(val, Raw):
-        return "any", False
-    if isinstance(val, Nil):
-        return "nil", False
+    const = PROP_CONSTS.get(type(val))
+    if const is not None:
+        return const
     if isinstance(val, Data):
         return _prop_table(ctx, owner, base, prop, val)
     if isinstance(val, (Logic, Lua, FnRef)):
@@ -287,10 +332,9 @@ def check_prop_value(ctx, owner, base, prop, val, t):
         return _prop_text(prop, val, where)
     if isinstance(val, list):
         return _prop_list(ctx, prop, val, where)
-    if isinstance(val, Num):
-        return _prop_scalar(prop, "num", "has_num", where)
-    if isinstance(val, Bool):
-        return _prop_scalar(prop, "bool", "has_bool", where)
+    scalar = PROP_SCALARS.get(type(val))
+    if scalar is not None:
+        return _prop_scalar(prop, scalar[0], scalar[1], where)
     if prop.has_tbl:
         return "tbl", False
     raise Error(M.EXPECTED_GOT
@@ -299,11 +343,8 @@ def check_prop_value(ctx, owner, base, prop, val, t):
 
 def register_refs(root, ctx):
     ctx.ref_fields = set()
-    for _i, (key, val) in enumerate(root.items):
-        at(root, _i)
-        kind, _info = classify(key)
-        if kind not in ("refs", "extend_refs"):
-            continue
+    for i, _kind, _info, _key, val in top_items(root, ("refs", "extend_refs")):
+        at(root, i)
         if isinstance(val, Block):
             raise Error(M.REFS_EXPECTED_LIST_NAMES)
         for x in _type_atoms(val):
@@ -314,11 +355,26 @@ def register_refs(root, ctx):
             ctx.ref_fields.add(x.s)
 
 
+def _tail_maps(args):
+    """(plain, shifted) maps: event -> {param: type} for narrowing."""
+    plain = {}
+    shifted = {}
+    for ev, a in args.items():
+        plain[ev] = dict(zip(("w", "wh"), a))
+        shifted[ev] = dict(zip(("w", "wh"), a[1:]))
+    return plain, shifted
+
+
 def register_events(root, ctx):
-    names = set(ctx.types.get("event", {}).get("values", []))
-    for _i, (key, val) in enumerate(root.items):
-        at(root, _i)
-        kind, ident = classify(key)
-        if kind == "event_decl" and isinstance(val, Block):
+    """Event names and the `type event:` handler signatures."""
+    td = ctx.types.get("event", {})
+    names = set(td.get("values", []))
+    for i, _kind, ident, _key, val in top_items(root, ("event_decl",)):
+        at(root, i)
+        if isinstance(val, Block):
             names.add(ident)
     ctx.event_names = names
+    ctx.event_args = dict(td.get("args", {}))
+    ctx.life_args = dict(td.get("life_args", {}))
+    ctx.event_tails = _tail_maps(ctx.event_args)
+    ctx.life_tails = _tail_maps(ctx.life_args)

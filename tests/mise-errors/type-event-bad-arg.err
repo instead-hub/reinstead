@@ -1,0 +1,1 @@
+mise: error: type-event-bad-arg.mise:6: type event: bad argument type 'foo': unknown type 'foo'

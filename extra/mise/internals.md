@@ -86,7 +86,11 @@ transpile (main loop) обход корневых элементов → Emitter
    затем `check_bare_names` сверяет голые значения тем же правилом в
    `impl`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
 4. `ctx.ref_fields` — `refs:`/`extend refs:`; `event_names` —
-   значения типа `event` (stdlib) + `event X:`.
+   значения типа `event` (stdlib) + `event X:`; блок `type event:` даёт
+   ещё `args`/`life_args` (позиционные типы a1..an; `life Имя:` —
+   life-фаза; проверяются `canon_type`/`type_error`, неизвестное имя и
+   дубликат — ошибка), а `register_events` переносит их в
+   `ctx.event_args`/`ctx.life_args`.
 5. `collect_game_defs`/`scan_required` — поиск функций/переменных в
    `|lua` и подключаемых Lua-файлах (чтобы `fn` и `&`-ссылки не
    конфликтовали с игровым кодом).
@@ -215,6 +219,9 @@ transpile (main loop) обход корневых элементов → Emitter
 типы простых имён (`if o:`, `== nil`, `~= nil`, `not o`). `and` даёт
 истинное сужение следующим частям, `or` — ложное (короткое
 замыкание); `else` одиночного `if` получает обратное сужение.
+Кроме имён `narrow_assume` сужает хвост по событию: `ev == X` /
+`event() == X` берут типы из env-ключа `TAILS` (карты `событие → {w, wh}`
+текущего обработчика, кладёт `handler_env`); `~=` и отрицание не сужают.
 
 ## Эмиссия (`emit.py:Emitter`)
 
@@ -224,7 +231,12 @@ transpile (main loop) обход корневых элементов → Emitter
   (в т.ч. составные ключи `before A, B`; фаза обязательна: `on X` —
   метод события (`X = function…`), `before/after/post/life X` — с префиксом;
   `Any`/`Default` — обычные события с параметрами `s, ev, w`;
-  `CURRENT_LINE` — по строке ключа). Составной ключ `before A, B`
+  `CURRENT_LINE` — по строке ключа). `handler_env` подставляет типы из
+  `type event:` в env обработчика: по получателю решается, привязан ли a1 к
+  `s` (объект/класс) или к `w` (room/game/mp); составной ключ типизируется
+  только при одинаковых аргументах у всех событий. В env кладётся
+  `TAILS` — карты `событие → {w, wh}` (`_tail_maps`) для сужения
+  `ev == X`/`event() == X`. Составной ключ `before A, B`
   эмитится компактно (`["before_A,B"]`), разворачивает его движковый
   `fn_aliases`: в таблицах объявлений — сам при конструировании, в
   `impl` объекта — при инициализации на старте игры, а в `impl`
@@ -286,6 +298,9 @@ transpile (main loop) обход корневых элементов → Emitter
 | форма `key: value` (предикат + reader) | `VALUE_FORMS` | parse.py |
 | вид объявления → маршрут эмиссии | `EMIT_ROUTES` | constructs.py |
 | маршрут эмиссии → эмиттер | `DECL_FORMS` | transpile.py |
+| сигнатуры обработчиков (`type event:`) | `_event_groups`, `_event_arg_types` | proptypes.py |
+| получатель → сдвиг аргументов обработчика | `handler_env` | emit.py |
+| карты хвостов для сужения по событию | `_tail_maps`, `TAILS`, `_narrow_event` | proptypes.py, condast.py |
 | ключи `setup` (и признак «нужен блок») | `SETUP_FORMS` | emit.py |
 | поля `talk` | `TALK_FORMS` | emit.py |
 | ключи объекта, эмитящиеся отдельно | `OBJ_SKIP_KEYS` | emit.py |

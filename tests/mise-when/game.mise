@@ -25,7 +25,8 @@ obj box:
     default:
       say [[не видно]]
 
-extend type event: Gaze
+extend type event:
+  Gaze:
 
 impl box:
   on Gaze: |

@@ -77,15 +77,20 @@ props option:
   onempty: fn(s: obj)
   when: bool | fn(s: obj) -> bool
 
+# имена событий и аргументы их обработчиков: a1..an как их передаёт движок
+# (действующий объект связывается с `s`, остальное — w/wh); пустое значение
+# — аргументы неизвестны; `life Имя:` — аргументы life-фазы (s — персонаж)
 type event:
-  - Answer, Any, Ask, AskFor, AskTo, Attack, Blow, Burn, Buy, Climb, Close,
-  - Consult, Cut, Default, Dig, Disrobe, Drink, Drop, Eat, Enter, Exam,
-  - Exit, Fill, GetOff, Give, Insert, Inv, Jump, JumpOver, Kiss, LetGo,
-  - LetIn, Listen, Lock, Look, LookUnder, Next, No, Open, Pull, Push,
-  - PushDir, PutOn, Receive, Remove, Rub, Search, Show, Sing, Sleep,
-  - Smell, Swim, SwitchOff, SwitchOn, Take, Talk, Taste, Tear, Tell,
-  - Think, ThrowAt, ThrownAt, Tie, Touch, Transfer, Turn, Unlock, Use,
-  - Wait, Wake, WakeOther, Walk, Wave, WaveHands, Wear, Yes
+  Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str
+  Burn, Cut, Dig, Tie: obj, obj?
+  Give, Insert, Lock, PutOn, Remove, Show, ThrowAt, Transfer, Unlock: obj, obj
+  life Ask, Tell, Answer: obj, str
+  Any, Attack, Blow, Buy, Climb, Close, Default, Disrobe, Drink, Drop:
+  Eat, Enter, Exam, Exit, Fill, GetOff, Inv, Jump, JumpOver, Kiss:
+  LetGo, LetIn, Listen, Look, LookUnder, Next, No, Open, Pull, Push:
+  PushDir, Receive, Rub, Search, Sing, Sleep, Smell, Swim, SwitchOff:
+  SwitchOn, Take, Talk, Taste, Tear, Think, ThrownAt, Touch, Turn, Use:
+  Wait, Wake, WakeOther, Walk, Wave, WaveHands, Wear, Yes:
 
 type phase: after, before, life, post
 

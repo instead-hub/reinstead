@@ -179,12 +179,6 @@ def _reject_bare_str(base, val, t):
         raise Error(M.FIELD_STRING_VALUES_QUOTED % (val.s, base))
 
 
-def _check_disabled(val):
-    """The `disabled` special key accepts only boolean values."""
-    if not isinstance(val, Bool):
-        raise Error(M.DISABLED_MUST_BE_BOOL)
-
-
 def _check_method_override(ctx, into, owner, base, val):
     """A class instance cannot replace an inherited method with a value.
 
@@ -204,8 +198,8 @@ def _collect_field(ctx, into, owner, key, val):
     """Store the typed value of one regular field."""
     base = field_base(key, val, ctx)
     if base is None:
-        if key == "disabled":
-            _check_disabled(val)
+        if key == "disabled" and not isinstance(val, Bool):
+            raise Error(M.DISABLED_MUST_BE_BOOL)
         return
     t = literal_type(ctx, val, refs=True)
     _reject_bare_str(base, val, t)
@@ -351,7 +345,8 @@ def _check_bare_field(ctx, use_props, owner, key, val):
     """Validate one non-mixin field of an impl/setup/hero block."""
     base = field_base(key, val, ctx)
     if key == "disabled":
-        _check_disabled(val)
+        if not isinstance(val, Bool):
+            raise Error(M.DISABLED_MUST_BE_BOOL)
         return
     t = literal_type(ctx, val, refs=True)
     _reject_bare_str(base, val, t)
