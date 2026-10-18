@@ -1,0 +1,1 @@
+mise: error: class-method-override.mise:7: class Door defines 'description' as a method; override it with |, |lua or &fn

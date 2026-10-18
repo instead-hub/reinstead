@@ -365,6 +365,7 @@ class Prop:
         self.ret = None
         self.names = None
         self.env = None
+        self.fn_type = "fn"
         for alt in split_union(self.text):
             self._add_alt(known, alt)
         self._init_fn()
@@ -392,6 +393,7 @@ class Prop:
         self.names = ", ".join(names)
         self.env = {pn: pt for pn, pt in self.fn[0]}
         self.ret = self.fn[1]
+        self.fn_type = canon_fn_sig(self.fn[0], body_type(self.ret) or ())
 
 
 def _union_ok(ctx, t, exp, alts, recurse):
@@ -533,6 +535,8 @@ LITERAL_TYPES = {
     Data: "tbl",
     Bare: _bare_type,
     FnRef: "fn",
+    Logic: "fn",
+    Lua: "fn",
     Raw: _raw_type,
 }
 

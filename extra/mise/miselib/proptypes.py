@@ -280,7 +280,7 @@ def check_prop_value(ctx, owner, base, prop, val, t):
     if isinstance(val, (Logic, Lua, FnRef)):
         if prop.fn is None:
             raise Error(M.EXPECTED_GOT_FUNCTION % (where, prop.text))
-        return "any", False
+        return prop.fn_type, False
     if isinstance(val, Bare):
         return _prop_bare(prop, where, t)
     if isinstance(val, Text):

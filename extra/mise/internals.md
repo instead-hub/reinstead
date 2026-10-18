@@ -73,6 +73,11 @@ transpile (main loop) обход корневых элементов → Emitter
 3. `collect_field_types` — `ctx.fields`; `collect_block_fields` рекурсивно
    по `with`; у классов поля наследуются; тип поля — `literal_type`
    (`typing.py`), у голого имени-объекта — `obj` + флаг `is_ref`;
+   у prop-поля с fn-альтернативой значение `|`/`|lua`/`&fn` получает
+   сигнатуру пропа (`Prop.fn_type`, `description` → `fn(obj)->str`);
+   инстанс класса не может перекрыть унаследованный метод значением —
+   `_check_method_override` сообщает об этом до STEAD («Overwrited
+   object method»);
    `collect_field_names` — `ctx.field_names` (все ключи игры + props +
    `refs:` + движковые) для проверки чтения/записи полей;
    `ctx.mixins` — именованные наборы, `attach_mixins` вливает их
@@ -150,7 +155,9 @@ transpile (main loop) обход корневых элементов → Emitter
   `refs=True` голое имя резолвится как объект (`ctx.ids`), событие
    (`ctx.event_names`) или значение перечисления (`ctx.enum_values`);
    нерезолвнутое голое имя в поле (`obj`/класс, `impl`, `setup`,
-   `const`/`global`) — ошибка (строки — `Text`).
+   `const`/`global`) — ошибка (строки — `Text`); `Logic`/`Lua` — `fn`
+   (обработчик), `FnRef` — `fn`; `Prop.fn_type` — сигнатура обработчика
+   из prop (`fn(obj)->str`), `body_type` применяется к ret.
 
 `obj`-значения: явное `_'имя'` (бэкtick) резолвится при загрузке;
 поле-ссылка (`other_kitten: none`) хранит строку-имя, а **чтения**
@@ -313,6 +320,11 @@ transpile (main loop) обход корневых элементов → Emitter
 - `events:` удалён: `event Имя:` регистрирует событие (при необходимости
   с действием); `verb` без обработчиков.
 - `say`-фолбэк не должен глотать типовые ошибки (см. `TypeCheckError`).
+- Метод класса (функция в его таблице) нельзя перекрыть значением в
+  инстансе: STEAD3 проверяет это в `std.obj.new` и падает при загрузке.
+  `ctx.fields` хранит такие поля как `fn...`; `_check_method_override`
+  ловит перекрытие в prescan. `impl:` пишет в объект уже после
+  конструктора — это не проверяется.
 - Class-scoped типизация `s.field` работает только для приёмника с
   именем `s`.
 - При добавлении новой конструкции: `classify`

@@ -10,7 +10,7 @@ from .inline import _inline_fn
 from .proptypes import (check_prop_value, collect_types, prop_of,
                        prop_scope, register_events, register_props,
                        register_refs)
-from .typing import literal_type
+from .typing import base as type_base, literal_type
 from . import messages as M
 from . import patterns as P
 
@@ -125,6 +125,9 @@ FIELD_SKIP = {"words", "on", "with", "attrs", "disabled",
               "dict", "nam", "patterns", "pattern", "tag", "prio",
               "hint", "mixin"}
 
+# values that keep a method when an instance overrides a class field
+FUNCTION_VALUES = (Logic, Lua, FnRef, Raw)
+
 ENGINE_TARGETS = {"game", "player", "pl", "mp", "std", "main"}
 
 
@@ -182,6 +185,21 @@ def _check_disabled(val):
         raise Error(M.DISABLED_MUST_BE_BOOL)
 
 
+def _check_method_override(ctx, into, owner, base, val):
+    """A class instance cannot replace an inherited method with a value.
+
+    STEAD3 rejects such objects at load time ("Overwrited object method"),
+    so report it at compile time; `|`, `|lua`, `&fn` and `impl:` keep a
+    method.
+    """
+    cls = ctx.id_kind.get(owner)
+    old = into.get(base)
+    if (cls in ctx.classes and old is not None
+            and type_base(old[0]).startswith("fn")
+            and not isinstance(val, FUNCTION_VALUES)):
+        raise Error(M.CLASS_METHOD_OVERRIDE % (cls, base))
+
+
 def _collect_field(ctx, into, owner, key, val):
     """Store the typed value of one regular field."""
     base = field_base(key, val, ctx)
@@ -192,6 +210,7 @@ def _collect_field(ctx, into, owner, key, val):
     t = literal_type(ctx, val, refs=True)
     _reject_bare_str(base, val, t)
     prop = prop_of(ctx, prop_scope(ctx, owner), base)
+    _check_method_override(ctx, into, owner, base, val)
     if prop is not None:
         into[base] = check_prop_value(ctx, owner, base, prop, val, t)
         return

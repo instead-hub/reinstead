@@ -18,6 +18,8 @@ CALL_FIELD_IN_LOGIC = 'call of field/expression is not allowed in logic (wrap it
 CANNOT_QUOTE_STRING_LUA = 'cannot quote string for Lua'
 CARET_FORBIDDEN = '^ is forbidden; compare objects with =='
 CHAIN_STYLE = 'use %s: instead of %s: in %s %s-chain'
+CLASS_METHOD_OVERRIDE = ('class %s defines %r as a method; override it '
+                         'with |, |lua or &fn')
 CLASS_RESERVED_NAME = 'class %s: name is reserved'
 COMMA_KEY_NEEDS_PHASE = 'comma key needs a phase (on/life/before/after/post)'
 DECLARATION_NEEDS_NAME = '%s needs a name'
