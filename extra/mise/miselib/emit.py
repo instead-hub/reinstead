@@ -77,6 +77,7 @@ def _group_years(names):
 DECL_FORMS = {
     "verb": ("verb", True),
     "extend": ("verb_extend", False),
+    "remove": ("verb_remove", False),
     "talk": ("talk", True),
 }
 
@@ -633,6 +634,13 @@ class Emitter:
             else "VerbExtend"
         return T.VERB_EXTEND % (base, ctor, ", ".join(fields),
                                   (", " + ", ".join(extra)) if extra else "")
+
+    def verb_remove(self, block, ident, base):
+        if not (ident or "").startswith("#"):
+            raise Error(M.REMOVE_NEEDS_TAG % (ident or "remove"))
+        if not isinstance(block, Block) or block.items:
+            raise Error(M.REMOVE_TAKES_NO_FIELDS % ident)
+        return T.VERB_REMOVE % (base, lua_str(ident))
 
     def talk_act(self, reply, do, indent):
         if do is None:

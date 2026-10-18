@@ -1,0 +1,31 @@
+name: remove
+lang: ru
+include: stdlib
+
+extend type event:
+  Zap: obj
+
+verb Zap:
+  words: зажиг/ать
+  patterns:
+    - * : Zap
+
+verb Whisper:
+  words: шеп/тать
+  patterns:
+    - {noun}/дт * : Whisper
+
+remove #Zap:
+remove #Wear:
+
+room r:
+  words: комната
+  before Zap: |
+    w:has scenery
+  before Whisper: |
+    say wh
+
+obj x:
+  words: вещь
+  before Whisper: |
+    say w

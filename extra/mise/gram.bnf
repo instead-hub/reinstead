@@ -28,7 +28,7 @@ key       ::= <текст до ':' нулевого уровня>         (* в�
 file      ::= { top }
 top       ::= meta | lang | fmt | include | require | evdecl
             | vars | setup | impl | fn | class | mixin | refs | props | verb
-            | extend | custom_type
+            | extend | remove | custom_type
             | talk
             | lua_section | decl | NEWLINE
 
@@ -114,6 +114,13 @@ extend    ::= "extend" "#" IDENT ":" block
    words: -> VerbExtendWord, только patterns: -> VerbExtend;
    паттерны расширяют сигнатуры событий так же, как в verb *)
 
+remove    ::= "remove" "#" IDENT ":"
+(* снимает глагол: VerbRemove '#Tag' в том же месте файла; полей нет
+   (block не допускается); паттерны снятого глагола выпадают из
+   выведенных сигнатур событий (сужение); событие, введённое только
+   этими паттернами, снова неизвестно; неизвестный тег — не ошибка
+   (стандартные глаголы объявлены в Lua) *)
+
 custom_type ::= ("type" LIDENT | "extend" "type" LIDENT) ":"
                 (name_list | list | block)
 (* значения — голые имена (или числа, напр. 2) без пробелов; кавычки запрещены; пустой type —
@@ -125,7 +132,8 @@ custom_type ::= ("type" LIDENT | "extend" "type" LIDENT) ":"
    строка `life Имя, ...: типы` — аргументы life-фазы (s — персонаж);
    имена life-строк должны быть объявлены выше; extend type event
    добавляет события и их сигнатуры тем же блоком; сигнатуры event
-   объединяются (union) с выведенными из паттернов verb/extend *)
+   объединяются (union) с выведенными из паттернов verb/extend;
+   remove #Tag: убирает вклад паттернов снятого глагола (сужение) *)
 
 talk        ::= "talk" NAME ":" NEWLINE INDENT { talk_item } DEDENT
 talk_item   ::= "intro" ":" value

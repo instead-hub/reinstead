@@ -9,7 +9,8 @@ local decl = {
   obj = true, room = true, door = true, story = true,
   ending = true, class = true, mixin = true, verb = true, talk = true,
   setup = true, impl = true, props = true, refs = true, const = true,
-  global = true, event = true, type = true, extend = true, fn = true,
+  global = true, event = true, type = true, extend = true, remove = true,
+  fn = true,
   lua = true,
 }
 

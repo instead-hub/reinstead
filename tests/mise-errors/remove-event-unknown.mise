@@ -1,0 +1,15 @@
+name: t
+lang: ru
+include: stdlib
+
+verb Tune:
+  words: настро/ить
+  patterns:
+    - {noun}/вн : Tune
+
+remove #Tune:
+
+obj x:
+  words: вещь
+  before Tune: |
+    pass

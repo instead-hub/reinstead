@@ -31,6 +31,7 @@ CTOR_OPEN_PARENT = '%s%s({'
 TAIL_PARENT = '%s}, %s)'
 VERB = '%sVerb { %s%s }'
 VERB_EXTEND = '%s%s { %s%s }'
+VERB_REMOVE = '%sVerbRemove %s'
 ATTRS = ":attr '%s'"
 DICT = ':dict %s'
 IMPL_DICT = '%s:dict %s'

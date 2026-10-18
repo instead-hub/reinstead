@@ -43,7 +43,7 @@ syn match miseKey /^\s*\zs\w\+\%(\s*,\s*\w\+\)*\ze\s*[:(]/
 syn match miseSpecialKey /^\s*\zs\%(words\|word\|attrs\|dict\|disabled\|with\|inside\|text\|found_in\)\ze\s*[:(]/
 
 " --- декларации и секции (в начале строки) ---
-syn match miseDecl /^\s*\zs\%(obj\|room\|door\|story\|ending\|class\|mixin\|verb\|talk\|setup\|impl\|props\|refs\|const\|global\|event\|type\|extend\|fn\|lua\)\>\ze\%(\s\|:\|$\)/
+syn match miseDecl /^\s*\zs\%(obj\|room\|door\|story\|ending\|class\|mixin\|verb\|talk\|setup\|impl\|props\|refs\|const\|global\|event\|type\|extend\|remove\|fn\|lua\)\>\ze\%(\s\|:\|$\)/
 syn match miseDirective /^\s*\zs\%(name\|version\|author\|info\|lang\|fmt\|include\|require\)\ze\s*:/
 syn match miseDecl2 /\%(^\s*extend\s\+\)\@<=\%(refs\|type\)\>/
 syn match miseImplTarget /\%(^\s*impl\s\+\)\@<=[^[:space:]:]\+/
