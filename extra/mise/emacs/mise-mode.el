@@ -33,7 +33,7 @@
 (defconst mise--declarations
   (mise--words '("obj" "room" "door" "story" "ending" "class"
                  "mixin" "verb" "talk" "setup" "impl" "props" "refs"
-                 "const" "global" "event" "type" "extend" "fn" "lua"))
+                 "const" "global" "event" "type" "extend" "remove" "fn" "lua"))
   "The section declarations of the mise language.")
 
 (defconst mise--logic

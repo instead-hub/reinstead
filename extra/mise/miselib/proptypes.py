@@ -405,11 +405,19 @@ def _add_verb_patterns(sigs, pats):
 
 
 def register_verbs(root):
-    """Event signatures derived from `verb`/`extend` patterns."""
+    """Event signatures derived from `verb`/`extend` patterns.
+
+    `remove #Tag` drops that verb's patterns (narrowing): an event
+    that only they introduced becomes unknown unless it is declared
+    in `type event:`/`event X:`.
+    """
+    removed = {"#" + i.lstrip("#")
+               for _i, _k, i, _key, _val in top_items(root, ("remove",))}
     sigs = {}
-    for _i, _kind, _info, _key, val in top_items(root, ("verb", "extend")):
+    for _i, _k, ident, _key, val in top_items(root, ("verb", "extend")):
+        tag = "#" + ident.lstrip("#")
         pats = val.get("patterns") if isinstance(val, Block) else None
-        if pats is not None:
+        if pats is not None and tag not in removed:
             _add_verb_patterns(sigs, pats)
     return {ev: tuple(t + "?" if i >= mn else t
                       for i, t in enumerate(types))

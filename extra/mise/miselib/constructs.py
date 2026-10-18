@@ -122,7 +122,7 @@ def _classify_decl(key):
     kind, ident = decl_key(key)
     if not kind:
         return "unknown", None
-    if kind in ("verb", "talk"):
+    if kind in ("verb", "talk", "remove"):
         return kind, ident
     if PRESETS.get(kind) or P.CLASS_RE.fullmatch(kind):
         return "decl", (kind, ident)
@@ -188,7 +188,7 @@ ENGINE_FIELDS = frozenset({"nam", "tag", "obj", "way", "lifes"})
 # names a class cannot take: they already name a construct or a meta key
 RESERVED_KINDS = (frozenset(PRESETS) | frozenset(SIMPLE_KINDS)
                   | frozenset(META_KEYS) | frozenset(SKIP_KEYS)
-                  | {"verb", "talk", "extend"})
+                  | {"verb", "talk", "extend", "remove"})
 
 # structural props scopes (not object kinds): their engine parent only
 STRUCT_SCOPES = {
@@ -226,6 +226,7 @@ EMIT_ROUTES = {
     "decl": "decl",
     "verb": "decl",
     "extend": "decl",
+    "remove": "decl",
     "talk": "decl",
     "props": "skip",
     "type": "skip",
