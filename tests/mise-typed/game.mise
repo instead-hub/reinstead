@@ -5,6 +5,9 @@ include: stdlib
 global:
   chosen: crate
 
+props obj:
+  target: ref
+
 class Box:
   attrs: container
   weight: 0
@@ -53,6 +56,17 @@ fn on_take(s: Box): |
 
 Box crate:
   words: ящик
+
+obj orb:
+  words: сфера
+
+obj lamp:
+  words: лампа
+  before Take: |
+    say(s.target:noun(вн))
+
+impl lamp:
+  target: orb
 
 impl crate:
   before Take: &on_take

@@ -144,4 +144,19 @@ Box {
   nam = "crate";
 }
 
+obj {
+  -"сфера";
+  nam = "orb";
+}
+
+obj {
+  -"лампа";
+  nam = "lamp";
+  before_Take = function(s, w, wh)
+    p(_(s.target):noun_hint("вн"))
+  end;
+}
+
+_'lamp'.target = 'orb'
+
 _'crate'.before_Take = fn_on_take;

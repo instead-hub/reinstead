@@ -353,7 +353,9 @@ def _check_bare_field(ctx, use_props, owner, key, val):
     prop = prop_of(ctx, prop_scope(ctx, owner), base) if (
         use_props and base) else None
     if prop is not None:
-        check_prop_value(ctx, owner, base, prop, val, t)
+        t, is_ref = check_prop_value(ctx, owner, base, prop, val, t)
+        if owner in ctx.fields:
+            ctx.fields[owner][base] = (t, is_ref)
 
 
 def _walk_fields(ctx, block, use_props=False, owner=None):
