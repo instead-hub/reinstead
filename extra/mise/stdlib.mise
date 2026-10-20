@@ -366,6 +366,11 @@ fn door_next(s: obj, w: obj) -> obj?: |
 class Door(door):
   attrs: static
   walk_to: none
+  door_to: |
+    local n = door_next(s, here())
+    if n:
+      return n
+    pass
 
 fn desc(s: obj) -> str?: `s.desc`
 

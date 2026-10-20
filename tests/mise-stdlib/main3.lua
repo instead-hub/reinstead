@@ -128,6 +128,13 @@ obj {
 
 Door = Class({
   walk_to = 'none';
+  door_to = function(s)
+    local n = fn_door_next(s, here())
+    if n then
+      return n
+    end
+    return false
+  end;
 }, door):attr 'static'
 
 Path = Class {
