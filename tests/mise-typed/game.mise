@@ -22,6 +22,9 @@ fn label2(w: obj, n: case|num) -> str: |
 fn first_str(t: tbl[str]) -> str: |
   return t[1]
 
+fn spot(s: obj) -> obj: |
+  return s:where() and s:where() or none
+
 fn on_take(s: Box): |
   if s.weight + 1 > 0:
     say [[тяжёлый]]
@@ -42,6 +45,7 @@ fn on_take(s: Box): |
   local h = { вн, мн }
   say(s:noun(h))
   say(chosen:noun(вн))
+  say(spot(s):noun(вн))
   local w = inv()[1]
   w:noun()
   say(label2(s, 2))

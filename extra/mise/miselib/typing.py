@@ -47,6 +47,33 @@ def union_parts(t):
     return parts if len(parts) > 1 else None
 
 
+def _alts(t):
+    """(base alternatives, optional) of a type; optional covers `nil`."""
+    parts = union_parts(t) or [t]
+    opt = any(p.endswith("?") or p == "nil" for p in parts)
+    alts = [p[:-1] if p.endswith("?") else p for p in parts]
+    return [p for p in alts if p and p != "nil"], opt
+
+
+def _alts_type(alts, opt):
+    """Canonical union of alternatives; `opt` adds the `?` suffix."""
+    rest = sorted(set(alts))
+    if not rest:
+        return "nil" if opt else "any"
+    return "|".join(rest) + ("?" if opt else "")
+
+
+def and_or_type(op, a, b):
+    """Type of `a and b` / `a or b`: the kept part of `a` plus `b`."""
+    if a == "any" or b == "any":
+        return "any"
+    alts, opt = _alts(b)
+    a_alts, a_opt = _alts(a)
+    if op == "or":
+        return _alts_type(alts + a_alts, opt)
+    return _alts_type(alts + [x for x in a_alts if x == "bool"], opt or a_opt)
+
+
 def split_types(text):
     """Split a comma list at top-level parentheses/brackets."""
     return [p for p in _split_top(text, ",") if p]

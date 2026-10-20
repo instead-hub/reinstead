@@ -166,7 +166,8 @@ def _stmt_assign(p, lhs, op, env, where, ctx):
     p.expect_eof()
     _check_env_assign(lhs, types, env, ctx, where)
     _check_field_assign(lhs, types, ctx, where)
-    lhs_code = lhs.raw if (isinstance(lhs, Field) and lhs.ref) else lhs.code
+    lhs_code = (lhs.name if isinstance(lhs, Ref) and lhs.var else
+                lhs.raw if isinstance(lhs, Field) and lhs.ref else lhs.code)
     if op == "=":
         return "%s = %s" % (lhs_code, ", ".join(codes))
     sign = "+" if op == "+=" else "-"

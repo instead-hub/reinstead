@@ -5,8 +5,8 @@ import re
 from . import state as S
 from .common import *
 from .constructs import ENGINE_FIELDS
-from .typing import (base, canon_fn_sig, fn_type_parts, tbl_inner, type_ok,
-                     type_value_error, union_parts)
+from .typing import (and_or_type, base, canon_fn_sig, fn_type_parts,
+                     tbl_inner, type_ok, type_value_error, union_parts)
 from . import messages as M
 from . import patterns as P
 
@@ -158,14 +158,15 @@ class Lit(Node):
 
 class Ref(Node):
     """Variable, global, fn name or object reference."""
-    __slots__ = ("name", "obj")
+    __slots__ = ("name", "obj", "var")
 
-    def __init__(self, code, t, name, obj=False):
+    def __init__(self, code, t, name, obj=False, var=False):
         self.code = code
         self.t = t
         self.val = None
         self.name = name
         self.obj = obj
+        self.var = var
 
 
 class Field(Node):
@@ -586,9 +587,8 @@ class ExprEmit:
             if check_num:
                 self.check(node.t, "num", node.code)
                 self.check(rhs.t, "num", rhs.code)
-            both = node.t == "bool" and rhs.t == "bool"
-            node = Node("%s %s %s" % (node.code, op, rhs.code),
-                        "bool" if t is None and both else (t or "any"))
+            res = t or and_or_type(op, node.t, rhs.t)
+            node = Node("%s %s %s" % (node.code, op, rhs.code), res)
         return node
 
     def concat_expr(self):
@@ -638,8 +638,14 @@ class ExprEmit:
         if funcs and name in self.ctx.funcs:
             return Ref(name, "fn", name)
         if name in self.ctx.vars:
-            return Ref(name, self.ctx.global_types.get(name, "any"), name)
+            return self.global_ref(name)
         return None
+
+    def global_ref(self, name):
+        """A `const`/`global` read: obj names are resolved with `_(...)`."""
+        t = self.ctx.global_types.get(name, "any")
+        code = "_(%s)" % name if t in ("obj", "obj?") else name
+        return Ref(code, t, name, var=True)
 
     def autocall(self, node):
         if not (isinstance(node, Ref) and not node.obj

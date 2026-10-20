@@ -56,6 +56,10 @@ local function fn_first_str(t)
   return t[1]
 end
 
+local function fn_spot(s)
+  return where(s) and where(s) or _'none'
+end
+
 local function fn_on_take(s)
   if s.weight + 1 > 0 then
     p([[тяжёлый]])
@@ -76,7 +80,8 @@ local function fn_on_take(s)
   p(fn_first_str(({ [[a]], [[b]] })))
   local h = ({ "вн", "мн" })
   p(s:noun_hint(h))
-  p(chosen:noun_hint("вн"))
+  p(_(chosen):noun_hint("вн"))
+  p(fn_spot(s):noun_hint("вн"))
   local w = inv()[1]
   w:noun_hint()
   p(fn_label2(s, 2))
