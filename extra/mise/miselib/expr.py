@@ -40,12 +40,10 @@ _TEXT_CALLS = ("p", "pn", "pr")
 
 
 def _text_arg(name, text, ctx):
-    """One-string call of say/line/append: `p[[...]]` sugar when possible."""
+    """One-string call of say/line/append: `p "..."` sugar when possible."""
     desc = ctx.inline.get(name)
     if desc is not None and desc[0] == "call" and desc[1][0] in _TEXT_CALLS:
-        long = lua_long(text)
-        if long is not None:
-            return desc[1][0] + long, ["str"]
+        return desc[1][0] + " " + lua_str(text), ["str"]
     return fn_call(ctx, name, [lua_str(text)]), ["str"]
 
 

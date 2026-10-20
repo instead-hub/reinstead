@@ -371,17 +371,6 @@ def lua_str(s):
         raise Error(M.CANNOT_QUOTE_STRING_LUA)
     return long
 
-
-def lua_long(s):
-    """A long-bracket string for text, or None when it is not safe.
-
-    Lua drops the newline right after `[[`, and an empty `[[]]` reads
-    badly, so those fall back to the quoted form.
-    """
-    if not s or s.startswith(("\n", "\r")):
-        return None
-    return _long_bracket(s)
-
 def _first_indent(lines):
     for l in lines:
         if l.strip():

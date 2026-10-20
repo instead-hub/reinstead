@@ -75,13 +75,13 @@ room {
   -"комната";
   nam = "r";
   dsc = function(s)
-    p[[Комната.]]
+    p "Комната."
     pr(_(picked):noun_hint("вн"))
-    p[[.]]
+    p "."
     if _(target) ~= _'none' then
-      p[[Цель есть.]]
+      p "Цель есть."
     else
-      p[[Цели нет.]]
+      p "Цели нет."
     end
   end;
 }
@@ -93,10 +93,10 @@ obj {
   before_Pull = function(s, w, wh)
     if _(target) == _'none' then
       target = _'box'
-      p[[Взял.]]
+      p "Взял."
       return
     end
-    p[[Уже.]]
+    p "Уже."
   end;
 }
 

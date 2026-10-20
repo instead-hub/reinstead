@@ -40,7 +40,7 @@ IMPL_ENABLE = '%s:enable()'
 LIST_ITEM = "%s'%s';"
 FN_S = '%sfunction(s)'
 P_CALL = '%sp(%s)'
-P_TEXT_CALL = '%sp%s'
+P_TEXT_CALL = '%sp %s'
 END = '%send'
 TALK_COND = 'cond = function(s) return %s end'
 TALK_NEXT = "next = '#%s'"
