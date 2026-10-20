@@ -25,6 +25,21 @@ ROOM_KINDS = frozenset({"room", "cutscene", "gameover"})
 EXTEND_KEYS = ("words", "patterns", "prio", "hint")
 
 
+_FIELD_NAME_RE = re.compile(r"^[A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*$")
+_PHASES = ("on", "life", "before", "after", "post")
+
+
+def _check_field_name(base):
+    """A field key: an identifier, a comma list or a bracketed Lua key."""
+    if base.startswith("[") or _FIELD_NAME_RE.fullmatch(base):
+        return
+    head = base.split(None, 1)[0] if base.split() else base
+    near = difflib.get_close_matches(head, _PHASES, 1, 0.6)
+    hint = (" (did you mean %r?)" % (near[0] + base[len(head):])
+            if near else "")
+    raise Error(M.FIELD_NAME_INVALID % (base, hint))
+
+
 def _check_verb_keys(label, ident, block, keys):
     """Reject unknown fields in a `verb`/`extend` block."""
     for k, _v in block.items:
@@ -464,6 +479,7 @@ class Emitter:
         if _EVENT_KEY_RE.match(key):
             return self.on(_one_item_block(key, val), fi)
         fbase, params = parse_key(key)
+        _check_field_name(fbase)
         if fbase == "on":
             raise Error(M.ON_MUST_NAME_EVENT)
         self._check_phase_prefix(fbase)
@@ -475,7 +491,8 @@ class Emitter:
             label = ident or self.ctx.current_owner
             raise Error(M.FIELD_MESSAGE % (label, key, e))
         if "," in fbase:
-            return [T.INDEX_ASSIGN % (fi, lua_str(fbase), rendered)]
+            names = ",".join(p.strip() for p in fbase.split(","))
+            return [T.INDEX_ASSIGN % (fi, lua_str(names), rendered)]
         return [T.FIELD % (fi, fbase, rendered)]
 
     def _check_phase_prefix(self, base):
@@ -874,6 +891,7 @@ class Emitter:
             elif key == "hero" and hk == "words":
                 out.append(T.HERO_WORD % hv.s)
             else:
+                _check_field_name(hk)
                 out.append(T.FIELD_BARE % (target, hk, self.body(hv, hk)))
         return out
 
@@ -963,9 +981,11 @@ class Emitter:
                     else T.IMPL_ENABLE % ref]
         if key.startswith("var "):
             name = parse_key(key[4:])[0]
+            _check_field_name(name)
             return [T.DOT_ASSIGN % (ref, name, self.body(val, name))]
         if "," in base:
             raise Error(M.COMMA_KEY_NEEDS_PHASE)
+        _check_field_name(base)
         return [T.DOT_ASSIGN % (ref, base, self.body(val, key,
                                                      scope=prop_scope(
                                                          self.ctx, t)))]

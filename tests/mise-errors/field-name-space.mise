@@ -1,0 +1,8 @@
+name: t
+lang: ru
+include: stdlib
+
+obj x:
+  words: штука
+  live ThrowAt: |
+    stop
