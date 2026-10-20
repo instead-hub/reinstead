@@ -683,6 +683,9 @@ class Emitter:
         if isinstance(reply, (Logic, Lua)):
             code = self.body(reply, "reply", indent + IND, scope="option")
             return [T.P_CALL % (indent + IND, "(%s)(s)" % code)]
+        long = lua_long(reply.s) if isinstance(reply, Text) else None
+        if long is not None:
+            return [T.P_TEXT_CALL % (indent + IND, long)]
         return [T.P_CALL % (indent + IND, self.value(reply))]
 
     def _talk_lines(self, indent, text):

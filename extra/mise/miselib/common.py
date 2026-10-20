@@ -351,17 +351,36 @@ def read_long(lines, i, first, line_no):
         i += 1
     parse_error(line_no, M.UNTERMINATED_BRACKET_STRING)
 
+def _long_bracket(s):
+    """A long-bracket Lua string for `s`, else None (12 levels of `=`)."""
+    for n in range(12):
+        eq = "=" * n
+        if "]" + eq + "]" not in s:
+            return "[" + eq + "[" + s + "]" + eq + "]"
+    return None
+
+
 def lua_str(s):
     if "\n" not in s and "\r" not in s and "\\" not in s:
         if '"' not in s:
             return '"%s"' % s
         if "'" not in s:
             return "'%s'" % s
-    for n in range(12):
-        eq = "=" * n
-        if "]" + eq + "]" not in s:
-            return "[" + eq + "[" + s + "]" + eq + "]"
-    raise Error(M.CANNOT_QUOTE_STRING_LUA)
+    long = _long_bracket(s)
+    if long is None:
+        raise Error(M.CANNOT_QUOTE_STRING_LUA)
+    return long
+
+
+def lua_long(s):
+    """A long-bracket string for text, or None when it is not safe.
+
+    Lua drops the newline right after `[[`, and an empty `[[]]` reads
+    badly, so those fall back to the quoted form.
+    """
+    if not s or s.startswith(("\n", "\r")):
+        return None
+    return _long_bracket(s)
 
 def _first_indent(lines):
     for l in lines:

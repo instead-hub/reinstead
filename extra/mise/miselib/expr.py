@@ -36,6 +36,19 @@ def _no_paren_kind(plist, variadic, rest, env, ctx):
     return "str" if not expr_like(rest, env, ctx) else "typed"
 
 
+_TEXT_CALLS = ("p", "pn", "pr")
+
+
+def _text_arg(name, text, ctx):
+    """One-string call of say/line/append: `p[[...]]` sugar when possible."""
+    desc = ctx.inline.get(name)
+    if desc is not None and desc[0] == "call" and desc[1][0] in _TEXT_CALLS:
+        long = lua_long(text)
+        if long is not None:
+            return desc[1][0] + long, ["str"]
+    return fn_call(ctx, name, [lua_str(text)]), ["str"]
+
+
 def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
     plist, rets, variadic = sig
     try:
@@ -45,7 +58,7 @@ def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
         if isinstance(e, TypeCheckError):
             raise
         if plist and type_ok(ctx, "str", plist[0][1]):
-            return fn_call(ctx, name, [lua_str(rest)]), ["str"]
+            return _text_arg(name, rest, ctx)
         raise
     check_arity(name, plist, variadic, len(types))
     for (pn, pt), t in zip(plist, types):
@@ -73,7 +86,7 @@ def no_paren_call(text, env, where, ctx):
     if kind is None:
         return None
     if kind == "str":
-        return fn_call(ctx, name, [lua_str(rest)]), ["str"]
+        return _text_arg(name, rest, ctx)
     return _typed_arg_form(name, (plist, rets, variadic), rest, env, where,
                            ctx, transpile_exprlist)
 

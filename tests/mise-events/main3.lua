@@ -126,7 +126,7 @@ obj {
     if w then
       w:has("scenery")
     end
-    p("Режешь.")
+    p[[Режешь.]]
   end;
 }
 
@@ -137,7 +137,7 @@ obj {
     if w then
       w:has("scenery")
     end
-    p("Режешь.")
+    p[[Режешь.]]
   end;
   ["before_Take,AskFor"] = function(s, w, wh)
     if (mp.event or nil) == 'AskFor' then
