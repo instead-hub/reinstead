@@ -49,6 +49,7 @@ PHR = '%sphr = {'
 GAME_DSC = 'game.dsc = %s'
 TAKE = "%stake('%s')"
 WORDS_ALIAS = '%s-"%%s";'
+WORD_FIELD = '%sword = -"%%s";'
 FMT = 'fmt.%s = true'
 HERO_WORD = 'pl.word = -"%s"'
 RETURN = '%sreturn%s'

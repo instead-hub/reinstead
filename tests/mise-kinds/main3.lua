@@ -261,7 +261,7 @@ obj {
 }
 
 Ghost = Class {
-  -"призрак";
+  word = -"призрак";
 }:disable()
 
 obj {

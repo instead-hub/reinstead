@@ -1,0 +1,22 @@
+name: classword
+lang: ru
+include: stdlib
+
+class Thing(obj):
+  words: штука
+
+Thing x:
+  attrs: static
+
+Thing y:
+  words: вещица
+
+room r:
+  words: комната
+  dsc: |
+    say x:noun()
+    say y:noun()
+
+setup:
+  start: |
+    player:move r

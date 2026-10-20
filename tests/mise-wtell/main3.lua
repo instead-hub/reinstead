@@ -116,7 +116,7 @@ Furniture = Class {
 }:attr 'static,supporter'
 
 Arrow = Class {
-  -"стрела,стрел*";
+  word = -"стрела,стрел*";
   arrow = true;
   description = "Все твои стрелы верны и остры.";
   ["before_Drop,Give,ThrowAt"] = "Ты не хочешь расставаться со своими острыми стрелами.";

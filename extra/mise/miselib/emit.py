@@ -380,7 +380,7 @@ class Emitter:
         fi = base + IND
         lines = [T.CTOR_OPEN_PARENT % (base, ctor) if parent
                  else T.CTOR_OPEN % (base, ctor)]
-        self._obj_words(block, fi, lines)
+        self._obj_words(block, fi, lines, ctor == "Class")
         self._obj_nam(block, ident, fi, lines)
         attrs = self._obj_attrs(block, ident, preset)
         ntext = sum(1 for k, _v in block.items if k == "text")
@@ -393,22 +393,23 @@ class Emitter:
         lines.append(self._obj_tail(block, ident, base, parent, attrs))
         return "\n".join(lines)
 
-    def _obj_words(self, block, fi, lines):
+    def _obj_words(self, block, fi, lines, field=False):
         words = block.get("words")
         if words is None:
             return
         use(block, "words") or use(block, "word")
+        head = T.WORD_FIELD if field else T.WORDS_ALIAS
         if isinstance(words, Text):
-            lines.append(T.WORDS_ALIAS % fi % words.s)
+            lines.append(head % fi % words.s)
         elif isinstance(words, Raw):
-            lines.append(T.LINE % (fi, words.s))
+            lines.append(T.LINE % (fi, "word = " + words.s if field else words.s))
         elif isinstance(words, list):
             items = []
             for it in words:
                 if not isinstance(it, Text):
                     raise Error(M.WORDS_LIST_ITEMS_STRINGS)
                 items.append(it.s.strip())
-            lines.append(T.WORDS_ALIAS % fi % "|".join(items))
+            lines.append(head % fi % "|".join(items))
         else:
             raise Error(M.WORDS_QUOTED_OR_LIST)
 
