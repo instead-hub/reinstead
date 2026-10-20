@@ -2,8 +2,5 @@
 
 include: stdlib
 
-fn way_dsc(s: obj, w: obj) -> str: |
-  return s:This() .. ' {#first} {#present/#first,lead} to ' .. noun(w) .. '.'
-
 fn path_dsc(w: obj) -> str: |
   return '{#Me} can go to ' .. noun(w) .. '.'

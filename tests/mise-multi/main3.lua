@@ -30,10 +30,6 @@ local function fn_where_prep(w)
   return 'в'
 end
 
-local function fn_way_dsc(s, w)
-  return s:This() .. ' {#first} {#word/вести,Г,нст,#first} ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
-end
-
 local function fn_path_dsc(w)
   return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
 end
@@ -81,20 +77,6 @@ obj {
 
 Door = Class({
   walk_to = 'none';
-  description = function(s)
-    local n = fn_door_next(s, here())
-    if n then
-      p(fn_way_dsc(s, n))
-    end
-    return false
-  end;
-  door_to = function(s)
-    local n = fn_door_next(s, here())
-    if n then
-      return n
-    end
-    return false
-  end;
 }, door):attr 'static'
 
 Path = Class {
@@ -115,8 +97,6 @@ Path = Class {
   end;
   default_Event = "Walk";
 }:attr 'scenery,enterable'
-
---"вести"
 
 --"мочь"
 

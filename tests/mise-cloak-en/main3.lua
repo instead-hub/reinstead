@@ -23,10 +23,6 @@ local function fn_door_next(s, w)
   return false
 end
 
-local function fn_way_dsc(s, w)
-  return s:This() .. ' {#first} {#present/#first,lead} to ' .. w:noun_hint() .. '.'
-end
-
 local function fn_path_dsc(w)
   return '{#Me} can go to ' .. w:noun_hint() .. '.'
 end
@@ -37,20 +33,6 @@ obj {
 
 Door = Class({
   walk_to = 'none';
-  description = function(s)
-    local n = fn_door_next(s, here())
-    if n then
-      p(fn_way_dsc(s, n))
-    end
-    return false
-  end;
-  door_to = function(s)
-    local n = fn_door_next(s, here())
-    if n then
-      return n
-    end
-    return false
-  end;
 }, door):attr 'static'
 
 Path = Class {

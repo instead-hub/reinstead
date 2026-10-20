@@ -2,6 +2,10 @@ name: t
 lang: ru
 include: stdlib
 
-Door d:
+class Thing(obj):
+  description: |
+    pass
+
+Thing d:
   words: дверь
   description: Текст.

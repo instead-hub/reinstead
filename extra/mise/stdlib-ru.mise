@@ -7,14 +7,8 @@ fn where_prep(w: obj) -> str: |
     return 'на'
   return 'в'
 
-fn way_dsc(s: obj, w: obj) -> str: |
-  return s:This() .. ' {#first} {#word/вести,Г,нст,#first} ' .. where_prep(w) .. ' ' .. noun(w, вн) .. '.'
-
 fn path_dsc(w: obj) -> str: |
   return '{#Me} {#word/мочь,нст,#me} пойти ' .. where_prep(w) .. ' ' .. noun(w, вн) .. '.'
-
-lua: |lua
-  --"вести"
 
 lua: |lua
   --"мочь"
