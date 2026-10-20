@@ -76,6 +76,7 @@ local function fn_on_take(s)
   p(fn_first_str(({ [[a]], [[b]] })))
   local h = ({ "вн", "мн" })
   p(s:noun_hint(h))
+  p(chosen:noun_hint("вн"))
   local w = inv()[1]
   w:noun_hint()
   p(fn_label2(s, 2))
@@ -126,6 +127,8 @@ Path = Class {
 --"вести"
 
 --"мочь"
+
+global 'chosen' ('crate')
 
 Box = Class {
   weight = 0;

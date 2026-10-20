@@ -541,7 +541,7 @@ def _register_globals(root, ctx):
         if classify(key)[0] in ("const", "global") and isinstance(val, Block):
             for k, v in val.items:
                 names.add(k)
-                ctx.global_types[k] = literal_type(ctx, v)
+                ctx.global_types[k] = literal_type(ctx, v, refs=True)
     return names
 
 

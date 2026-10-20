@@ -2,6 +2,9 @@ name: t
 lang: ru
 include: stdlib
 
+global:
+  chosen: crate
+
 class Box:
   attrs: container
   weight: 0
@@ -38,6 +41,7 @@ fn on_take(s: Box): |
   say(first_str { [[a]], [[b]] })
   local h = { вн, мн }
   say(s:noun(h))
+  say(chosen:noun(вн))
   local w = inv()[1]
   w:noun()
   say(label2(s, 2))
