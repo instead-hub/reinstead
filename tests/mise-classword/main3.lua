@@ -14,6 +14,11 @@ local function fn_where_list(w)
   return std.list(list)
 end
 
+local function fn_exit(s, d)
+  local r = d and mp:runorval(s, d, d)
+  return r and std.ref(r) or nil
+end
+
 local function fn_door_next(s, w)
   local l = fn_where_list(s)
   local _, i = l:lookup(w)

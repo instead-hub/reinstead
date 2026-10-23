@@ -340,6 +340,10 @@ fn runmethods(what: phase, meth: event, ...: obj): |lua
 fn runorval(w: obj, name: str, ...) -> any: |lua
   return mp:runorval(w, name, ...)
 
+fn exit(s: obj, d: direction?) -> obj?: |lua
+  local r = d and mp:runorval(s, d, d)
+  return r and std.ref(r) or nil
+
 fn theme_name() -> str: |lua
   return theme.name()
 

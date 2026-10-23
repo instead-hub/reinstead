@@ -628,6 +628,7 @@ props story:
 | `walk` | `(obj)` | `walk(where)` |
 | `walkin` | `(obj)` | `walkin(where)` |
 | `compass_dir` | `(obj) -> direction?` | `mp:compass_dir` |
+| `exit` | `(obj, direction?) -> obj?` | куда ведёт направление из комнаты (`mp:runorval` + `ref`); `here():exit(compass_dir(w))` |
 | `once` | `(obj, str?) -> bool` | `s:once(tag)` — один раз (с тегом) |
 | `take` | `(obj)` | `take(w)` |
 | `drop` | `(obj)` | `drop(w)` |
