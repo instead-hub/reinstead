@@ -2,6 +2,13 @@ name: exit
 lang: ru
 include: stdlib
 
+fn exit(s: obj, d: direction?) -> obj?: |
+  local name = runorval(s, tostr(d))
+  local r = ref(tostr(name))
+  if is_room(r):
+    return r
+  return nil
+
 room r:
   words: комната
   n_to: q

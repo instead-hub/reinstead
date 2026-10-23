@@ -340,10 +340,6 @@ fn runmethods(what: phase, meth: event, ...: obj): |lua
 fn runorval(w: obj, name: str, ...) -> any: |lua
   return mp:runorval(w, name, ...)
 
-fn exit(s: obj, d: direction?) -> obj?: |lua
-  local r = d and mp:runorval(s, d, d)
-  return r and std.ref(r) or nil
-
 fn theme_name() -> str: |lua
   return theme.name()
 
@@ -359,6 +355,12 @@ fn tiny() -> bool: `instead.tiny`
 
 fn music(name: str, ...): |lua
   snd.music(name, ...)
+
+fn tostr(s: any) -> str: |lua
+  return tostring(s)
+
+fn is_room(s: obj?) -> bool: |lua
+  return not not std.is_obj(s or false, 'room')
 
 fn door_next(s: obj, w: obj) -> obj?: |
   local l = where_list(s)

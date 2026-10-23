@@ -628,7 +628,6 @@ props story:
 | `walk` | `(obj)` | `walk(where)` |
 | `walkin` | `(obj)` | `walkin(where)` |
 | `compass_dir` | `(obj) -> direction?` | `mp:compass_dir` |
-| `exit` | `(obj, direction?) -> obj?` | куда ведёт направление из комнаты (`mp:runorval` + `ref`); `here():exit(compass_dir(w))` |
 | `once` | `(obj, str?) -> bool` | `s:once(tag)` — один раз (с тегом) |
 | `take` | `(obj)` | `take(w)` |
 | `drop` | `(obj)` | `drop(w)` |
@@ -667,7 +666,8 @@ props story:
 `empty(w: obj?) -> bool`,
 `runmethods(what: phase, meth: event, ...: obj)` (фазы —
 `after`/`before`/`life`/`post` из `type phase`),
-`runorval(w, имя, ...)`, `check_touch()`, `check_worn(w)`,
+`runorval(w, имя, ...)`, `tostr(s: any) -> str`, `is_room(s: obj?) -> bool`,
+`check_touch()`, `check_worn(w)`,
 `offerslight(w)`, `visible_scope(where) -> obj?`, `inroom(w)`,
 `getDaemons() -> list`, `cls_prompt()`, `gram(s) -> tbl`, `access(s)`,
 `xevent() -> event?`.

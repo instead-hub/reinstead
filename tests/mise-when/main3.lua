@@ -14,9 +14,8 @@ local function fn_where_list(w)
   return std.list(list)
 end
 
-local function fn_exit(s, d)
-  local r = d and mp:runorval(s, d, d)
-  return r and std.ref(r) or nil
+local function fn_is_room(s)
+  return not not std.is_obj(s or false, 'room')
 end
 
 local function fn_door_next(s, w)
