@@ -408,6 +408,12 @@ class Emitter:
         lines.append(self._obj_tail(block, ident, base, parent, attrs))
         return "\n".join(lines)
 
+    def _words_text(self, s):
+        """A words value for the engine's `-"..."` literal, else an error."""
+        if any(c in s for c in '"\\\n\r'):
+            raise Error(M.WORDS_BAD_CHAR % s)
+        return s
+
     def _obj_words(self, block, fi, lines, field=False):
         words = block.get("words")
         if words is None:
@@ -415,7 +421,7 @@ class Emitter:
         use(block, "words") or use(block, "word")
         head = T.WORD_FIELD if field else T.WORDS_ALIAS
         if isinstance(words, Text):
-            lines.append(head % fi % words.s)
+            lines.append(head % fi % self._words_text(words.s))
         elif isinstance(words, Raw):
             lines.append(T.LINE % (fi, "word = " + words.s if field else words.s))
         elif isinstance(words, list):
@@ -423,7 +429,7 @@ class Emitter:
             for it in words:
                 if not isinstance(it, Text):
                     raise Error(M.WORDS_LIST_ITEMS_STRINGS)
-                items.append(it.s.strip())
+                items.append(self._words_text(it.s.strip()))
             lines.append(head % fi % "|".join(items))
         else:
             raise Error(M.WORDS_QUOTED_OR_LIST)
@@ -891,7 +897,7 @@ class Emitter:
                 own = "pl" if key == "hero" else "game"
                 out.extend(self.on(hv, "", target, owner=own))
             elif key == "hero" and hk == "words":
-                out.append(T.HERO_WORD % hv.s)
+                out.append(T.HERO_WORD % self._words_text(hv.s))
             else:
                 _check_field_name(hk)
                 out.append(T.FIELD_BARE % (target, hk, self.body(hv, hk)))
