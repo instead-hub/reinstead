@@ -250,17 +250,17 @@ fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str: |lua
 fn Noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str: |lua
   return s:Noun_hint(n, nn)
 
-fn It(s: obj) -> str: |lua
-  return s:It()
+fn It(s: obj, n: tbl[case|gram]|case|num?) -> str: |lua
+  return s:It(n)
 
-fn it(s: obj) -> str: |lua
-  return s:it()
+fn it(s: obj, n: tbl[case|gram]|case|num?) -> str: |lua
+  return s:it(n)
 
-fn This(s: obj) -> str: |lua
-  return s:This()
+fn This(s: obj, n: tbl[case|gram]|case|num?) -> str: |lua
+  return s:This(n)
 
-fn this(s: obj) -> str: |lua
-  return s:this()
+fn this(s: obj, n: tbl[case|gram]|case|num?) -> str: |lua
+  return s:this(n)
 
 fn hint(s: obj, h: str): |lua
   s:hint(h)
