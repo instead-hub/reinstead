@@ -1176,7 +1176,7 @@ function mp:after_Exam(w)
       local t
       if w:has'on' and w.when_on ~= nil then
         t = std.call(w, 'when_on')
-      else
+      elseif w:hasnt'on' and w.when_off ~= nil then
         t = std.call(w, 'when_off')
       end
       if t then
