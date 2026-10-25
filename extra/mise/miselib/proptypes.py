@@ -365,6 +365,46 @@ def _tail_maps(args):
     return plain, shifted
 
 
+TAIL_KEYS = ("w", "wh")
+
+
+def _merge_tail(types):
+    """Least common type of one handler position.
+
+    `None` means the event has no such argument; it makes the result
+    optional. Unlike `type event:` merging, handler positions never use
+    unions: incompatible types become `any`.
+    """
+    present = [t for t in types if t is not None]
+    if not present:
+        return None
+    if "any" in present:
+        return "any"
+    optional = any(t is None or t == "nil" or t.endswith("?") for t in types)
+    bases = [t[:-1] if t.endswith("?") else t for t in present]
+    if len(set(bases)) != 1:
+        return "any"
+    return bases[0] + ("?" if optional else "")
+
+
+def merge_tail_types(tails, table, years):
+    """Merge the w/wh types of a composite handler.
+
+    Untyped and empty signatures use the default `obj` tail; a typed
+    signature that omits a trailing position makes it optional.
+    """
+    out = []
+    for key in TAIL_KEYS:
+        types = ["obj" if not table.get(ev)
+                 else (tails.get(ev) or {}).get(key) for ev in years]
+        if all(t is None for t in types):
+            continue
+        merged = _merge_tail(types)
+        if merged is not None:
+            out.append(merged)
+    return out
+
+
 def _verb_sig(text):
     """(event, args) of one engine pattern, else (None, None)."""
     pat, sep, ev = text.rpartition(":")

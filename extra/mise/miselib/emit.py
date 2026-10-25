@@ -9,7 +9,7 @@ from .condast import TAILS
 from .emitlogic import emit_logic
 from .constructs import PRESETS, decl_key
 from .decl import check_ref_value, is_true, mixin_bodies, sym_text
-from .proptypes import prop_of, prop_scope
+from .proptypes import merge_tail_types, prop_of, prop_scope
 from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import transpile_exprlist
 from .exprparse import fn_name, min_args
@@ -277,12 +277,12 @@ class Emitter:
         `s`, then `ev` for Any/Default, then the event arguments (`w`, `wh`),
         so explicit parameter names are free. The engine binds a1 to `s`
         only for the acted-upon object; rooms and engine modules (game, mp)
-        get the arguments unshifted. A comma key is typed only when all its
-        events share the arguments; `ev == X`/`event() == X` narrow the tail.
+        get the arguments unshifted. A comma key merges its events by
+        position: a missing argument becomes optional, `any` absorbs a
+        concrete type and incompatible types become `any`.
         """
         life = pfx == "life_"
         table = self.ctx.life_args if life else self.ctx.event_args
-        args = table.get(years[0])
         kind = self.ctx.id_kind.get(owner, owner)
         while kind in self.ctx.class_parents:
             kind = self.ctx.class_parents[kind]
@@ -290,8 +290,7 @@ class Emitter:
         tails = (self.ctx.life_tails if life else self.ctx.event_tails)[shifted]
         names = self.param_env(prm)
         seq = ["obj"] + (["event"] if years[0] in ("Any", "Default") else [])
-        if args is not None and len(set(map(table.get, years))) == 1:
-            seq += tails.get(years[0], {}).values()
+        seq += merge_tail_types(tails, table, years)
         env = dict(zip(names, chain(seq, repeat("obj"))))
         env[TAILS] = tails
         return env

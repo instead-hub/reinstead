@@ -1,0 +1,12 @@
+name: t
+lang: ru
+include: stdlib
+
+extend type event:
+  A: obj, obj
+  B: obj
+
+obj x:
+  words: вещь
+  before A,B: |
+    say (w:noun())

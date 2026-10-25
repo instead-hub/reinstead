@@ -1,1 +1,1 @@
-mise: error: expected str, got obj: w in narrow-outside.mise:17: say ( text_of ( w ) )
+mise: error: expected str, got any: w in narrow-outside.mise:17: say ( text_of ( w ) )
