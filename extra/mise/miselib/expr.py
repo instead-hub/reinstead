@@ -3,9 +3,10 @@ import re
 
 from . import state as S
 from .common import *
+from .common import _scan_depth
 from .lex import lex_lua
 from .constructs import ENGINE_FIELDS
-from .typing import canon_type, type_error, type_ok
+from .typing import canon_type, tbl_inner, type_error, type_ok
 from .exprparse import (Call, ExprEmit, Field, Index, Ref, check_arity,
                         expr_list, fn_call, min_args)
 from . import messages as M
@@ -275,7 +276,55 @@ def _for_bound(p, env, where, ctx):
     return code
 
 
+def _split_for_of(header):
+    """Split `vars of expr` outside strings/brackets."""
+    for i, c, depth in _scan_depth(header, 0, "([{", ")]}", naive=True):
+        if depth or not header.startswith("of", i):
+            continue
+        if i and not header[i - 1].isspace():
+            continue
+        j = i + 2
+        if j < len(header) and not header[j].isspace():
+            continue
+        return header[:i].strip(), header[j:].strip()
+    return None
+
+
+def _for_of(header, env, where, ctx):
+    parts = _split_for_of(header)
+    if parts is None:
+        raise LintError(M.BAD_FOR_HEADER % (where, header))
+    names_text, iterable = parts
+    vars_ = {}
+    for spec in names_text.split(","):
+        if not spec.strip():
+            continue
+        name, pt = _loop_var(spec, where, ctx)
+        vars_[name] = pt or "any"
+    names = list(vars_)
+    if len(names) not in (1, 2):
+        raise LintError(M.BAD_FOR_HEADER % (where, header))
+    code, types = transpile_exprlist(iterable, env, where, None, ctx)
+    iter_t = types[0] if types else "any"
+    elem = "obj" if iter_t == "list" else tbl_inner(iter_t)
+    if elem is None:
+        elem = "any"
+    if len(names) == 1:
+        vars_[names[0]] = vars_[names[0]] if vars_[names[0]] != "any" else elem
+        head = "_, %s in ipairs(%s)" % (names[0], code)
+    else:
+        if vars_[names[0]] == "any":
+            vars_[names[0]] = "num"
+        if vars_[names[1]] == "any":
+            vars_[names[1]] = elem
+        head = "%s in ipairs(%s)" % (", ".join(names), code)
+    return head, vars_
+
+
 def transpile_for(header, env, where, ctx):
+    of = _split_for_of(header)
+    if of is not None:
+        return _for_of(header, env, where, ctx)
     if P.IN_RE.search(header):
         return _for_in(header, env, where, ctx)
     parts = split_list(header)

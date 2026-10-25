@@ -14,6 +14,10 @@ local function fn_where_list(w)
   return std.list(list)
 end
 
+local function fn_plurals(s)
+  return std.list(mp.multi[s] or { s })
+end
+
 local function fn_is_room(s)
   return not not std.is_obj(s or false, 'room')
 end

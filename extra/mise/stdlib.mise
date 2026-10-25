@@ -238,6 +238,9 @@ fn where_list(w: obj) -> list: |lua
   where(w, list)
   return std.list(list)
 
+fn plurals(s: obj) -> list: |lua
+  return std.list(mp.multi[s] or { s })
+
 fn inroom(w: obj) -> obj: |lua
   return inroom(w)
 

@@ -1,0 +1,25 @@
+name: for-of
+lang: ru
+include: stdlib
+
+obj box:
+  words: коробка
+  attrs: scenery
+  description: Коробка.
+
+obj rock:
+  words: камень
+  attrs: scenery
+  description: Камень.
+
+obj coin:
+  words: монета
+
+setup:
+  init: |
+    for w of { box, rock }:
+      say (w:noun())
+    for i, w of { box, rock }:
+      say (i)
+    for w of plurals(box):
+      say (w:noun())
