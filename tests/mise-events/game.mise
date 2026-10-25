@@ -30,12 +30,12 @@ room r:
   words: комната
   with: x, npc, y, z
   before Consult: |
-    say text_of(wh)
+    say (text_of(wh))
 
 obj x:
   words: вещь
   before AskFor: |
-    say text_of(w)
+    say (text_of(w))
   before Cut: |
     if w:
       w:has scenery
@@ -49,12 +49,12 @@ obj y:
     say Режешь.
   before Take, AskFor: |
     when event() == AskFor:
-      say text_of(w)
+      say (text_of(w))
     default:
       pass
   before Any: |
     when ev == Ask:
-      say text_of(w)
+      say (text_of(w))
     when ev == Cut:
       if w:
         w:has scenery
@@ -65,23 +65,23 @@ obj z:
   words: штуковина
   before AskFor: &reply_text
   before Consult(s, text): |
-    say text_of(text)
+    say (text_of(text))
   before Whisper: |
-    say text_of(w)
+    say (text_of(w))
 
 obj npc:
   words: сторож
   attrs: animate
   life Ask: |
-    say text_of(w)
+    say (text_of(w))
 
 impl game:
   before Tell: |
-    say text_of(wh)
+    say (text_of(wh))
   before Zap: |
     if w:
       w:has scenery
 
 event Ask:
   on: |
-    say text_of(wh)
+    say (text_of(wh))

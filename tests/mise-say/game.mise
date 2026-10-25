@@ -1,0 +1,19 @@
+name: say
+lang: ru
+include: stdlib
+
+fn note(t: str): |lua
+  p(t)
+
+obj x:
+  words: вещь
+
+setup:
+  init: |
+    say x
+    say x:noun()
+    say (x:noun())
+    line line text
+    append append text
+    note raw words
+    note (x:noun())

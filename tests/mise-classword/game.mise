@@ -14,8 +14,8 @@ Thing y:
 room r:
   words: комната
   dsc: |
-    say x:noun()
-    say y:noun()
+    say (x:noun())
+    say (y:noun())
 
 setup:
   start: |

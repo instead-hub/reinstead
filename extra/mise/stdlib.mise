@@ -112,6 +112,9 @@ fn hasnt(s: obj, a: attr) -> bool: |lua
 fn move(s: obj, where: obj): |lua
   move(s, where)
 
+fn check_move(s: obj, where: obj) -> bool: |lua
+  return mp:move(s, where)
+
 fn objs(s: obj) -> list: |lua
   return s.obj
 
@@ -393,7 +396,7 @@ class Path:
   before Default: |
     local d = desc(s)
     if d:
-      say d
+      say (d)
       stop
     say(path_dsc(s.walk_to))
   default_Event: Walk

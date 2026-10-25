@@ -23,9 +23,9 @@ room r:
   before Zap: |
     w:has scenery
   before Whisper: |
-    say wh
+    say (wh)
 
 obj x:
   words: вещь
   before Whisper: |
-    say w
+    say (w)

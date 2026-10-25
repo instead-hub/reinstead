@@ -1,1 +1,1 @@
-mise: error: expected str, got obj: text in positional-param-type.mise:15: text_of ( text )
+mise: error: expected str, got obj: text in positional-param-type.mise:15: say ( text_of ( text ) )

@@ -12,4 +12,4 @@ room r:
 obj x:
   words: вещь
   before Take(s, text): |
-    say text_of(text)
+    say (text_of(text))

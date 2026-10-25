@@ -13,5 +13,5 @@ obj x:
   words: вещь
   before Take, AskFor: |
     when event() == AskFor:
-      say text_of(w)
-    say text_of(w)
+      say (text_of(w))
+    say (text_of(w))

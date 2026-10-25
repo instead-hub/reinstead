@@ -13,35 +13,35 @@ from . import messages as M
 from . import patterns as P
 
 
-def expr_cont(s):
-    c = s[0]
-    if c == "#":
-        return False
-    if c == "~":
-        return not (len(s) > 1 and (s[1].isalpha() or s[1] == "_"))
-    if c == "-":
-        return not (len(s) > 1 and s[1].isdigit())
-    if c in "=<>~+*/%^.,)]}:":
-        return True
-    m = P.DSL_RE.match(s)
-    return bool(m and m.group(0) in S.KEYWORDS)
+def _expects_str(ctx, pt):
+    """Does a parameter type accept a string value? `any` is not text."""
+    return bool(pt) and pt != "any" and type_ok(ctx, "str", pt)
 
-def _no_paren_kind(plist, variadic, rest, env, ctx):
-    """`"str"`, `"typed"` or None (not a one-argument no-paren call)."""
-    if not plist:
-        if expr_cont(rest):
-            return None
-        return "str" if not expr_like(rest, env, ctx) else "typed"
-    if not variadic and not type_ok(ctx, "str", plist[0][1]):
-        return None
-    return "str" if not expr_like(rest, env, ctx) else "typed"
+
+def _tail_type(sig):
+    """Type of the only no-paren argument, or None."""
+    plist, _rets, variadic = sig
+    if len(plist) == 1:
+        return plist[0][1]
+    if not plist and variadic:
+        return variadic
+    return None
+
+
+def _text_tail(sig, rest, ctx):
+    """Is the no-paren tail of this call a raw text argument?"""
+    pt = _tail_type(sig)
+    if not pt or not rest or rest.startswith("(") \
+            or rest[0] in "\"'" or P.LONG_OPEN_RE.match(rest):
+        return False
+    return _expects_str(ctx, pt)
 
 
 _TEXT_CALLS = ("p", "pn", "pr")
 
 
 def _text_arg(name, text, ctx):
-    """One-string call of say/line/append: `p "..."` sugar when possible."""
+    """One-string call with a `p "..."`/`pn`/`pr` adapter when possible."""
     desc = ctx.inline.get(name)
     if desc is not None and desc[0] == "call" and desc[1][0] in _TEXT_CALLS:
         return desc[1][0] + " " + lua_str(text), ["str"]
@@ -50,15 +50,8 @@ def _text_arg(name, text, ctx):
 
 def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
     plist, rets, variadic = sig
-    try:
-        code, types = parse(
-            rest, env, where, plist[0][1] if plist else None, ctx)
-    except LintError as e:
-        if isinstance(e, TypeCheckError):
-            raise
-        if plist and type_ok(ctx, "str", plist[0][1]):
-            return _text_arg(name, rest, ctx)
-        raise
+    code, types = parse(
+        rest, env, where, plist[0][1] if plist else None, ctx)
     check_arity(name, plist, variadic, len(types))
     for (pn, pt), t in zip(plist, types):
         if not type_ok(ctx, t, pt):
@@ -81,13 +74,14 @@ def no_paren_call(text, env, where, ctx):
     rest = m.group(2).strip()
     if not rest or not (len(plist) == 1 or variadic):
         return None
-    kind = _no_paren_kind(plist, variadic, rest, env, ctx)
-    if kind is None:
-        return None
-    if kind == "str":
+    sig = (plist, rets, variadic)
+    if _text_tail(sig, rest, ctx):
         return _text_arg(name, rest, ctx)
-    return _typed_arg_form(name, (plist, rets, variadic), rest, env, where,
-                           ctx, transpile_exprlist)
+    pt = _tail_type(sig)
+    if not _expects_str(ctx, pt):
+        return None
+    return _typed_arg_form(name, sig, rest, env, where, ctx,
+                           transpile_exprlist)
 
 def transpile_exprlist(text, env, where, expected=None, ctx=None):
     raw = no_paren_call(text, env, where, ctx)
@@ -278,7 +272,7 @@ def _for_bound(p, env, where, ctx):
 
 def _split_for_of(header):
     """Split `vars of expr` outside strings/brackets."""
-    for i, c, depth in _scan_depth(header, 0, "([{", ")]}", naive=True):
+    for i, _, depth in _scan_depth(header, 0, "([{", ")]}", naive=True):
         if depth or not header.startswith("of", i):
             continue
         if i and not header[i - 1].isspace():
@@ -290,41 +284,33 @@ def _split_for_of(header):
     return None
 
 
-def _for_of(header, env, where, ctx):
-    parts = _split_for_of(header)
-    if parts is None:
-        raise LintError(M.BAD_FOR_HEADER % (where, header))
+def _for_of(parts, env, where, ctx):
     names_text, iterable = parts
-    vars_ = {}
-    for spec in names_text.split(","):
-        if not spec.strip():
-            continue
-        name, pt = _loop_var(spec, where, ctx)
-        vars_[name] = pt or "any"
+    pairs = [(spec, _loop_var(spec, where, ctx))
+             for spec in names_text.split(",") if spec.strip()]
+    vars_ = {name: pt or "any" for _spec, (name, pt) in pairs}
     names = list(vars_)
     if len(names) not in (1, 2):
         raise LintError(M.BAD_FOR_HEADER % (where, header))
     code, types = transpile_exprlist(iterable, env, where, None, ctx)
     iter_t = types[0] if types else "any"
-    elem = "obj" if iter_t == "list" else tbl_inner(iter_t)
-    if elem is None:
-        elem = "any"
+    elem = "obj" if iter_t == "list" else (tbl_inner(iter_t) or "any")
     if len(names) == 1:
-        vars_[names[0]] = vars_[names[0]] if vars_[names[0]] != "any" else elem
-        head = "_, %s in ipairs(%s)" % (names[0], code)
-    else:
-        if vars_[names[0]] == "any":
-            vars_[names[0]] = "num"
-        if vars_[names[1]] == "any":
-            vars_[names[1]] = elem
-        head = "%s in ipairs(%s)" % (", ".join(names), code)
-    return head, vars_
+        name = names[0]
+        kind = vars_[name] if vars_[name] != "any" else elem
+        return "_, %s in ipairs(%s)" % (name, code), {**vars_, name: kind}
+    first, second = names
+    return "%s in ipairs(%s)" % (", ".join(names), code), {
+        **vars_,
+        first: "num" if vars_[first] == "any" else vars_[first],
+        second: elem if vars_[second] == "any" else vars_[second],
+    }
 
 
 def transpile_for(header, env, where, ctx):
     of = _split_for_of(header)
     if of is not None:
-        return _for_of(header, env, where, ctx)
+        return _for_of(of, env, where, ctx)
     if P.IN_RE.search(header):
         return _for_in(header, env, where, ctx)
     parts = split_list(header)
@@ -337,18 +323,3 @@ def transpile_for(header, env, where, ctx):
     start = _for_bound(start_expr, env, where, ctx)
     codes = [start] + [_for_bound(p, env, where, ctx) for p in parts[1:]]
     return ("%s = %s" % (name, ", ".join(codes)), {name: "num"})
-
-def expr_like(s, env, ctx):
-    c = s[0]
-    if c in "'\"([{`_#":
-        return True
-    if c.isdigit():
-        return True
-    if c == "-" and len(s) > 1 and s[1].isdigit():
-        return True
-    m = P.DSL_RE.match(s)
-    if not m:
-        return False
-    tok = m.group(0)
-    return (tok in env or tok in ctx.vars or tok in ctx.ids or tok in ctx.fn_sigs
-            or tok in ctx.funcs)
