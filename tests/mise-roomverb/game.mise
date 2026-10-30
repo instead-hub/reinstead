@@ -1,0 +1,20 @@
+name: roomverb
+lang: ru
+include: stdlib
+
+event Help:
+
+room computer:
+  words: компьютер
+
+verb Help:
+  target: computer
+  words: пом/ощь
+
+extend #Help:
+  target: computer
+  words: помощь
+
+impl computer:
+  on Help: |
+    say Помощь.

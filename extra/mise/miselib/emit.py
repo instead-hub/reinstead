@@ -18,11 +18,11 @@ from . import messages as M
 from . import patterns as P
 
 
-VERB_KEYS = ("tag", "words", "patterns", "prio", "hint")
+VERB_KEYS = ("tag", "target", "words", "patterns", "prio", "hint")
 
 # engine parents whose instances the engine calls as a room, not as an object
 ROOM_KINDS = frozenset({"room", "cutscene", "gameover"})
-EXTEND_KEYS = ("words", "patterns", "prio", "hint")
+EXTEND_KEYS = ("target", "words", "patterns", "prio", "hint")
 
 
 _FIELD_NAME_RE = re.compile(r"^[A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*$")
@@ -616,6 +616,14 @@ class Emitter:
                 fields.append(self.value(p))
         return fields
 
+    def verb_target(self, block):
+        """Bare object/game target of a local verb, or None for the default."""
+        target = block.get("target")
+        if target is None:
+            return None
+        check_ref_value("verb", "target", target)
+        return T.REF % target.s
+
     def verb_extra(self, block):
         extra = []
         if block.get("prio") is not None:
@@ -638,8 +646,12 @@ class Emitter:
             fields.append(self.value(tag))
         fields += self.verb_fields(block, required=True)
         extra = self.verb_extra(block)
-        return T.VERB % (base, ", ".join(fields),
-                                    (", " + ", ".join(extra)) if extra else "")
+        args = ", ".join(fields)
+        tail = (", " + ", ".join(extra)) if extra else ""
+        target = self.verb_target(block)
+        if target is not None:
+            return T.VERB_TARGET % (base, args, tail, target)
+        return T.VERB % (base, args, tail)
 
     def verb_extend(self, block, ident, base):
         if not ident:
@@ -655,8 +667,12 @@ class Emitter:
         extra = self.verb_extra(block)
         ctor = "VerbExtendWord" if block.get("words") is not None \
             else "VerbExtend"
-        return T.VERB_EXTEND % (base, ctor, ", ".join(fields),
-                                  (", " + ", ".join(extra)) if extra else "")
+        args = ", ".join(fields)
+        tail = (", " + ", ".join(extra)) if extra else ""
+        target = self.verb_target(block)
+        if target is not None:
+            return T.VERB_EXTEND_TARGET % (base, ctor, args, tail, target)
+        return T.VERB_EXTEND % (base, ctor, args, tail)
 
     def verb_remove(self, block, ident, base):
         if not (ident or "").startswith("#"):
