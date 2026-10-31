@@ -41,6 +41,7 @@ props obj:
 
 props room:
   cant_go: str | bool | fn(s: obj, to: direction) -> str
+  OnError: fn(s: obj, err: str)
   compass_look: fn(s: obj, to: direction)
   onenter: fn(s: obj, w: obj)
   onexit: fn(s: obj, w: obj)

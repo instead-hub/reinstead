@@ -243,6 +243,7 @@ refs       — поля-ссылки (см. «Типы полей»)
 | `description`, `dsc`, `title`, `inv`, `when_open`, … | текст/логика/Lua |
 | `daemon`, `each_turn`, `when_open`/`when_closed`/`when_on`/`when_off`, `found_in`, `door_to` | обработчики-поля `(s)` |
 | `compass_look` | обработчик `(s, to)` (направление) |
+| `OnError` | обработчик ошибки парсера `(s, err: str)` |
 | `scope` | список объектов или обработчик `(s, w)` |
 | `enter`/`exit`, `onenter`/`onexit` | обработчики STEAD3 `(s, w)` (откуда/куда) |
 | `default_Event`, `capacity`, `help`, `disp`, `gfx`, `word`/`raw_word` | простые свойства (типы — в `props:`) |
@@ -581,6 +582,7 @@ props obj:
 
 props room:
   n_to: ref | fn(s: obj) -> ref
+  OnError: fn(s: obj, err: str)
 
 props door:
   door_to: ref | fn(s: obj) -> ref

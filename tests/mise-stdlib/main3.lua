@@ -170,6 +170,9 @@ room {
   -"зал";
   nam = "hall";
   dsc = "Зал.";
+  OnError = function(s, err)
+    p(err)
+  end;
 }
 
 function lua_probe(s, w, wh)

@@ -5,6 +5,8 @@ include: stdlib
 room hall:
   words: зал
   dsc: [[Зал.]]
+  OnError: |
+    say (err)
 
 fn describe(s: obj) -> str: |
   return 'Ящик.'
