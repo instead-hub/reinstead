@@ -116,3 +116,12 @@ _'box'.Gaze = function(s, w, wh)
     p([[одежда]])
   end
 end;
+
+function init()
+  if true then
+    p([[one]])
+  end
+  if false then
+    p([[two]])
+  end
+end

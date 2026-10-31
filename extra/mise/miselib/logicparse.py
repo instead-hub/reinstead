@@ -50,6 +50,9 @@ def _parse_branches(lines, i, indent, style, branches, recurse):
         elif t2 == else_kw + ":":
             body2, i = _branch_body(lines, i, indent, else_kw, recurse)
             else_bodies.append(body2)
+        elif style == "if" and t2.startswith("when "):
+            # A different chain style starts a new independent block.
+            break
         elif _is_chain_kw(t2):
             _chain_error(t2, lno2, style)
         else:
