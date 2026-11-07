@@ -89,8 +89,8 @@ def _no_key_error(pos, logic):
 
 
 def _is_handler_key(key):
-    """`on`/`before`/... including their event names."""
-    return key in HANDLER_KEYS or key.split(None, 1)[0] in HANDLER_KEYS
+    """`on`/`life`/`before`/... including their event names."""
+    return key.split(None, 1)[0] in P.PHASES
 
 
 def _block_child(lines, pos, indent, key, recurse, logic=None):

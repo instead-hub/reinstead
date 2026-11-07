@@ -180,7 +180,6 @@ TEXT_KEYS = {
     "ask", "reply", "say", "intro",
 }
 
-HANDLER_KEYS = ("on", "before", "after", "post")
 
 # keys whose block holds declarations or `key: value` fields; under any
 # other key an indented block is logic and must start with `|`
