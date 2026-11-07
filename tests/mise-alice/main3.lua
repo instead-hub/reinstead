@@ -201,7 +201,7 @@ obj {
   -"зеркало,стекло";
   nam = "mirror";
   found_in = 'Drawing_Room';
-  ["before_Touch,Pull,Push"] = { "Рука проходит сквозь серебристый туман", "не встречая сопротивления!" };
+  ["before_Touch,Pull,Push"] = "Рука проходит сквозь серебристый туман, не встречая сопротивления!";
   before_ThrownAt = "И заработать семь лет несчастий и бед?!";
 }:attr 'static,concealed,enterable'
 

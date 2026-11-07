@@ -88,6 +88,11 @@ def _no_key_error(pos, logic):
     parse_error(pos + 1, M.EXPECTED_KEY_VALUE)
 
 
+def _is_handler_key(key):
+    """`on`/`before`/... including their event names."""
+    return key in HANDLER_KEYS or key.split(None, 1)[0] in HANDLER_KEYS
+
+
 def _block_child(lines, pos, indent, key, recurse, logic=None):
     j = skip_blank(lines, pos + 1)
     if _is_list_item(lines, j, indent):
@@ -95,7 +100,7 @@ def _block_child(lines, pos, indent, key, recurse, logic=None):
         return sub, cnxt - pos
     if j < len(lines) and lines[j][1] > indent:
         child = logic or ((key, pos + 1) if not _is_struct(key) else None)
-        node, bnxt = recurse(lines, j, lines[j][1], key in HANDLER_KEYS,
+        node, bnxt = recurse(lines, j, lines[j][1], _is_handler_key(key),
                              child)
         return node, bnxt - pos
     return Block(), 1
@@ -136,10 +141,13 @@ VALUE_FORMS = (
 
 
 def _block_value(lines, pos, indent, rest, text_values, key):
-    tm = text_values or key in TEXT_KEYS
+    handler = _is_handler_key(key)
+    tm = text_values or key in TEXT_KEYS or handler
     m = _FNREF_RE.match(rest)
     if m:
         return FnRef(m.group(1)), 1
+    if handler and rest.strip() == "pass":
+        return Bare("pass"), 1
     for matches, read in VALUE_FORMS:
         if matches(rest, tm):
             return read(lines, pos, indent, rest, tm)
