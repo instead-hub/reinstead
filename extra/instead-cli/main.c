@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2022 Peter Kosyh <p.kosyh at gmail.com>
+ * Copyright 2009-2026 Peter Kosyh <p.kosyh at gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation files
@@ -438,8 +438,8 @@ restart:
 		if (rc && !str && !menu_mode) { /* parser? */
 			snprintf(cmd, sizeof(cmd), "@metaparser \"%s\"", p);
 			str = instead_cmd(cmd, &rc);
-			if (!rc && p[0])
-				parser_mode = 1;
+			if (!rc)
+				parser_mode = (!p[0])+1;
 		}
 		if (rc) { /* try act */
 			free(str);
@@ -457,6 +457,8 @@ restart:
 		}
 		if (!parser_mode && !cmd_mode)
 			footer();
+		if (parser_mode == 2)
+			parser_mode = 0;
 		if (opt_log) {
 			if (log_file)
 				fprintf(log_file, "%s\n", p);
