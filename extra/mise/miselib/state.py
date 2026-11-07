@@ -18,7 +18,6 @@ class Ctx:
         self.ids = set()
         self.vars = set()
         self.funcs = set()
-        self.fns = set()
         self.fn_sigs = {}
         self.global_types = {}
         self.event_names = set()

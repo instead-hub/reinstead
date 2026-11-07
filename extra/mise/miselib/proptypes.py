@@ -231,24 +231,33 @@ def register_props(root, ctx):
                 _register_prop(ctx, known, name, tval, target)
 
 
-def _check_ref_name(ctx, where, name):
+def _check_ref_name(ids, where, name):
     """Object reference name must be a declared id."""
-    if name not in ctx.ids:
+    if ids is not None and name not in ids:
         raise Error(M.UNKNOWN_OBJECT_REFERENCE % (where, name))
 
 
-def check_ref_list(ctx, where, val):
-    """`tbl[ref]` list items: bare names or `-`-list strings."""
-    for it in val:
-        if isinstance(it, Text):
-            _check_ref_name(ctx, where, it.s.strip())
-        elif isinstance(it, Bare):
-            if not P.REF_RE.fullmatch(it.s):
-                raise Error(M.OBJECT_NAME_IDENTIFIER % (where, it.s))
-            _check_ref_name(ctx, where, it.s)
-        else:
-            raise Error(M.EXPECTED_OBJECT_REFERENCE
-                        % (where, type(it).__name__.lower()))
+def _check_one_ref(ids, where, it, allow_text, in_list):
+    if isinstance(it, Text):
+        if not (allow_text and in_list):
+            raise Error(M.OBJECT_REFERENCE % (where, it.s))
+        _check_ref_name(ids, where, it.s.strip())
+    elif isinstance(it, Bare):
+        if not P.REF_RE.fullmatch(it.s):
+            raise Error(M.OBJECT_NAME_IDENTIFIER % (where, it.s))
+        _check_ref_name(ids, where, it.s)
+    elif in_list:
+        raise Error(M.EXPECTED_OBJECT_REFERENCE
+                    % (where, type(it).__name__.lower()))
+
+
+def check_ref_value(ids, where, val, allow_text=False, in_list=False):
+    """Validate an object reference or a list of object references."""
+    if isinstance(val, list):
+        for it in val:
+            _check_one_ref(ids, where, it, allow_text, True)
+        return
+    _check_one_ref(ids, where, val, allow_text, in_list)
 
 
 def _prop_table(ctx, owner, base, prop, val):
@@ -267,7 +276,7 @@ def _ref_table(ctx, where, text):
     s = text.strip()
     inner = s[1:-1] if s.startswith("{") and s.endswith("}") else s
     items = [parse_scalar(p, CURRENT_LINE[0] or 0) for p in split_list(inner)]
-    check_ref_list(ctx, where, items)
+    check_ref_value(ctx.ids, where, items, True, True)
     names = ", ".join(lua_str(it.s.strip()) for it in items)
     return "{ %s }" % names if names else "{}"
 
@@ -290,7 +299,7 @@ def _prop_text(prop, val, where):
 
 def _prop_list(ctx, prop, val, where):
     if prop.has_reflist or prop.has_list:
-        check_ref_list(ctx, where, val)
+        check_ref_value(ctx.ids, where, val, True, True)
         return ("list" if prop.has_list else "tbl"), False
     if prop.has_tbl:
         if prop.tbl_elem:

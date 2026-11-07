@@ -5,17 +5,16 @@ from .common import *
 from .cursor import at, use
 from .parse import parse_source
 from .constructs import RESERVED_KINDS, ENGINE_FIELDS, classify
-from .decl import mixin_bodies, parse_fn_sig
+from .decl import parse_fn_sig
 from .inline import _inline_fn
-from .proptypes import (check_prop_value, collect_types, prop_of,
-                       prop_scope, register_events, register_props,
+from .proptypes import (check_prop_value, check_ref_value, collect_types,
+                       prop_of, prop_scope, register_events, register_props,
                        register_refs)
 from .typing import base as type_base, literal_type
 from . import messages as M
 from . import patterns as P
 
 _MIXIN_KEY_RE = re.compile(r"^mixins?\b")
-_EVENT_PREFIX_RE = re.compile(r"^(on|life|before|after|post)\s")
 
 def _decl_id(key):
     """(ident, kind) of a declaration or talk key, else None."""
@@ -82,7 +81,7 @@ def _nested_decls(val):
     """Yield (kind, ident, block) of declarations inside with/inside."""
     for nk, nv in val.items:
         k2, info = classify(nk)
-        if k2 == "decl" and info[1] and isinstance(nv, Block):
+        if k2 == "decl" and isinstance(nv, Block):
             yield info[0], info[1], nv
 
 
@@ -151,26 +150,53 @@ def field_base(key, val, ctx):
     parts = [p.strip() for p in base.split(",")]
     if (params is not None or isinstance(val, Block)
             or base in FIELD_SKIP or base in ("Any", "Default")
-            or _EVENT_PREFIX_RE.match(base)
+            or P.EVENT_PREFIX_RE.match(base)
             or any(p in ctx.event_names or p.startswith("life_")
                    or p in ("Any", "Default") for p in parts)):
         return None
     return base
 
 
-def attach_mixins(block, ctx, into, collect):
-    """Merge attached mixins' fields first (own keys override)."""
+def _mixin_bodies(ctx, val):
+    """Resolved `(name, body)` pairs of a `mixin` field value."""
+    for v in (val if isinstance(val, list) else [val]):
+        name = v.s if hasattr(v, "s") else str(v)
+        body = ctx.mixin_defs.get(name)
+        if body is None:
+            raise Error(M.UNKNOWN_MIXIN + name)
+        yield name, body
+
+
+def _merge_mixin(merged, seen, own, bdef, name):
+    for i, (k, _bv) in enumerate(bdef.items):
+        if k in seen:
+            raise Error(M.MIXIN_KEY_CONFLICT % (k, seen[k], name))
+        seen[k] = name
+        if k not in own:
+            merged.copy_from(bdef, i)
+
+
+def _merge_own(merged, block):
+    for i, (k, _bv) in enumerate(block.items):
+        if k != "mixin":
+            merged.copy_from(block, i)
+
+
+def expand_mixins(block, ctx):
+    """Merge attached mixins' keys into `block` (own keys win)."""
     val = block.get("mixin")
     if val is None:
         return
+    use(block, "mixin")
+    own = {k for k, _ in block.items if k != "mixin"}
+    merged = Block()
     seen = {}
-    for name, bdef in mixin_bodies(ctx, val, use(block, "mixin")):
-        for k, _bv in bdef.items:
-            if k in seen:
-                raise Error(M.MIXIN_KEY_CONFLICT
-                            % (k, seen[k], name))
-            seen[k] = name
-        collect(bdef, ctx, into)
+    for name, bdef in _mixin_bodies(ctx, val):
+        _merge_mixin(merged, seen, own, bdef, name)
+    _merge_own(merged, block)
+    block.items = merged.items
+    block.lines = merged.lines
+    block.srcs = merged.srcs
 
 
 def _reject_bare_str(base, val, t):
@@ -194,8 +220,15 @@ def _check_method_override(ctx, into, owner, base, val):
         raise Error(M.CLASS_METHOD_OVERRIDE % (cls, base))
 
 
-def _collect_field(ctx, into, owner, key, val):
-    """Store the typed value of one regular field."""
+def _check_custom_ref(ctx, owner, key, val, base):
+    for part in (p.strip() for p in base.split(",")):
+        if part in ctx.ref_fields:
+            check_ref_value(ctx.ids, "%s.%s" % (owner or "?", key), val)
+            return
+
+
+def _collect_field(ctx, into, owner, key, val, check_override=True):
+    """Validate and store the typed value of one regular field."""
     base = field_base(key, val, ctx)
     if base is None:
         if key == "disabled" and not isinstance(val, Bool):
@@ -204,15 +237,20 @@ def _collect_field(ctx, into, owner, key, val):
     t = literal_type(ctx, val, refs=True)
     _reject_bare_str(base, val, t)
     prop = prop_of(ctx, prop_scope(ctx, owner), base)
-    _check_method_override(ctx, into, owner, base, val)
+    if check_override:
+        _check_method_override(ctx, into, owner, base, val)
     if prop is not None:
-        into[base] = check_prop_value(ctx, owner, base, prop, val, t)
+        res = check_prop_value(ctx, owner, base, prop, val, t)
+        if into is not None:
+            into[base] = res
         return
-    into[base] = (t, t == "obj" and isinstance(val, Bare))
+    _check_custom_ref(ctx, owner, key, val, base)
+    if into is not None and check_override:
+        into[base] = (t, t == "obj" and isinstance(val, Bare))
 
 
 def collect_block_fields(block, ctx, into, owner=None):
-    attach_mixins(block, ctx, into, collect_block_fields)
+    expand_mixins(block, ctx)
     for i, (key, val) in enumerate(block.items):
         at(block, i)
         if key == "with" and isinstance(val, Block):
@@ -226,7 +264,8 @@ def _collect_nested(block, ctx, collect):
     for kind, ident, nv in _nested_decls(block):
         fields = dict(ctx.fields.get(kind, {}))
         collect(nv, ctx, fields, ident)
-        ctx.fields[ident] = fields
+        if ident:
+            ctx.fields[ident] = fields
 
 
 def _collect_class(info, val, class_defs, _mixin_defs):
@@ -279,10 +318,11 @@ def _collect_decl_fields(root, ctx):
     """Field maps of declared objects/classes."""
     for key, val in root.items:
         kind, info = classify(key)
-        if kind == "decl" and info[1] and isinstance(val, Block):
+        if kind == "decl" and isinstance(val, Block):
             fields = dict(ctx.fields.get(info[0], {}))
             collect_block_fields(val, ctx, fields, info[1])
-            ctx.fields[info[1]] = fields
+            if info[1]:
+                ctx.fields[info[1]] = fields
 
 
 def collect_field_names(root, ctx):
@@ -333,39 +373,13 @@ def collect_field_types(root, ctx):
     _collect_decl_fields(root, ctx)
 
 
-def _check_mixin_names(ctx, value):
-    """Validate the mixin names of a `mixin` field value."""
-    for item in (value if isinstance(value, list) else [value]):
-        name = item.s if hasattr(item, "s") else str(item)
-        if name not in ctx.mixin_defs:
-            raise Error(M.UNKNOWN_MIXIN + name)
-
-
-def _check_bare_field(ctx, use_props, owner, key, val):
-    """Validate one non-mixin field of an impl/setup/hero block."""
-    base = field_base(key, val, ctx)
-    if key == "disabled":
-        if not isinstance(val, Bool):
-            raise Error(M.DISABLED_MUST_BE_BOOL)
-        return
-    t = literal_type(ctx, val, refs=True)
-    _reject_bare_str(base, val, t)
-    prop = prop_of(ctx, prop_scope(ctx, owner), base) if (
-        use_props and base) else None
-    if prop is not None:
-        t, is_ref = check_prop_value(ctx, owner, base, prop, val, t)
-        if owner in ctx.fields:
-            ctx.fields[owner][base] = (t, is_ref)
-
-
-def _walk_fields(ctx, block, use_props=False, owner=None):
-    """Validate the fields of one impl/setup/hero/const block."""
+def _walk_fields(ctx, block, owner=None):
+    """Validate the fields of one impl/setup/hero block."""
+    expand_mixins(block, ctx)
+    into = ctx.fields.get(owner)
     for n, (field_key, field_val) in enumerate(block.items):
         at(block, n)
-        if field_key == "mixin":
-            _check_mixin_names(ctx, field_val)
-            continue
-        _check_bare_field(ctx, use_props, owner, field_key, field_val)
+        _collect_field(ctx, into, owner, field_key, field_val, False)
 
 
 def _walk_setup_fields(setup, ctx):
@@ -373,33 +387,22 @@ def _walk_setup_fields(setup, ctx):
     for j, (skey, sval) in enumerate(setup.items):
         at(setup, j)
         if skey in ("hero", "game") and isinstance(sval, Block):
-            _walk_fields(ctx, sval, True, skey)
-
-
-def _bare_mixin(ctx, info, val, _key):
-    _walk_fields(ctx, val, True, info)
+            _walk_fields(ctx, sval, skey)
 
 
 def _bare_impl(ctx, info, val, _key):
     _check_impl_target(info, ctx)
-    _walk_fields(ctx, val, True, info)
+    _walk_fields(ctx, val, info)
 
 
 def _bare_setup(ctx, _info, val, _key):
     _walk_setup_fields(val, ctx)
 
 
-def _bare_vars(ctx, _info, val, _key):
-    _walk_fields(ctx, val)
-
-
 # the top-level blocks whose bare names are validated
 BARE_FORMS = {
-    "mixin": _bare_mixin,
     "impl": _bare_impl,
     "setup": _bare_setup,
-    "const": _bare_vars,
-    "global": _bare_vars,
 }
 
 
@@ -475,7 +478,7 @@ def resolve_lang_includes(root, ctx):
     root.items = [(k, _resolve_item(k, v, lang, ctx)) for k, v in root.items]
     return root
 
-def _include_one(name, ctx, seen, extra, extra_lines, extra_srcs, recurse):
+def _include_one(name, ctx, seen, extra, recurse):
     """Parse one included file; append its items, lines and sources."""
     if name in seen:
         return
@@ -483,28 +486,24 @@ def _include_one(name, ctx, seen, extra, extra_lines, extra_srcs, recurse):
     path = find_include(name, ctx)
     sub = parse_source(open(path, encoding="utf-8").read(), path)
     recurse(sub, ctx, seen)
-    extra.extend(sub.items)
-    extra_lines.extend(sub.lines)
-    extra_srcs.extend(sub.srcs)
+    extra.extend_from(sub)
 
 
 def apply_includes(root, ctx, seen=None):
     seen = seen or set()
-    extra = []
-    extra_lines = []
-    extra_srcs = []
+    extra = Block()
     for key, val in root.items:
         if key != "include":
             continue
         vals = val if isinstance(val, list) else [val]
         for v in vals:
             name = v.s if hasattr(v, "s") else str(v)
-            _include_one(name, ctx, seen, extra, extra_lines, extra_srcs,
-                         apply_includes)
-    if extra:
-        root.items = extra + root.items
-        root.lines = extra_lines + root.lines
-        root.srcs = extra_srcs + root.srcs
+            _include_one(name, ctx, seen, extra, apply_includes)
+    if extra.items:
+        extra.extend_from(root)
+        root.items = extra.items
+        root.lines = extra.lines
+        root.srcs = extra.srcs
     return root
 
 def _register_fns(root, ctx):
@@ -541,9 +540,12 @@ def _register_globals(root, ctx):
     for _i, (key, val) in enumerate(root.items):
         at(root, _i)
         if classify(key)[0] in ("const", "global") and isinstance(val, Block):
-            for k, v in val.items:
+            for j, (k, v) in enumerate(val.items):
+                at(val, j)
+                t = literal_type(ctx, v, refs=True)
+                _reject_bare_str(field_base(k, v, ctx), v, t)
                 names.add(k)
-                ctx.global_types[k] = literal_type(ctx, v, refs=True)
+                ctx.global_types[k] = t
     return names
 
 
@@ -552,7 +554,6 @@ def _fnrefs(root):
 
 
 def prescan(root, ctx):
-    ctx.fns = set()
     collect_types(root, ctx)
     collect_classes(root, ctx)
     ids = collect_ids(root)
@@ -564,13 +565,12 @@ def prescan(root, ctx):
     collect_field_types(root, ctx)
     collect_field_names(root, ctx)
     check_bare_names(root, ctx)
+    const_names = _register_globals(root, ctx)
     game_funcs, game_vars = collect_game_defs(root)
     fn_names = _register_fns(root, ctx)
     _register_requires(root, ctx, game_funcs, game_vars)
-    const_names = _register_globals(root, ctx)
     ctx.vars = game_vars | const_names
     ctx.funcs = fn_names | game_funcs | {"_"}
-    ctx.fns = fn_names
     for n in _fnrefs(root):
         desc = ctx.inline.get(n)
         if desc and desc[0] != "expr":

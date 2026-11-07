@@ -8,8 +8,8 @@ from .cursor import at, use
 from .condast import TAILS
 from .emitlogic import emit_logic
 from .constructs import PRESETS, decl_key
-from .decl import check_ref_value, is_true, mixin_bodies, sym_text
-from .proptypes import merge_tail_types, prop_of, prop_scope
+from .decl import is_true, sym_text
+from .proptypes import check_ref_value, merge_tail_types, prop_of, prop_scope
 from .typing import body_type, class_le, type_ok, type_value_error
 from .expr import transpile_exprlist
 from .exprparse import fn_name, min_args
@@ -26,7 +26,6 @@ EXTEND_KEYS = ("target", "words", "patterns", "prio", "hint")
 
 
 _FIELD_NAME_RE = re.compile(r"^[A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*$")
-_PHASES = ("on", "life", "before", "after", "post")
 
 
 def _check_field_name(base):
@@ -34,7 +33,7 @@ def _check_field_name(base):
     if base.startswith("[") or _FIELD_NAME_RE.fullmatch(base):
         return
     head = base.split(None, 1)[0] if base.split() else base
-    near = difflib.get_close_matches(head, _PHASES, 1, 0.6)
+    near = difflib.get_close_matches(head, P.PHASES, 1, 0.6)
     hint = (" (did you mean %r?)" % (near[0] + base[len(head):])
             if near else "")
     raise Error(M.FIELD_NAME_INVALID % (base, hint))
@@ -70,8 +69,6 @@ def _one_item_block(key, val):
     return block
 
 
-_EVENT_KEY_RE = re.compile(r"^(on|life|before|after|post)\s+\S")
-_EVENT_PREFIX_RE = re.compile(r"^(on|life|before|after|post)\s+(.+)$")
 _HANDLER_KEY_RE = re.compile(r"^(on|before|after)(\s|$)")
 _PHASE_PREFIX_RE = re.compile(r"^[a-z]+_")
 _TAG_NAME_RE = re.compile(r"[#\w]+")
@@ -87,14 +84,6 @@ def _group_years(names):
             groups.append((pfx, [year]))
     return groups
 
-
-# the non-object declarations: Emitter method and whether a name is required
-DECL_FORMS = {
-    "verb": ("verb", True),
-    "extend": ("verb_extend", False),
-    "remove": ("verb_remove", False),
-    "talk": ("talk", True),
-}
 
 # the setup keys: Emitter method and whether a block is required
 SETUP_FORMS = {
@@ -331,7 +320,7 @@ class Emitter:
         return params, [self._on_name(part, inherited) for part in parts]
 
     def _event_prefix(self, part):
-        m = _EVENT_PREFIX_RE.match(part)
+        m = P.EVENT_PREFIX_RE.match(part)
         if not m:
             return None
         return _pfx(m.group(1)), m.group(2)
@@ -355,42 +344,7 @@ class Emitter:
         finally:
             self.ctx.current_owner = prev
 
-    def expand_mixins(self, block):
-        """Merge attached mixins' keys (own keys win)."""
-        val = block.get("mixin")
-        if val is None:
-            return block
-        use(block, "mixin")
-        own = {k for k, _ in block.items if k != "mixin"}
-        merged = Block()
-        seen = {}
-        for name, bdef in mixin_bodies(self.ctx, val):
-            self._merge_mixin(merged, seen, own, bdef, name)
-        self._merge_own(merged, block)
-        return merged
-
-    def _merge_mixin(self, merged, seen, own, bdef, name):
-        for i, (k, bv) in enumerate(bdef.items):
-            if k in seen:
-                raise Error(M.MIXIN_KEY_CONFLICT
-                            % (k, seen[k], name))
-            seen[k] = name
-            if k in own:
-                continue
-            merged.items.append((k, bv))
-            merged.lines.append(bdef.line_at(i))
-            merged.srcs.append(bdef.srcs[i] if i < len(bdef.srcs) else None)
-
-    def _merge_own(self, merged, block):
-        for i, (k, bv) in enumerate(block.items):
-            if k == "mixin":
-                continue
-            merged.items.append((k, bv))
-            merged.lines.append(block.line_at(i))
-            merged.srcs.append(block.srcs[i] if i < len(block.srcs) else None)
-
     def _obj(self, block, ident, base, ctor, preset, parent=None, scope=None):
-        block = self.expand_mixins(block)
         fi = base + IND
         lines = [T.CTOR_OPEN_PARENT % (base, ctor) if parent
                  else T.CTOR_OPEN % (base, ctor)]
@@ -481,15 +435,13 @@ class Emitter:
     def _obj_field(self, key, val, ident, fi, scope=None):
         if key in OBJ_SKIP_KEYS:
             return []
-        if _EVENT_KEY_RE.match(key):
+        if P.EVENT_PREFIX_RE.match(key):
             return self.on(_one_item_block(key, val), fi)
-        fbase, params = parse_key(key)
+        fbase, _params = parse_key(key)
         _check_field_name(fbase)
         if fbase == "on":
             raise Error(M.ON_MUST_NAME_EVENT)
         self._check_phase_prefix(fbase)
-        if not params:
-            self._check_ref_value(ident, key, val, fbase)
         try:
             rendered = self.body(val, key, fi, scope=scope)
         except Error as e:
@@ -507,16 +459,6 @@ class Emitter:
         for part in (p.strip() for p in base.split(",")):
             if part in self.ctx.event_names:
                 raise Error(M.EVENT_NEEDS_PHASE_PREFIX % part)
-
-    def _check_ref_value(self, ident, key, val, fbase):
-        prop = prop_of(self.ctx, prop_scope(self.ctx, ident), fbase)
-        for part in (p.strip() for p in fbase.split(",")):
-            if part in self.ctx.ref_fields:
-                check_ref_value(ident or self.ctx.current_owner or "?", key,
-                                val, self.ctx.ids,
-                                allow_text=bool(prop and (prop.has_reflist
-                                                         or prop.has_list)))
-                break
 
     def _obj_nested(self, block, fi, lines):
         blobs = self._nested_blobs(block, fi)
@@ -543,7 +485,8 @@ class Emitter:
         return blobs + nested
 
     def _nested_decls(self, val, ind):
-        return [self.decl(nk, nv, ind) + ";" for nk, nv in val.items]
+        return [self.decl(*decl_key(nk), nv, ind) + ";"
+                for nk, nv in val.items]
 
     def _nested_refs(self, key, val, ind):
         refs = val if isinstance(val, list) else [val]
@@ -621,7 +564,7 @@ class Emitter:
         target = block.get("target")
         if target is None:
             return None
-        check_ref_value("verb", "target", target)
+        check_ref_value(None, "verb.target", target)
         return T.REF % target.s
 
     def verb_extra(self, block):
@@ -632,11 +575,13 @@ class Emitter:
             extra.append(T.HINT % self.body(block.get("hint"), "hint"))
         return extra
 
-    def verb(self, block, ident, base):
+    def verb(self, block, ident, base=""):
+        if not ident:
+            raise Error(M.DECLARATION_NEEDS_NAME % "verb")
         base_key = self._event_handler_key(block)
         if base_key is not None:
             raise Error(M.VERB_DECLARED_EVENT_NOW
-                        % (ident or "?", base_key, ident or "?"))
+                        % (ident, base_key, ident))
         _check_verb_keys("verb", ident, block, VERB_KEYS)
         fields = []
         tag = block.get("tag")
@@ -653,9 +598,7 @@ class Emitter:
             return T.VERB_TARGET % (base, args, tail, target)
         return T.VERB % (base, args, tail)
 
-    def verb_extend(self, block, ident, base):
-        if not ident:
-            raise Error(M.EXTEND_NEEDS_VERB_TAG)
+    def verb_extend(self, block, ident, base=""):
         base_key = self._event_handler_key(block)
         if base_key is not None:
             raise Error(M.EXTEND_DECLARED_EVENT_NOW
@@ -674,7 +617,7 @@ class Emitter:
             return T.VERB_EXTEND_TARGET % (base, ctor, args, tail, target)
         return T.VERB_EXTEND % (base, ctor, args, tail)
 
-    def verb_remove(self, block, ident, base):
+    def verb_remove(self, block, ident, base=""):
         if not (ident or "").startswith("#"):
             raise Error(M.REMOVE_NEEDS_TAG % (ident or "remove"))
         if not isinstance(block, Block) or block.items:
@@ -813,8 +756,7 @@ class Emitter:
             raise Error(M.TALK_BAD_FIELD % base)
         return base
 
-    def talk(self, block, name, base):
-        fi = base + IND
+    def _talk_root(self, block, fi):
         labels = []
         root = []
         fields = []
@@ -830,6 +772,15 @@ class Emitter:
                 labels.append((key[6:].strip(), val))
             else:
                 fields.append((key, val))
+        return fields, root, labels
+
+    def talk(self, block, name, base=""):
+        if not name:
+            raise Error(M.DECLARATION_NEEDS_NAME % "talk")
+        if not _TAG_NAME_RE.fullmatch(name):
+            raise Error(M.OBJECT_NAMES_MUST_BE_IDENTIFIERS % name)
+        fi = base + IND
+        fields, root, labels = self._talk_root(block, fi)
         lines = [T.DLG % base, T.DLG_NAM % (fi, name)]
         for key, val in fields:
             lines.append(T.FIELD % (fi, self._talk_key(key),
@@ -862,20 +813,11 @@ class Emitter:
             self.ctx.current_owner = prev
         return T.ASSIGN % (name, body)
 
-    def decl(self, key, block, base):
-        kind, ident = decl_key(key)
+    def decl(self, kind, ident, block, base=""):
         if not kind:
-            raise Error(M.BAD_DECLARATION + key)
-        if ident and kind != "verb" and kind != "extend" and not (
-                _TAG_NAME_RE.fullmatch(ident)):
-            raise Error(M.OBJECT_NAMES_MUST_BE_IDENTIFIERS
-                        % ident)
-        handler = DECL_FORMS.get(kind)
-        if handler is not None:
-            method, named = handler
-            if named and not ident:
-                raise Error(M.DECLARATION_NEEDS_NAME % kind)
-            return getattr(self, method)(block, ident, base)
+            raise Error(M.BAD_DECLARATION)
+        if ident and not _TAG_NAME_RE.fullmatch(ident):
+            raise Error(M.OBJECT_NAMES_MUST_BE_IDENTIFIERS % ident)
         preset = PRESETS.get(kind)
         if preset is None:
             if kind in self.ctx.classes:
@@ -962,7 +904,6 @@ class Emitter:
         return lines
 
     def impl(self, target, block):
-        block = self.expand_mixins(block)
         t = target.strip()
         if (t.startswith("'") and t.endswith("'")) or (
                 t.startswith('"') and t.endswith('"')):
@@ -987,7 +928,7 @@ class Emitter:
         base, _ = parse_key(key)
         if base == "on":
             raise Error(M.ON_MUST_NAME_EVENT)
-        if _EVENT_KEY_RE.match(key):
+        if P.EVENT_PREFIX_RE.match(key):
             # a class table is finalized by Class() right away, so its
             # later "before_A,B" keys need an explicit fn_aliases pass;
             # object tables init at game start and expand on their own

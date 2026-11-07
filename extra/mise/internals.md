@@ -45,8 +45,8 @@ transpile (main loop) обход корневых элементов → Emitter
 |---|---|
 | `ids` | имена объявленных объектов/тегов (`_'имя'`) |
 | `vars` | доступные имена (globals/const + Lua-локали из `require`) |
-| `funcs` | вызываемые имена: `fns` + игровые Lua-функции + `_` |
-| `fns`, `fn_sigs` | объявленные `fn`: имена и `(plist, rets, variadic)`, где `rets` — кортеж типов возврата (`("any",)` без аннотации) |
+| `funcs` | вызываемые имена: объявленные `fn` + игровые Lua-функции + `_` |
+| `fn_sigs` | объявленные `fn`: `имя -> (plist, rets, variadic)`, где `rets` — кортеж типов возврата (`("any",)` без аннотации) |
 | `global_types` | типы `const:`/`global:` (выводятся `literal_type`) |
 | `event_names` | значения `type event` (stdlib) + `event X:` |
 | `inline` | inline-функции: `name -> (kind, payload)` (см. ниже) |
@@ -80,11 +80,11 @@ transpile (main loop) обход корневых элементов → Emitter
    object method»);
    `collect_field_names` — `ctx.field_names` (все ключи игры + props +
    `refs:` + движковые) для проверки чтения/записи полей;
-   `ctx.mixins` — именованные наборы, `attach_mixins` вливает их
-   поля в цель до собственных; `check_bare_names` проверяет и цель
-   `impl` (объект/класс/`game`/`@…`);
-   затем `check_bare_names` сверяет голые значения тем же правилом в
-   `impl`, `setup`/`hero`/`game` и `const`/`global` (без типизации).
+   `ctx.mixin_defs` — именованные наборы, `expand_mixins` раскрывает их
+   ключи прямо в блоки `class`/`decl`/`impl` до собственных ключей;
+   `check_bare_names` проверяет цель `impl` (объект/класс/`game`/`@…`) и
+   поля `impl` и `setup`/`hero`/`game` тем же `_collect_field`;
+   `_register_globals` проверяет и типизирует `const`/`global`.
 4. `ctx.ref_fields` — `refs:`/`extend refs:`; `event_names` —
    значения типа `event` (stdlib) + `event X:` + имена из паттернов
    `verb`/`extend` (`register_verbs`/`_verb_sig`: `{noun}` → obj, `*` →
@@ -111,8 +111,8 @@ transpile (main loop) обход корневых элементов → Emitter
 8. `_fnrefs` — имена из `&...` выкидываются из `inline`, кроме
    `expr` (expr-функцию нельзя использовать как обработчик).
 9. `check_refs` — `with`/`found_in` сверяются с `ctx.ids`;
-   прочие поля-ссылки (`ctx.ref_fields` из `refs:`) проверяет
-   `Emitter.obj` через `check_ref_value(..., ctx.ids)`.
+   поля из `refs:` и `props:` (`ref`/`tbl[ref]`/`list`) проверяются
+   в `prescan` через `proptypes.check_ref_value`.
 
 ## Inline-функции
 
@@ -158,9 +158,8 @@ transpile (main loop) обход корневых элементов → Emitter
   передать в слот `str`, но не наоборот (`_rule_str_enum`);
   `tbl[A]`→`tbl[B]` поэлементно, `tbl[A]`→`tbl` да, `tbl`→`tbl[A]` нет,
   `tbl[]` (пустой) совместим с любым `tbl[B]`; `tbl[any]` ≡ `tbl`.
-- `check_ref_list` (`proptypes`) — элементы `tbl[ref]`/`list`-props: `Bare`/`Text`
-  сверяются с `ctx.ids`; `check_ref_value(..., allow_text=True)` — тот же
-  backstop на эмиссии для безымянных объектов (`-`-список даёт `Text`).
+- `check_ref_value` (`proptypes`) — проверка `ref`/`tbl[ref]`/`list`-props
+  и полей из `refs:`: `Bare`/`Text` сверяются с `ctx.ids`.
 - `type_value_error` — проверка значений перечислений (`values`,
   `~`-отрицание при `negate`, подсказки `difflib`).
 - `canon_type`/`type_error` — канонизация и валидация аннотаций
@@ -238,8 +237,6 @@ transpile (main loop) обход корневых элементов → Emitter
 
 ## Эмиссия (`emit.py:Emitter`)
 
-- `expand_mixins` — ключи привязанных `mixins` вливаются до
-  собственных ключей (свои перекрывают); конфликт двух mixins — ошибка.
 - `value`/`body`/`handler`/`on` — значения, тела, обработчики
   (в т.ч. составные ключи `before A, B`; фаза обязательна: `on X` —
   метод события (`X = function…`), `before/after/post/life X` — с префиксом;
@@ -327,9 +324,9 @@ transpile (main loop) обход корневых элементов → Emitter
 | регистрация `type`/`extend_type` | `TYPE_FORMS` | proptypes.py |
 | сбор class/mixin | `DEFS_FORMS` | prescan.py |
 | проверка bare-имён | `BARE_FORMS` | prescan.py |
-| операторы и приоритеты выражений | `BIN_LEVELS`, `UNARY_OPS`, `STR_ARG_ERRORS` | exprparse.py |
+| операторы и приоритеты выражений | `BIN_LEVELS`, `UNARY_OPS` | exprparse.py |
 | тип `and`/`or` (сохранившаяся часть левого + правый) | `and_or_type`, `_alts` | typing.py |
-| первичные/постфиксные токены, спец-типы | `PRIMARY_FORMS`, `POSTFIX_OPS`, `STR_ARG_FORMS` | exprparse.py |
+| первичные/постфиксные токены | `PRIMARY_FORMS`, `POSTFIX_OPS` | exprparse.py |
 | операторы-инструкции логики | `STMT_FORMS` | expr.py |
 | блочные инструкции логики | `LOGIC_BLOCKS` | logicparse.py |
 | формы токенов | `LEX_FORMS` | lex.py |

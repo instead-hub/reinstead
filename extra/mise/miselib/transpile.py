@@ -49,7 +49,6 @@ def _emit_fn(ctx, em, key, val):
     """Emit a `local function fn_...` body, or None when inlined."""
     name, plist, ret, variadic = parse_fn_sig(
         key, set(ctx.types) | ctx.classes)
-    ctx.fns.add(name)
     if name in ctx.inline:
         if ctx.inline[name][0] == "expr" and len(ret) > 1:
             raise Error(M.FN_INLINE_MULTI % name)
@@ -87,8 +86,24 @@ def _event_decl(em, info, _key, val):
     return em.event(info, val) or None
 
 
-def _block_decl(em, _info, key, val):
-    return em.decl(key, val, "")
+def _verb_decl(em, info, _key, val):
+    return em.verb(val, info)
+
+
+def _extend_decl(em, info, _key, val):
+    return em.verb_extend(val, info)
+
+
+def _remove_decl(em, info, _key, val):
+    return em.verb_remove(val, info)
+
+
+def _talk_decl(em, info, _key, val):
+    return em.talk(val, info)
+
+
+def _block_decl(em, info, _key, val):
+    return em.decl(info[0], info[1], val)
 
 
 # the emitters of the emission routes (see constructs.EMIT_ROUTES)
@@ -100,6 +115,10 @@ DECL_FORMS = {
     "const": _const_decl,
     "global": _global_decl,
     "event": _event_decl,
+    "verb": _verb_decl,
+    "extend": _extend_decl,
+    "remove": _remove_decl,
+    "talk": _talk_decl,
     "decl": _block_decl,
 }
 

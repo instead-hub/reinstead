@@ -87,12 +87,6 @@ UNARY_OPS = {
     "-": ("-%s", "num"),
 }
 
-# the scalar expected types that never accept a quoted string
-STR_ARG_ERRORS = {
-    "num": "expected num, got str",
-    "bool": "expected bool, got str",
-}
-
 # the primary token kinds and the ExprEmit methods they use
 PRIMARY_FORMS = {
     "num": "_primary_num",
@@ -106,12 +100,6 @@ POSTFIX_OPS = {
     ".": "postfix_dot",
     "[": "postfix_index",
     ":": "postfix_method",
-}
-
-# the expected types with their own string-value handling
-STR_ARG_FORMS = {
-    "obj": "_str_arg_obj",
-    "event": "_str_arg_event",
 }
 
 
@@ -290,13 +278,6 @@ class ExprEmit:
         val, _ = parse_string(tok, 0)
         return val
 
-    def str_arg(self, tok, exp):
-        val = self.strval(tok)
-        alts = union_parts(exp) if exp else None
-        if alts is not None:
-            return self._union_str_arg(tok, exp, val, alts)
-        return self._scalar_str_arg(tok, exp, val)
-
     def _enum_expected(self, exp):
         """Is `exp` an enum type or a union that cannot take a string?"""
         if not exp:
@@ -306,43 +287,17 @@ class ExprEmit:
             return False
         return any(alt and alt in self.ctx.types for alt in alts)
 
-    def _union_str_arg(self, tok, exp, val, alts):
-        if "str" in alts or "any" in alts:
-            return tok
-        for alt in alts:
-            if alt == "event" and val in self.ctx.event_names:
-                return tok
-            if alt == "obj" and val in self.ctx.ids:
-                return "_'%s'" % val
-        if any(alt in self.ctx.types for alt in alts):
-            self.terr(M.ENUM_VALUES_BARE % val)
-        self.terr(M.EXPECTED_GOT_STR_VAL % (exp, val))
-
-    def _str_arg_obj(self, _tok, val):
-        if val in self.ctx.ids:
-            return "_'%s'" % val
-        self.terr(M.UNKNOWN_OBJECT_EXPECTED_OBJ % val)
-
-    def _str_arg_event(self, tok, val):
-        if val not in self.ctx.event_names:
-            self.terr(M.UNKNOWN_EVENT_NAMED % val)
-        return tok
-
-    def _scalar_str_arg(self, tok, exp, val):
-        handler = STR_ARG_FORMS.get(exp)
-        if handler is not None:
-            return getattr(self, handler)(tok, val)
-        if base(exp) in self.ctx.types:
-            self.terr(M.ENUM_VALUES_BARE % val)
-        err = STR_ARG_ERRORS.get(exp)
-        if err is not None:
-            self.terr(err)
-        return tok
-
     def _str_arglist(self, expected_list):
-        tok = self.next()
+        tok = self.next()[1]
         exp = expected_list[0] if expected_list else None
-        return [self.str_arg(tok[1], exp)], 1
+        val = self.strval(tok)
+        if exp == "obj" and val in self.ctx.ids:
+            return ["_'%s'" % val], 1
+        self.expected = exp
+        node = self._primary_str(tok)
+        self.expected = None
+        self.check(node.t, exp, node.code)
+        return [node.code], 1
 
     def arglist(self, expected_list, repeat=None):
         if self.peek()[0] == "str":
@@ -683,6 +638,10 @@ class ExprEmit:
     def _is_bare_call(self, node, k, v):
         if not (isinstance(node, Ref) and not node.obj):
             return False
+        if k == "str" and node.name in self.ctx.fn_sigs:
+            plist, _r, var = self.ctx.fn_sigs[node.name]
+            pt = plist[0][1] if plist else var
+            return bool(pt) and pt != "any" and type_ok(self.ctx, "str", pt)
         if k == "name" and v not in S.KEYWORDS:
             return True
         if k == "op" and v in ("#", "-", "{"):
@@ -833,10 +792,10 @@ class ExprEmit:
         if name not in self.ctx.fn_sigs:
             return None, "any", False
         plist, rets, variadic = self.ctx.fn_sigs[name]
-        if not plist:
+        if not plist and not variadic:
             self.err(M.FN_NO_ARGUMENTS % name)
         self.check_arity(name, plist, variadic, 1)
-        return plist[0][1], rets, variadic
+        return (plist[0][1] if plist else variadic), rets, variadic
 
     def _bare_typed_arg(self, exp, save):
         arg = self.unary()
@@ -849,7 +808,8 @@ class ExprEmit:
     def _bare_arg(self, exp, variadic):
         save = self.i
         self.expected = exp
-        arg = (self.expr() if exp == "str" or variadic
+        str_exp = bool(exp) and exp != "any" and type_ok(self.ctx, "str", exp)
+        arg = (self.expr() if str_exp or variadic
                else self._bare_typed_arg(exp, save))
         self.expected = None
         return arg

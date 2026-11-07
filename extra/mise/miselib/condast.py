@@ -108,8 +108,3 @@ def narrow_assume(node, env, negate):
         return {}
     want = (not want_nil) if negate else want_nil
     return {name: "nil" if want else t[:-1]}
-
-
-def narrow_cond(text, env, negate=False):
-    """Narrowing from a whole condition being true/false (else branch)."""
-    return narrow_assume(parse_cond(text), env, negate)

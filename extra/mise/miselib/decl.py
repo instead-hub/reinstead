@@ -47,9 +47,10 @@ def _fn_tail(key, name, params, rest):
 
 
 def _check_type(name, known, pt, what):
-    msg = type_error(known, pt)
-    if msg:
-        raise Error(M.FN_MESSAGE % (name, msg, what))
+    c = canon_type(known, pt)
+    if c is None:
+        raise Error(M.FN_MESSAGE % (name, type_error(known, pt), what))
+    return c
 
 
 def _split_param(p):
@@ -67,8 +68,7 @@ def _repeat_type(name, p, known):
         tail = tail[1:].strip()
     if not tail:
         return "any"
-    _check_type(name, known, tail, "...")
-    return canon_type(known, tail)
+    return _check_type(name, known, tail, "...")
 
 
 def _fn_params(name, params, known):
@@ -87,8 +87,7 @@ def _fn_params(name, params, known):
         pn, pt = _split_param(p)
         if not P.DSL_RE.fullmatch(pn):
             raise Error(M.FN_BAD_PARAMETER % (name, pn))
-        _check_type(name, known, pt, pn)
-        plist.append((pn, canon_type(known, pt)))
+        plist.append((pn, _check_type(name, known, pt, pn)))
     return plist, False
 
 
@@ -114,54 +113,15 @@ def parse_fn_sig(key, types=None):
     _check_optional_order(name, plist)
     if ret_text is None:
         return name, plist, ("any",), variadic
-    rets = []
-    for rt in split_types(ret_text):
-        _check_type(name, known, rt, "return")
-        rets.append(canon_type(known, rt))
+    rets = [_check_type(name, known, rt, "return")
+            for rt in split_types(ret_text)]
     return name, plist, tuple(rets), variadic
-
-
-def check_ref_value(where, key, v, ids=None, allow_text=False, in_list=False):
-    if isinstance(v, list):
-        for r in v:
-            check_ref_value(where, key, r, ids, allow_text, True)
-        return
-    if isinstance(v, Text):
-        if not (allow_text and in_list):
-            raise Error(M.FIELD_OBJECT_REFERENCE % (where, key, v.s))
-        return _check_ref_name(where, key, v.s.strip(), ids)
-    if isinstance(v, Bare):
-        if not P.REF_RE.fullmatch(v.s):
-            raise Error(M.FIELD_OBJECT_NAME_IDENTIFIER % (where, key, v.s))
-        return _check_ref_name(where, key, v.s, ids)
-    if in_list:
-        raise Error(M.FIELD_EXPECTED_OBJECT_REFERENCE
-                    % (where, key, type(v).__name__.lower()))
-
-
-def _check_ref_name(where, key, name, ids):
-    """Reject a reference name that is not among the declared ids."""
-    if ids is not None and name not in ids:
-        raise Error(M.FIELD_UNKNOWN_OBJECT_REFERENCE % (where, key, name))
-
 
 
 def sym_text(v):
     if isinstance(v, (Bare, Text)):
         return v.s
     raise Error(M.EXPECTED_EXPRESSION)
-
-
-def mixin_bodies(ctx, val, line=None):
-    """Resolved `(name, body)` pairs of a `mixin` field value."""
-    for v in (val if isinstance(val, list) else [val]):
-        if line is not None:
-            CURRENT_LINE[0] = line
-        name = v.s if hasattr(v, "s") else str(v)
-        body = ctx.mixin_defs.get(name)
-        if body is None:
-            raise Error(M.UNKNOWN_MIXIN + name)
-        yield name, body
 
 
 def is_true(v):

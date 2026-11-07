@@ -7,8 +7,8 @@ from .common import _scan_depth
 from .lex import lex_lua
 from .constructs import ENGINE_FIELDS
 from .typing import canon_type, tbl_inner, type_error, type_ok
-from .exprparse import (Call, ExprEmit, Field, Index, Ref, check_arity,
-                        expr_list, fn_call, min_args)
+from .exprparse import (Call, ExprEmit, Field, Index, Ref,
+                        expr_list, fn_call)
 from . import messages as M
 from . import patterns as P
 
@@ -48,23 +48,7 @@ def _text_arg(name, text, ctx):
     return fn_call(ctx, name, [lua_str(text)]), ["str"]
 
 
-def _typed_arg_form(name, sig, rest, env, where, ctx, parse):
-    plist, rets, variadic = sig
-    code, types = parse(
-        rest, env, where, plist[0][1] if plist else None, ctx)
-    check_arity(name, plist, variadic, len(types))
-    for (pn, pt), t in zip(plist, types):
-        if not type_ok(ctx, t, pt):
-            raise TypeCheckError(M.FN_ARGUMENT_EXPECTS_GOT
-                                 % (name, pn, pt, t))
-    for i, t in enumerate(types[len(plist):], len(plist) + 1):
-        if not type_ok(ctx, t, variadic or "any"):
-            raise TypeCheckError(M.FN_ARGUMENT_EXPECTS_GOT
-                                 % (name, i, variadic, t))
-    return fn_call(ctx, name, [code]), list(rets)
-
-
-def no_paren_call(text, env, where, ctx):
+def no_paren_call(text, ctx):
     """Raw-text forms only; typed one-arg calls are parsed by ExprEmit."""
     m = re.match(r"^(" + P.DSL_NAME + r")\s+([^(\s].*)$", text.strip(), re.S)
     if not m or m.group(1) not in ctx.fn_sigs:
@@ -74,25 +58,25 @@ def no_paren_call(text, env, where, ctx):
     rest = m.group(2).strip()
     if not rest or not (len(plist) == 1 or variadic):
         return None
-    sig = (plist, rets, variadic)
-    if _text_tail(sig, rest, ctx):
+    if _text_tail((plist, rets, variadic), rest, ctx):
         return _text_arg(name, rest, ctx)
-    pt = _tail_type(sig)
-    if not _expects_str(ctx, pt):
-        return None
-    return _typed_arg_form(name, sig, rest, env, where, ctx,
-                           transpile_exprlist)
+    return None
 
-def transpile_exprlist(text, env, where, expected=None, ctx=None):
-    raw = no_paren_call(text, env, where, ctx)
-    if raw is not None:
-        return raw
-    p = ExprEmit(lex_lua(text), env, where, ctx)
+
+def transpile_tokens(toks, env, where, expected=None, ctx=None):
+    p = ExprEmit(toks, env, where, ctx)
     code, types = p.exprlist(expected)
     p.expect_eof()
     if expected and types:
         p.check(types[0], expected, code)
     return code, types
+
+
+def transpile_exprlist(text, env, where, expected=None, ctx=None):
+    raw = no_paren_call(text, ctx)
+    if raw is not None:
+        return raw
+    return transpile_tokens(lex_lua(text), env, where, expected, ctx)
 
 def _local_names(p):
     names = []
@@ -213,10 +197,7 @@ def _stmt_expr(p, env, where, ctx):
 
 
 def transpile_stmt(text, env, where, ctx):
-    s = text.strip()
-    if s in ctx.fn_sigs and min_args(ctx.fn_sigs[s][0]) == 0:
-        return fn_call(ctx, s, [])
-    raw = no_paren_call(text, env, where, ctx)
+    raw = no_paren_call(text, ctx)
     if raw is not None:
         return raw[0]
     p = ExprEmit(lex_lua(text), env, where, ctx)
@@ -236,10 +217,10 @@ def _loop_var(spec, where, ctx):
         return name, None
     pt = pt.strip()
     known = S.TYPES | set(ctx.types) | ctx.classes | {"nil"}
-    msg = type_error(known, pt)
-    if msg:
-        raise LintError(M.FOR_MESSAGE % (where, name, msg))
-    return name, canon_type(known, pt)
+    canon = canon_type(known, pt)
+    if canon is None:
+        raise LintError(M.FOR_MESSAGE % (where, name, type_error(known, pt)))
+    return name, canon
 
 
 def _for_in(header, env, where, ctx):
@@ -284,7 +265,7 @@ def _split_for_of(header):
     return None
 
 
-def _for_of(parts, env, where, ctx):
+def _for_of(parts, header, env, where, ctx):
     names_text, iterable = parts
     pairs = [(spec, _loop_var(spec, where, ctx))
              for spec in names_text.split(",") if spec.strip()]
@@ -310,7 +291,7 @@ def _for_of(parts, env, where, ctx):
 def transpile_for(header, env, where, ctx):
     of = _split_for_of(header)
     if of is not None:
-        return _for_of(of, env, where, ctx)
+        return _for_of(of, header, env, where, ctx)
     if P.IN_RE.search(header):
         return _for_in(header, env, where, ctx)
     parts = split_list(header)

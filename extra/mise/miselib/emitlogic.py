@@ -1,7 +1,8 @@
 from .common import *
-from .condast import Leaf, narrow_assume, narrow_cond, parse_cond
+from .condast import Leaf, narrow_assume, parse_cond
 from .typing import type_ok
-from .expr import transpile_exprlist, transpile_stmt, transpile_for
+from .expr import (transpile_exprlist, transpile_for, transpile_stmt,
+                   transpile_tokens)
 from . import templates as T
 from . import messages as M
 
@@ -28,8 +29,8 @@ def _emit_or(parts, env, where, ctx, emit):
 
 def cond_emit(node, env, where, ctx):
     if isinstance(node, Leaf):
-        code, _ = transpile_exprlist(
-            " ".join(t[1] for t in node.toks), env, where, None, ctx=ctx)
+        code, _ = transpile_tokens(
+            node.toks + [("eof", "")], env, where, None, ctx=ctx)
         out = dict(env)
         out.update(narrow_assume(node, env, False) or {})
         return code, out
@@ -86,10 +87,10 @@ def _emit_for(st, indent, env, ret, ret_name, where, ctx):
     return out
 
 
-def _emit_branches(branches, indent, env, ret, ret_name, where, ctx):
+def _emit_branches(trees, indent, env, ret, ret_name, where, ctx):
     out = []
-    for idx, (cond, body) in enumerate(branches):
-        code, eenv = cond_emit(parse_cond(cond), dict(env), where, ctx)
+    for idx, (tree, body) in enumerate(trees):
+        code, eenv = cond_emit(tree, dict(env), where, ctx)
         out.append(T.THEN % (
             indent, "if" if idx == 0 else "elseif", code))
         out.extend(emit_logic(body, indent + IND, eenv, ret,
@@ -97,20 +98,21 @@ def _emit_branches(branches, indent, env, ret, ret_name, where, ctx):
     return out
 
 
-def _else_env(branches, env):
+def _else_env(trees, env):
     eenv = dict(env)
-    if len(branches) == 1:
-        eenv.update(narrow_cond(branches[0][0], env, negate=True))
+    if len(trees) == 1:
+        eenv.update(narrow_assume(trees[0][0], env, True))
     return eenv
 
 
 def _emit_if(st, indent, env, ret, ret_name, where, ctx):
-    branches, else_body = st[1], st[2]
-    out = _emit_branches(branches, indent, env, ret, ret_name, where, ctx)
+    trees = [(parse_cond(cond), body) for cond, body in st[1]]
+    else_body = st[2]
+    out = _emit_branches(trees, indent, env, ret, ret_name, where, ctx)
     if else_body is not None:
         out.append(indent + "else")
         out.extend(emit_logic(else_body, indent + IND,
-                              _else_env(branches, env), ret, ret_name,
+                              _else_env(trees, env), ret, ret_name,
                               ctx=ctx))
     out.append(indent + "end")
     return out

@@ -62,7 +62,6 @@ class Raw(Val):
 
 CURRENT_LINE = [None]
 CURRENT_FILE = [None]
-PARSING_FILE = [None]
 
 
 class Block:
@@ -71,18 +70,23 @@ class Block:
         self.lines = []
         self.srcs = []
 
-    def add(self, key, val, line):
+    def add(self, key, val, line, src=None):
         self.items.append((key, val))
         self.lines.append(line)
+        self.srcs.append(CURRENT_FILE[0] if src is None else src)
+
+    def copy_from(self, other, idx):
+        key, val = other.items[idx]
+        src = other.srcs[idx] if idx < len(other.srcs) else None
+        self.add(key, val, other.line_at(idx), src)
+
+    def extend_from(self, other):
+        self.items.extend(other.items)
+        self.lines.extend(other.lines)
+        self.srcs.extend(other.srcs)
 
     def line_at(self, idx):
         return self.lines[idx] if idx < len(self.lines) else None
-
-    def line(self, key):
-        for i, (k, _v) in enumerate(self.items):
-            if k == key:
-                return self.line_at(i)
-        return None
 
     def get(self, key):
         for k, v in self.items:
@@ -134,10 +138,9 @@ def split_key(text):
     return None, None
 
 def parse_error(line, msg):
-    label = file_label(PARSING_FILE[0])
-    if label:
-        raise Error("%s:%d: %s" % (label, line, msg))
-    raise Error(M.LINE_PREFIX % (line, msg))
+    label = file_label(CURRENT_FILE[0])
+    raise Error("%s:%d: %s" % (label, line, msg) if label
+                else "line %d: %s" % (line, msg))
 
 def strip_comment(s):
     i = 0
