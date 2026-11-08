@@ -35,6 +35,7 @@ class Context:
     objects: Dict[str, str] = field(default_factory=dict)                  # id -> kind/class
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
     prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
+    ctors: Dict[str, str] = field(default_factory=dict)                  # class -> engine constructor
     seen_types: Set[str] = field(default_factory=set)
     field_names: Set[str] = field(default_factory=lambda: set(_ENGINE_FIELDS))
     ref_fields: Set[str] = field(default_factory=lambda: {"with", "found_in", "scope"})
@@ -250,6 +251,8 @@ def prescan(prog: Program) -> Context:
             for m in re.finditer(r"\bfunction\s+([A-Za-z_]\w*)", item.code):
                 ctx.lua_funcs.add(m.group(1))
         elif isinstance(item, EntityDecl) and item.kind == "class" and item.name:
+            if item.ctor:
+                ctx.ctors[item.name] = item.ctor
             prev = ctx.class_decls.get(item.name)
             if prev is not None and prev.parent and item.parent and prev.parent != item.parent:
                 raise Error(f"class {item.name!r}: parent differs from an earlier declaration", item.line)

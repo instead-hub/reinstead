@@ -154,6 +154,7 @@ class EntityDecl:
     kind: str                  # "class", "impl", or class name ("obj", "room", "Door", ...)
     name: Optional[str] = None
     parent: Optional[str] = None
+    ctor: Optional[str] = None       # engine constructor, e.g. `class story(room) = cutscene`
     words: List[str] = field(default_factory=list)
     traits: List[str] = field(default_factory=list)   # classes/mixins or attributes
     locations: List[str] = field(default_factory=list)

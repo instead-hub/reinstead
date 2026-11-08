@@ -5,6 +5,8 @@ from .lexer import Token, tokenize
 
 PHASES = frozenset({"on", "before", "after", "post", "life"})
 META_KEYS = frozenset({"game", "name", "version", "author", "info"})
+# Grammar keywords, like `fn`/`talk`/`verb`; which engine constructor a kind maps to
+# is declared in stdlib (`class story(room) = cutscene`), not here.
 TOP_KINDS = frozenset({"obj", "room", "door", "story", "ending", "class"})
 STMT_KWS = frozenset({
     "if", "elseif", "else", "when", "default", "match", "for", "in", "of",
@@ -314,7 +316,10 @@ class Parser:
         words = self._header_words()
         traits = self.sym_list() if (self.match("OP", ":") and not self.at("NEWLINE")) else []
         locs = self.sym_list() if self.match("OP", "@") else []
-        ent = EntityDecl(kind=kind, name=name, parent=parent, words=words, traits=traits,
+        ctor = None
+        if kind == "class" and self.match("OP", "="):
+            ctor = self.eat("IDENT").val
+        ent = EntityDecl(kind=kind, name=name, parent=parent, ctor=ctor, words=words, traits=traits,
                          locations=locs, line=tok.line, src=self.src)
         self.eat_nl()
         if self.match("INDENT"):

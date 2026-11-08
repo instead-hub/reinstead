@@ -5,7 +5,6 @@ from .ast_nodes import *
 from .checker import Context, load_includes, prescan
 from .parser import parse_source
 
-_CTORS = {"obj": "obj", "room": "room", "door": "door", "story": "cutscene", "ending": "gameover"}
 _PREC = {"or": 1, "and": 2, "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3, "..": 4, "+": 4, "-": 4, "*": 5, "/": 5, "%": 5, "//": 5}
 
 
@@ -93,7 +92,7 @@ class Emitter:
         if ent.kind == "impl":
             return self._emit_impl(ent)
 
-        ctor = _CTORS.get(ent.kind, ent.kind)
+        ctor = self.ctx.ctors.get(ent.kind, ent.kind)
         lines, tails = self._obj_parts(ent, is_class=False, ind=ind)
         pad = " " * ind
         inner = ("\n" + "\n".join(lines) + f"\n{pad}") if lines else f"\n{pad}"

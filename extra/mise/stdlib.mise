@@ -14,7 +14,7 @@ type case = им, рд, дт, вн, тв, пр, зв
 
 type gram = ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
 
-class obj
+class obj = obj
   daemon: fn(obj)
   description: str | bool | fn(obj) -> str
   dsc: str | bool | fn(obj) -> str
@@ -41,7 +41,7 @@ class obj
   raw_word: str | fn(obj) -> str
   disabled: bool
 
-class room(obj)
+class room(obj) = room
   cant_go: str | bool | fn(obj, direction) -> str
   OnError: fn(obj, str)
   compass_look: fn(obj, direction)
@@ -63,15 +63,15 @@ class room(obj)
   out_to: ref | fn(obj) -> ref
   next_to: ref | fn(obj) -> ref
 
-class door(obj)
+class door(obj) = door
   from: ref
   to: ref
   door_to: ref | fn(obj) -> ref
 
-class story(room)
+class story(room) = cutscene
   text: str | tbl[str] | fn(obj, num) -> str
 
-class ending(room)
+class ending(room) = gameover
 
 class talk(obj)
 
