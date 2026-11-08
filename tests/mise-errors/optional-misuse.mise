@@ -9,5 +9,5 @@ fn maybe() -> obj?
 
 obj box "коробка"
   on Use
-    local o = maybe()
+    local o = maybe
     o:attr open

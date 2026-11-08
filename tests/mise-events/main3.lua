@@ -132,7 +132,7 @@ obj {
     p "Режешь."
   end;
   ["before_Take,AskFor"] = function(s, w, wh)
-    if ((mp.event or nil)) == "AskFor" then
+    if (mp.event or nil) == "AskFor" then
       p(fn_text_of(w))
     else
       return false

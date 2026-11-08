@@ -81,11 +81,11 @@ room hall "зал"
   scope
     pass
   enter
-    w:noun()
+    w:noun
   exit
     pass
   onenter
-    w:noun()
+    w:noun
   onexit
     pass
   each_turn

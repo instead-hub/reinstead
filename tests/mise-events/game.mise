@@ -30,11 +30,11 @@ impl game
 room r "комната"
   with x, npc, y, z
   before Consult
-    say (text_of(wh))
+    say (text_of wh)
 
 obj x "вещь"
   before AskFor
-    say (text_of(w))
+    say (text_of w)
   before Cut
     if w
       w:has scenery
@@ -46,13 +46,13 @@ obj y "штука"
       w:has scenery
     "Режешь."
   before Take, AskFor
-    if event() == AskFor
-      say (text_of(w))
+    if event == AskFor
+      say (text_of w)
     else
       pass
   before Any
     if ev == Ask
-      say (text_of(w))
+      say (text_of w)
     elseif ev == Cut
       if w
         w:has scenery
@@ -62,21 +62,21 @@ obj y "штука"
 obj z "штуковина"
   before AskFor &reply_text
   before Consult(s, text)
-    say (text_of(text))
+    say (text_of text)
   before Whisper
-    say (text_of(w))
+    say (text_of w)
 
 obj npc "сторож" : animate
   life Ask
-    say (text_of(w))
+    say (text_of w)
 
 impl game
   before Tell
-    say (text_of(wh))
+    say (text_of wh)
   before Zap
     if w
       w:has scenery
 
 impl mp : Ask
   on Ask
-    say (text_of(wh))
+    say (text_of wh)

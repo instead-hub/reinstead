@@ -62,7 +62,7 @@ room bar "буфет" : ~light
 Но похоже, что в пыли на полу написано что-то важное.]]
   n_to = foyer
   before Walk
-    if compass_dir(w) != n_to and not w:has light
+    if compass_dir w != n_to and not w:has light
       message.number += 2
       "Слоняться в кромешной тьме -- не самая лучшая идея."
       stop

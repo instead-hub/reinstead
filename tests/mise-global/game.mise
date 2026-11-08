@@ -13,7 +13,7 @@ obj box "коробка"
 room r "комната"
   dsc
     "Комната."
-    append (picked:noun(вн))
+    append (picked:noun вн)
     "."
     if target != none
       "Цель есть."

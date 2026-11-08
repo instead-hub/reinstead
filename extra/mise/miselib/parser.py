@@ -727,16 +727,11 @@ class Parser:
 
         if self.match("OP", ":"):
             m = self.eat("IDENT").val
-            args = self._parse_method_args()
+            args = self._app_args()
             self.eat_nl()
             return CallStmt(line=line, call=Call(line=line, func=m, receiver=lhs, args=args))
-        if isinstance(lhs, Call):
-            self.eat_nl()
-            return CallStmt(line=line, call=lhs)
         if isinstance(lhs, Sym):
-            args = []
-            while self._can_start_arg():
-                args.append(self.parse_postfix(spaced_ok=False))
+            args = self._app_args()
             self.eat_nl()
             return CallStmt(line=line, call=Call(line=line, func=lhs.name, args=args))
         raise Error("expected statement", line, self.src)
@@ -823,27 +818,21 @@ class Parser:
         return self.parse_app()
 
     def parse_app(self) -> Expr:
+        """Application by juxtaposition: `f a b`, `obj:m a`. Parentheses only group."""
         base = self.parse_postfix()
         while self.match("OP", ":"):
             m = self.eat("IDENT").val
-            base = Call(line=base.line, func=m, receiver=base, args=self._parse_method_args())
-            base = self._postfix_tail(base, spaced_ok=True)
+            base = Call(line=base.line, func=m, receiver=base, args=self._app_args())
+            base = self._postfix_tail(base)
         if isinstance(base, Sym) and self._can_start_arg():
-            args = []
-            while self._can_start_arg():
-                args.append(self.parse_postfix(spaced_ok=False))
-            return Call(line=base.line, func=base.name, args=args)
+            return Call(line=base.line, func=base.name, args=self._app_args())
         return base
 
-    def _parse_method_args(self) -> List[Expr]:
-        if self.at("OP", "(") and not self.cur().spaced:
-            self.pos += 1
-            args = self.parse_expr_list() if not self.at("OP", ")") else []
-            self.eat("OP", ")")
-            return args
+    def _app_args(self) -> List[Expr]:
+        """Arguments of one call: atoms up to the next operator or end of line."""
         args = []
         while self._can_start_arg():
-            args.append(self.parse_postfix(spaced_ok=False))
+            args.append(self.parse_postfix())
         return args
 
     def _can_start_arg(self) -> bool:
@@ -854,25 +843,18 @@ class Parser:
             return t.val not in STMT_KWS
         return t.kind == "OP" and t.val in ("(", "[", "{", "&")
 
-    def parse_postfix(self, spaced_ok: bool = True) -> Expr:
-        return self._postfix_tail(self.parse_primary(), spaced_ok)
+    def parse_postfix(self) -> Expr:
+        return self._postfix_tail(self.parse_primary())
 
-    def _postfix_tail(self, atom: Expr, spaced_ok: bool = True) -> Expr:
+    def _postfix_tail(self, atom: Expr) -> Expr:
         while True:
-            if self.at("OP", ".") and (spaced_ok or not self.cur().spaced):
-                self.pos += 1
+            if self.match("OP", "."):
                 atom = FieldAccess(line=atom.line, obj=atom, field=self.eat("IDENT").val)
             elif self.at("OP", "[") and not self.cur().spaced:
                 self.pos += 1
                 idx = self.parse_expr()
                 self.eat("OP", "]")
                 atom = IndexAccess(line=atom.line, obj=atom, index=idx)
-            elif self.at("OP", "(") and not self.cur().spaced:
-                self.pos += 1
-                args = self.parse_expr_list() if not self.at("OP", ")") else []
-                self.eat("OP", ")")
-                atom = Call(line=atom.line, func=atom.name, args=args) if isinstance(atom, Sym) else Call(
-                    line=atom.line, callee=atom, args=args)
             else:
                 break
         return atom
@@ -900,7 +882,14 @@ class Parser:
         if self.match("OP", "&"):
             return FnRef(line=t.line, name=self.eat("IDENT").val)
         if self.match("OP", "("):
+            if self.at("OP", ")"):
+                raise Error("empty parentheses are not a call: write the name alone "
+                            "(`walkout`) or use a block", t.line, self.src)
             e = self.parse_expr()
+            if self.at("OP", ","):
+                raise Error("unexpected ',': arguments are separated by spaces "
+                            "(`f a b`); a comma is only allowed in `[...]`/`{...}`",
+                            self.cur().line, self.src)
             self.eat("OP", ")")
             return e
         if self.match("OP", "[") or self.match("OP", "{"):

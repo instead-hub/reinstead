@@ -10,10 +10,10 @@ fn start(load)
 room hall "зал"
   dsc = "Зал."
   scope
-    add(w, coin)
-    w:add(star)
-    add(w, moon)
-    del(w, moon)
+    add w coin
+    w:add star
+    add w moon
+    del w moon
 
 room kitchen "кухня"
   dsc = "Кухня."

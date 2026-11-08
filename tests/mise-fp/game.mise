@@ -15,7 +15,7 @@ Tree tree "дерево"
 
 impl tree
   before Take
-    for_plural(s,&mark)
-    trace(s,&mark)
+    for_plural s &mark
+    trace s &mark
     if s:isa Tree
       [[дерево]]

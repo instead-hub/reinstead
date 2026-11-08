@@ -35,23 +35,23 @@ impl mp : Reflect
     if wh != mirror
       "Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!"
       stop
-    if w == hearth or w == mirror or(where(player) != mantelpiece and where(player) != armchair)
+    if w == hearth or w == mirror or(where player != mantelpiece and where player != armchair)
       "Но Алисе вряд ли удастся поднести это к зеркалу!"
       stop
     'Отражение '
     if w == player
       "Алисы"
     else
-      say (w:noun(рд))
+      say (w:noun рд)
     ' в зеркале выглядит '
-    if where(player) == mantelpiece
+    if where player == mantelpiece
       "слишком уж расплывчатым и размытым."
       stop
     'точь-в-точь как {#word/настоящий,#first}'
     if w == player
       "Алиса"
     else
-      say (w:noun())
+      say (w:noun)
     '-- только левая и правая сторона поменялись местами!'
 
 room Drawing_Room "гостиная|снег|снежинки"
@@ -71,7 +71,7 @@ obj red_queen "Чёрная Королева,королева,чёрная/жр|
 obj chess_board "шахматная доска,доска" : supporter @ Drawing_Room
   init_dsc
     "На полу лежит раскрытая шахматная доска."
-    content(s)
+    content s
   description = "На полу лежала раскрытая шахматная доска с недоигранной партией. Но ни одной фигурки на ней уже не осталось -- котята играют с ними в менее интеллектуальные игры."
 
 obj hearth "камин,огонь|пламя|решетка" : scenery @ Drawing_Room
@@ -108,7 +108,7 @@ obj window "окно|рама" : scenery @ Drawing_Room
   before Open
     "И подхватить простуду?! Лучше оставить окно закрытым."
   before Search
-    xaction(Exam, s)
+    xaction Exam s
 
 class Kitten : animate
   other_kitten = none
@@ -155,20 +155,20 @@ verb Touch2
 
 impl Drawing_Room
   before Exit, Walk
-    if where(player) != mantelpiece
+    if where player != mantelpiece
       pass
-    if compass_dir(w) == d_to or compass_dir(w) == out_to or w == s
+    if compass_dir w == d_to or compass_dir w == out_to or w == s
       "Таким путем вряд ли удастся спуститься с каминной полки!"
       stop
     pass
   before Default
-    if where(player) != mantelpiece
+    if where player != mantelpiece
       pass
-    if w and not inside(w, mantelpiece)
+    if w and not inside w mantelpiece
       'Отсюда трудно дотянуться до '
       say (w:noun рд) '.'
       stop
-    if wh and not inside(wh, mantelpiece)
+    if wh and not inside wh mantelpiece
       'Отсюда трудно дотянуться до '
       say (w:noun рд) '.'
       stop
@@ -194,10 +194,10 @@ impl red_queen
 
 impl rug
   before LookUnder
-    if where(player) == mantelpiece or where(player) == armchair
+    if where player == mantelpiece or where player == armchair
       "Отсюда вряд ли возможно дотянуться до коврика!"
       stop
-    if where(player) == s
+    if where player == s
       [[Алиса попыталась приподнять угол коврика, но потерпела неудачу.
 Причиной оказалось то, что она стояла прямо на нем.
 Мм-да, мир полон неожиданностей.]]
@@ -221,7 +221,7 @@ impl armchair
       "окном."
     pass
   before Push, Pull
-    local loc = where(player)
+    local loc = where player
     if loc
       if loc != Drawing_Room
         say 'Для начала необходимо покинуть ' (loc:noun вн) '.'
@@ -236,7 +236,7 @@ impl armchair
       k = black_kitten
     if k != none
       [[Начав двигать кресло, Алиса обнаружила, что ]]
-      say (k:noun(1))
+      say (k:noun 1)
       [[ находится прямо на его пути. Хорошо, что она заметила это
 вовремя -- а то могла бы просто раздавить бедное создание!]]
       stop
@@ -254,33 +254,33 @@ impl mantelpiece
 чтобы на ней можно было стоять без риска.]]
     pass
   before Enter, Climb
-    if where(player) == s
+    if where player == s
       "Но Алиса уже на ней!"
       stop
-    if where(player) != armchair
+    if where player != armchair
       "Каминная полка слишком высоко, чтобы до нее достать."
       stop
     if not armchair.moved
       "Отсюда невозможно дотянуться до каминной полки!"
       stop
-    if len(inv()) > 0
+    if len (inv) > 0
       "Для этого руки должны быть свободны!"
       stop
     player:move mantelpiece
     "Алиса ловко вскарабкалась на каминную полку."
   before Receive, LetGo
-    if where(player) != s and(where(player) != armchair or not armchair.moved)
+    if where player != s and(where player != armchair or not armchair.moved)
       "Полка слишком высоко, за пределами досягаемости."
       stop
     pass
 
 impl mirror
   description
-    if where(player) == mantelpiece
+    if where player == mantelpiece
       [[Невероятно -- но стеклянная поверхность зеркала
 тает на глазах, подобно призрачному серебристому пару!]]
       stop
-    if where(player) == armchair
+    if where player == armchair
       say ([[В зеркале отражается хорошо знакомая гостиная -- в ней
 все такое же, как и по эту сторону, только наоборот.
 Но почему-то Алиса уверена в том, что за краем зеркала,
@@ -290,7 +290,7 @@ impl mirror
     [[Отсюда в зеркале можно разглядеть только потолок гостиной.
 Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]]
   before Any
-    if event() != Exam and event() != Reflect and event() != Search and event() != ThrownAt and where(player) != mantelpiece
+    if event != Exam and event != Reflect and event != Search and event != ThrownAt and where player != mantelpiece
       "Отсюда невозможно даже дотянуться до зеркала!"
       stop
     pass
@@ -302,7 +302,7 @@ impl mirror
 
 impl worsted
   dsc
-    if where(s) != here
+    if where s != here
       pass
     if white_kitten.state != WOOL_STATE and black_kitten.state != WOOL_STATE
       "На полу лежит клубок шерсти."
@@ -354,20 +354,20 @@ impl Kitten
 будто он понимает каждое ее слово.]]
   life Give, ThrowAt
     if w != red_queen and w != worsted
-      if event() == ThrowAt
+      if event == ThrowAt
         w:move Drawing_Room
-        say 'Алиса бросила ' (w:noun вн) ' на пол, и ' (s:noun(1))
+        say 'Алиса бросила ' (w:noun вн) ' на пол, и ' (s:noun 1)
       else
-        say (s:Noun(1))
+        say (s:Noun 1)
       say ' рассматривает ' (w:noun вн) ' с озадаченным видом.'
       stop
     say 'Алиса бросила ' (w:noun вн) ' на пол. Немедленно '
-    append (s:noun(1))
-    if have(s)
+    append (s:noun 1)
+    if have s
       ', выскользнув из ее рук,'
     w:move Drawing_Room
     s:move Drawing_Room
-    append ' бросился за ' (w:noun(тв))
+    append ' бросился за ' (w:noun тв)
     if w == worsted
       worsted.sputan = true
       s.state = WOOL_STATE
@@ -376,7 +376,7 @@ impl Kitten
       s.state = QUEEN_STATE
     '.'
   before Take
-    if have(s.other_kitten)
+    if have s.other_kitten
       "Двух котят сразу Алисе ни за что не удержать!"
       stop
     s.state = HELD_STATE
@@ -388,19 +388,19 @@ impl Kitten
     say (s:Noun 1) ', выскользнув из рук Алисы, убежал прочь.'
   after Transfer, PutOn, Insert
     s.state = CHAIR_STATE
-    local p = where(s)
+    local p = where s
     if p
-      append (s:Noun 1) ', спрыгнув с ' (p:noun(рд))
+      append (s:Noun 1) ', спрыгнув с ' (p:noun рд)
     s:move Drawing_Room
     ', ловко приземлился на полу и убежал прочь.'
   daemon
     s.seen = false
     s.this_kittens_turn = not s.this_kittens_turn
-    if not s.this_kittens_turn or rnd(3) == 2
+    if not s.this_kittens_turn or rnd 3 == 2
       stop
-    say (s:Noun(1))
+    say (s:Noun 1)
     if s.state == HELD_STATE
-      local n = rnd(5)
+      local n = rnd 5
       if n == 1
         ' жалобно мяукнул.'
       elseif n == 2
@@ -415,7 +415,7 @@ impl Kitten
         ' спрыгнул на пол, ловко выскользнув из Алисиных рук.'
       stop
     elseif s.state == QUEEN_STATE
-      local n = rnd(5)
+      local n = rnd 5
       if n == 1
         ' ткнул Черную Королеву лапкой.'
       elseif n == 2
@@ -430,7 +430,7 @@ impl Kitten
       stop
     elseif s.state == WOOL_STATE
       worsted.sputan = true
-      local n = rnd(5)
+      local n = rnd 5
       if n == 1
         ' ткнул клубок шерсти лапкой.'
       elseif n == 2
@@ -444,8 +444,8 @@ impl Kitten
         ' прервав игру, чешет себя за ушами.'
       stop
     elseif s.state == CHAIR_STATE
-      if s.other_kitten.state == CHAIR_STATE and rnd(2) == 1
-        local n = rnd(5)
+      if s.other_kitten.state == CHAIR_STATE and rnd 2 == 1
+        local n = rnd 5
         if n == 1
           ' преследует '
         elseif n == 2
@@ -456,7 +456,7 @@ impl Kitten
           ' обежал вокруг '
         elseif n == 5
           ' ткнул '
-        append (s.other_kitten:noun(вн))
+        append (s.other_kitten:noun вн)
         if n == 2
           ' и они вместе покатились по полу.'
         elseif n == 4
@@ -466,7 +466,7 @@ impl Kitten
         else
           '.'
         stop
-      local n = rnd(5)
+      local n = rnd 5
       if n == 1
         ' гоняет по полу комок пыли.'
       elseif n == 2

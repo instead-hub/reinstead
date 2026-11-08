@@ -114,7 +114,7 @@ obj {
       p "светло"
     end
     s:for_plural(fn_mark)
-    fn_each((inv()), fn_mark)
+    fn_each(inv(), fn_mark)
     if fn_total(3) > 0 then
       return false
     end

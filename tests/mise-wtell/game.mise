@@ -102,7 +102,7 @@ room below_square "улица"
 Furniture stall "овощная лавка|лавка|прилавок,стол" : scenery @ below_square
   description = "Это всего лишь маленький стол с большой кучей картошки, кучкой морковки и репы, и парой яблок."
   before Search
-    xaction(Exam, s)
+    xaction Exam s
 
 Prop картошка "картошка|картофель" @ below_square
   description = "Должно быть, какой-то особенно ранний сорт... лет так на триста!"
@@ -206,7 +206,7 @@ impl mp : FireAt
     if not w
       "Ты не хочешь просто стрелять куда зря."
       stop
-    if BowOrArrow(wh)
+    if BowOrArrow wh
       "Немыслимо!"
     pass
 
@@ -269,7 +269,7 @@ impl stallholder
   life_Talk
     s.times_spoken_to += 1
     if s.times_spoken_to == 1
-      score_up()
+      score_up
       "Ты тепло благодаришь Хельгу за яблоко."
     elseif s.times_spoken_to == 2
       "Ещё увидимся!"
@@ -278,10 +278,10 @@ impl stallholder
 
 impl mid_square
   before Walk
-    if compass_dir(w) == s_to
+    if compass_dir w == s_to
       s.warnings_count = 0
       pole.has_been_saluted = false
-    if compass_dir(w) == n_to
+    if compass_dir w == n_to
       if pole.has_been_saluted
         [[^"Хорошего дня".^]]
         pass
@@ -306,7 +306,7 @@ impl mid_square
 
 impl tree
   before FireAt
-    if BowOrArrow(w)
+    if BowOrArrow w
       "Твоя рука слегка дрожит, и стрела входит в ствол на несколько дюймов выше головы Уолтера."
       walk theend
 
@@ -320,7 +320,7 @@ impl governor
 тебя... после того, как ты продемонстрируешь своё мастерство владения луком. Попади в это яблоко с того места,
 где ты стоишь. Это не должно быть слишком сложным. Сержант, лови. Поставь его на голову этого мелкого ублюдка".]])
   before FireAt
-    if BowOrArrow(w)
+    if BowOrArrow w
       [[Прежде, чем солдаты успевают среагировать, ты разворачиваешься, и выпускаешь стрелу в Гесслера.
 Она пронзает его сердце, и герцог оседает на землю. На мгновение толпа замирает в недоумении, но тут же
 разражается криками ликования.]]
@@ -334,7 +334,7 @@ impl son
       stop
     "Тихий светлый мальчик восьми лет, он быстро учится сельской работе."
   life Give
-    score_up()
+    score_up
     w:move s
     [["Спасибо, пап".]]
   life_Talk
@@ -344,7 +344,7 @@ impl son
       "Ты показываешь сыну несколько интересных мест в городе."
   before FireAt
     if here == marketplace
-      if BowOrArrow(w)
+      if BowOrArrow w
         "Упс! Наверняка вы имели в виду не это?"
         walk theend
       stop
@@ -362,7 +362,7 @@ impl apple
     else
       "Яблоко зелёное, с коричневым пятном."
   before Default
-    if where(s) == son
+    if where s == son
       if here == marketplace
         "Отсюда ты едва видишь его."
         stop
@@ -371,8 +371,8 @@ impl apple
     pass
   before FireAt
     if here == marketplace
-      if BowOrArrow(w)
-        score_up()
+      if BowOrArrow w
+        score_up
         [[Мягко и спокойно ты кладёшь стрелу на тетиву, оттягивая её, и, предельно
 сконцентрировавшись, берёшь прицел. Задержав дыхание, не мигая, ты в ужасе
 отправляешь стрелу в цель. Она летит через площадь к твоему сыну, и, пронзая яблоко, впивается
@@ -385,10 +385,10 @@ ending theend
   title = "Конец"
   dsc
     line 'Вы испортили любимую народную легенду.'
-    say 'Ваш счет: ' (cur_score()) ' из ' (MAX_SCORE)
+    say 'Ваш счет: ' (cur_score) ' из ' (MAX_SCORE)
 
 ending happyend
   title = "Конец"
   dsc
     line 'Поздравляю, вы прошли игру!'
-    say 'Ваш счет: ' (cur_score()) ' из ' (MAX_SCORE)
+    say 'Ваш счет: ' (cur_score) ' из ' (MAX_SCORE)

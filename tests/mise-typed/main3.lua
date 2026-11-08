@@ -86,7 +86,7 @@ local function fn_on_take(s)
   p(s:noun_hint(h))
   p(_(chosen):noun_hint("вн"))
   p(fn_spot(s):noun_hint("вн"))
-  local w = (inv())[1]
+  local w = inv()[1]
   w:noun_hint()
   p(fn_label2(s, 2))
   fn_label(s, 1, 2)

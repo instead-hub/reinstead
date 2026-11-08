@@ -12,8 +12,8 @@ Thing y "вещица"
 
 room r "комната"
   dsc
-    say (x:noun())
-    say (y:noun())
+    say (x:noun)
+    say (y:noun)
 
 fn start(load)
   player:move r

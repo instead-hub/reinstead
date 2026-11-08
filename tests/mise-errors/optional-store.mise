@@ -10,5 +10,5 @@ fn maybe() -> obj?
 obj box "коробка"
   scored = false
   on Use
-    local o = maybe()
+    local o = maybe
     o.scored = true

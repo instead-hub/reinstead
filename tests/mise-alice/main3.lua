@@ -409,7 +409,7 @@ _'mantelpiece'["before_Enter,Climb"] = function(s, w, wh)
     p "Отсюда невозможно дотянуться до каминной полки!"
     return
   end
-  if (#(inv())) > 0 then
+  if (#inv()) > 0 then
     p "Для этого руки должны быть свободны!"
     return
   end
@@ -442,7 +442,7 @@ _'mirror'.description = function(s)
   Впрочем, он ничем не отличается от потолка по эту сторону зеркала.]])
 end;
 _'mirror'.before_Any = function(s, ev, w, wh)
-  if ((mp.event or nil)) ~= "Exam" and ((mp.event or nil)) ~= "Reflect" and ((mp.event or nil)) ~= "Search" and ((mp.event or nil)) ~= "ThrownAt" and where(me()) ~= _'mantelpiece' then
+  if (mp.event or nil) ~= "Exam" and (mp.event or nil) ~= "Reflect" and (mp.event or nil) ~= "Search" and (mp.event or nil) ~= "ThrownAt" and where(me()) ~= _'mantelpiece' then
     p "Отсюда невозможно даже дотянуться до зеркала!"
     return
   end
@@ -618,7 +618,7 @@ end;
 std.fn_aliases(Kitten, "life_Ask,Answer,Tell,Talk")
 Kitten["life_Give,ThrowAt"] = function(s, w, wh)
   if w ~= _'red_queen' and w ~= _'worsted' then
-    if ((mp.event or nil)) == "ThrowAt" then
+    if (mp.event or nil) == "ThrowAt" then
       move(w, _'Drawing_Room')
       p("Алиса бросила ", w:noun_hint("вн"), " на пол, и ", s:noun_hint(1))
     else

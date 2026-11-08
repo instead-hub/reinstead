@@ -5,18 +5,18 @@ lang ru
 include stdlib
 
 fn exit(s: obj, d: direction?) -> obj?
-  local name = runorval(s, tostr(d))
-  local r = ref(tostr(name))
-  if is_room(r)
+  local name = runorval s (tostr d)
+  local r = ref (tostr name)
+  if is_room r
     return r
   return nil
 
 room r "комната"
   n_to = q
   dsc
-    local e = exit(here(), n_to)
+    local e = exit (here) n_to
     if e
-      say (e:noun(вн))
+      say (e:noun вн)
 
 room q "зал"
 

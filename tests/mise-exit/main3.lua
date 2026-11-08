@@ -92,7 +92,7 @@ room {
   nam = "r";
   n_to = 'q';
   dsc = function(s)
-    local e = fn_exit((here()), "n_to")
+    local e = fn_exit(here(), "n_to")
     if e then
       p(e:noun_hint("вн"))
     end

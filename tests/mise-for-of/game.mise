@@ -14,8 +14,8 @@ obj coin "монета"
 
 fn init()
   for w of {box, rock}
-    say (w:noun())
+    say (w:noun)
   for i, w of {box, rock}
     say (i)
-  for w of plurals(box)
-    say (w:noun())
+  for w of plurals box
+    say (w:noun)

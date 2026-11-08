@@ -21,7 +21,7 @@ obj box "коробка"
     local o = seen 'box'
     if o
       o:attr seen
-      say (pick(s))
+      say (pick s)
     else
       [[не видно]]
 
