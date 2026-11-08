@@ -71,6 +71,10 @@ class door(obj)
 class story(room)
   text: str | tbl[str] | fn(obj, num) -> str
 
+class ending(room)
+
+class talk(obj)
+
 type event
   Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str
   Burn, Cut, Dig, Tie: obj, obj?
@@ -116,7 +120,7 @@ extern fn disabled(w: obj) -> bool = "disabled($1)"
 extern fn for_plural(s: obj, f: fn(obj)) = "$1:for_plural($2)"
 extern fn trace(s: obj, f: fn(obj)) = "mp:trace($1, $2)"
 extern fn isa(s: obj, cls: str) -> bool = "(((function(o) local m = getmetatable($1) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G[$2])))"
-extern fn seen(w: obj, wh: obj?) -> obj? = "seen($*)"
+extern fn seen(w: ref, wh: ref?) -> obj? = "seen($*)"
 extern fn walk(where: obj) = "walk($1)"
 extern fn walkin(where: obj) = "walkin($1)"
 extern fn take(w: obj) = "take($1)"

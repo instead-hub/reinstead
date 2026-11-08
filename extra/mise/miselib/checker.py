@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from .ast_nodes import *
 from .parser import parse_source
 
-OBJECT_KINDS = frozenset({"obj", "room", "door", "story", "ending", "talk"})
-ROOM_KINDS = frozenset({"room", "story", "ending", "cutscene", "gameover"})
+# the class chain of `room` decides whether an object is room-like
+ROOM_ROOT = "room"
 _SLOT_OBJ_RE = re.compile(r"\{(?:noun|noun_obj|compass\w*)\}")
 _ENGINE_FIELDS = frozenset({"nam", "tag", "obj", "way", "lifes"})
 # engine globals and Lua libraries reachable from expressions (`mp.event`, ...)
@@ -87,9 +87,8 @@ def tbl_inner(t: str) -> Optional[str]:
 
 # --- Type compatibility -----------------------------------------------------
 
-PRIMITIVES = frozenset({"obj", "str", "num", "bool", "any", "event", "tbl", "list", "nil", "ref"})
-# engine kinds whose instances behave as objects; `talk` is a dialogue object
-OBJ_KINDS = frozenset({"obj", "room", "door", "story", "ending", "talk"})
+# type names that are part of the type language; object types are classes
+PRIMITIVES = frozenset({"str", "num", "bool", "any", "event", "tbl", "list", "nil", "ref"})
 
 
 def _atom_fits(ctx: Context, actual: str, expected: str) -> bool:
@@ -98,16 +97,15 @@ def _atom_fits(ctx: Context, actual: str, expected: str) -> bool:
         return True
     if actual == "any":
         return False  # `any` never silently narrows into a concrete type
-    if expected in ("obj", "ref"):
-        return actual in OBJ_KINDS or actual in ("ref", "str") or actual in ctx.classes
-    if expected in OBJ_KINDS:
-        cur = actual
-        seen = set()
+    if expected == "ref":
+        return _is_object_type(ctx, actual) or actual == "str"
+    if expected in ctx.classes:
+        cur, seen = actual, set()
         while cur in ctx.classes and cur not in seen:
+            if cur == expected:
+                return True
             seen.add(cur)
             cur = ctx.classes[cur]
-            if cur == expected or (cur == "obj" and expected in OBJ_KINDS):
-                return True
         return False
     if expected == "str" and actual in ctx.enums:
         return True  # an enum value can be passed where a string is wanted
@@ -294,7 +292,7 @@ def prescan(prog: Program) -> Context:
         ent.handlers = [h for h in exp_h if (h.phase, tuple(h.events)) not in own_h] + ent.handlers
 
         if ent.kind not in ("class", "impl") and ent.name:
-            if ent.kind not in OBJECT_KINDS and ent.kind not in ctx.classes:
+            if ent.kind not in ctx.classes:
                 raise Error(f"unknown kind {ent.kind!r}", ent.line)
             if not ent.name.startswith("#") and ent.name in ctx.objects:
                 raise Error(f"duplicate declaration {ent.name!r}", ent.line)
@@ -558,7 +556,7 @@ def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[st
         ev = h.events[0]
         sigs = ctx.life_args.get(ev) if h.phase == "life" else ctx.event_args.get(ev)
         if sigs:
-            room_like = kind in ROOM_KINDS or (kind in ctx.classes and ctx.classes.get(kind) in ROOM_KINDS) or owner in ("game", "mp", "setup", None)
+            room_like = _inherits(ctx, kind, ROOM_ROOT) or owner in ("game", "mp", "setup", None)
             off = 1 if (room_like and h.phase != "life") else 0
             for idx, st in enumerate(sigs):
                 if 0 < idx + off < len(pnames):
@@ -817,15 +815,29 @@ def _check_fnref(ctx: Context, ref: FnRef, expected: Optional[str], where: str):
                          f"{' | '.join(alts)}", ref.line)
 
 
+def _inherits(ctx: Context, kind: str, root: str) -> bool:
+    """Is `kind` the class `root` or one of its descendants?"""
+    cur, seen = kind, set()
+    while cur and cur not in seen:
+        if cur == root:
+            return True
+        seen.add(cur)
+        cur = ctx.classes.get(cur)
+    return False
+
+
+def _is_object_type(ctx: Context, t: str) -> bool:
+    """A declared class (or an instance of one) — the only things with fields."""
+    return t in ctx.classes or t in ctx.objects
+
+
 def _objectish(ctx: Context, t: str) -> bool:
     """Can a value of this type have fields (`x.field`)? Scalars cannot."""
     for alt in split_union(t):
         alt = alt.rstrip("?").strip()
-        if alt in ("any", "obj", "ref", "room", "door", "talk", "list", "tbl", "class"):
-            return True
-        if alt.startswith("tbl[") or alt.startswith("fn("):
-            return True
-        if alt in ctx.classes or alt in ctx.objects:
+        if alt in ("any", "ref", "list") or alt.startswith("tbl["):
+            return True          # dynamic values, references and collections
+        if _is_object_type(ctx, alt):
             return True
     return False
 
