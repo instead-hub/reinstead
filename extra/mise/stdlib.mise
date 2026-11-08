@@ -14,8 +14,8 @@ type gram: ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
 
 props obj:
   daemon: fn(s: obj)
-  description: str | bool | fn(s: obj) -> str
-  dsc: str | bool | fn(s: obj) -> str
+  description: str | bool | fn(s: obj) -> bool?
+  dsc: str | bool | fn(s: obj) -> bool?
   title: str | bool | fn(s: obj) -> str
   inv: str | bool | fn(s: obj) -> str
   inside_dsc: str | bool | fn(s: obj) -> str
