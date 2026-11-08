@@ -484,6 +484,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         elif isinstance(p.value, Expr):
             _check_expr(ctx, p.value, {"s": "obj"}, owner)
     for h in ent.handlers:
+        _check_handler_events(ctx, h, owner or kind)
         if isinstance(h.body, FnRef):
             ctx.used_refs.add(h.body.name)
         elif isinstance(h.body, Expr):
@@ -1062,3 +1063,14 @@ def _check_cond(ctx: Context, cond: Expr, env: Dict[str, str], owner: Optional[s
 
 def is_optional(t: str) -> bool:
     return "nil" in split_union(t)
+
+
+def _check_handler_events(ctx: Context, h: Handler, where: str):
+    """A handler phase must name a declared event."""
+    import difflib
+    for ev in h.events:
+        if ev in ctx.event_names:
+            continue
+        near = difflib.get_close_matches(ev, sorted(ctx.event_names), 1, 0.7)
+        hint = f" (did you mean {near[0]!r}?)" if near else ""
+        raise Error(f"{where}: unknown event {ev!r}{hint}", h.line)

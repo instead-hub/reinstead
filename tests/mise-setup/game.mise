@@ -1,0 +1,27 @@
+game "setup"
+
+lang ru
+include stdlib
+
+setup
+  fmt dash
+  dsc "Заставка."
+  take box
+  hero
+    words "ты/мр"
+    description = "Герой."
+  game
+    hint_verbs = { "#Exam", "#Take" }
+  before Exam
+    "Нечего осматривать."
+  init
+    player:move hall
+  start
+    player:move hall
+
+obj box "коробка"
+  found_in = hall
+  description = "Просто коробка."
+
+room hall "зал"
+  dsc = "Большой зал."

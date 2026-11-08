@@ -18,6 +18,11 @@ _BIN_PREC = {
 }
 
 
+def _looks_like_kind(kw: str) -> bool:
+    """A member head that may start a nested declaration (`obj`, a class, ...)."""
+    return kw in TOP_KINDS or kw == "mixin" or kw[:1].isupper()
+
+
 class Parser:
     def __init__(self, tokens: List[Token], src_name: str = "", raw_src: str = ""):
         self.tokens, self.pos, self.src = tokens, 0, src_name
@@ -122,6 +127,8 @@ class Parser:
             return prog.items.append(self._parse_verb("verb", t.line))
         if kw == "talk":
             return prog.items.append(self._parse_talk())
+        if kw == "setup":
+            return prog.items.extend(self._parse_setup(prog))
         if kw == "lua":
             return prog.items.append(self._parse_lua())
         prog.items.append(self._parse_entity())
@@ -349,6 +356,14 @@ class Parser:
                     ent.with_refs.extend(self.sym_list())
                     self.eat_nl()
                 continue
+            if kw[:1].islower() and kw not in PHASES and self.peek().kind == "IDENT" \
+                    and self.peek(2).val not in ("=", "(", "@", ","):
+                import difflib
+                near = difflib.get_close_matches(kw, sorted(PHASES), 1, 0.75)
+                if near:
+                    raise Error(f"bad field name {kw + ' ' + self.peek().val!r} "
+                                f"(did you mean {near[0] + ' ' + self.peek().val!r}?)",
+                                t.line, self.src)
             if self._is_nested_entity():
                 ent.children.append(self._parse_entity())
                 continue
@@ -488,6 +503,72 @@ class Parser:
             return e
         res = self._opt_lua_or_stmts()
         return Lit(line=self.cur().line, kind="raw", val=res) if isinstance(res, str) else res
+
+    def _parse_setup(self, prog: Program) -> List[Any]:
+        """`setup` is sugar: it expands into `impl game`/`impl pl`, `fn init`/`fn start`."""
+        line = self.eat("IDENT", "setup").line
+        game = EntityDecl(kind="impl", name="game", line=line)
+        hero = None
+        init_body: Optional[List[Stmt]] = None
+        start_body: Optional[List[Stmt]] = None
+        init_head: List[Stmt] = []
+        self.eat_nl()
+        self.eat("INDENT")
+        while not self.at("DEDENT") and not self.at("EOF"):
+            t = self.cur()
+            kw = t.val
+            if kw in ("dsc", "fmt", "take"):
+                self.pos += 1
+                self.match("OP", "=")
+                if kw == "fmt":
+                    prog.fmt.extend(self.sym_list())
+                    self.eat_nl()
+                elif kw == "dsc":
+                    val = self._parse_str_tok()
+                    game.props.append(Prop(name="dsc", value=val, line=t.line))
+                    self.eat_nl()
+                else:
+                    for name in self.sym_list():
+                        init_head.append(CallStmt(line=t.line, call=Call(
+                            line=t.line, func="take", args=[Sym(line=t.line, name=name)])))
+                    self.eat_nl()
+            elif kw in ("hero", "game"):
+                self.pos += 1
+                sub = EntityDecl(kind="impl", name="pl" if kw == "hero" else "game", line=t.line)
+                if self.cur().kind in ("STRING", "ISTRING"):
+                    sub.words.append(self.eat(self.cur().kind).val)
+                self.eat_nl()
+                self.eat("INDENT")
+                self._parse_members(sub)
+                self.eat("DEDENT")
+                if kw == "hero":
+                    hero = sub
+                else:
+                    game.props.extend(sub.props)
+                    game.handlers.extend(sub.handlers)
+            elif kw in ("init", "start"):
+                self.pos += 1
+                prms = self._opt_ident_parens()
+                body = self.parse_stmt_block()
+                fn = FnDecl(name=kw, params=[(pn, "bool" if pn == "load" else "any") for pn in (prms or [])],
+                            body=body, line=t.line)
+                if kw == "init":
+                    init_body = body
+                else:
+                    start_body = body
+            elif kw in PHASES:
+                game.handlers.append(self._parse_handler())
+            else:
+                raise Error(f"unknown setup field {kw!r}", t.line, self.src)
+        self.eat("DEDENT")
+        out: List[Any] = [game]
+        if hero is not None:
+            out.append(hero)
+        if init_body is not None or init_head:
+            out.append(FnDecl(name="init", params=[], body=init_head + (init_body or []), line=line))
+        if start_body is not None:
+            out.append(FnDecl(name="start", params=[("load", "bool")], body=start_body, line=line))
+        return out
 
     # --- Verbs & Talk (`*` / `+` Choice Syntax) ---
 
