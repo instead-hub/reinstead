@@ -32,7 +32,6 @@ class obj
   found_in: ref | tbl[ref] | fn(obj) -> bool
   talk_to: ref | fn(obj) -> ref
   with_key: ref | fn(obj) -> ref
-  walk_to: ref
   default_Event: event | fn(obj) -> event
   capacity: num | fn(obj) -> num
   disp: str | fn(obj) -> str
@@ -62,7 +61,6 @@ class room(obj)
   u_to: ref | fn(obj) -> ref
   in_to: ref | fn(obj) -> ref
   out_to: ref | fn(obj) -> ref
-  prev_to: ref | fn(obj) -> ref
   next_to: ref | fn(obj) -> ref
 
 class door(obj)
@@ -72,14 +70,6 @@ class door(obj)
 
 class story(room)
   text: str | tbl[str] | fn(obj, num) -> str
-
-class option(obj)
-  intro: str | fn(obj) -> str
-  ask: str | fn(obj) -> str
-  say: str | fn(obj) -> str
-  reply: str | fn(obj) -> str
-  onempty: fn(obj)
-  when: bool | fn(obj) -> bool
 
 type event
   Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str
@@ -188,10 +178,6 @@ extern fn tiny() -> bool = "(instead.tiny)"
 extern fn music(name: str, ...: any) = "snd.music($*)"
 extern fn tostr(s: any) -> str = "tostring($1)"
 extern fn desc(s: obj) -> str? = "(s.desc)"
-
-fn objs(s: obj) -> list
-  lua
-    return s.obj
 
 fn where_list(w: obj) -> list
   lua

@@ -4,10 +4,6 @@
 require "fmt"
 require "parser/mp-en"
 
-local function fn_objs(s)
-  return s.obj
-end
-
 local function fn_where_list(w)
   local list = {}
   where(w, list)
