@@ -25,7 +25,7 @@ def _list_value(lines, pos, ind, text, recurse):
             item, lnxt = read_long(lines, pos, rest, pos + 1)
             return item, lnxt - pos
         return parse_scalar(rest, pos + 1, textmode=True), 1
-    j = skip_blank(lines, pos + 1)
+    j = skip_trivia(lines, pos + 1)
     if _is_list_item(lines, j, ind):
         sub, snxt = recurse(lines, j, lines[j][1])
         return sub, snxt - pos
@@ -36,14 +36,14 @@ def parse_list(lines, i, indent):
     pos = i
     while pos < len(lines):
         raw, ind = lines[pos]
-        if not raw.strip():
+        text = strip_comment(raw.strip())
+        if not text:
             pos += 1
             continue
         if ind < indent:
             break
         if ind > indent:
             parse_error(pos + 1, M.UNEXPECTED_INDENT % raw)
-        text = strip_comment(raw.strip())
         if not _LIST_MARK_RE.match(text):
             break
         item, consumed = _list_value(lines, pos, ind, text, parse_list)
@@ -67,7 +67,7 @@ def pipe_value(lines, i, indent, tag):
         return Lua(reindent("\n".join(r for r, _ind, _lno in body),
                             "")), j
     k = 0
-    while k < len(body) and not body[k][0].strip():
+    while k < len(body) and not strip_comment(body[k][0].strip()):
         k += 1
     if k >= len(body):
         return Logic([]), j
@@ -94,7 +94,7 @@ def _is_handler_key(key):
 
 
 def _block_child(lines, pos, indent, key, recurse, logic=None):
-    j = skip_blank(lines, pos + 1)
+    j = skip_trivia(lines, pos + 1)
     if _is_list_item(lines, j, indent):
         sub, cnxt = parse_list(lines, j, lines[j][1])
         return sub, cnxt - pos
@@ -161,17 +161,14 @@ def parse_block(lines, i, indent, text_values=False, logic=None):
     pos = i
     while pos < len(lines):
         raw, ind = lines[pos]
-        if not raw.strip():
+        text = strip_comment(raw.strip())
+        if not text:
             pos += 1
             continue
         if ind < indent:
             break
         if ind > indent:
             parse_error(pos + 1, M.UNEXPECTED_INDENT % raw)
-        text = strip_comment(raw.strip())
-        if not text:
-            pos += 1
-            continue
         key, rest = split_key(text)
         if key is None:
             _no_key_error(pos, logic)

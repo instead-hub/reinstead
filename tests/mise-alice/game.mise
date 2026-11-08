@@ -31,12 +31,14 @@ event Reflect:
     if wh ~= mirror:
       say Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!
       stop
+    # комментарий перед веткой if
     if w == hearth or w == mirror or (where(player) ~= mantelpiece and where(player) ~= armchair):
       say Но Алисе вряд ли удастся поднести это к зеркалу!
       stop
     say 'Отражение '
     if w == player:
       say Алисы
+    # комментарий перед else
     else:
       say(w:noun(рд))
     say ' в зеркале выглядит '

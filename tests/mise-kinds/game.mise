@@ -47,6 +47,7 @@ story prologue:
   text:
     - [[Первая страница.
 Вторая строка первой страницы.]]
+    # - [[Отключённая страница.]]
     - [[Вторая страница.]]
 
 story epilogue:
@@ -66,6 +67,7 @@ room hall:
   dict: { "зал" }
   with: sky
   on Enter: |
+    # приветствие входящего
     say [[Вы вошли.]]
   on Walk: |
     say [[Вы идёте.]]
@@ -79,6 +81,7 @@ room hall:
     say [[Повернулись.]]
   compass_look: |
     if to:
+      # выход есть -- молчим
       pass
   scope: |
     pass

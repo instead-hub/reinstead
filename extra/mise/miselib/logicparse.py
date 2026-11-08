@@ -9,7 +9,7 @@ from . import messages as M
 
 def _branch_body(lines, header, indent, what, recurse):
     """Parse the indented body of a branch or loop header."""
-    j = skip_blank(lines, header + 1)
+    j = skip_trivia(lines, header + 1)
     if j >= len(lines) or lines[j][1] <= indent:
         parse_error(lines[header][2], M.EMPTY_BRANCH % what)
     return recurse(lines, j, lines[j][1])
@@ -37,10 +37,10 @@ def _parse_branches(lines, i, indent, style, branches, recurse):
     else_bodies = []
     while i < len(lines):
         raw2, ind2, lno2 = lines[i]
-        if not raw2.strip():
+        t2 = strip_comment(raw2.strip())
+        if not t2:
             i += 1
             continue
-        t2 = strip_comment(raw2.strip())
         if ind2 != indent:
             break
         if t2.startswith(branch_kw + " "):
@@ -113,14 +113,14 @@ def parse_logic(lines, i, indent):
     stmts = []
     while i < len(lines):
         raw, ind, lno = lines[i]
-        if not raw.strip():
+        text = strip_comment(raw.strip())
+        if not text:
             i += 1
             continue
         if ind < indent:
             break
         if ind > indent:
             parse_error(lno, M.UNEXPECTED_INDENT % raw)
-        text = strip_comment(raw.strip())
         while not long_balanced(text) and i + 1 < len(lines):
             i += 1
             text += "\n" + lines[i][0]
