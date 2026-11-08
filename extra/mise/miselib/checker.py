@@ -606,11 +606,25 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
         elif isinstance(s, AssignStmt):
             vt = _value_types(ctx, s.values, env, owner)
             if isinstance(s.target, Sym):
-                cur = env.get(s.target.name)
+                name = s.target.name
+                if name in ctx.globals:
+                    # a game variable (`global`/`const`) keeps the type of its initial
+                    # value for reads, but writes are not type-checked (as in mise1)
+                    if name in env:
+                        cur = env[name]
+                    else:
+                        cur = None
+                elif name in env:
+                    cur = env[name]
+                elif name.startswith("__"):
+                    cur = None
+                else:
+                    raise Error(f"unknown name {name!r} (declare it with `local` or `global`)",
+                                s.line)
                 if cur is not None and s.op == "=" and vt:
-                    expect(ctx, f"assignment to {s.target.name}", vt[0], cur, s.line)
+                    expect(ctx, f"assignment to {name}", vt[0], cur, s.line)
                 if cur in (None, "any") and vt and s.op == "=":
-                    env[s.target.name] = vt[0]
+                    env[name] = vt[0]
             else:
                 _check_store(ctx, s.target, vt[0] if vt else "any", env, owner, s.line)
         elif isinstance(s, CallStmt):
@@ -765,9 +779,17 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str], owner: Optional[str],
                expected: Optional[str], is_lhs: bool) -> str:
     n = e.name
     if is_lhs:
-        e.rk = "var"
-        e.typ = env.get(n, "any")
-        return e.typ
+        # a write target must be a local/parameter, a declared global or `__`-dynamic
+        if n in env:
+            e.rk, e.typ = "var", env[n]
+            return e.typ
+        if n in ctx.globals:
+            e.rk, e.typ = "global", ctx.globals[n][0]
+            return e.typ
+        if n.startswith("__"):
+            e.rk, e.typ = "var", "any"
+            return "any"
+        raise Error(f"unknown name {n!r} (declare it with `local` or `global`)", e.line)
     if n == "none":
         e.rk, e.typ = "none", "obj"
         return "obj"

@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+obj shiplog "журнал"
+  description
+    zzz = 1
+    "Текст."
