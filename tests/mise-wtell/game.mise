@@ -34,15 +34,15 @@ class Prop : scenery
     say 'Вам нет нужды беспокоиться о ' (s:noun {пр}) '.'
 
 class Furniture : static, supporter
-  before Take, Pull, Push, PushDir "Слишком тяжело."
+  before Take, Pull, Push, PushDir = "Слишком тяжело."
 
 class Arrow "стрела,стрел*"
   arrow = true
   description = "Все твои стрелы верны и остры."
-  before Drop, Give, ThrowAt "Ты не хочешь расставаться со своими острыми стрелами."
+  before Drop, Give, ThrowAt = "Ты не хочешь расставаться со своими острыми стрелами."
 
 class NPC : animate
-  life_Answer,Ask,AskTo,AskFor,Tell
+  life Answer,Ask,AskTo,AskFor,Tell
     say 'Введите просто "говорить с ' (s:noun {тв}) '".'
 
 impl game
@@ -113,7 +113,7 @@ Prop фрукты "фрукты/~од|овощи|морковь,морковка
 NPC stallholder "Хельга|торговка,продавщица,женщина|платье|шарф" @ below_square
   description = "Хельга -- полноватая жизнерадостная женщина, одетая в бесформенное платье и пёстрый платок."
   times_spoken_to = 0
-  life_Kiss '"Ох, а ты дерзкий тип!"'
+  life Kiss = '"Ох, а ты дерзкий тип!"'
 
 room south_square
   title = "Южный край площади"
@@ -125,12 +125,12 @@ room south_square
   s_to = below_square
 
 Prop шляпа "шляпа,шапка|шест,столб" @ south_square, north_square
-  before Default, Exam "Издали плохо видно."
+  before Default, Exam = "Издали плохо видно."
 
 NPC guard "солдаты,стражники" : animate, scenery @ south_square, mid_square, north_square, marketplace
   description = "Неотёсанные, жестокие люди не из этих мест."
-  before FireAt, Attack "Их намного больше."
-  before Talk "Разговаривать с этими мерзавцами -- ниже твоего достоинства."
+  before FireAt, Attack = "Их намного больше."
+  before Talk = "Разговаривать с этими мерзавцами -- ниже твоего достоинства."
 
 room mid_square "центр|площадь"
   title = "Центр площади"
@@ -145,7 +145,7 @@ Furniture pole "шляпа|столб|перо|шапка" : scenery @ mid_squar
 На самой верхушке надёжно закреплена нелепая шляпа Гесслера из черной и красной кожи, с широкими
 изогнутыми полями и пучком перьев из мёртвого гуся.]]
   has_been_saluted = false
-  before FireAt "Заманчиво, но ты не хочешь неприятностей."
+  before FireAt = "Заманчиво, но ты не хочешь неприятностей."
   before Salute
     s.has_been_saluted = true
     [[Ты отдаёшь честь шляпе на столбе.^^
@@ -174,17 +174,17 @@ obj tree "липа|дерево" : scenery @ marketplace
 
 NPC governor "герцог|Гесслер,фогт,Герман" @ marketplace
   description = "Невысокий, коренастый, с противным лицом, Гесслер наслаждается властью, которую он имеет над этим городком."
-  before Attack "Как ты думаешь это сделать?"
-  life_Talk "Ты не можешь заставить себя заговорить с ним."
+  before Attack = "Как ты думаешь это сделать?"
+  life Talk = "Ты не можешь заставить себя заговорить с ним."
   dict = { ["Гесслер/вн"] = "Геслера", ["Гесслер/рд"] = "Геслера", ["Гесслер/дт"] = "Гесслеру", ["Гесслер/тв"] = "Гесслером", ["Гесслер/пр"] = "Геслере" }
 
 obj bow "лук" : clothing
   description = "Твой верный лук из тиса, с натянутой льняной тетивой."
-  before Drop, Give, ThrowAt "Ты никогда не расстаёшься со своим верным луком."
+  before Drop, Give, ThrowAt = "Ты никогда не расстаёшься со своим верным луком."
 
 obj quiver "колчан" : container, open, clothing
   description = "Он сделан из козьей кожи и обычно висит за твоим левым плечом. В колчане есть стрелы."
-  before Drop, Give, ThrowAt "Но это ведь подарок твоей жены Хедвиг."
+  before Drop, Give, ThrowAt = "Но это ведь подарок твоей жены Хедвиг."
 
 Arrow @ quiver
 
@@ -198,8 +198,8 @@ NPC son "сын,мальчик,мальчишка,парень|Уолтер" : t
     return true
 
 obj apple "яблоко,яблочко"
-  before Drop "Вполне съедобное яблоко, не стоит его выбрасывать."
-  before Eat "Хельга дала его для Уолтера..."
+  before Drop = "Вполне съедобное яблоко, не стоит его выбрасывать."
+  before Eat = "Хельга дала его для Уолтера..."
 
 impl mp : FireAt
   on FireAt
@@ -211,8 +211,8 @@ impl mp : FireAt
     pass
 
 verb FireAt
-  words "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить"
-  patterns
+  words = "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить"
+  patterns =
     - "в {noun}/вн,scene : FireAt"
     - "~ {noun}/вн,scene : FireAt"
     - "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt"
@@ -233,13 +233,13 @@ impl mp : Salute
         say (w:Noun) ' не замечает этого.'
 
 verb Salute
-  words "поклони/ться,честь"
-  patterns
+  words = "поклони/ться,честь"
+  patterns =
     - "{noun}/дт,scene : Salute"
 
 verb Salute2
-  words "мах/ать,помах/ать,помаш/и,маш/и"
-  patterns
+  words = "мах/ать,помах/ать,помаш/и,маш/и"
+  patterns =
     - "{noun}/дт,scene : Salute"
 
 impl mp : Untie
@@ -247,8 +247,8 @@ impl mp : Untie
     "Ты не можешь развязать это."
 
 verb Untie
-  words "развяз/ать,отвяз/ать,освобод/ить"
-  patterns
+  words = "развяз/ать,отвяз/ать,освобод/ить"
+  patterns =
     - "{noun}/вн,scene : Untie"
 
 impl street
@@ -266,7 +266,7 @@ impl stallholder
       apple:move player
       line [[^"Привет, Вильгельм! Отличный денёк для торговли! Это твой Уолтер? О, как он вырос! Держи яблоко для него --
 тут один край немного подгнил, но всё остальное хорошее. Как там фрау Телль? Передавай ей привет".]]
-  life_Talk
+  life Talk
     s.times_spoken_to += 1
     if s.times_spoken_to == 1
       score_up
@@ -337,7 +337,7 @@ impl son
     score_up
     w:move s
     [["Спасибо, пап".]]
-  life_Talk
+  life Talk
     if here == marketplace
       [["Стой спокойно, сынок, Господь нам поможет".]]
     else

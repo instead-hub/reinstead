@@ -11,8 +11,8 @@ impl game
   hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" }
 
 extend verb #Drop
-  words "повес/ить"
-  patterns
+  words = "повес/ить"
+  patterns =
     - "{noun}/вн,held на {noun}/вн,supporter : PutOn"
     - "~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse"
 

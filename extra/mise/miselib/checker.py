@@ -34,6 +34,7 @@ class Context:
     class_decls: Dict[str, EntityDecl] = field(default_factory=dict)
     objects: Dict[str, str] = field(default_factory=dict)                  # id -> kind/class
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
+    prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
     field_names: Set[str] = field(default_factory=lambda: set(_ENGINE_FIELDS))
     ref_fields: Set[str] = field(default_factory=lambda: {"with", "found_in", "scope"})
 
@@ -135,7 +136,11 @@ def _kind_name(expr: Expr) -> str:
     if isinstance(expr, Sym):
         return expr.name
     if isinstance(expr, Lit):
-        return str(expr.val) if expr.kind != "raw" else "`lua`"
+        if expr.kind == "raw":
+            return "`lua`"
+        if expr.kind == "table":
+            return "{…}"
+        return str(expr.val)
     if isinstance(expr, FieldAccess):
         return f"{_kind_name(expr.obj)}.{expr.field}"
     if isinstance(expr, Call):
@@ -255,6 +260,8 @@ def prescan(prog: Program) -> Context:
             else:
                 ctx.class_decls[item.name] = item
             for p in item.props:
+                if p.typ:
+                    ctx.prop_types.setdefault(item.name, {})[p.name] = p.typ
                 if p.typ and any(k in p.typ for k in ("ref", "room", "door", "talk", "list")):
                     ctx.ref_fields.add(p.name)
 
@@ -462,10 +469,35 @@ def _check_var_ref(ctx: Context, name: str, val: Expr, line: int):
     raise Error(f"{name}: unknown name {n!r}", line)
 
 
+def _decl_type(ctx: Context, kind: str, name: str) -> Optional[str]:
+    """The declared type of a field, looked up through the class chain of `kind`."""
+    cur, seen = kind, set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        t = ctx.prop_types.get(cur, {}).get(name)
+        if t:
+            return t
+        cur = ctx.classes.get(cur)
+    return None
+
+
+def _fn_returns(declared: str) -> List[str]:
+    """Return types of the `fn(...) -> T` alternatives of a declared type."""
+    res = []
+    for alt in split_union(declared):
+        if alt.startswith("fn(") and "->" in alt:
+            rets = alt.split("->", 1)[1].rstrip("?")
+            res.extend(r.strip() for r in rets.split(",") if r.strip())
+    return res
+
+
 def _check_entity(ctx: Context, ent: EntityDecl):
     owner = ent.name
-    kind = ent.kind if ent.kind != "impl" else ctx.objects.get(owner or "", "obj")
+    kind = ent.name if ent.kind == "class" else (
+        ent.kind if ent.kind != "impl" else ctx.objects.get(owner or "", "obj"))
     for p in ent.props:
+        where = f"{owner}.{p.name}" if owner else p.name
+        declared = _decl_type(ctx, kind, p.name) if kind else None
         if isinstance(p.value, FnRef):
             ctx.used_refs.add(p.value.name)
         elif isinstance(p.value, list):
@@ -480,17 +512,29 @@ def _check_entity(ctx: Context, ent: EntityDecl):
                 env["w"] = "obj"
             for pn in p.params or []:
                 env.setdefault(pn, "any")
-            _check_stmts(ctx, p.value, env, owner)
+            if declared is not None and "fn(" not in declared:
+                raise TypeCheckError(f"{where}: expected {declared}, got a block "
+                                     f"(a block is a function)", p.line)
+            rets: List[str] = []
+            _check_stmts(ctx, p.value, env, owner, rets)
+            want = _fn_returns(declared) if declared else []
+            for t in rets:
+                if want and not any(is_subtype(ctx, t, w) for w in want):
+                    raise TypeCheckError(f"{where}: return {t}, declared returns "
+                                         f"{', '.join(want)}", p.line)
+        elif isinstance(p.value, Lit) and p.value.kind == "raw":
+            pass  # a `lua` block: opaque
         elif isinstance(p.value, Expr):
-            _check_expr(ctx, p.value, {"s": "obj"}, owner)
+            _check_expr(ctx, p.value, {"s": "obj"}, owner, declared)
     for h in ent.handlers:
         _check_handler_events(ctx, h, owner or kind)
         if isinstance(h.body, FnRef):
             ctx.used_refs.add(h.body.name)
-        elif isinstance(h.body, Expr):
-            _check_expr(ctx, h.body, _h_env(ctx, owner, kind, h), owner, "str")
         elif isinstance(h.body, list):
             _check_stmts(ctx, h.body, _h_env(ctx, owner, kind, h), owner)
+        elif isinstance(h.body, Expr):
+            # a handler holds a string, a boolean or a function (as the engine allows)
+            _check_expr(ctx, h.body, _h_env(ctx, owner, kind, h), owner, "str|bool|fn")
     for ch in ent.children:
         _check_entity(ctx, ch)
 
@@ -722,6 +766,9 @@ def _check_expr(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str]
 def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = None,
            expected: Optional[str] = None, is_lhs: bool = False) -> str:
     if isinstance(e, Lit):
+        if e.kind == "table":
+            e.typ = "tbl"
+            return "tbl"
         if e.kind == "num" and expected:
             # a number declared as an enum alias (`2` in `gram`) is that enum value
             for alt in split_union(expected):

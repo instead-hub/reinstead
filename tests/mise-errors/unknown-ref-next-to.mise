@@ -3,7 +3,7 @@ lang ru
 include stdlib
 
 story flash "флеш"
-  text
+  text =
     - "строка"
   next_to = medtable2
 

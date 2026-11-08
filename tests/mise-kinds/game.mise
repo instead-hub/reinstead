@@ -45,7 +45,7 @@ story intro
     [[История началась.]]
 
 story prologue
-  text
+  text =
     - [[Первая страница.
 Вторая строка первой страницы.]]
     - "Вторая страница."
@@ -62,7 +62,7 @@ room hall "зал"
   room_note = 1
   obj_note = 2
   dict = { "зал" }
-  with sky
+  with = sky
   on Enter
     [[Вы вошли.]]
   on Walk
@@ -114,7 +114,7 @@ room garden "сад"
   dsc = "Тихий сад."
   d_to = hall
   home_to = hall
-  scope
+  scope =
     - statue
     - relic
   default_Event = Exam
@@ -154,11 +154,11 @@ obj casket "шкатулка" : lockable, locked
 
 verb Probe
   tag = #Probe
-  words "пробовать"
+  words = "пробовать"
   prio = 10
   hint
     [[Подсказка.]]
-  patterns
+  patterns =
     - "{noun}/вн : Probe"
 
 impl Ghost

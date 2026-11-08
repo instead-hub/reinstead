@@ -125,6 +125,8 @@ class Parser:
         if kw == "verb":
             self.pos += 1
             return prog.items.append(self._parse_verb("verb", t.line))
+        if kw == "event":
+            return prog.items.append(self._parse_event(prog))
         if kw == "talk":
             return prog.items.append(self._parse_talk())
         if kw == "setup":
@@ -330,18 +332,23 @@ class Parser:
             ):
                 ent.handlers.append(self._parse_handler())
                 continue
-            if kw == "words" and self.peek().val != "=":
+            if kw == "words":
                 self.pos += 1
+                self.eat("OP", "=")
                 ent.words.extend(self._str_or_list())
                 continue
-            if kw in ("attr", "attrs", "mixin") and self.peek().val != "=":
+            if kw in ("attr", "attrs", "mixin") and self.peek().val != ":":
                 self.pos += 1
+                self.eat("OP", "=")
                 ent.traits.extend(self.sym_list())
                 self.eat_nl()
                 continue
             if kw == "with":
                 self.pos += 1
-                self.match("OP", "=")
+                if self.match("OP", "="):
+                    ent.with_refs.extend(self.sym_list())
+                    self.eat_nl()
+                    continue
                 if self.match("NEWLINE"):
                     self.skip_nl()
                     self.eat("INDENT")
@@ -353,8 +360,8 @@ class Parser:
                             ent.children.append(self._parse_entity())
                     self.eat("DEDENT")
                 else:
-                    ent.with_refs.extend(self.sym_list())
-                    self.eat_nl()
+                    raise Error("with: expected '=' before reference names or an indented block "
+                                "of nested declarations", t.line, self.src)
                 continue
             if kw[:1].islower() and kw not in PHASES and self.peek().kind == "IDENT" \
                     and self.peek(2).val not in ("=", "(", "@", ","):
@@ -378,13 +385,17 @@ class Parser:
                 self.eat_nl()
                 continue
 
-            if self.at("NEWLINE") and self.peek().kind == "INDENT":
+            if self.match("OP", "="):
+                val = self._value_after_eq()
+                ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
+            elif self.at("NEWLINE") and self.peek().kind == "INDENT":
                 self.eat_nl()
                 self.eat("INDENT")
-                if self.at("OP", "-"):
-                    val = self._parse_dash_items()
-                elif self.at("IDENT", "lua"):
+                if self.at("IDENT", "lua"):
                     val = Lit(line=t.line, kind="raw", val=self._parse_lua().code)
+                elif self.at("OP", "-"):
+                    raise Error(f"{pname}: expected '=' before a `-` list value "
+                                f"(write `{pname} =` and indent the list)", t.line, self.src)
                 else:
                     val = []
                     while not self.at("DEDENT") and not self.at("EOF"):
@@ -393,24 +404,32 @@ class Parser:
                 self.eat("DEDENT")
                 ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
             else:
-                self.match("OP", "=")
-                if self.at("NEWLINE"):
-                    self.eat_nl()
-                    self.eat("INDENT")
-                    val = self._parse_dash_items()
-                    self.eat("DEDENT")
-                else:
-                    val = self._parse_prop_val()
-                    self.eat_nl()
-                ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
+                raise Error(f"{pname}: expected '=' before a value "
+                            f"(write `{pname} = …`) or an indented block for a body",
+                            t.line, self.src)
 
     def _is_nested_entity(self) -> bool:
+        """`Kind name` starts a nested declaration; a property always has `=` or a body."""
         t, nxt = self.cur(), self.peek()
         if t.val in TOP_KINDS or t.val == "mixin":
             return nxt.val != "="
-        return nxt.kind in ("IDENT", "TAG") and self.peek(2).val not in ("=", "(") and t.val not in (
-            "var", "words", "attr", "attrs", "mixin", "with", "found_in", "scope"
-        )
+        return nxt.kind in ("IDENT", "TAG") and self.peek(2).val not in ("=", "(", ":")
+
+    def _value_after_eq(self) -> Any:
+        """A value after `=`: on the same line, or an indented `-` list / single value."""
+        if not self.at("NEWLINE"):
+            val = self._parse_prop_val()
+            self.eat_nl()
+            return val
+        self.eat_nl()
+        self.eat("INDENT")
+        if self.at("OP", "-"):
+            val = self._parse_dash_items()
+        else:
+            val = self._parse_prop_val()
+            self.eat_nl()
+        self.eat("DEDENT")
+        return val
 
     def _opt_ident_parens(self) -> Optional[List[str]]:
         if not self.match("OP", "("):
@@ -447,7 +466,7 @@ class Parser:
                 parts.append('"' + t.val.replace("\\", "\\\\").replace('"', '\\"') + '"')
             else:
                 parts.append("~=" if (t.kind == "OP" and t.val == "!=") else t.val)
-        return Lit(line=line, kind="raw", val="".join(parts))
+        return Lit(line=line, kind="table", val="".join(parts))
 
     def _str_or_list(self) -> List[str]:
         if self.cur().kind in ("STRING", "ISTRING"):
@@ -487,22 +506,39 @@ class Parser:
         return Handler(phase=phase, events=evs, params=prms, body=self._parse_handler_body(), line=tok.line)
 
     def _parse_handler_body(self) -> Any:
+        """A handler value (`=` + value) or its body (indented block, `pass`/`stop`)."""
+        if self.match("OP", "="):
+            return self._value_after_eq()
         if self.match("IDENT", "pass"):
             self.eat_nl()
             return "pass"
         if self.match("IDENT", "stop"):
             self.eat_nl()
             return "stop"
-        if self.match("OP", "&"):
-            name = self.eat("IDENT").val
-            self.eat_nl()
-            return FnRef(line=self.cur().line, name=name)
-        if self.cur().kind in ("STRING", "ISTRING"):
-            e = self._parse_str_tok()
-            self.eat_nl()
-            return e
+        t = self.cur()
+        if t.kind in ("STRING", "ISTRING", "RAW", "NUMBER") or (t.kind == "OP" and t.val in ("&", "{")):
+            raise Error("a handler value needs '=' (write `before Take = "
+                        + ("&fn" if t.val == "&" else "\"…\"") + "`); an indented block is a body",
+                        t.line, self.src)
         res = self._opt_lua_or_stmts()
         return Lit(line=self.cur().line, kind="raw", val=res) if isinstance(res, str) else res
+
+    def _parse_event(self, prog: Program) -> EntityDecl:
+        """`event X` registers an event and is sugar for `impl mp : X`."""
+        line = self.eat("IDENT", "event").line
+        name = self.eat("IDENT").val
+        ent = EntityDecl(kind="impl", name="mp", traits=[name], line=line)
+        self.eat_nl()
+        if self.match("INDENT"):
+            while not self.at("DEDENT") and not self.at("EOF"):
+                ptok = self.eat("IDENT")
+                if ptok.val not in ("on", "before", "after", "post"):
+                    raise Error(f"event {name}: unknown phase {ptok.val!r}", ptok.line, self.src)
+                prms = self._opt_ident_parens()
+                ent.handlers.append(Handler(phase=ptok.val, events=[name], params=prms,
+                                            body=self._parse_handler_body(), line=ptok.line))
+            self.eat("DEDENT")
+        return ent
 
     def _parse_setup(self, prog: Program) -> List[Any]:
         """`setup` is sugar: it expands into `impl game`/`impl pl`, `fn init`/`fn start`."""
@@ -579,8 +615,12 @@ class Parser:
         self.eat_nl()
         self.eat("INDENT")
         while not self.at("DEDENT") and not self.at("EOF"):
-            k = self.eat("IDENT").val
-            self.match("OP", "=")
+            ktok = self.eat("IDENT")
+            k = ktok.val
+            if k == "hint":
+                vd.hint = self._parse_handler_body()
+                continue
+            self.eat("OP", "=")
             if k == "tag":
                 vd.tag = "" if self.match("IDENT", "false") else self.eat("TAG").val
                 self.eat_nl()
@@ -592,8 +632,8 @@ class Parser:
                 self.eat_nl()
             elif k in ("words", "patterns"):
                 setattr(vd, k, self._str_or_list())
-            elif k == "hint":
-                vd.hint = self._parse_handler_body()
+            else:
+                raise Error(f"unknown verb field {k!r}", ktok.line, self.src)
         self.eat("DEDENT")
         return vd
 
@@ -606,7 +646,6 @@ class Parser:
             t = self.cur()
             if t.val == "intro":
                 self.pos += 1
-                self.match("OP", "=")
                 td.intro = self._parse_handler_body()
             elif t.val == "label":
                 self.pos += 1
@@ -617,10 +656,12 @@ class Parser:
                 while not self.at("DEDENT") and not self.at("EOF"):
                     if self.at("OP", "*") or self.at("OP", "+"):
                         lchoices.append(self._parse_choice())
-                    else:
-                        if self.match("IDENT", "say"):
-                            self.match("OP", "=")
+                    elif self.match("IDENT", "say"):
                         lsay = self._parse_handler_body()
+                    else:
+                        raise Error(f"unexpected item {self.cur().val!r} in talk label "
+                                    f"(expected `say = …` or a `*`/`+` choice)",
+                                    self.cur().line, self.src)
                 self.eat("DEDENT")
                 td.labels.append((lname, lsay, lchoices))
             elif t.kind == "OP" and t.val in ("*", "+"):

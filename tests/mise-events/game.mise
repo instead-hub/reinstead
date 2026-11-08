@@ -11,24 +11,24 @@ fn reply_text(s: obj, text: str) -> str
   return text
 
 verb Zap
-  words "зажиг/ать"
-  patterns
+  words = "зажиг/ать"
+  patterns =
     - "{noun}/вн : Zap"
     - "частота|канал : Zap"
 
 verb Whisper
-  words "шеп/тать,нашёптыв/ать"
-  patterns
+  words = "шеп/тать,нашёптыв/ать"
+  patterns =
     - "{noun}/дт * : Whisper"
 
 impl pl
-  before Take, Drop "Тебе нельзя."
+  before Take, Drop = "Тебе нельзя."
 
 impl game
-  before Open, Close "Не сейчас."
+  before Open, Close = "Не сейчас."
 
 room r "комната"
-  with x, npc, y, z
+  with = x, npc, y, z
   before Consult
     say (text_of wh)
 
@@ -60,7 +60,7 @@ obj y "штука"
       pass
 
 obj z "штуковина"
-  before AskFor &reply_text
+  before AskFor = &reply_text
   before Consult(s, text)
     say (text_of text)
   before Whisper

@@ -82,22 +82,22 @@ obj rug "каминный коврик,коврик|ковер" : concealed, sta
   founded = false
   description
     [[Красивый каминный коврик из какой-то далекой страны -- может быть, Индии или Аравии.]]
-  before Take "Но коврик слишком большой и тяжелый!"
-  before Push, Pull "Но место каминного коврика -- рядом с камином!"
+  before Take = "Но коврик слишком большой и тяжелый!"
+  before Push, Pull = "Но место каминного коврика -- рядом с камином!"
 
 obj armchair "кресло|стул" : static, concealed, supporter, enterable @ Drawing_Room
   moved = false
-  before Transfer "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]"
+  before Transfer = "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]"
   before Climb, Enter
     player:move s
     "Алиса забралась с ногами в мягкое удобное кресло."
-  before Take "Но кресло слишком тяжелое для маленькой девочки!"
+  before Take = "Но кресло слишком тяжелое для маленькой девочки!"
 
 obj mantelpiece "каминная полка,полка" : concealed, supporter, enterable, static @ Drawing_Room
 
 obj mirror "зеркало,стекло" : static, concealed, enterable @ Drawing_Room
-  before Touch, Pull, Push "Рука проходит сквозь серебристый туман, не встречая сопротивления!"
-  before ThrownAt "И заработать семь лет несчастий и бед?!"
+  before Touch, Pull, Push = "Рука проходит сквозь серебристый туман, не встречая сопротивления!"
+  before ThrownAt = "И заработать семь лет несчастий и бед?!"
 
 obj worsted "клубок шерсти,клубок|шерсть" @ Drawing_Room
   sputan = false
@@ -115,7 +115,7 @@ class Kitten : animate
   life Kiss
     say 'Алиса чмокнула ' (s:noun вн 1) [[ в носик,
 и тот взглянул на нее сконфуженно, но довольно.]]
-  life Attack "Разве можно напасть на такое крохотное и беззащитное создание!"
+  life Attack = "Разве можно напасть на такое крохотное и беззащитное создание!"
   on Show
     say (s:Noun 1) ', протянув лапку, опасливо дотронулся до ' (w:noun рд) '.'
   before Touch, Rub
@@ -134,7 +134,7 @@ Kitten black_kitten "чёрный котенок,котенок,чёрный" @ 
   other_kitten = white_kitten
 
 extend verb #Exam
-  patterns
+  patterns =
     - "{noun}/вн,scene в {noun}/пр,2,scene : Reflect"
     - "~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect"
     - "~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse"
@@ -144,13 +144,13 @@ impl mp : Untangle
     "Что, распутать ЭТО?!"
 
 verb Untangle
-  words "размот/ать,распут/ать"
-  patterns
+  words = "размот/ать,распут/ать"
+  patterns =
     - "{noun}/вн : Untangle"
 
 verb Touch2
-  words "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/"
-  patterns
+  words = "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/"
+  patterns =
     - "{noun}/вн : Touch"
 
 impl Drawing_Room

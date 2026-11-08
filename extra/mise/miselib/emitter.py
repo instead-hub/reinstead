@@ -118,7 +118,7 @@ class Emitter:
                 if isinstance(p.value, Lit) and p.value.val is True:
                     tails.append(":disable()")
                 continue
-            if p.name == "dict" and isinstance(p.value, Lit) and p.value.kind == "raw":
+            if p.name == "dict" and isinstance(p.value, Lit):
                 tails.append(f":dict {p.value.val}")
                 continue
             if p.name == "text" and ent.kind == "story" and isinstance(p.value, ListLit):
@@ -140,6 +140,8 @@ class Emitter:
         v, pad = p.value, " " * ind
         if isinstance(v, FnRef):
             return self._fnref(v.name)
+        if isinstance(v, Lit) and v.kind == "table":
+            return v.val
         if isinstance(v, Lit) and v.kind == "raw" and p.name in ("scope", "word", "raw_word", "dsc", "description"):
             prms = self._prop_prms(p)
             return f"function({prms})\n{_ind(v.val, ind + 2)}\n{pad}end"

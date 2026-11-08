@@ -11,8 +11,8 @@ impl game
   hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" }
 
 extend verb #Drop
-  words "hang"
-  patterns
+  words = "hang"
+  patterns =
     - "{noun}/held on {noun}/supporter : PutOn"
 
 impl game

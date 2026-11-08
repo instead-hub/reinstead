@@ -67,4 +67,4 @@ impl lamp
   target = orb
 
 impl crate
-  before Take &on_take
+  before Take = &on_take

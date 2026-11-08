@@ -8,13 +8,13 @@ extend type event
   Zap: obj
 
 verb Zap
-  words "зажиг/ать"
-  patterns
+  words = "зажиг/ать"
+  patterns =
     - "* : Zap"
 
 verb Whisper
-  words "шеп/тать"
-  patterns
+  words = "шеп/тать"
+  patterns =
     - "{noun}/дт * : Whisper"
 
 remove #Zap

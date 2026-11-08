@@ -11,11 +11,11 @@ room computer "компьютер"
 
 verb Help
   target = computer
-  words "пом/ощь"
+  words = "пом/ощь"
 
 extend verb #Help
   target = computer
-  words "помощь"
+  words = "помощь"
 
 impl computer
   on Help

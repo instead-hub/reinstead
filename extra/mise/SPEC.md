@@ -173,6 +173,24 @@ before Any(s, ev, w)
 ```
 `match` работает для событий (с автоматическим сужением типов аргументов `w, wh` по таблице `type event` и паттернам `verb`), перечислений (`enum`), чисел и объектов.
 
+### 3.4.1. Значение и тело: `=` — единственный разделитель
+Правило одно и без исключений:
+
+> **`=` ⟺ значение. Без `=` ⟺ тело** (отступ) или **вложенная декларация** (`Kind имя`).
+
+| Что | Запись |
+|---|---|
+| значение-строка | `dsc = "Текст."` |
+| значение-список | `scope = a, b`; `words =` + `-`-список; `text =` + `-`-список |
+| значение-обработчик | `before Take = "Нельзя."`, `before Take = &on_take` |
+| тело | `dsc` + блок; `before Take` + блок; `before Open pass` |
+| вложенная декларация | `obj hook "…" : … @ …` + блок; `with` + блок |
+| объявление поля | `n_to: room?` (только в `class`) |
+
+Благодаря этому `n_to hall` (значение без `=`) не путается с `Kind имя`, а типы проверяются
+равномерно: у каждого поля есть объявленный тип (в `class obj`/`class room`/класса игры или
+в `props` для ключей-обработчиков), значение сверяется с ним, а тело — как `fn(s) -> T`.
+
 ### 3.5. Что проверяется на сборке
 Все гарантии безопасности `mise1` восстановлены в `miselib/checker.py`:
 
@@ -479,24 +497,29 @@ setup_decl  ::= "setup" obj_block
 
 obj_block   ::= INDENT { member NEWLINE } DEDENT
 
-member      ::= prop_assign
-              | prop_block
+(* Правило одно:
+   "="  -> значение;  без "=" -> тело (отступ) или вложенная декларация. *)
+member      ::= prop
               | handler_decl
-              | object_decl                          (* вложенный объект -> with *)
-              | ("attr" | "attrs") SYMBOL { "," SYMBOL }
-              | "words" (STRING | string_list)
-              | ("with" | "found_in" | "scope") SYMBOL { "," SYMBOL }
+              | object_decl                          (* Kind имя + блок -> with *)
+              | ("attr" | "attrs") "=" SYMBOL { "," SYMBOL }
+              | "words" "=" (STRING | string_list)
+              | "with" ("=" SYMBOL { "," SYMBOL } | obj_block)
 
-prop_assign ::= IDENT "=" (expr | string_list | raw_lua)
-prop_block  ::= IDENT [ "(" [ ident_list ] ")" ] stmt_block
+prop        ::= IDENT [ "(" [ ident_list ] ")" ] ( "=" value | stmt_block )
+              | IDENT ":" type                        (* объявление поля в class *)
 
-string_list ::= INDENT { "-" STRING NEWLINE } DEDENT
+value       ::= expr | string_list | raw_lua
+
+string_list ::= ( "-" STRING NEWLINE { "-" STRING NEWLINE } )     (* после "=" *)
+              | INDENT { "-" STRING NEWLINE } DEDENT
 
 (* =====================================================================
    Обработчики событий
    ===================================================================== *)
 
-handler_decl ::= phase event_list [ "(" [ ident_list ] ")" ] handler_body
+handler_decl ::= phase event_list [ "(" [ ident_list ] ")" ]
+                 ( "=" value | "pass" | "stop" | stmt_block )
 phase        ::= "on" | "before" | "after" | "post" | "life"
 event_list   ::= IDENT { "," IDENT }
 
@@ -514,7 +537,7 @@ verb_decl   ::= "verb" IDENT [ "for" SYMBOL ] INDENT { verb_member NEWLINE } DED
               | "extend" "verb" TAG [ "for" SYMBOL ] INDENT { verb_member NEWLINE } DEDENT
               | "remove" "verb" TAG
 
-verb_member ::= "words" (STRING | string_list)
+verb_member ::= "words" "=" (STRING | string_list)
               | "patterns" string_list
               | "prio" NUMBER
               | "hint" STRING

@@ -8,7 +8,7 @@ setup
   dsc "Заставка."
   take box
   hero
-    words "ты/мр"
+    words = "ты/мр"
     description = "Герой."
   game
     hint_verbs = { "#Exam", "#Take" }

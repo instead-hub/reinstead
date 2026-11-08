@@ -190,8 +190,6 @@ obj {
   -"записка";
   nam = "note";
   description = "use heal";
-  scope = function(s, w)
-    { box, note }
-  end;
+  scope = std.list { "box", "note" };
   before_Disrobe = "pass";
 }

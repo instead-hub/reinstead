@@ -19,12 +19,12 @@ lua
 
 obj box "ящик" : container, open
   description = &describe
-  before Take &lua_probe
+  before Take = &lua_probe
 
 obj note "записка"
-  before Disrobe "pass"
+  before Disrobe = "pass"
   description = "use heal"
-  scope = { box, note }
+  scope = [box, note]
 
 fn probe(w: obj, t: tbl, ev: event)
   time
