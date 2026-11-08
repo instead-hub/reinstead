@@ -1,9 +1,0 @@
-name: t
-lang: ru
-include: stdlib
-
-obj box:
-  words: коробка
-
-impl box:
-  before Take: &nosuch

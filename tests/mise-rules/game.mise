@@ -1,17 +1,19 @@
-name: t
-lang: ru
-include: stdlib
+game "t"
 
-event Any:
-  before: |
-    when ev == Walk and w:has door:
-      say [[дверь]]
-  on: |
-    when ev == Exam and w:has scenery:
-      say [[осмотр декорации]]
-    when ev == Wear:
-      say [[надели]]
+lang ru
 
-event Default:
-  on: |
-    say [[нет обработчика]]
+include stdlib
+
+impl mp : Any
+  before Any
+    if ev == Walk and w:has door
+      [[дверь]]
+  on Any
+    if ev == Exam and w:has scenery
+      [[осмотр декорации]]
+    elseif ev == Wear
+      [[надели]]
+
+impl mp : Default
+  on Default
+    [[нет обработчика]]

@@ -1,24 +1,25 @@
-name: t
-lang: ru
-include: stdlib
+game "t"
 
-fn helper(): |
-  say [[helper]]
+lang ru
 
-obj box:
-  words: коробка
-  title: Коробка
-  score_value: 0
+include stdlib
 
-impl box:
-  before Take: |
-    if s.score_value + 1 > 0:
-      say [[взяли]]
-  on Take: |
-    say [[метод]]
-  after Drop: use &helper
-  on Wait: use &helper
-  on Open, Close: use &helper
-  after Any: use &helper
-  on Any: use &helper
-  on Default: use &helper
+fn helper()
+  [[helper]]
+
+obj box "коробка"
+  title = "Коробка"
+  score_value = 0
+
+impl box
+  before Take
+    if s.score_value + 1 > 0
+      [[взяли]]
+  on Take
+    [[метод]]
+  after Drop "use &helper"
+  on Wait "use &helper"
+  on Open, Close "use &helper"
+  after Any "use &helper"
+  on Any "use &helper"
+  on Default "use &helper"

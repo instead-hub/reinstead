@@ -1,8 +1,0 @@
-name: t
-lang: ru
-include: stdlib
-
-setup:
-  start: |
-    if say:
-      say x

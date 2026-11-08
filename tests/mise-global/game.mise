@@ -1,35 +1,32 @@
-name: global
-lang: ru
-include: stdlib
+game "global"
 
-global:
-  picked: box
-  target: none
+lang ru
 
-obj box:
-  words: коробка
+include stdlib
 
-room r:
-  words: комната
-  dsc: |
-    say Комната.
+global
+  picked = box
+  target = none
+
+obj box "коробка"
+
+room r "комната"
+  dsc
+    "Комната."
     append (picked:noun(вн))
-    say .
-    when target ~= none:
-      say Цель есть.
-    default:
-      say Цели нет.
+    "."
+    if target != none
+      "Цель есть."
+    else
+      "Цели нет."
 
-obj lever:
-  words: рычаг
-  found_in: r
-  before Pull: |
-    if target == none:
+obj lever "рычаг" @ r
+  before Pull
+    if target == none
       target = box
-      say Взял.
+      "Взял."
       stop
-    say Уже.
+    "Уже."
 
-setup:
-  start: |
-    player:move r
+fn start(load)
+  player:move r

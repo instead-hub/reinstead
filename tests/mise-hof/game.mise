@@ -1,37 +1,37 @@
-name: t
-lang: ru
-include: stdlib
+game "t"
 
-extend type attr: seen
+lang ru
 
-class Tree:
-  attrs: scenery
+include stdlib
 
-fn is_lit(w: obj) -> bool: |
+extend type attr = seen
+
+class Tree : scenery
+
+fn is_lit(w: obj) -> bool
   return w:has light
 
-fn mark(w: obj): |
+fn mark(w: obj)
   w:attr seen
 
-fn run(f: fn(w: obj) -> bool) -> bool: |
+fn run(f: fn(w: obj) -> bool) -> bool
   return f(box)
 
-fn each(t: tbl, f: fn(w: obj)): |
-  for _, w: obj in ipairs(t):
+fn each(t: tbl, f: fn(w: obj))
+  for _, w:obj in ipairs(t)
     f(w)
 
-fn total(n: num) -> num: |
+fn total(n: num) -> num
   local r = 0
-  for i: num = 1, n:
+  for i:num = 1, n
     r += i
   return r
 
-obj box:
-  words: коробка
-  on Take: |
-    if run(&is_lit):
-      say [[светло]]
-    for_plural(s, &mark)
-    each(inv(), &mark)
-    if total(3) > 0:
+obj box "коробка"
+  on Take
+    if run(&is_lit)
+      [[светло]]
+    for_plural(s,&mark)
+    each(inv(),&mark)
+    if total(3) > 0
       pass

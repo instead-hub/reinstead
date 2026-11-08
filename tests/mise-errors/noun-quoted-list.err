@@ -1,1 +1,0 @@
-mise: error: enum values are bare, not quoted ('тв') in noun-quoted-list.mise:9: s : noun ( { 'тв' } )

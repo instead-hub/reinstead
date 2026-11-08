@@ -33,13 +33,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 obj {
@@ -59,6 +59,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -66,35 +67,33 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
 
 global 'score' (0)
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" }
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
 
 VerbExtendWord { "#Drop", "повес/ить", "{noun}/вн,held на {noun}/вн,supporter : PutOn", "~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse" }
 
-game.dsc = [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация.
+_'game'.dsc = [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация.
 ^^Торопливо пробираясь сквозь дождливую и холодную ноябрьскую ночь,
 Вы радостно заметили неподалеку ярко горящие огни Оперного театра.^
 Конечно, очень странно, что рядом не заметно ни одной живой души...
-но стоит ли ждать слишком много от простенькой демонстрационной игры?..^]]
+но стоит ли ждать слишком много от простенькой демонстрационной игры?..^]];
+
 function start(load)
   move(me(), _'foyer')
   move(_'cloak', me())
   _'cloak':attr("worn")
-end
-function init()
 end
 
 room {
@@ -155,7 +154,7 @@ room {
     return false
   end;
   before_Default = function(s, ev, w, wh)
-    if ev == 'Exit' then
+    if ev == "Exit" then
       return false
     end
     if not s:has("light") then
@@ -176,7 +175,7 @@ room {
           walk(_'goodend')
         else
           p([[Полустертую надпись разобрать очень трудно.
-С трудом можно различить такие слова...]])
+          С трудом можно различить такие слова...]])
           walk(_'badend')
         end
       end;
@@ -196,7 +195,7 @@ obj {
   ["before_Drop,PutOn"] = function(s, w, wh)
     if here() == _'cloakroom' then
       _'bar':attr("light")
-      if (mp.event or nil) == 'PutOn' and not s.scored then
+      if (mp.event or nil) == "PutOn" and not s.scored then
         s.scored = true
         score = score + (1)
       end
@@ -228,6 +227,6 @@ gameover {
   nam = "goodend";
   title = "Вы выиграли";
   dsc = function(s)
-    p('Ваш счет: ', score)
+    p("Ваш счет: ", score)
   end;
 }

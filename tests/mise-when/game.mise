@@ -1,47 +1,45 @@
-name: t
-lang: ru
-include: stdlib
+game "t"
 
-extend type attr: seen
+lang ru
 
-class Tree:
-  attrs: scenery
+include stdlib
 
-fn pick(s: obj) -> str: |
-  when s:isa Tree:
+extend type attr = seen
+
+class Tree : scenery
+
+fn pick(s: obj) -> str
+  if s:isa Tree
     return [[дерево]]
-  when s:has scenery:
+  elseif s:has scenery
     return [[декорация]]
-  default:
+  else
     return [[прочее]]
 
-obj box:
-  words: коробка
-  on Take: |
+obj box "коробка"
+  on Take
     local o = seen 'box'
-    when o:
+    if o
       o:attr seen
-      say(pick(s))
-    default:
-      say [[не видно]]
+      say (pick(s))
+    else
+      [[не видно]]
 
-extend type event:
+extend type event
   Gaze:
 
-impl box:
-  on Gaze: |
-    say [[смотрят]]
+impl box
+  on Gaze
+    [[смотрят]]
     local style = light
-    if style == light:
+    if style == light
       pass
     local e = Exam
-    if e == Wear:
-      say [[одежда]]
+    if e == Wear
+      [[одежда]]
 
-
-setup:
-  init: |
-    if true:
-      say [[one]]
-    when false:
-      say [[two]]
+fn init()
+  if true
+    [[one]]
+  if false
+    [[two]]

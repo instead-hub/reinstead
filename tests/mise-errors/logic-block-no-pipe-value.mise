@@ -1,8 +1,0 @@
-name: t
-lang: ru
-include: stdlib
-
-obj штука:
-  words: ш
-  description:
-    say Штука.

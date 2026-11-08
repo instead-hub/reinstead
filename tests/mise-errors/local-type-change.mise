@@ -1,9 +1,0 @@
-name: t
-lang: ru
-include: stdlib
-
-obj box:
-  words: коробка
-  before Take: |
-    local x = 1
-    x = 'a'

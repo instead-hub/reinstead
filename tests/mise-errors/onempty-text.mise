@@ -1,8 +1,0 @@
-name: t
-lang: ru
-include: stdlib
-
-talk T:
-  option:
-    ask: Что?
-    onempty: [[текст]]

@@ -1,25 +1,24 @@
-name: exit
-lang: ru
-include: stdlib
+game "exit"
 
-fn exit(s: obj, d: direction?) -> obj?: |
+lang ru
+
+include stdlib
+
+fn exit(s: obj, d: direction?) -> obj?
   local name = runorval(s, tostr(d))
   local r = ref(tostr(name))
-  if is_room(r):
+  if is_room(r)
     return r
   return nil
 
-room r:
-  words: комната
-  n_to: q
-  dsc: |
+room r "комната"
+  n_to = q
+  dsc
     local e = exit(here(), n_to)
-    when e:
-      say(e:noun(вн))
+    if e
+      say (e:noun(вн))
 
-room q:
-  words: зал
+room q "зал"
 
-setup:
-  start: |
-    player:move r
+fn start(load)
+  player:move r

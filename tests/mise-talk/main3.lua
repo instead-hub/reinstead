@@ -33,13 +33,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 local function fn_знакомы(s)
@@ -47,15 +47,15 @@ local function fn_знакомы(s)
 end
 
 local function fn_ask_text(s)
-  return 'Вопрос от fn?'
+  return "Вопрос от fn?"
 end
 
 local function fn_reply_text(s)
-  return '-- Ответ от fn.'
+  return "-- Ответ от fn."
 end
 
 local function fn_act_say(s)
-  p([[-- Что-то произошло.]])
+  p "-- Что-то произошло."
 end
 
 obj {
@@ -75,6 +75,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -82,14 +83,13 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
@@ -99,8 +99,6 @@ global 'q1' (0)
 
 function start(load)
   move(me(), _'hall')
-end
-function init()
 end
 
 room {
@@ -112,8 +110,8 @@ room {
 obj {
   -"гид,проводник";
   nam = "guide";
-  dsc = "Суровый гид.";
   found_in = 'hall';
+  dsc = "Суровый гид.";
   talk_to = 'разговор_с_гидом';
 }
 
@@ -166,10 +164,10 @@ dlg {
         "-- Тяжело.";
       };
       onempty = function(s)
-        p "-- Гид угрюмо молчит."
-        met = true
-        walkout()
-      end;
+  p "-- Гид угрюмо молчит."
+  met = true
+  walkout()
+end;
     };
     {
       "Всегда доступно";
@@ -183,14 +181,18 @@ dlg {
     };
     {
       "После знакомства";
-      "-- Мы уже виделись.";
+      function(s)
+        p "-- Мы уже виделись."
+      end;
       cond = function(s)
         return met
       end;
     };
     {
       "Знакомы ли мы?";
-      "-- Похоже, да.";
+      function(s)
+        p "-- Похоже, да."
+      end;
       cond = fn_знакомы;
     };
     {
@@ -200,16 +202,20 @@ dlg {
     };
     {
       "Проверка and";
-      "-- И это правда.";
+      function(s)
+        p "-- И это правда."
+      end;
       cond = function(s)
         return met and true
       end;
     };
     {
       function(s)
-        return 'Вопрос из блока?'
+        return "Вопрос из блока?"
       end;
-      "-- Ответ из блока.";
+      function(s)
+        p "-- Ответ из блока."
+      end;
     };
     {
       fn_ask_text;

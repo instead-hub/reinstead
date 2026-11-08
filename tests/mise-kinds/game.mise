@@ -1,196 +1,176 @@
-name: kinds
-lang: ru
-include: stdlib
+game "kinds"
 
-fn tick(s: obj): |
+lang ru
+
+include stdlib
+
+fn tick(s: obj)
   pass
 
-props:
+class obj
   treasure: ref | fn(s: obj)
 
-props obj:
+class obj
   obj_note: num
 
-props room:
+class room
   room_note: num
 
-type mood:
+type mood =
   - calm, angry
 
-extend type mood:
+extend type mood =
   - tired
 
-extend refs:
-  - home_to
+class obj
+  home_to: ref
 
-setup:
-  fmt: verbose
+fmt verbose
 
-  take: statue
+fn init()
+  take statue
 
-  game:
-    hint_verbs: { "#Look" }
+impl game
+  hint_verbs = { "#Look" }
 
-  hero:
-    words: ты
+impl pl
+  word = -"ты"
 
-  start: |
-    player:move hall
+fn start(load)
+  player:move hall
 
-story intro:
-  dsc: [[Пролог.]]
+story intro
+  dsc = "Пролог."
+  after Enter
+    [[История началась.]]
 
-  after Enter: |
-    say [[История началась.]]
-
-story prologue:
-  text:
+story prologue
+  text
     - [[Первая страница.
 Вторая строка первой страницы.]]
-    # - [[Отключённая страница.]]
-    - [[Вторая страница.]]
+    - "Вторая страница."
 
-story epilogue:
-  text: [[Конец.]]
+story epilogue
+  text = "Конец."
 
-obj sky:
-  words: небо
-  attrs: scenery
-  dsc: [[Небо в облаках.]]
-  room_note: 'не комната'
+obj sky "небо" : scenery
+  dsc = "Небо в облаках."
+  room_note = "не комната"
 
-room hall:
-  words: зал
-  dsc: [[Большой зал.]]
-  room_note: 1
-  obj_note: 2
-  dict: { "зал" }
-  with: sky
-  on Enter: |
-    # приветствие входящего
-    say [[Вы вошли.]]
-  on Walk: |
-    say [[Вы идёте.]]
-  on Look: |
-    say [[Вы осматриваетесь.]]
-  post Look: |
-    say [[Уже осмотрелись.]]
-  life Give, Show: |
-    say [[Жизнь кипит.]]
-  after Turn: |
-    say [[Повернулись.]]
-  compass_look: |
-    if to:
-      # выход есть -- молчим
+room hall "зал"
+  dsc = "Большой зал."
+  room_note = 1
+  obj_note = 2
+  dict = { "зал" }
+  with sky
+  on Enter
+    [[Вы вошли.]]
+  on Walk
+    [[Вы идёте.]]
+  on Look
+    [[Вы осматриваетесь.]]
+  post Look
+    [[Уже осмотрелись.]]
+  life Give, Show
+    [[Жизнь кипит.]]
+  after Turn
+    [[Повернулись.]]
+  compass_look
+    if to
       pass
-  scope: |
+  scope
     pass
-  enter: |
+  enter
     w:noun()
-  exit: |
+  exit
     pass
-  onenter: |
+  onenter
     w:noun()
-  onexit: |
+  onexit
     pass
-  each_turn: |
+  each_turn
     pass
-  found_in: |
+  found_in
     pass
-  when_open: |
+  when_open
     pass
-  when_closed: |
+  when_closed
     pass
-  when_on: |
+  when_on
     pass
-  when_off: |
+  when_off
     pass
-  s_to: garden
+  s_to = garden
 
-door gate:
-  words: ворота
+door gate "ворота"
 
-Door gate2:
-  words: калитка
-  from: hall
-  to: garden
-  door_to: |
+Door gate2 "калитка"
+  from = hall
+  to = garden
+  door_to
     return hall
 
-room garden:
-  words: сад
-  dsc: [[Тихий сад.]]
-  d_to: hall
-  home_to: hall
-  scope:
+room garden "сад"
+  dsc = "Тихий сад."
+  d_to = hall
+  home_to = hall
+  scope
     - statue
     - relic
-  default_Event: Exam
+  default_Event = Exam
 
-obj statue:
-  words: статуя
-  attrs: scenery
-  mood: calm
-  treasure: relic
+obj statue "статуя" : scenery
+  mood = calm
+  treasure = relic
 
-obj relic:
-  words: реликвия
-  mood: tired
-  disabled: true
-  daemon: &tick
-  when_open: [[Открыто.]]
-  help: [[Подсказка.]]
-  disp: [[Реликвия.]]
-  gfx: [[relic.png]]
-  found_in:
-    - garden
-  word: |
+obj relic "реликвия" @ garden
+  mood = tired
+  disabled = true
+  daemon = &tick
+  when_open = "Открыто."
+  help = "Подсказка."
+  disp = "Реликвия."
+  gfx = "relic.png"
+  word
     return 'реликвия'
-  on Use: |
-    say [[Применили.]]
-  on AskTo: |
-    say [[Попросили.]]
+  on Use
+    [[Применили.]]
+  on AskTo
+    [[Попросили.]]
 
-obj key:
-  words: ключ
+obj key "ключ"
 
-obj mirror:
-  words: зеркало
-  disabled: false
-  with:
-    obj shard:
-      words: осколок
-      disabled: true
+obj mirror "зеркало"
+  disabled = false
+  obj shard "осколок"
+    disabled = true
 
-class Ghost:
-  words: призрак
-  disabled: true
+class Ghost "призрак"
+  disabled = true
 
-obj casket:
-  words: шкатулка
-  attrs: lockable, locked
-  with_key: key
-  capacity: 2
+obj casket "шкатулка" : lockable, locked
+  with_key = key
+  capacity = 2
 
-verb Probe:
-  tag: #Probe
-  words: пробовать
-  prio: 10
-  hint: |
-    say [[Подсказка.]]
-  patterns:
-    - {noun}/вн : Probe
+verb Probe
+  tag = #Probe
+  words "пробовать"
+  prio = 10
+  hint
+    [[Подсказка.]]
+  patterns
+    - "{noun}/вн : Probe"
 
-impl Ghost:
-  disabled: false
+impl Ghost
+  disabled = false
 
-impl relic:
-  disabled: true
+impl relic
+  disabled = true
 
-impl key:
-  disabled: false
+impl key
+  disabled = false
 
-impl game:
-  dict: { ["зал/вн"] = "зал" }
-  var time: 0
-  var Look: 2
+impl game
+  dict = { ["зал/вн"] = "зал" }
+  var time = 0
+  var Look = 2

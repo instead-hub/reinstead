@@ -50,7 +50,7 @@ done
 # --- engine transcripts -------------------------------------------------
 prep_script() {
 	_m=транскрипт
-	grep -qE '^lang:[[:space:]]*en' "$(dirname "$1")/game.mise" && _m=transcript
+	grep -qE '^lang[[:space:]:=]*en' "$(dirname "$1")/game.mise" && _m=transcript
 	if grep -qx "$_m" "$1"; then
 		cat "$1" > "$2"
 	else

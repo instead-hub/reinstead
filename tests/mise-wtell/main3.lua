@@ -33,17 +33,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
-end
-
-local function fn_score_up()
-  mp.score = mp.score + 1
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 local function fn_BowOrArrow(o)
@@ -71,6 +67,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -78,14 +75,13 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
@@ -97,12 +93,12 @@ instead.notitle = false
 
 const 'MAX_SCORE' (3)
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" }
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" };
 
 Prop = Class {
-  before_Exam = function() return false end;
+  before_Exam = function(s, w, wh) return false end;
   before_Default = function(s, ev, w, wh)
-    p('Вам нет нужды беспокоиться о ', s:noun_hint(({ "пр" })), '.')
+    p("Вам нет нужды беспокоиться о ", s:noun_hint({ "пр" }), ".")
   end;
 }:attr 'scenery'
 
@@ -118,12 +114,12 @@ Arrow = Class {
 }
 
 NPC = Class {
-  ["life_Answer,Ask,AskTo,AskFor,Tell"] = function(s)
-    p('Введите просто "говорить с ', s:noun_hint(({ "тв" })), '".')
+  ["life_Answer,Ask,AskTo,AskFor,Tell"] = function(s, w, wh)
+    p('Введите просто "говорить с ', s:noun_hint({ "тв" }), '".')
   end;
 }:attr 'animate'
 
-game.dsc = [[^Пример простой игры на Inform
+_'game'.dsc = [[^Пример простой игры на Inform
 ^Авторы: Роджер Фирт (Roger Firth) и Соня Кессерих (Sonja Kesserich).
 ^Перевод Александра Мосьпана a.k.a. Ugo^
 ^Перенос на МЕТАПАРСЕР 3 выполнил Пётр Косых^^
@@ -135,8 +131,10 @@ game.dsc = [[^Пример простой игры на Inform
 независимый мужчина, охотник и проводник, известный мастерством владения луком, и неумением скрывать своё презрение
 к фогту, что, конечно, неумно, учитывая, сколько вокруг его солдат.
 ^^
-Сегодня базарный день -- город забит людьми с окрестных деревень и селений.^]]
-pl.description = "Ты одет в традиционную одежду швейцарского горца."
+Сегодня базарный день -- город забит людьми с окрестных деревень и селений.^]];
+
+pl.description = "Ты одет в традиционную одежду швейцарского горца.";
+
 function init()
   move(me(), _'street')
   move(_'bow', me())
@@ -164,23 +162,23 @@ room {
 Prop {
   -"прилавки|прилавок";
   nam = "прилавки";
+  found_in = { "street", "below_square" };
   description = "Еда, инструменты, одежда -- обычное барахло.";
-  found_in = { 'street', 'below_square' };
 }
 
 Prop {
   -"товары|товар|еда|одежда|инструмент|барахло";
   nam = "товары";
+  found_in = { "street", "below_square" };
   description = "Ничто не приковывает твой взгляд.";
-  found_in = { 'street', 'below_square' };
 }
 
 Prop {
   -"торговцы,купцы,продавцы,лавочники";
   nam = "торговцы";
+  found_in = { "street", "below_square" };
   description = [[Несколько жуликоватых, но довольно прилично выглядящих торговцев, откровенно преувеличивая,
 расхваливают свой товар.]];
-  found_in = { 'street', 'below_square' };
 }:attr 'animate'
 
 Prop {
@@ -208,7 +206,7 @@ Furniture {
   found_in = 'below_square';
   description = "Это всего лишь маленький стол с большой кучей картошки, кучкой морковки и репы, и парой яблок.";
   before_Search = function(s, w, wh)
-    mp:xaction('Exam', s)
+    mp:xaction("Exam", s)
   end;
 }:attr 'scenery'
 
@@ -249,17 +247,17 @@ room {
 Prop {
   -"шляпа,шапка|шест,столб";
   nam = "шляпа";
+  found_in = { "south_square", "north_square" };
   ["before_Default,Exam"] = "Издали плохо видно.";
-  found_in = { 'south_square', 'north_square' };
 }
 
 NPC {
   -"солдаты,стражники";
   nam = "guard";
+  found_in = { "south_square", "mid_square", "north_square", "marketplace" };
   description = "Неотёсанные, жестокие люди не из этих мест.";
   ["before_FireAt,Attack"] = "Их намного больше.";
   before_Talk = "Разговаривать с этими мерзавцами -- ниже твоего достоинства.";
-  found_in = { 'south_square', 'mid_square', 'north_square', 'marketplace' };
 }:attr 'animate,scenery'
 
 room {
@@ -276,6 +274,7 @@ room {
 Furniture {
   -"шляпа|столб|перо|шапка";
   nam = "pole";
+  found_in = 'mid_square';
   description = [[Столб из соснового ствола диаметром в несколько дюймов и высотой в девять или десять футов.
 На самой верхушке надёжно закреплена нелепая шляпа Гесслера из черной и красной кожи, с широкими
 изогнутыми полями и пучком перьев из мёртвого гуся.]];
@@ -284,9 +283,8 @@ Furniture {
   before_Salute = function(s, w, wh)
     s.has_been_saluted = true
     p([[Ты отдаёшь честь шляпе на столбе.^^
-"Благодарю вас, сэр", -- ухмыляется солдат.]])
+    "Благодарю вас, сэр", -- ухмыляется солдат.]])
   end;
-  found_in = 'mid_square';
 }:attr 'scenery'
 
 room {
@@ -358,10 +356,10 @@ Arrow {
 NPC {
   -"сын,мальчик,мальчишка,парень|Уолтер";
   nam = "son";
-  ["before_Exam,Listen,Salute,Talk"] = function() return false end;
   found_in = function(s)
     return true
   end;
+  ["before_Exam,Listen,Salute,Talk"] = function(s, w, wh) return false end;
 }:attr 'transparent,scenery'
 
 obj {
@@ -380,64 +378,64 @@ mp.FireAt = function(s, w, wh)
     p "Немыслимо!"
   end
   return false
-end
+end;
 
-Verb { '#FireAt', "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить", "в {noun}/вн,scene : FireAt", "~ {noun}/вн,scene : FireAt", "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt", "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse", "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse" }
+Verb { "#FireAt", "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить", "в {noun}/вн,scene : FireAt", "~ {noun}/вн,scene : FireAt", "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt", "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse", "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse" }
 
 mp.Salute = function(s, w, wh)
   if w:has("animate") then
-    if w:hint('мн') then
-      p(w:Noun_hint(), ' приветствуют тебя.')
+    if w:hint("мн") then
+      p(w:Noun_hint(), " приветствуют тебя.")
     else
-      p(w:Noun_hint(), ' приветствует тебя.')
+      p(w:Noun_hint(), " приветствует тебя.")
     end
   else
-    if w:hint('мн') then
-      p(w:Noun_hint(), ' не замечают этого.')
+    if w:hint("мн") then
+      p(w:Noun_hint(), " не замечают этого.")
     else
-      p(w:Noun_hint(), ' не замечает этого.')
+      p(w:Noun_hint(), " не замечает этого.")
     end
   end
-end
+end;
 
-Verb { '#Salute', "поклони/ться,честь", "{noun}/дт,scene : Salute" }
+Verb { "#Salute", "поклони/ться,честь", "{noun}/дт,scene : Salute" }
 
-Verb { '#Salute2', "мах/ать,помах/ать,помаш/и,маш/и", "{noun}/дт,scene : Salute" }
+Verb { "#Salute2", "мах/ать,помах/ать,помаш/и,маш/и", "{noun}/дт,scene : Salute" }
 
 mp.Untie = function(s, w, wh)
   p "Ты не можешь развязать это."
-end
+end;
 
-Verb { '#Untie', "развяз/ать,отвяз/ать,освобод/ить", "{noun}/вн,scene : Untie" }
+Verb { "#Untie", "развяз/ать,отвяз/ать,освобод/ить", "{noun}/вн,scene : Untie" }
 
 _'street'.dsc = function(s)
   pn([[Узкая улочка тянется на север, к городской площади. Местные жители стекаются в город через ворота на юге.
-Они выкрикивают приветствия, предлагают товары, обмениваются новостями, с наигранным недоверием торгуются с
-лавочниками, чьи прилавки сильно затрудняют движение.]])
+  Они выкрикивают приветствия, предлагают товары, обмениваются новостями, с наигранным недоверием торгуются с
+  лавочниками, чьи прилавки сильно затрудняют движение.]])
   if s:once() then
-    pn('^"Держись поближе ко мне, сынок, -- говоришь ты. -- Иначе потеряешься в этой толпе".')
+    pn '^"Держись поближе ко мне, сынок, -- говоришь ты. -- Иначе потеряешься в этой толпе".'
   end
-end
+end;
 
 _'stallholder'.init_dsc = function(s)
   pn "Хельга отвлекается от сортировки картошки, чтобы уделить тебе внимание."
   if s:once() then
     move(_'apple', me())
     pn([[^"Привет, Вильгельм! Отличный денёк для торговли! Это твой Уолтер? О, как он вырос! Держи яблоко для него --
-тут один край немного подгнил, но всё остальное хорошее. Как там фрау Телль? Передавай ей привет".]])
+    тут один край немного подгнил, но всё остальное хорошее. Как там фрау Телль? Передавай ей привет".]])
   end
-end
-_'stallholder'.life_Talk = function(s)
+end;
+_'stallholder'.life_Talk = function(s, w, wh)
   s.times_spoken_to = s.times_spoken_to + (1)
   if s.times_spoken_to == 1 then
-    fn_score_up()
+    mp.score = mp.score + 1
     p "Ты тепло благодаришь Хельгу за яблоко."
   elseif s.times_spoken_to == 2 then
-    p("Ещё увидимся!")
+    p "Ещё увидимся!"
   else
     return false
   end
-end
+end;
 
 _'mid_square'.before_Walk = function(s, w, wh)
   if (mp:compass_dir(w) or nil) == "s_to" then
@@ -446,23 +444,23 @@ _'mid_square'.before_Walk = function(s, w, wh)
   end
   if (mp:compass_dir(w) or nil) == "n_to" then
     if _'pole'.has_been_saluted then
-      p([[^"Хорошего дня".^]])
+      p '^"Хорошего дня".^'
       return false
     end
     s.warnings_count = s.warnings_count + (1)
     if s.warnings_count == 1 then
       p([[Солдат преграждает тебе дорогу.^^
-"Эй ты, сноб, забыл хорошие манеры? Как насчёт того, чтобы поклониться шляпе фогта?"]])
+      "Эй ты, сноб, забыл хорошие манеры? Как насчёт того, чтобы поклониться шляпе фогта?"]])
     elseif s.warnings_count == 2 then
       p([["Я тебя знаю, ты Телль, мятежник, не правда ли?
-Ладно, мы не хотим начинать тут драку, так что будь хорошим мальчиком,
-отдай честь этой чёртовой шляпе, в третий раз я просить не буду".]])
+      Ладно, мы не хотим начинать тут драку, так что будь хорошим мальчиком,
+      отдай честь этой чёртовой шляпе, в третий раз я просить не буду".]])
     else
       p([["Ладно, {$fmt u|господин} Телль, у вас серьёзные неприятности.
-Я вежливо попросил, но вы оказались слишком гордым
-и слишком глупым. Думаю, фогт захочет с вами немного побеседовать".^^
-С этими словами солдаты хватают тебя и Уолтера, и пока сержант бежит докладывать Гесслеру,
-они грубо тащат вас к старому липовому дереву, растущему на рыночной площади.^]])
+      Я вежливо попросил, но вы оказались слишком гордым
+      и слишком глупым. Думаю, фогт захочет с вами немного побеседовать".^^
+      С этими словами солдаты хватают тебя и Уолтера, и пока сержант бежит докладывать Гесслеру,
+      они грубо тащат вас к старому липовому дереву, растущему на рыночной площади.^]])
       move(_'apple', _'son')
       move(me(), _'marketplace')
     end
@@ -482,17 +480,17 @@ _'governor'.init_dsc = function(s)
   pn "Гесслер с глумливым лицом наблюдает за происходящим с безопасного расстояния."
   if s:once() then
     pn([[^"Похоже, нужно преподать тебе урок, глупец. Никто не смеет проходить через площадь, не отдав дань
-уважения Его Императорскому Высочеству Альберту. Никто, ты слышишь? Я мог бы лишить тебя головы за измену,
-но проявлю снисхождение. Не жди моей милости, если снова проявишь подобную глупость, но в этот раз я отпущу
-тебя... после того, как ты продемонстрируешь своё мастерство владения луком. Попади в это яблоко с того места,
-где ты стоишь. Это не должно быть слишком сложным. Сержант, лови. Поставь его на голову этого мелкого ублюдка".]])
+    уважения Его Императорскому Высочеству Альберту. Никто, ты слышишь? Я мог бы лишить тебя головы за измену,
+    но проявлю снисхождение. Не жди моей милости, если снова проявишь подобную глупость, но в этот раз я отпущу
+    тебя... после того, как ты продемонстрируешь своё мастерство владения луком. Попади в это яблоко с того места,
+    где ты стоишь. Это не должно быть слишком сложным. Сержант, лови. Поставь его на голову этого мелкого ублюдка".]])
   end
-end
+end;
 _'governor'.before_FireAt = function(s, w, wh)
   if fn_BowOrArrow(w) then
     p([[Прежде, чем солдаты успевают среагировать, ты разворачиваешься, и выпускаешь стрелу в Гесслера.
-Она пронзает его сердце, и герцог оседает на землю. На мгновение толпа замирает в недоумении, но тут же
-разражается криками ликования.]])
+    Она пронзает его сердце, и герцог оседает на землю. На мгновение толпа замирает в недоумении, но тут же
+    разражается криками ликования.]])
     walk(_'theend')
   end
 end;
@@ -500,23 +498,23 @@ end;
 _'son'.description = function(s)
   if here() == _'marketplace' then
     p([[Он смотрит на тебя, пытаясь выглядеть спокойным и смелым. Его руки связаны за спиной.
-Яблоко лежит в его светлых волосах.]])
+    Яблоко лежит в его светлых волосах.]])
     return
   end
   p "Тихий светлый мальчик восьми лет, он быстро учится сельской работе."
-end
-_'son'.life_Give = function(s, w, wh)
-  fn_score_up()
-  move(w, s)
-  p([["Спасибо, пап".]])
 end;
-_'son'.life_Talk = function(s)
+_'son'.life_Give = function(s, w, wh)
+  mp.score = mp.score + 1
+  move(w, s)
+  p '"Спасибо, пап".'
+end;
+_'son'.life_Talk = function(s, w, wh)
   if here() == _'marketplace' then
-    p([["Стой спокойно, сынок, Господь нам поможет".]])
+    p '"Стой спокойно, сынок, Господь нам поможет".'
   else
     p "Ты показываешь сыну несколько интересных мест в городе."
   end
-end
+end;
 _'son'.before_FireAt = function(s, w, wh)
   if here() == _'marketplace' then
     if fn_BowOrArrow(w) then
@@ -541,7 +539,7 @@ _'apple'.description = function(s)
   else
     p "Яблоко зелёное, с коричневым пятном."
   end
-end
+end;
 _'apple'.before_Default = function(s, ev, w, wh)
   if where(s) == _'son' then
     if here() == _'marketplace' then
@@ -556,11 +554,11 @@ end;
 _'apple'.before_FireAt = function(s, w, wh)
   if here() == _'marketplace' then
     if fn_BowOrArrow(w) then
-      fn_score_up()
+      mp.score = mp.score + 1
       p([[Мягко и спокойно ты кладёшь стрелу на тетиву, оттягивая её, и, предельно
-сконцентрировавшись, берёшь прицел. Задержав дыхание, не мигая, ты в ужасе
-отправляешь стрелу в цель. Она летит через площадь к твоему сыну, и, пронзая яблоко, впивается
-в дерево. Толпа взрывается криками радости. Гесслер остаётся разочарованным.]])
+      сконцентрировавшись, берёшь прицел. Задержав дыхание, не мигая, ты в ужасе
+      отправляешь стрелу в цель. Она летит через площадь к твоему сыну, и, пронзая яблоко, впивается
+      в дерево. Толпа взрывается криками радости. Гесслер остаётся разочарованным.]])
       walk(_'happyend')
     end
     return
@@ -572,8 +570,8 @@ gameover {
   nam = "theend";
   title = "Конец";
   dsc = function(s)
-    pn('Вы испортили любимую народную легенду.')
-    p('Ваш счет: ', (mp.score), ' из ', MAX_SCORE)
+    pn "Вы испортили любимую народную легенду."
+    p("Ваш счет: ", (mp.score), " из ", MAX_SCORE)
   end;
 }
 
@@ -581,7 +579,7 @@ gameover {
   nam = "happyend";
   title = "Конец";
   dsc = function(s)
-    pn('Поздравляю, вы прошли игру!')
-    p('Ваш счет: ', (mp.score), ' из ', MAX_SCORE)
+    pn "Поздравляю, вы прошли игру!"
+    p("Ваш счет: ", (mp.score), " из ", MAX_SCORE)
   end;
 }

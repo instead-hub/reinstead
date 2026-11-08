@@ -33,13 +33,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 obj {
@@ -59,6 +59,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -66,21 +67,34 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
 
+Talkative = Class {
+  heard = false;
+  before_Talk = function(s, w, wh)
+    s.heard = true
+    p "поговорили"
+  end;
+}
+
+Flying = Class {
+  before_Climb = function(s, w, wh)
+    p "взлетел"
+  end;
+}
+
 Bird = Class {
   before_Climb = function(s, w, wh)
-    p([[взлетел]])
+    p "взлетел"
   end;
 }:attr 'animate'
 
@@ -95,7 +109,7 @@ obj {
   heard = false;
   before_Talk = function(s, w, wh)
     s.heard = true
-    p([[поговорили]])
+    p "поговорили"
   end;
 }
 
@@ -104,6 +118,6 @@ obj {
   nam = "crow";
   heard = false;
   before_Talk = function(s, w, wh)
-    p([[кар]])
+    p "кар"
   end;
 }

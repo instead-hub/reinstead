@@ -33,13 +33,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 local function fn_label(w, n, nn)
@@ -66,27 +66,27 @@ end
 
 local function fn_on_take(s)
   if s.weight + 1 > 0 then
-    p([[тяжёлый]])
+    p "тяжёлый"
   end
   p(fn_label(s))
   p(fn_label(s, "им"))
   p(fn_label(s, "вн"))
   p(s:noun_hint("вн"))
   p(s:noun_hint("зв"))
-  p(s:noun_hint(({ "рд", 2 })))
-  p(s:noun_hint(({ "рд", 2 })))
+  p(s:noun_hint({ "рд", 2 }))
+  p(s:noun_hint({ "рд", 2 }))
   p(s:noun_hint("им"))
-  p(s:noun_hint(({ "вн", 2 })))
-  p(s:noun_hint(({ "пр", "мн" })))
-  p(s:noun_hint(({ "тв", 2 })))
-  p(s:noun_hint(({})))
-  p(s:Noun_hint(({ "рд", 2 }), 1))
-  p(fn_first_str(({ [[a]], [[b]] })))
-  local h = ({ "вн", "мн" })
+  p(s:noun_hint({ "вн", 2 }))
+  p(s:noun_hint({ "пр", "мн" }))
+  p(s:noun_hint({ "тв", 2 }))
+  p(s:noun_hint({}))
+  p(s:Noun_hint({ "рд", 2 }, 1))
+  p(fn_first_str({ "a", "b" }))
+  local h = { "вн", "мн" }
   p(s:noun_hint(h))
   p(_(chosen):noun_hint("вн"))
   p(fn_spot(s):noun_hint("вн"))
-  local w = inv()[1]
+  local w = (inv())[1]
   w:noun_hint()
   p(fn_label2(s, 2))
   fn_label(s, 1, 2)
@@ -109,6 +109,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -116,14 +117,13 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
@@ -152,6 +152,6 @@ obj {
   end;
 }
 
-_'lamp'.target = 'orb'
+_'lamp'.target = 'orb';
 
 _'crate'.before_Take = fn_on_take;

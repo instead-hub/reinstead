@@ -33,13 +33,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 obj {
@@ -59,6 +59,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -66,31 +67,30 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
 
 mp.before_Any = function(s, ev, w, wh)
-  if ev == 'Walk' and w:has("door") then
-    p([[дверь]])
+  if ev == "Walk" and w:has("door") then
+    p "дверь"
   end
-end
+end;
 mp.Any = function(s, ev, w, wh)
-  if ev == 'Exam' and w:has("scenery") then
-    p([[осмотр декорации]])
-  elseif ev == 'Wear' then
-    p([[надели]])
+  if ev == "Exam" and w:has("scenery") then
+    p "осмотр декорации"
+  elseif ev == "Wear" then
+    p "надели"
   end
-end
+end;
 
 mp.Default = function(s, ev, w, wh)
-  p([[нет обработчика]])
-end
+  p "нет обработчика"
+end;

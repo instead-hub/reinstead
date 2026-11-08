@@ -1,41 +1,39 @@
-name: stdlib
-lang: ru
-include: stdlib
+game "stdlib"
 
-room hall:
-  words: зал
-  dsc: [[Зал.]]
-  OnError: |
+lang ru
+
+include stdlib
+
+room hall "зал"
+  dsc = "Зал."
+  OnError
     say (err)
 
-fn describe(s: obj) -> str: |
+fn describe(s: obj) -> str
   return 'Ящик.'
 
-lua: |lua
+lua
   function lua_probe(s, w, wh)
     return false
   end
 
-obj box:
-  words: ящик
-  attrs: container,open
-  description: &describe
-  before Take: &lua_probe
+obj box "ящик" : container, open
+  description = &describe
+  before Take &lua_probe
 
-obj note:
-  words: записка
-  before Disrobe: 'pass'
-  description: 'use heal'
-  scope: { box, note }
+obj note "записка"
+  before Disrobe "pass"
+  description = "use heal"
+  scope = { box, note }
 
-fn probe(w: obj, t: tbl, ev: event): |
+fn probe(w: obj, t: tbl, ev: event)
   time()
   time(5)
-  say(time())
+  say (time())
   hasnt(w, open)
   once(w, 'tag')
   once(w)
-  w:once tag
+  w:once "tag"
   w:once
   subaction(ev)
   subaction(ev, w, w)
@@ -70,11 +68,11 @@ fn probe(w: obj, t: tbl, ev: event): |
   add(inv(), w)
   del(inv(), w)
   inv():add(w)
-  say(0)
-  append(0)
-  say(box)
-  say('x', 1, w)
-  line(1, 2)
+  say (0)
+  append (0)
+  say (box)
+  say 'x' 1 (w)
+  line 1 (2)
   push(w)
   push(w, w)
   pop()
@@ -83,8 +81,8 @@ fn probe(w: obj, t: tbl, ev: event): |
   empty()
   empty(w)
   empty
-  if empty:
-    say(0)
+  if empty
+    say (0)
   check_held(w)
   check_live(w)
   check_touch()

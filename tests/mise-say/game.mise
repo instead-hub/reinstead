@@ -1,19 +1,20 @@
-name: say
-lang: ru
-include: stdlib
+game "say"
 
-fn note(t: str): |lua
-  p(t)
+lang ru
 
-obj x:
-  words: вещь
+include stdlib
 
-setup:
-  init: |
-    say x
-    say x:noun()
-    say (x:noun())
-    line line text
-    append append text
-    note raw words
-    note (x:noun())
+fn note(t: str)
+  lua
+    p(t)
+
+obj x "вещь"
+
+fn init()
+  "x"
+  "x:noun()"
+  say (x:noun())
+  line "line text"
+  "append text"~
+  note raw words
+  note(x:noun())

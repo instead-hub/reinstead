@@ -1,1 +1,0 @@
-mise: error: with-key-quoted.mise:10: casket.with_key: object reference must be a bare name, not a quoted string ('key')

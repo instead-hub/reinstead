@@ -1,1 +1,0 @@
-mise: error: ambiguous value 'x' (types: a, b) in ambiguous-value.mise:9: local v = x

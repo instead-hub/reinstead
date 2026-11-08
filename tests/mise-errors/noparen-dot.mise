@@ -1,9 +1,0 @@
-name: t
-lang: ru
-include: stdlib
-
-obj box:
-  words: коробка
-  xxx: light
-  before Take: |
-    s:has s.xxx

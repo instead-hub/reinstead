@@ -1,72 +1,70 @@
-name: t
-lang: ru
-include: stdlib
+game "t"
 
-global:
-  chosen: crate
+lang ru
 
-props obj:
+include stdlib
+
+global
+  chosen = crate
+
+class obj
   target: ref
 
-class Box:
-  attrs: container
-  weight: 0
+class Box : container
+  weight = 0
 
-fn label(w: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str: |
-  if n and nn:
+fn label(w: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str
+  if n and nn
     return w:noun(n, nn)
-  if n:
+  if n
     return w:noun(n)
   return w:noun()
 
-fn label2(w: obj, n: case|num) -> str: |
+fn label2(w: obj, n: case|num) -> str
   return w:noun(n)
 
-fn first_str(t: tbl[str]) -> str: |
+fn first_str(t: tbl[str]) -> str
   return t[1]
 
-fn spot(s: obj) -> obj: |
-  return s:where() and s:where() or none
+fn spot(s: obj) -> obj
+  return s:where()and s:where()or none
 
-fn on_take(s: Box): |
-  if s.weight + 1 > 0:
-    say [[тяжёлый]]
-  say(label(s))
-  say(label(s, им))
-  say(label(s, вн))
-  say(s:noun(вн))
-  say(s:noun(зв))
-  say(s:noun({ рд, 2 }))
-  say(s:noun { рд, 2 })
-  say(s:noun(им))
-  say(s:noun({ вн, 2 }))
-  say(s:noun({ пр, мн }))
-  say(s:noun({ тв, 2 }))
-  say(s:noun({}))
-  say(s:Noun({ рд, 2 }, 1))
-  say(first_str { [[a]], [[b]] })
-  local h = { вн, мн }
-  say(s:noun(h))
-  say(chosen:noun(вн))
-  say(spot(s):noun(вн))
+fn on_take(s: Box)
+  if s.weight + 1 > 0
+    [[тяжёлый]]
+  say (label(s))
+  say (label(s, им))
+  say (label(s, вн))
+  say (s:noun(вн))
+  say (s:noun(зв))
+  say (s:noun({рд, 2}))
+  say (s:noun {рд, 2})
+  say (s:noun(им))
+  say (s:noun({вн, 2}))
+  say (s:noun({пр, мн}))
+  say (s:noun({тв, 2}))
+  say (s:noun({}))
+  say (s:Noun({рд, 2}, 1))
+  say (first_str {[[a]], [[b]]})
+  local h = {вн, мн}
+  say (s:noun(h))
+  say (chosen:noun(вн))
+  say (spot(s):noun(вн))
   local w = inv()[1]
   w:noun()
-  say(label2(s, 2))
+  say (label2(s, 2))
   label(s, 1, 2)
 
-Box crate:
-  words: ящик
+Box crate "ящик"
 
-obj orb:
-  words: сфера
+obj orb "сфера"
 
-obj lamp:
-  words: лампа
-  before Take: |
-    say(s.target:noun(вн))
+obj lamp "лампа"
+  before Take
+    say (s.target:noun(вн))
 
-impl lamp:
-  target: orb
+impl lamp
+  target = orb
 
-impl crate:
-  before Take: &on_take
+impl crate
+  before Take &on_take

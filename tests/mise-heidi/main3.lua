@@ -33,13 +33,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 obj {
@@ -59,6 +59,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -66,33 +67,32 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" }
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
 
-game.dsc = [[^Пример простой игры на Inform.
+_'game'.dsc = [[^Пример простой игры на Inform.
 ^Авторы: Роджер Фирт (Roger Firth) и Соня Кессерих (Sonja Kesserich).
 ^Перевод Юрия Салтыкова a.k.a. G.A. Garinson^
 ^Перевод на МЕТАПАРСЕР 3 выполнил Петр Косых.
 ^
-]]
-pl.word = -"ты/жр,2л"
-pl.description = "Здесь нет зеркала."
-pl.capacity = 1
+]];
+
+pl.word = -"ты/жр,2л";
+pl.description = "Здесь нет зеркала.";
+pl.capacity = 1;
+
 function start(load)
   move(me(), _'before_cottage')
-end
-function init()
 end
 
 room {
@@ -151,7 +151,6 @@ room {
         mp:content(s)
       end;
     }:attr 'container,open';
-
     obj {
       -"платан|дерево|ствол";
       nam = "tree";

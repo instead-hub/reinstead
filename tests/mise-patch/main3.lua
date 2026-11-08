@@ -33,17 +33,17 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 local function fn_helper()
-  p([[helper]])
+  p "helper"
 end
 
 obj {
@@ -63,6 +63,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -70,14 +71,13 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
@@ -91,11 +91,11 @@ obj {
 
 _'box'.before_Take = function(s, w, wh)
   if s.score_value + 1 > 0 then
-    p([[взяли]])
+    p "взяли"
   end
 end;
 _'box'.Take = function(s, w, wh)
-  p([[метод]])
+  p "метод"
 end;
 _'box'.after_Drop = "use &helper";
 _'box'.Wait = "use &helper";

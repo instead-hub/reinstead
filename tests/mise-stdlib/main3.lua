@@ -33,17 +33,17 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 local function fn_describe(s)
-  return 'Ящик.'
+  return "Ящик."
 end
 
 local function fn_probe(w, t, ev)
@@ -51,7 +51,7 @@ local function fn_probe(w, t, ev)
   time(5)
   p(time())
   w:hasnt("open")
-  w:once('tag')
+  w:once("tag")
   w:once()
   w:once("tag")
   w:once()
@@ -85,13 +85,13 @@ local function fn_probe(w, t, ev)
   walkback(w)
   walkback()
   remove(w)
-  inv():add(w)
-  inv():del(w)
-  inv():add(w)
+  (inv()):add(w)
+  (inv()):del(w)
+  (inv()):add(w)
   p(0)
   pr(0)
   p(_'box')
-  p('x', 1, w)
+  p("x", 1, w)
   pn(1, 2)
   push(w)
   push(w, w)
@@ -115,18 +115,18 @@ local function fn_probe(w, t, ev)
   lifeon(w)
   lifeoff(w)
   std.call(w, 'before_' .. ev)
-  mp:runmethods("before", 'Take', w)
-  mp:runorval(w, 'inv')
+  mp:runmethods("before", "Take", w)
+  mp:runorval(w, "inv")
   theme.name()
   std.pclr()
-  std.ref('box')
+  std.ref("box")
   ((mp.args[1] or {}).word or '')
   (instead.tiny)
-  snd.music('x')
+  snd.music("x")
   rnd(1)
-  local xs = inv()
+  local xs = (inv())
   (#xs)
-  local daemons = getDaemons()
+  local daemons = (getDaemons())
   (#daemons)
 end
 
@@ -147,6 +147,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -154,14 +155,13 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
@@ -189,7 +189,9 @@ obj {
 obj {
   -"записка";
   nam = "note";
-  before_Disrobe = "pass";
   description = "use heal";
-  scope = { "box", "note" };
+  scope = function(s, w)
+    { box, note }
+  end;
+  before_Disrobe = "pass";
 }

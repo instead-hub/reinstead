@@ -1,129 +1,87 @@
-name: talk
-lang: ru
-include: stdlib
+game "talk"
 
-global:
-  met: false
-  q1: 0
+lang ru
 
-fn знакомы(s: obj) -> bool: |
+include stdlib
+
+global
+  met = false
+  q1 = 0
+
+fn знакомы(s: obj) -> bool
   return met
 
-fn ask_text(s: obj) -> str: |
+fn ask_text(s: obj) -> str
   return 'Вопрос от fn?'
 
-fn reply_text(s: obj) -> str: |
+fn reply_text(s: obj) -> str
   return '-- Ответ от fn.'
 
-fn act_say(s: obj): |
-  say [[-- Что-то произошло.]]
+fn act_say(s: obj)
+  [[-- Что-то произошло.]]
 
-setup:
-  start: |
-    player:move hall
+fn start(load)
+  player:move hall
 
-room hall:
-  words: зал
-  dsc: [[Большой зал.]]
+room hall "зал"
+  dsc = "Большой зал."
 
-obj guide:
-  words: гид,проводник
-  dsc: [[Суровый гид.]]
-  found_in: hall
-  talk_to: разговор_с_гидом
+obj guide "гид,проводник" @ hall
+  dsc = "Суровый гид."
+  talk_to = разговор_с_гидом
 
-talk разговор_с_гидом:
-  intro: [[-- Здравствуйте, путник.]]
-
-  option:
-    when: not met
-    ask: Что тут случилось?
-
-    reply: -- Обвал в шахте.
-    option:
-      ask: Кто виноват?
-      reply: -- Никто.
-      do: |
-        q1 += 1
-    option:
-      hidden: true
-      ask: Секретный вариант
-      reply: -- Тс-с-с.
-      do: |
-        q1 += 10
-    option:
-      only: true
-      ask: Только один раз
-      next: финал
-  option:
-    always: true
-    say: Я скоро вернусь.
-    do: |
+talk разговор_с_гидом
+  intro "-- Здравствуйте, путник."
+  * [not met] "Что тут случилось?"
+    "-- Обвал в шахте."
+    * "Кто виноват?"
+      "-- Никто."
+      q1 += 1
+    * "Секретный вариант" hidden
+      "-- Тс-с-с."
+      q1 += 10
+    * "Только один раз" only -> финал
+  + "Я скоро вернусь."
+    met = true
+    walkout()
+  * "Расспросить"
+    "-- О чём?"
+    onempty
+      "-- Гид угрюмо молчит."
       met = true
       walkout()
-  option:
-    ask: Расспросить
-    reply: -- О чём?
-
-    option:
-      ask: О погоде
-      reply: -- Ветрено.
-
-    option:
-      ask: О работе
-      reply: -- Тяжело.
-
-    onempty: |
-      say -- Гид угрюмо молчит.
-      met = true
-      walkout()
-  option:
-    when: true
-    ask: Всегда доступно
-    reply: -- Да, всегда.
-  option:
-    when: false
-    ask: Никогда
-    reply: -- И не увидите.
-  option:
-    when: |
+    * "О погоде"
+      "-- Ветрено."
+    * "О работе"
+      "-- Тяжело."
+  * [true] "Всегда доступно"
+    "-- Да, всегда."
+  * [false] "Никогда"
+    "-- И не увидите."
+  * "После знакомства"
+    when
       return met
-    ask: После знакомства
-    reply: -- Мы уже виделись.
-  option:
-    when: &знакомы
-    ask: Знакомы ли мы?
-    reply: -- Похоже, да.
-
-  option:
-    when: not s:has(open)
-    ask: Проверка s
-    reply: -- s на месте.
-
-  option:
-    when: |
+    "-- Мы уже виделись."
+  * "Знакомы ли мы?"
+    when &знакомы
+    "-- Похоже, да."
+  * [not s:has(open)] "Проверка s"
+    "-- s на месте."
+  * "Проверка and"
+    when
       return met and true
-    ask: Проверка and
-    reply: -- И это правда.
-
-  option:
-    ask: |
+    "-- И это правда."
+  * ""
+    ask
       return 'Вопрос из блока?'
-    reply: -- Ответ из блока.
-
-  option:
-    ask: &ask_text
-    reply: &reply_text
-
-  option:
-    ask: С действием?
-    reply: &reply_text
-    do: &act_say
-
-  label финал:
-    say: -- Продолжение следует.
-    option:
-      ask: Спасибо.
-      do: |
-        met = true
-        walkout()
+    "-- Ответ из блока."
+  * &ask_text
+    reply &reply_text
+  * "С действием?"
+    reply &reply_text
+    do &act_say
+  label финал
+    "-- Продолжение следует."
+    * "Спасибо."
+      met = true
+      walkout()

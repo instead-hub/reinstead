@@ -33,22 +33,22 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 local function fn_pick(s)
-  if ((((function(o) local m = getmetatable(s) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G[("Tree")])))) then
-    return [[дерево]]
+  if (((function(o) local m = getmetatable(s) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G["Tree"]))) then
+    return "дерево"
   elseif s:has("scenery") then
-    return [[декорация]]
+    return "декорация"
   else
-    return [[прочее]]
+    return "прочее"
   end
 end
 
@@ -69,6 +69,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -76,52 +77,50 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
 
-Tree = Class {
-}:attr 'scenery'
+Tree = Class {}:attr 'scenery'
 
 obj {
   -"коробка";
   nam = "box";
   Take = function(s, w, wh)
-    local o = seen(_'box')
+    local o = seen("box")
     if o then
       o:attr("seen")
       p(fn_pick(s))
     else
-      p([[не видно]])
+      p "не видно"
     end
   end;
 }
 
 _'box'.Gaze = function(s, w, wh)
-  p([[смотрят]])
+  p "смотрят"
   local style = "light"
   if style == "light" then
     return false
   end
-  local e = 'Exam'
-  if e == 'Wear' then
-    p([[одежда]])
+  local e = "Exam"
+  if e == "Wear" then
+    p "одежда"
   end
 end;
 
 function init()
   if true then
-    p([[one]])
+    p "one"
   end
   if false then
-    p([[two]])
+    p "two"
   end
 end

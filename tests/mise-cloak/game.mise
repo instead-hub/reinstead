@@ -1,130 +1,121 @@
-name: Плащ Тьмы
-lang: ru
-include: stdlib
+game "Плащ Тьмы"
 
-global:
-  score: 0
+lang ru
 
-impl game:
-  hint_verbs: { "#Exam", "#Walk", "#Take", "#Drop" }
+include stdlib
 
-extend #Drop:
-  words: повес/ить
-  patterns:
-    - {noun}/вн,held на {noun}/вн,supporter : PutOn
-    - ~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse
+global
+  score = 0
 
-setup:
-  dsc: [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация.
+impl game
+  hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" }
+
+extend verb #Drop
+  words "повес/ить"
+  patterns
+    - "{noun}/вн,held на {noun}/вн,supporter : PutOn"
+    - "~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse"
+
+impl game
+  dsc = [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация.
 ^^Торопливо пробираясь сквозь дождливую и холодную ноябрьскую ночь,
 Вы радостно заметили неподалеку ярко горящие огни Оперного театра.^
 Конечно, очень странно, что рядом не заметно ни одной живой души...
 но стоит ли ждать слишком много от простенькой демонстрационной игры?..^]]
-  start: |
-    player:move foyer
-    cloak:move player
-    cloak:attr worn
 
-room foyer:
-  words: фойе
-  title: Фойе Оперного Театра
-  dsc: [[Вы стоите в центре просторного холла,
+fn start(load)
+  player:move foyer
+  cloak:move player
+  cloak:attr worn
+
+room foyer "фойе"
+  title = "Фойе Оперного Театра"
+  dsc = [[Вы стоите в центре просторного холла,
 полного роскоши и декорированного красным и золотым.
 Массивные люстры ярко сияют под потолком.
 На север отсюда имеется выход на улицу,
 две другие двери ведут в южном и западном направлении.]]
-  s_to: bar
-  w_to: cloakroom
-  n_to: |
-    say Вы только пришли сюда. К тому же, погода снаружи заметно ухудшается.
+  s_to = bar
+  w_to = cloakroom
+  n_to
+    "Вы только пришли сюда. К тому же, погода снаружи заметно ухудшается."
 
-room cloakroom:
-  words: гардероб
-  title: Гардероб
-  dsc: [[Когда-то на стенах этой комнаты было множество крючков,
-    предназначенных для одежды, но сохранился только один.
-    Единственный выход отсюда -- восточная дверь.]]
-  e_to: foyer
-  with:
-    obj hook:
-      words: маленький бронзовый крючок,крючок|вешалка
-      attrs: scenery, supporter
-      description: |
-        say Всего лишь маленький бронзовый крючок для одежды,
-        if where cloak == s:
-          say с которого свисает черный бархатный плащ.
-        else:
-          say привинченный к стене.
+room cloakroom "гардероб"
+  title = "Гардероб"
+  dsc = [[Когда-то на стенах этой комнаты было множество крючков,
+предназначенных для одежды, но сохранился только один.
+Единственный выход отсюда -- восточная дверь.]]
+  e_to = foyer
+  obj hook "маленький бронзовый крючок,крючок|вешалка" : scenery, supporter
+    description
+      "Всего лишь маленький бронзовый крючок для одежды,"
+      if where cloak == s
+        "с которого свисает черный бархатный плащ."
+      else
+        "привинченный к стене."
 
-room bar:
-  words: буфет
-  title: Буфет
-  attrs: ~light
-  dsc: [[Театральный буфет (намного более скромный,
-    чем можно было предположить после роскоши фойе,
-    расположенного к северу отсюда) совершенно пуст.
-    Но похоже, что в пыли на полу написано что-то важное.]]
-  n_to: foyer
-  before Walk: |
-    if compass_dir(w) ~= n_to and not w:has light:
+room bar "буфет" : ~light
+  title = "Буфет"
+  dsc = [[Театральный буфет (намного более скромный,
+чем можно было предположить после роскоши фойе,
+расположенного к северу отсюда) совершенно пуст.
+Но похоже, что в пыли на полу написано что-то важное.]]
+  n_to = foyer
+  before Walk
+    if compass_dir(w) != n_to and not w:has light
       message.number += 2
-      say Слоняться в кромешной тьме -- не самая лучшая идея.
+      "Слоняться в кромешной тьме -- не самая лучшая идея."
       stop
     pass
-  before Default: |
-    if ev == Exit:
+  before Default
+    if ev == Exit
       pass
-    if not s:has light:
+    if not s:has light
       message.number += 1
-      say В непроглядной темноте это очень трудно...
+      "В непроглядной темноте это очень трудно..."
       stop
     pass
-  with:
-    obj message:
-      words: надпись|пыль
-      attrs: scenery
-      number: 0
-      description: |
-        if s.number < 2:
-          say Начертанная в пыли надпись сообщает Вам, что...
-          walk goodend
-        else:
-          say [[Полустертую надпись разобрать очень трудно.
-С трудом можно различить такие слова...]]
-          walk badend
+  obj message "надпись|пыль" : scenery
+    number = 0
+    description
+      if s.number < 2
+        "Начертанная в пыли надпись сообщает Вам, что..."
+        walk goodend
+      else
+        say ([[Полустертую надпись разобрать очень трудно.
+С трудом можно различить такие слова...]])
+        walk badend
 
-obj cloak:
-  words: бархатный плащ,плащ
-  attrs: clothing
-  scored: false
-  description: [[
+obj cloak "бархатный плащ,плащ" : clothing
+  scored = false
+  description = [[
 Хороший плащ (из черного бархата с атласной прокладкой),
 немного промокший от дождя. Его чернота настолько глубока,
 что возникает ощущение, словно он втягивает в себя весь свет
 из окружающего мира.]]
-  before Drop, PutOn: |
-    if here == cloakroom:
+  before Drop, PutOn
+    if here == cloakroom
       bar:attr light
-      if event == PutOn and not s.scored:
+      if event == PutOn and not s.scored
         s.scored = true
         score += 1
       pass
-    else:
-      say Не самое подходящее место для того, чтобы оставлять здесь свою одежду.
+    else
+      "Не самое подходящее место для того, чтобы оставлять здесь свою одежду."
       stop
-  after Take: |
+  after Take
     bar:attr ~light
     pass
-  after PutOn: |
-    if w ~= hook:
+  after PutOn
+    if w != hook
       pass
-    say Ты повесил плащ на крючок.
+    "Ты повесил плащ на крючок."
 
-ending badend:
-  title: Вы проиграли
-  dsc: false
+ending badend
+  title = "Вы проиграли"
+  dsc = false
 
-ending goodend:
-  title: Вы выиграли
-  dsc: |
-    say('Ваш счет: ', score)
+ending goodend
+  title = "Вы выиграли"
+  dsc
+    say 'Ваш счет: ' (score)

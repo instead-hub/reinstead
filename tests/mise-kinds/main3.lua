@@ -2,6 +2,7 @@
 
 --$Name:kinds$
 require "fmt"
+fmt.verbose = true
 require "parser/mp-ru"
 
 local function fn_objs(s)
@@ -33,13 +34,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 local function fn_tick(s)
@@ -63,6 +64,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -70,40 +72,43 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
 
-fmt.verbose = true
-game.hint_verbs = { "#Look" }
-pl.word = -"ты"
+function init()
+  take(_'statue')
+end
+
+_'game'.hint_verbs = { "#Look" };
+
+pl.word = -"ты";
+
 function start(load)
   move(me(), _'hall')
-end
-function init()
-  take('statue')
 end
 
 cutscene {
   nam = "intro";
   dsc = "Пролог.";
   after_Enter = function(s, w, wh)
-    p([[История началась.]])
+    p "История началась."
   end;
 }
 
 cutscene {
   nam = "prologue";
-  text = { [[Первая страница.
-Вторая строка первой страницы.]], "Вторая страница." };
+  text = {
+    [[Первая страница.
+Вторая строка первой страницы.]], "Вторая страница.";
+  };
 }
 
 cutscene {
@@ -124,24 +129,6 @@ room {
   dsc = "Большой зал.";
   room_note = 1;
   obj_note = 2;
-  Enter = function(s, w, wh)
-    p([[Вы вошли.]])
-  end;
-  Walk = function(s, w, wh)
-    p([[Вы идёте.]])
-  end;
-  Look = function(s, w, wh)
-    p([[Вы осматриваетесь.]])
-  end;
-  post_Look = function(s, w, wh)
-    p([[Уже осмотрелись.]])
-  end;
-  ["life_Give,Show"] = function(s, w, wh)
-    p([[Жизнь кипит.]])
-  end;
-  after_Turn = function(s, w, wh)
-    p([[Повернулись.]])
-  end;
   compass_look = function(s, to)
     if to then
       return false
@@ -181,6 +168,24 @@ room {
     return false
   end;
   s_to = 'garden';
+  Enter = function(s, w, wh)
+    p "Вы вошли."
+  end;
+  Walk = function(s, w, wh)
+    p "Вы идёте."
+  end;
+  Look = function(s, w, wh)
+    p "Вы осматриваетесь."
+  end;
+  post_Look = function(s, w, wh)
+    p "Уже осмотрелись."
+  end;
+  ["life_Give,Show"] = function(s, w, wh)
+    p "Жизнь кипит."
+  end;
+  after_Turn = function(s, w, wh)
+    p "Повернулись."
+  end;
   obj = {
     'sky';
   };
@@ -207,7 +212,7 @@ room {
   dsc = "Тихий сад.";
   d_to = 'hall';
   home_to = 'hall';
-  scope = { "statue", "relic" };
+  scope = std.list { "statue", "relic" };
   default_Event = "Exam";
 }
 
@@ -221,21 +226,21 @@ obj {
 obj {
   -"реликвия";
   nam = "relic";
+  found_in = 'garden';
   mood = "tired";
   daemon = fn_tick;
   when_open = "Открыто.";
   help = "Подсказка.";
   disp = "Реликвия.";
   gfx = "relic.png";
-  found_in = { "garden" };
   word = function(s)
-    return 'реликвия'
+    return "реликвия"
   end;
   Use = function(s, w, wh)
-    p([[Применили.]])
+    p "Применили."
   end;
   AskTo = function(s, w, wh)
-    p([[Попросили.]])
+    p "Попросили."
   end;
 }:disable()
 
@@ -267,7 +272,7 @@ obj {
 }:attr 'lockable,locked'
 
 Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 10, hint = function(s)
-  p([[Подсказка.]])
+  p "Подсказка."
 end }
 
 Ghost:enable()
@@ -277,5 +282,5 @@ _'relic':disable()
 _'key':enable()
 
 _'game':dict { ["зал/вн"] = "зал" }
-_'game'.time = 0
-_'game'.Look = 2
+_'game'.time = 0;
+_'game'.Look = 2;

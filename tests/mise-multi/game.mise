@@ -1,32 +1,34 @@
-name: multi
-lang: ru
-include: stdlib
+game "multi"
 
-obj box:
-  words: коробка
+lang ru
 
-fn minmax(a: num, b: num) -> num, num: |
-  if a < b:
+include stdlib
+
+obj box "коробка"
+
+fn minmax(a: num, b: num) -> num, num
+  if a < b
     return a, b
-  else:
+  else
     return b, a
 
-fn swap(x: obj) -> obj, obj: |lua
-  return x, x
+fn swap(x: obj) -> obj, obj
+  lua
+    return x, x
 
-fn fwd() -> num, num: |
+fn fwd() -> num, num
   return minmax(1, 2)
 
-fn single() -> num: |
+fn single() -> num
   return minmax(1, 2)
 
-fn cb(f: fn(n: num) -> num, num): |
+fn cb(f: fn(n: num) -> num, num)
   f(1)
 
-fn caller(): |
+fn caller()
   cb(&fwd)
 
-fn demo(): |
+fn demo()
   local lo, hi = minmax(3, 4)
   local a, b = minmax(1, 2), 9
   local c = minmax(5, 6)

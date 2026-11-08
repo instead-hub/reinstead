@@ -32,7 +32,7 @@ local function fn_door_next(s, w)
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} can go to ' .. w:noun_hint() .. '.'
+  return ("{#Me}" .. " can go to ") .. w:noun_hint() .. "."
 end
 
 obj {
@@ -52,6 +52,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -59,32 +60,30 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 global 'score' (0)
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" }
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
 
 VerbExtendWord { "#Drop", "hang", "{noun}/held on {noun}/supporter : PutOn" }
 
-game.dsc = [[^{$fmt b|Cloak of Darkness}^^Cloak of Darkness -- a simple demonstration of Interactive Fiction.
+_'game'.dsc = [[^{$fmt b|Cloak of Darkness}^^Cloak of Darkness -- a simple demonstration of Interactive Fiction.
 ^^Hurrying through the rainswept November night, you're glad to see the
 bright lights of the Opera House. It's surprising that there aren't more
-people about but, hey, what do you expect in a cheap demo game...?^]]
+people about but, hey, what do you expect in a cheap demo game...?^]];
+
 function start(load)
   move(me(), _'foyer')
   move(_'cloak', me())
   _'cloak':attr("worn")
-end
-function init()
 end
 
 room {
@@ -97,7 +96,7 @@ the street is to the north, and there are doorways south and west.]];
   s_to = 'bar';
   w_to = 'cloakroom';
   n_to = function(s)
-    p("You've only just arrived, and besides, the weather outside seems to be getting worse.")
+    p "You've only just arrived, and besides, the weather outside seems to be getting worse."
   end;
 }
 
@@ -113,11 +112,11 @@ though now only one remains. The exit is a door to the east.]];
       -"small brass hook,hook|peg";
       nam = "hook";
       description = function(s)
-        p("It's just a small brass hook, ")
+        p "It's just a small brass hook, "
         if where(_'cloak') == s then
-          p("with a cloak hanging on it.")
+          p "with a cloak hanging on it."
         else
-          p("screwed to the wall.")
+          p "screwed to the wall."
         end
       end;
     }:attr 'scenery,supporter';
@@ -135,18 +134,18 @@ be some sort of message scrawled in the sawdust on the floor.]];
   before_Walk = function(s, w, wh)
     if (mp:compass_dir(w) or nil) ~= "n_to" and not w:has("light") then
       _'message'.number = _'message'.number + (2)
-      p("Blundering around in the dark isn't a good idea!")
+      p "Blundering around in the dark isn't a good idea!"
       return
     end
     return false
   end;
   before_Default = function(s, ev, w, wh)
-    if ev == 'Exit' then
+    if ev == "Exit" then
       return false
     end
     if not s:has("light") then
       _'message'.number = _'message'.number + (1)
-      p("In the dark? You could easily disturb something!")
+      p "In the dark? You could easily disturb something!"
       return
     end
     return false
@@ -158,10 +157,10 @@ be some sort of message scrawled in the sawdust on the floor.]];
       number = 0;
       description = function(s)
         if s.number < 2 then
-          p("The message, neatly marked in the sawdust, reads...")
+          p "The message, neatly marked in the sawdust, reads..."
           walk(_'goodend')
         else
-          p("The message has been carelessly trampled, making it difficult to read. You can just distinguish the words...")
+          p "The message has been carelessly trampled, making it difficult to read. You can just distinguish the words..."
           walk(_'badend')
         end
       end;
@@ -179,13 +178,13 @@ almost seems to suck light from the room.]];
   ["before_Drop,PutOn"] = function(s, w, wh)
     if here() == _'cloakroom' then
       _'bar':attr("light")
-      if (mp.event or nil) == 'PutOn' and not s.scored then
+      if ((mp.event or nil)) == "PutOn" and not s.scored then
         s.scored = true
         score = score + (1)
       end
       return false
     else
-      p("This isn't the best place to leave a smart cloak lying around.")
+      p "This isn't the best place to leave a smart cloak lying around."
       return
     end
   end;
@@ -205,6 +204,6 @@ gameover {
   nam = "goodend";
   title = "You win";
   dsc = function(s)
-    p('Score: ', score)
+    p("Score: ", score)
   end;
 }

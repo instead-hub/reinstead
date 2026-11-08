@@ -1,5 +1,0 @@
-name: t
-lang: ru
-include: stdlib
-
-extend type event: Gaze

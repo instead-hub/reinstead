@@ -1,20 +1,22 @@
-name: roomverb
-lang: ru
-include: stdlib
+game "roomverb"
 
-event Help:
+lang ru
 
-room computer:
-  words: компьютер
+include stdlib
 
-verb Help:
-  target: computer
-  words: пом/ощь
+extend type event
+  Help:
 
-extend #Help:
-  target: computer
-  words: помощь
+room computer "компьютер"
 
-impl computer:
-  on Help: |
-    say Помощь.
+verb Help
+  target = computer
+  words "пом/ощь"
+
+extend verb #Help
+  target = computer
+  words "помощь"
+
+impl computer
+  on Help
+    "Помощь."

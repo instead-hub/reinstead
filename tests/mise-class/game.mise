@@ -1,28 +1,25 @@
-name: class
-lang: ru
-include: stdlib
+game "class"
 
-class path(obj):
-  attrs: scenery, enterable
+lang ru
 
-props path:
+include stdlib
+
+class path(obj) : scenery, enterable
+
+class path
   walk_to: ref
 
-class darkroom(room):
-  attrs: ~light
+class darkroom(room) : ~light
 
-props darkroom:
+class darkroom
   hall_note: num
 
-room hall:
-  words: зал
-  dsc: [[Зал.]]
+room hall "зал"
+  dsc = "Зал."
 
-path way:
-  words: тропа
-  walk_to: hall
+path way "тропа"
+  walk_to = hall
 
-darkroom cellar:
-  words: подвал
-  dsc: [[Подвал.]]
-  hall_note: 1
+darkroom cellar "подвал"
+  dsc = "Подвал."
+  hall_note = 1

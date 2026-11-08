@@ -1,6 +1,0 @@
-name: t
-lang: ru
-include: stdlib
-
-props nosuch:
-  extra: str

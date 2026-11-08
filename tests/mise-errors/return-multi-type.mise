@@ -1,2 +1,0 @@
-fn f() -> num, str: |
-  return 'x', 1

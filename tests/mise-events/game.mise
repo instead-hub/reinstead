@@ -1,87 +1,82 @@
-name: events
-lang: ru
-include: stdlib
+game "events"
 
-fn text_of(t: str) -> str: |
+lang ru
+
+include stdlib
+
+fn text_of(t: str) -> str
   return t
 
-fn reply_text(s: obj, text: str) -> str: |
+fn reply_text(s: obj, text: str) -> str
   return text
 
-verb Zap:
-  words: зажиг/ать
-  patterns:
-    - {noun}/вн : Zap
-    - частота|канал : Zap
+verb Zap
+  words "зажиг/ать"
+  patterns
+    - "{noun}/вн : Zap"
+    - "частота|канал : Zap"
 
-verb Whisper:
-  words: шеп/тать,нашёптыв/ать
-  patterns:
-    - {noun}/дт * : Whisper
+verb Whisper
+  words "шеп/тать,нашёптыв/ать"
+  patterns
+    - "{noun}/дт * : Whisper"
 
-setup:
-  hero:
-    on:
-      before Take, Drop: Тебе нельзя.
-  on:
-    before Open, Close: Не сейчас.
+impl pl
+  before Take, Drop "Тебе нельзя."
 
-room r:
-  words: комната
-  with: x, npc, y, z
-  before Consult: |
+impl game
+  before Open, Close "Не сейчас."
+
+room r "комната"
+  with x, npc, y, z
+  before Consult
     say (text_of(wh))
 
-obj x:
-  words: вещь
-  before AskFor: |
+obj x "вещь"
+  before AskFor
     say (text_of(w))
-  before Cut: |
-    if w:
+  before Cut
+    if w
       w:has scenery
-    say Режешь.
+    "Режешь."
 
-obj y:
-  words: штука
-  before Cut, Dig: |
-    if w:
+obj y "штука"
+  before Cut, Dig
+    if w
       w:has scenery
-    say Режешь.
-  before Take, AskFor: |
-    when event() == AskFor:
+    "Режешь."
+  before Take, AskFor
+    if event() == AskFor
       say (text_of(w))
-    default:
+    else
       pass
-  before Any: |
-    when ev == Ask:
+  before Any
+    if ev == Ask
       say (text_of(w))
-    when ev == Cut:
-      if w:
+    elseif ev == Cut
+      if w
         w:has scenery
-    default:
+    else
       pass
 
-obj z:
-  words: штуковина
-  before AskFor: &reply_text
-  before Consult(s, text): |
+obj z "штуковина"
+  before AskFor &reply_text
+  before Consult(s, text)
     say (text_of(text))
-  before Whisper: |
+  before Whisper
     say (text_of(w))
 
-obj npc:
-  words: сторож
-  attrs: animate
-  life Ask: |
+obj npc "сторож" : animate
+  life Ask
     say (text_of(w))
 
-impl game:
-  before Tell: |
+impl game
+  before Tell
     say (text_of(wh))
-  before Zap: |
-    if w:
+  before Zap
+    if w
       w:has scenery
 
-event Ask:
-  on: |
+impl mp : Ask
+  on Ask
     say (text_of(wh))

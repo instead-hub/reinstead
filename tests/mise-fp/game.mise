@@ -1,21 +1,21 @@
-name: t
-lang: ru
-include: stdlib
+game "t"
 
-extend type attr: seen
+lang ru
 
-class Tree:
-  attrs: scenery
+include stdlib
 
-fn mark(w: obj): |
+extend type attr = seen
+
+class Tree : scenery
+
+fn mark(w: obj)
   w:attr seen
 
-Tree tree:
-  words: дерево
+Tree tree "дерево"
 
-impl tree:
-  before Take: |
-    for_plural(s, &mark)
-    trace(s, &mark)
-    if s:isa Tree:
-      say [[дерево]]
+impl tree
+  before Take
+    for_plural(s,&mark)
+    trace(s,&mark)
+    if s:isa Tree
+      [[дерево]]

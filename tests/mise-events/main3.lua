@@ -33,13 +33,13 @@ end
 
 local function fn_where_prep(w)
   if w:has("supporter") then
-    return 'на'
+    return "на"
   end
-  return 'в'
+  return "в"
 end
 
 local function fn_path_dsc(w)
-  return '{#Me} {#word/мочь,нст,#me} пойти ' .. fn_where_prep(w) .. ' ' .. w:noun_hint("вн") .. '.'
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
 local function fn_text_of(t)
@@ -67,6 +67,7 @@ Door = Class({
 
 Path = Class {
   walk_to = 'none';
+  default_Event = "Walk";
   ["before_Walk,Enter"] = function(s, w, wh)
     if mp:check_inside(_(s.walk_to)) then
       return
@@ -74,28 +75,24 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = (s.desc)
+    local d = ((s.desc))
     if d then
       p(d)
       return
     end
     p(fn_path_dsc(_(s.walk_to)))
   end;
-  default_Event = "Walk";
 }:attr 'scenery,enterable'
 
 --"мочь"
 
-Verb { '#Zap', "зажиг/ать", "{noun}/вн : Zap", "частота|канал : Zap" }
+Verb { "#Zap", "зажиг/ать", "{noun}/вн : Zap", "частота|канал : Zap" }
 
-Verb { '#Whisper', "шеп/тать,нашёптыв/ать", "{noun}/дт * : Whisper" }
+Verb { "#Whisper", "шеп/тать,нашёптыв/ать", "{noun}/дт * : Whisper" }
 
 pl["before_Take,Drop"] = "Тебе нельзя.";
-std.fn_aliases(pl, "before_Take,Drop");
-game["before_Open,Close"] = "Не сейчас.";
-std.fn_aliases(game, "before_Open,Close");
-function init()
-end
+
+_'game'["before_Open,Close"] = "Не сейчас.";
 
 room {
   -"комната";
@@ -135,16 +132,16 @@ obj {
     p "Режешь."
   end;
   ["before_Take,AskFor"] = function(s, w, wh)
-    if (mp.event or nil) == 'AskFor' then
+    if ((mp.event or nil)) == "AskFor" then
       p(fn_text_of(w))
     else
       return false
     end
   end;
   before_Any = function(s, ev, w, wh)
-    if ev == 'Ask' then
+    if ev == "Ask" then
       p(fn_text_of(w))
-    elseif ev == 'Cut' then
+    elseif ev == "Cut" then
       if w then
         w:has("scenery")
       end
@@ -185,4 +182,4 @@ end;
 
 mp.Ask = function(s, w, wh)
   p(fn_text_of(wh))
-end
+end;
