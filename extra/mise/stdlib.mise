@@ -97,17 +97,6 @@ type event
 
 type phase = after, before, life, post
 
-# Environment properties (usable without () in expressions)
-extern prop here: room = "here()"
-extern prop player: obj = "me()"
-extern prop event: event? = "(mp.event or nil)"
-extern prop xevent: event? = "(mp.xevent or nil)"
-extern prop inv: list = "inv()"
-extern prop from: obj = "from()"
-extern prop getDaemons: list = "getDaemons()"
-extern prop theme_name: str = "theme.name()"
-extern prop tiny: bool = "(instead.tiny)"
-
 # Engine extern functions
 extern fn here() -> room = "here()"
 extern fn player() -> obj = "me()"

@@ -75,7 +75,7 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = ((s.desc))
+    local d = (s.desc)
     if d then
       p(d)
       return

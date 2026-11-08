@@ -409,8 +409,6 @@ class Emitter:
                 return n
             if e.rk == "none":
                 return "_'none'"
-            if e.rk == "prop" and n in self.ctx.extern_props:
-                return self.ctx.extern_props[n].body
             if e.rk == "obj":
                 return f"_'{n}'"
             if e.rk == "global_ref":
@@ -470,7 +468,12 @@ class Emitter:
             return re.sub(r",\s*\)", ")", re.sub(r"\(\s*,\s*", "(", t))
         for (pn, _pt), av in zip(fn.params, args):
             t = re.sub(rf"\b{re.escape(pn)}\b", av, t)
-        return t if as_stmt else f"({t})"
+        if as_stmt or t.startswith("(") or _SIMPLE_EXPR.match(t.strip()):
+            return t
+        return f"({t})"
+
+
+_SIMPLE_EXPR = re.compile(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*(?:\([^()]*\))?")
 
 
 def transpile(src: str, src_dir: str = "", src_name: str = "") -> str:

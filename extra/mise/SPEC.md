@@ -59,7 +59,7 @@ if (not w:has('light')) and (where(me()) ~= _'armchair') then
 ### Идея 3: Разделение 0-арных команд и свойств окружения (никакого magic auto-call)
 Почему в OCaml нет авто-вызова функций без аргументов? Потому что если в `f x y` идентификатор `x` вдруг окажется 0-арной функцией, парсер без таблицы типов не поймёт, `x` — это аргумент для `f` или вызов `x(y)`.
 В `mise2` это решается чисто и элегантно:
-1. **Свойства окружения (`here`, `player`, `event`, `xevent`, `inv`, `from`, `time`):** объявляются в `stdlib` как `extern prop here: obj = "here()"`. Для языка и парсера они являются **значениями (переменными)**, которые никогда не принимают аргументов. Поэтому `if here == cloakroom` и `move cloak player` парсятся как обычные идентификаторы!
+1. **Нуль-арные функции (`here`, `player`, `event`, `inv`, `from`, `tiny`):** объявляются в `stdlib` как `extern fn here() -> room = "here()"`. Имя нуль-арной функции в позиции значения **вызывается автоматически**, поэтому `if here == cloakroom` и `move cloak player` пишутся без скобок, а на уровне инструкции `walkout` — это вызов.
 2. **0-арные функции и команды (`walkout`, `stop`, `pass`, `suit_worn`):**
    - Имя функции без аргументов — это вызов: `walkout` на уровне инструкции и `if suit_worn` в выражении. Пустых скобок нет.
    - Значение-функция (для колбэка) пишется с `&`: `trace s &mark`.
@@ -93,9 +93,9 @@ else
 ### Идея 7: Декларации `extern` вместо `|lua`-вырезок и `inline.py`
 Вместо парсинга Lua-кода внутри `stdlib.mise` регулярками, `stdlib` описывает биндинги к движку декларативно через шаблоны:
 ```mise2
-extern prop here: obj = "here()"
-extern prop player: obj = "me()"
-extern prop event: event? = "(mp.event or nil)"
+extern fn here() -> room = "here()"
+extern fn player() -> obj = "me()"
+extern fn event() -> event? = "(mp.event or nil)"
 
 extern fn has(s: obj, a: attr) -> bool = "$1:has($2)"
 extern fn attr(s: obj, a: attr...) = "$1:attr($2)"
@@ -134,7 +134,7 @@ extern fn noun(s: obj, h: case|gram|num|tbl[case|gram]?, n: num?) -> str = "$1:n
 - Имени конкретного объекта `cloak` соответствует singleton-тип `obj(cloak) <: obj`.
 
 Что это даёт:
-- В `stdlib`: `extern prop here: room`, `props room` → `n_to: room | door | fn(room) -> room?`, `props obj` → `talk_to: talk | fn(obj) -> talk`.
+- В `stdlib`: `extern fn here() -> room`, `props room` → `n_to: room | door | fn(room) -> room?`, `props obj` → `talk_to: talk | fn(obj) -> talk`.
 - Любую комнату, дверь или экземпляр класса можно передавать в функции, ожидающие `obj` (`move`, `has`, `inside`).
 - Но если написать `n_to = cloak` (предмет вместо комнаты/двери) или `talk_to = foyer` (комната вместо диалога), компилятор выдаст точную ошибку типа на этапе сборки!
 - Тип `ref` больше не нужен: в `props` пишется просто `obj`, `room`, `talk`, `tbl[obj]`.
@@ -693,7 +693,7 @@ app_expr ::= postfix_expr [ ":" IDENT { arg_atom } | arg_atom { arg_atom } ]
 | **Строки vs Имена** | Проверки `TEXT_KEYS`, `Bare` vs `Text`, запреты кавычек в одних местах и требование в других. | Кавычки `"` — всегда `Str`, без кавычек — всегда `Symbol`. Нулевая неоднозначность. |
 | **Парсер выражений** | 850 строк (`exprparse.py`): `no_paren_call`, авто-вызов 0-арных функций, зависимость разбора от `ctx.fn_sigs` и `ctx.types`. | 150 строк классического рекурсивного спуска / Pratt-парсера: правило `app_expr` занимает **15 строк** и не зависит от типов. |
 | **Вывод текста (`say`)** | Спец-правила для `str`-параметров, `lua_str`, адаптеры `p`/`pr`/`pn`. | Любой `Str` на уровне инструкции → `p(...)`; интерполяция `"Счёт: {score}"` → `p("Счёт: ", score)`. |
-| **Внешние функции (`stdlib`)** | 400 строк `stdlib.mise` с `\|lua` + 130 строк `inline.py` с регулярками. | Декларации `extern fn` / `extern prop` с шаблоном `"$1:has($2)"` (~30 строк подстановки). |
+| **Внешние функции (`stdlib`)** | 400 строк `stdlib.mise` с `\|lua` + 130 строк `inline.py` с регулярками. | Декларации `extern fn` с шаблоном `"$1:has($2)"` (~30 строк подстановки). |
 | **Диалоги (`talk`)** | Многословные `option: / ask: / reply: / do: / when:`. | Компактные `* [cond] "Вопрос"` / `+ "Вопрос"`, напрямую транслируемые в `phr` (~100 строк). |
 
 ---
@@ -707,7 +707,7 @@ app_expr ::= postfix_expr [ ":" IDENT { arg_atom } | arg_atom { arg_atom } ]
 3. **`parser.py` (~450 строк):** контекстно-независимый парсер верхнего уровня, блоков и ML-выражений (`app_expr`).
 4. **`checker.py` (~750 строк):** сбор символов (`prescan`), проверка типов (`obj`, `str`, `num`, `bool`, `T?`, `A|B`, `tbl[T]`, `enum`), сужение типов (`narrowing`) в `if`/`when`, вывод сигнатур событий из паттернов глаголов.
 5. **`emitter.py` (~500 строк):** генерация чистого `main3.lua` (таблицы объектов, `Class`, `Verb`, `dlg`, подстановка `extern`-шаблонов).
-6. **`stdlib.mise2` (~150 строк):** декларации `type`, `props`, `extern prop` и `extern fn`.
+6. **`stdlib.mise` (~150 строк):** декларации `type`, `props`, `extern fn`.
 
 ### План работ по этапам
 1. **Этап 1 — Лексер + Парсер + AST (1.5–2 дня):**  

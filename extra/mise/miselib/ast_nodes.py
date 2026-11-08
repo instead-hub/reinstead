@@ -172,7 +172,6 @@ class FnDecl:
     ret_types: List[str] = field(default_factory=list)
     body: Any = None           # List[Stmt] or str (template / raw lua)
     is_extern: bool = False
-    is_prop: bool = False      # `extern prop here: room = "here()"`
     line: int = 0
 
 @dataclass

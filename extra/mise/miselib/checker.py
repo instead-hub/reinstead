@@ -39,7 +39,6 @@ class Context:
     field_names: Set[str] = field(default_factory=lambda: set(_ENGINE_FIELDS))
     ref_fields: Set[str] = field(default_factory=lambda: {"with", "found_in", "scope"})
 
-    extern_props: Dict[str, FnDecl] = field(default_factory=dict)
     fns: Dict[str, FnDecl] = field(default_factory=dict)
     fn_names: Set[str] = field(default_factory=set)
     used_refs: Set[str] = field(default_factory=set)
@@ -246,11 +245,9 @@ def prescan(prog: Program) -> Context:
                 for v in item.values:
                     ctx.enum_owner.setdefault(v, set()).add(item.name)
         elif isinstance(item, FnDecl):
-            table = ctx.extern_props if item.is_prop else ctx.fns
-            if item.name in table:
-                kind = "extern prop" if item.is_prop else "fn"
-                raise Error(f"duplicate {kind} {item.name!r}", item.line)
-            table[item.name] = item
+            if item.name in ctx.fns:
+                raise Error(f"duplicate fn {item.name!r}", item.line)
+            ctx.fns[item.name] = item
         elif isinstance(item, LuaDecl):
             for m in re.finditer(r"\bfunction\s+([A-Za-z_]\w*)", item.code):
                 ctx.lua_funcs.add(m.group(1))
@@ -304,8 +301,8 @@ def prescan(prog: Program) -> Context:
             ctx.objects[ent.name] = ent.kind
         if ent.kind == "impl" and ent.name and ent.name not in ("game", "pl", "mp") \
                 and not ent.name.startswith("@") and ent.name not in ctx.objects \
-                and ent.name not in ctx.classes and ent.name not in ctx.extern_props \
-                and ent.name not in ctx.fns and ent.name not in ctx.lua_funcs:
+                and ent.name not in ctx.classes and ent.name not in ctx.fns \
+                and ent.name not in ctx.lua_funcs:
             raise Error(f"impl {ent.name!r}: unknown target", ent.line)
         for ch in ent.children:
             register_entity(ch)
@@ -887,9 +884,6 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str], owner: Optional[str],
                     return ea
     if n in ctx.objects:
         e.rk, e.typ = "obj", ctx.objects[n]
-        return e.typ
-    if n in ctx.extern_props:
-        e.rk, e.typ = "prop", ctx.extern_props[n].ret_types[0]
         return e.typ
     if n in ctx.globals:
         gt, is_r = ctx.globals[n]

@@ -75,7 +75,7 @@ Path = Class {
     walk(_(s.walk_to))
   end;
   before_Default = function(s, ev, w, wh)
-    local d = ((s.desc))
+    local d = (s.desc)
     if d then
       p(d)
       return
@@ -571,7 +571,7 @@ gameover {
   title = "Конец";
   dsc = function(s)
     pn "Вы испортили любимую народную легенду."
-    p("Ваш счет: ", (mp.score), " из ", MAX_SCORE)
+    p("Ваш счет: ", mp.score, " из ", MAX_SCORE)
   end;
 }
 
@@ -580,6 +580,6 @@ gameover {
   title = "Конец";
   dsc = function(s)
     pn "Поздравляю, вы прошли игру!"
-    p("Ваш счет: ", (mp.score), " из ", MAX_SCORE)
+    p("Ваш счет: ", mp.score, " из ", MAX_SCORE)
   end;
 }

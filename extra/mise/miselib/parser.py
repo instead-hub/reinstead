@@ -221,16 +221,10 @@ class Parser:
 
     def _parse_fn(self, is_extern: bool) -> FnDecl:
         line = self.eat("IDENT").line
-        if is_extern and self.match("IDENT", "prop"):
-            name = self.eat("IDENT").val
-            self.eat("OP", ":")
-            typ = self._parse_type_str()
-            self.eat("OP", "=")
-            tmpl = self.eat(self.cur().kind).val
-            self.eat_nl()
-            return FnDecl(name=name, params=[], ret_types=[typ], body=tmpl, is_extern=True, is_prop=True, line=line)
         if is_extern:
-            self.eat("IDENT", "fn")
+            kind = self.eat("IDENT")
+            if kind.val != "fn":
+                raise Error(f"extern {kind.val}: expected `fn`", kind.line, self.src)
         name = self.eat("IDENT").val
         params, var = [], None
         if self.match("OP", "("):
