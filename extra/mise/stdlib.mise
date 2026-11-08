@@ -2,12 +2,34 @@
 
 obj none
 
-type attr =
-  - ~, animate, clothing, concealed, container, cutscene, door
-  - edible, enterable, gameover, light, lockable, locked, luminous
-  - moved, multi, on, open, openable, scenery, static, supporter
-  - switchable, transparent, visited, worn
-
+type attr = [
+  ~,
+  animate,
+  clothing,
+  concealed,
+  container,
+  cutscene,
+  door,
+  edible,
+  enterable,
+  gameover,
+  light,
+  lockable,
+  locked,
+  luminous,
+  moved,
+  multi,
+  on,
+  open,
+  openable,
+  scenery,
+  static,
+  supporter,
+  switchable,
+  transparent,
+  visited,
+  worn,
+]
 type direction = n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to
 
 type case = им, рд, дт, вн, тв, пр, зв

@@ -134,25 +134,21 @@ Kitten black_kitten "чёрный котенок,котенок,чёрный" @ 
   other_kitten = white_kitten
 
 extend verb #Exam
-  patterns =
-    - "{noun}/вн,scene в {noun}/пр,2,scene : Reflect"
-    - "~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect"
-    - "~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse"
-
+  patterns = [
+    "{noun}/вн,scene в {noun}/пр,2,scene : Reflect",
+    "~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect",
+    "~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse",
+  ]
 impl mp : Untangle
   on Untangle =
     "Что, распутать ЭТО?!"
 
 verb Untangle
   words = "размот/ать,распут/ать"
-  patterns =
-    - "{noun}/вн : Untangle"
-
+  patterns = ["{noun}/вн : Untangle"]
 verb Touch2
   words = "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/"
-  patterns =
-    - "{noun}/вн : Touch"
-
+  patterns = ["{noun}/вн : Touch"]
 impl Drawing_Room
   before Exit, Walk
     if where player != mantelpiece

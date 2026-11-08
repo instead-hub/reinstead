@@ -12,9 +12,7 @@ impl game
 
 extend verb #Drop
   words = "hang"
-  patterns =
-    - "{noun}/held on {noun}/supporter : PutOn"
-
+  patterns = ["{noun}/held on {noun}/supporter : PutOn"]
 impl game
   dsc = [[^{$fmt b|Cloak of Darkness}^^Cloak of Darkness -- a simple demonstration of Interactive Fiction.
 ^^Hurrying through the rainswept November night, you're glad to see the

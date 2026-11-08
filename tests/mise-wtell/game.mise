@@ -212,13 +212,13 @@ impl mp : FireAt
 
 verb FireAt
   words = "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить"
-  patterns =
-    - "в {noun}/вн,scene : FireAt"
-    - "~ {noun}/вн,scene : FireAt"
-    - "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt"
-    - "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse"
-    - "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse"
-
+  patterns = [
+    "в {noun}/вн,scene : FireAt",
+    "~ {noun}/вн,scene : FireAt",
+    "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt",
+    "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse",
+    "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse",
+  ]
 impl mp : Salute
   on Salute =
     if w:has animate
@@ -234,23 +234,17 @@ impl mp : Salute
 
 verb Salute
   words = "поклони/ться,честь"
-  patterns =
-    - "{noun}/дт,scene : Salute"
-
+  patterns = ["{noun}/дт,scene : Salute"]
 verb Salute2
   words = "мах/ать,помах/ать,помаш/и,маш/и"
-  patterns =
-    - "{noun}/дт,scene : Salute"
-
+  patterns = ["{noun}/дт,scene : Salute"]
 impl mp : Untie
   on Untie =
     "Ты не можешь развязать это."
 
 verb Untie
   words = "развяз/ать,отвяз/ать,освобод/ить"
-  patterns =
-    - "{noun}/вн,scene : Untie"
-
+  patterns = ["{noun}/вн,scene : Untie"]
 impl street
   dsc =
     line [[Узкая улочка тянется на север, к городской площади. Местные жители стекаются в город через ворота на юге.

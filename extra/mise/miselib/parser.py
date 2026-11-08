@@ -206,14 +206,19 @@ class Parser:
                 if not self.match("OP", ","):
                     break
 
-        if self.match("NEWLINE"):
-            self.skip_nl()
-            self.eat("INDENT")
-            while not self.at("DEDENT") and not self.at("EOF"):
-                self.match("OP", "-")
-                read_vals()
-                self.eat_nl()
-            self.eat("DEDENT")
+        if self.match("OP", "["):
+            while not self.at("OP", "]") and not self.at("EOF"):
+                if self.match("OP", "~"):
+                    neg = True
+                elif self.cur().kind in ("IDENT", "NUMBER", "TILDE_ID"):
+                    vals.append(self.cur().val)
+                    self.pos += 1
+                else:
+                    raise Error(f"invalid enum value {self.cur().val!r}",
+                                self.cur().line, self.src)
+                self.match("OP", ",")
+            self.eat("OP", "]")
+            self.eat_nl()
         else:
             read_vals()
             self.eat_nl()
@@ -422,9 +427,9 @@ class Parser:
         self.eat_nl()
         self.eat("INDENT")
         if self.at("OP", "-"):
-            val = self._parse_dash_items()
-            self.eat("DEDENT")
-            return val
+            raise Error("a `-` list is gone: write a `[...]` list after '=' "
+                        "(`text = [\"page 1\", \"page 2\"]` or a multi-line `[` block)",
+                        self.cur().line, self.src)
         if self.at("IDENT", "lua"):
             val = Lit(line=self.cur().line, kind="raw", val=self._parse_lua().code)
             self.eat("DEDENT")
@@ -474,27 +479,20 @@ class Parser:
         return Lit(line=line, kind="table", val="".join(parts))
 
     def _str_or_list(self) -> List[str]:
+        """A single string or a `[...]` list of strings (`words`, `patterns`)."""
         if self.cur().kind in ("STRING", "ISTRING"):
             s = self.eat(self.cur().kind).val
             self.eat_nl()
             return [s]
-        self.eat_nl()
-        self.eat("INDENT")
+        self.eat("OP", "[")
         res = []
-        while not self.at("DEDENT") and not self.at("EOF"):
-            self.eat("OP", "-")
+        while not self.at("OP", "]") and not self.at("EOF"):
             res.append(self.eat(self.cur().kind).val)
-            self.eat_nl()
-        self.eat("DEDENT")
+            if not self.match("OP", ","):
+                break
+        self.eat("OP", "]")
+        self.eat_nl()
         return res
-
-    def _parse_dash_items(self) -> ListLit:
-        line, items = self.cur().line, []
-        while not self.at("DEDENT") and not self.at("EOF"):
-            self.eat("OP", "-")
-            items.extend(self.parse_expr_list())
-            self.eat_nl()
-        return ListLit(line=line, items=items)
 
     def _parse_handler(self) -> Handler:
         tok = self.eat("IDENT")
@@ -942,7 +940,11 @@ class Parser:
             return e
         if self.match("OP", "[") or self.match("OP", "{"):
             close = "]" if t.val == "[" else "}"
-            items = self.parse_expr_list() if not self.at("OP", close) else []
+            items = []
+            while not self.at("OP", close) and not self.at("EOF"):
+                items.append(self.parse_expr())
+                if not self.match("OP", ","):
+                    break
             self.eat("OP", close)
             return ListLit(line=t.line, items=items)
         raise Error(f"unexpected token {t.val!r}", t.line, self.src)

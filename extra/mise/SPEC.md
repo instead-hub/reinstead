@@ -498,21 +498,27 @@ setup_decl  ::= "setup" obj_block
 obj_block   ::= INDENT { member NEWLINE } DEDENT
 
 (* Правило одно:
-   "="  -> значение;  без "=" -> тело (отступ) или вложенная декларация. *)
+   "="  -> значение или тело;  без "=" -> вложенная декларация. *)
 member      ::= prop
               | handler_decl
               | object_decl                          (* Kind имя + блок -> with *)
               | ("attr" | "attrs") "=" SYMBOL { "," SYMBOL }
-              | "words" "=" (STRING | string_list)
+              | "words" "=" (STRING | list)
               | "with" ("=" SYMBOL { "," SYMBOL } | obj_block)
 
 prop        ::= IDENT [ "(" [ ident_list ] ")" ] ( "=" value | stmt_block )
               | IDENT ":" type                        (* объявление поля в class *)
 
-value       ::= expr | string_list | raw_lua
+value       ::= expr | list | raw_lua
 
-string_list ::= ( "-" STRING NEWLINE { "-" STRING NEWLINE } )     (* после "=" *)
-              | INDENT { "-" STRING NEWLINE } DEDENT
+(* Единственный синтаксис списка: скобки, элементы через запятую
+   (запятая в конце строки разрешена, поэтому список можно писать в столбик):
+     scope = [ключ, лампа]
+     text = [
+       "Страница 1.",
+       "Страница 2.",
+     ] *)
+list        ::= "[" [ expr { "," expr } [ "," ] ] "]"
 
 (* =====================================================================
    Обработчики событий
@@ -537,8 +543,8 @@ verb_decl   ::= "verb" IDENT [ "for" SYMBOL ] INDENT { verb_member NEWLINE } DED
               | "extend" "verb" TAG [ "for" SYMBOL ] INDENT { verb_member NEWLINE } DEDENT
               | "remove" "verb" TAG
 
-verb_member ::= "words" "=" (STRING | string_list)
-              | "patterns" string_list
+verb_member ::= "words" "=" (STRING | list)
+              | "patterns" "=" list
               | "prio" NUMBER
               | "hint" STRING
 

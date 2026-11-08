@@ -16,12 +16,8 @@ class obj
 class room
   room_note: num
 
-type mood =
-  - calm, angry
-
-extend type mood =
-  - tired
-
+type mood = [calm, angry]
+extend type mood = [tired]
 class obj
   home_to: ref
 
@@ -45,10 +41,11 @@ story intro
     [[История началась.]]
 
 story prologue
-  text =
-    - [[Первая страница.
-Вторая строка первой страницы.]]
-    - "Вторая страница."
+  text = [
+    [[Первая страница.
+Вторая строка первой страницы.]],
+    "Вторая страница.",
+  ]
 
 story epilogue
   text = "Конец."
@@ -114,9 +111,7 @@ room garden "сад"
   dsc = "Тихий сад."
   d_to = hall
   home_to = hall
-  scope =
-    - statue
-    - relic
+  scope = [statue, relic]
   default_Event = Exam
 
 obj statue "статуя" : scenery
@@ -158,9 +153,7 @@ verb Probe
   prio = 10
   hint =
     [[Подсказка.]]
-  patterns =
-    - "{noun}/вн : Probe"
-
+  patterns = ["{noun}/вн : Probe"]
 impl Ghost
   disabled = false
 

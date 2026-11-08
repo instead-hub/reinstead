@@ -29,8 +29,7 @@ verb Probe
   tag = #Probe
   words = "пробовать"
   prio = 7
-  patterns =
-    - "{noun}/вн : Probe"
+  patterns = ["{noun}/вн : Probe"]
   hint = [[Подсказка.]]
 
 event Probe

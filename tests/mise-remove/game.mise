@@ -9,14 +9,10 @@ extend type event
 
 verb Zap
   words = "зажиг/ать"
-  patterns =
-    - "* : Zap"
-
+  patterns = ["* : Zap"]
 verb Whisper
   words = "шеп/тать"
-  patterns =
-    - "{noun}/дт * : Whisper"
-
+  patterns = ["{noun}/дт * : Whisper"]
 remove #Zap
 
 remove #Wear
