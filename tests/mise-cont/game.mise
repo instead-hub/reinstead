@@ -1,0 +1,24 @@
+game "cont"
+
+lang ru
+include stdlib
+
+obj comm "коммуникатор|рация|\
+           аппарат"
+
+obj note
+  words = "записка|бумажка|\
+           листок"
+  dsc = "Мятая записка, которую кто-то \
+         бросил на пол."
+  found_in = hall
+
+obj box "коробка" : scenery
+  dsc = "Просто коробка."
+  found_in = hall
+
+room hall "зал"
+  dsc = "Большой зал."
+
+fn start(load)
+  player:move hall

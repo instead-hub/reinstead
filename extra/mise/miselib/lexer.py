@@ -39,6 +39,14 @@ def _scan_str(src: str, pos: int, line: int, src_name: str):
             line += 1
         if ch == "\\" and i + 1 < n:
             nxt = src[i + 1]
+            if nxt == "\n":
+                # a trailing backslash joins the next line: the newline and the
+                # indentation of the next line are not part of the value
+                i += 2
+                line += 1
+                while i < n and src[i] in " \t":
+                    i += 1
+                continue
             buf.append("\n" if nxt == "n" else "\t" if nxt == "t" else ("\x00" + nxt if nxt in "{}" else nxt))
             i += 2
             continue
