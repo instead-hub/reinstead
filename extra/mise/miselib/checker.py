@@ -35,6 +35,7 @@ class Context:
     objects: Dict[str, str] = field(default_factory=dict)                  # id -> kind/class
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
     prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
+    seen_types: Set[str] = field(default_factory=set)
     field_names: Set[str] = field(default_factory=lambda: set(_ENGINE_FIELDS))
     ref_fields: Set[str] = field(default_factory=lambda: {"with", "found_in", "scope"})
 
@@ -234,16 +235,22 @@ def prescan(prog: Program) -> Context:
                         elif ats:
                             base_evs[ev] = list(ats)
             else:
+                if item.extend and item.name not in ctx.enums:
+                    raise Error(f"extend type {item.name!r}: unknown type", item.line)
+                if item.name in ctx.seen_types and not item.extend:
+                    raise Error(f"duplicate type {item.name!r}", item.line)
+                ctx.seen_types.add(item.name)
                 vals, neg = ctx.enums.get(item.name, (set(), False))
                 vals.update(item.values)
                 ctx.enums[item.name] = (vals, neg or item.negate)
                 for v in item.values:
                     ctx.enum_owner.setdefault(v, set()).add(item.name)
         elif isinstance(item, FnDecl):
-            if item.is_prop:
-                ctx.extern_props[item.name] = item
-            else:
-                ctx.fns[item.name] = item
+            table = ctx.extern_props if item.is_prop else ctx.fns
+            if item.name in table:
+                kind = "extern prop" if item.is_prop else "fn"
+                raise Error(f"duplicate {kind} {item.name!r}", item.line)
+            table[item.name] = item
         elif isinstance(item, LuaDecl):
             for m in re.finditer(r"\bfunction\s+([A-Za-z_]\w*)", item.code):
                 ctx.lua_funcs.add(m.group(1))
@@ -557,6 +564,23 @@ def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[st
 
 def _check_talk(ctx: Context, td: TalkDecl):
     env = {"s": "obj"}
+    labels = [ln for ln, _say, _ch in td.labels]
+    for ln in labels:
+        if labels.count(ln) > 1:
+            raise Error(f"talk {td.name}: duplicate label {ln!r}", td.line)
+
+    def check_next(c: TalkChoice):
+        if c.next_label and c.next_label not in labels:
+            raise Error(f"talk {td.name}: unknown label {c.next_label!r} "
+                        f"in `next`/`->`", c.line)
+        for sub in c.children:
+            check_next(sub)
+
+    for c in td.choices:
+        check_next(c)
+    for _ln, _say, chs in td.labels:
+        for c in chs:
+            check_next(c)
     if isinstance(td.intro, FnRef):
         ctx.used_refs.add(td.intro.name)
     elif isinstance(td.intro, list):
@@ -565,13 +589,20 @@ def _check_talk(ctx: Context, td: TalkDecl):
         _check_expr(ctx, td.intro, dict(env), td.name)
 
     def chk_c(c: TalkChoice):
-        for part in (c.cond, c.ask, c.reply, c.onempty, c.do_body):
+        # a condition is a truthiness test (like `if`), no type check there
+        for part, want in ((c.cond, None), (c.ask, "str"), (c.reply, "str"),
+                           (c.onempty, "fn"), (c.do_body, "fn")):
             if isinstance(part, FnRef):
                 ctx.used_refs.add(part.name)
             elif isinstance(part, list):
-                _check_stmts(ctx, part, dict(env), td.name)
+                rets: List[str] = []
+                _check_stmts(ctx, part, dict(env), td.name, rets)
+                if want == "str":
+                    for t in rets:
+                        expect(ctx, f"talk {td.name}: phrase text", t, "str", c.line)
             elif isinstance(part, Expr):
-                _check_expr(ctx, part, dict(env), td.name)
+                _check_expr(ctx, part, dict(env), td.name,
+                            None if want == "fn" else want)
         for sub in c.children:
             chk_c(sub)
 

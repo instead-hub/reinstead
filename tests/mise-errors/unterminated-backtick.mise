@@ -1,0 +1,5 @@
+game "t"
+lang ru
+include stdlib
+
+fn f() -> num = `1

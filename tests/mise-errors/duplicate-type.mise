@@ -1,0 +1,6 @@
+game "t"
+lang ru
+include stdlib
+
+type m = a
+type m = b
