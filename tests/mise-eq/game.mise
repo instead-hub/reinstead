@@ -23,7 +23,7 @@ obj box "коробка" : scenery
   before Exam = "Нечего рассматривать."
   after Drop =
     "Упало."
-  before Open pass
+  before Open = pass
 
 verb Probe
   tag = #Probe

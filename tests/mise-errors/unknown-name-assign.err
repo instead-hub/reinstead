@@ -1,1 +1,1 @@
-mise: line 7: unknown name 'zzz' (declare it with `local` or `global`)
+mise: unknown-name-assign.mise:6: description: a member is written with '=' (`description = value` or `description =` and an indented body)

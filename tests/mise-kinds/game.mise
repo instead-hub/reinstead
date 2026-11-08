@@ -68,7 +68,7 @@ room hall "зал"
     [[Вы осматриваетесь.]]
   post Look =
     [[Уже осмотрелись.]]
-  life Give, Show
+  life Give, Show =
     [[Жизнь кипит.]]
   after Turn =
     [[Повернулись.]]

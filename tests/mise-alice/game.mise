@@ -63,7 +63,7 @@ room Drawing_Room "гостиная|снег|снежинки"
 с жарко пылающим камином, мягким ковриком перед ним,
 и глубоким удобным креслом, в котором можно свернуться
 клубочком и немного подремать.]]
-  before Exam, Search, Enter, ThrowAt, ThrownAt, Reflect, Touch pass
+  before Exam, Search, Enter, ThrowAt, ThrownAt, Reflect, Touch = pass
 
 obj red_queen "Чёрная Королева,королева,чёрная/жр|ферзь" : ~animate
   description = "Маленькая (но какая своенравная!) шахматная фигурка."
@@ -88,7 +88,7 @@ obj rug "каминный коврик,коврик|ковер" : concealed, sta
 obj armchair "кресло|стул" : static, concealed, supporter, enterable @ Drawing_Room
   moved = false
   before Transfer = "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]"
-  before Climb, Enter
+  before Climb, Enter =
     player:move s
     "Алиса забралась с ногами в мягкое удобное кресло."
   before Take = "Но кресло слишком тяжелое для маленькой девочки!"
@@ -118,7 +118,7 @@ class Kitten : animate
   life Attack = "Разве можно напасть на такое крохотное и беззащитное создание!"
   on Show =
     say (s:Noun 1) ', протянув лапку, опасливо дотронулся до ' (w:noun рд) '.'
-  before Touch, Rub
+  before Touch, Rub =
     say (s:Noun 1) ' в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.'
 
 Kitten white_kitten "белый котенок,котенок,белый" @ Drawing_Room
@@ -150,7 +150,7 @@ verb Touch2
   words = "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/"
   patterns = ["{noun}/вн : Touch"]
 impl Drawing_Room
-  before Exit, Walk
+  before Exit, Walk =
     if where player != mantelpiece
       pass
     if compass_dir w == d_to or compass_dir w == out_to or w == s
@@ -181,7 +181,7 @@ impl red_queen
     if black_kitten.state == QUEEN_STATE
       black_kitten.state = CHAIR_STATE
     pass
-  after PutOn, Transfer, Insert
+  after PutOn, Transfer, Insert =
     if w == chess_board
       [[В гордом одиночестве на шахматной доске, Черная Королева --
 самодержавная повелительница 32 белых и 32 черных клеток.]]
@@ -216,7 +216,7 @@ impl armchair
     else
       "окном."
     pass
-  before Push, Pull
+  before Push, Pull =
     local loc = where player
     if loc
       if loc != Drawing_Room
@@ -249,7 +249,7 @@ impl mantelpiece
 но зато выглядит достаточно прочной и широкой,
 чтобы на ней можно было стоять без риска.]]
     pass
-  before Enter, Climb
+  before Enter, Climb =
     if where player == s
       "Но Алиса уже на ней!"
       stop
@@ -264,7 +264,7 @@ impl mantelpiece
       stop
     player:move mantelpiece
     "Алиса ловко вскарабкалась на каминную полку."
-  before Receive, LetGo
+  before Receive, LetGo =
     if where player != s and(where player != armchair or not armchair.moved)
       "Полка слишком высоко, за пределами досягаемости."
       stop
@@ -344,11 +344,11 @@ impl Kitten
     [[Какой красивый котенок! Из пары именно он -- Алисин любимчик,
 и намного симпатичней ей, чем непослушный и непоседливый ]]
     say (s.other_kitten:noun) '.'
-  life Ask, Answer, Tell, Talk
+  life Ask, Answer, Tell, Talk =
     say (s:Noun 1) [[, шевеля усами, смотрит на Алису
 с таким умным видом, что она почти готова поверить,
 будто он понимает каждое ее слово.]]
-  life Give, ThrowAt
+  life Give, ThrowAt =
     if w != red_queen and w != worsted
       if event == ThrowAt
         w:move Drawing_Room
@@ -382,7 +382,7 @@ impl Kitten
     s.state = CHAIR_STATE
     s:move Drawing_Room
     say (s:Noun 1) ', выскользнув из рук Алисы, убежал прочь.'
-  after Transfer, PutOn, Insert
+  after Transfer, PutOn, Insert =
     s.state = CHAIR_STATE
     local p = where s
     if p

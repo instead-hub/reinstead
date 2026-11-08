@@ -3,6 +3,6 @@ lang ru
 include stdlib
 
 obj box "коробка"
-  on Use
+  on Use =
     for i: str = 1, 3
       pass

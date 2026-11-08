@@ -3,5 +3,5 @@ lang ru
 include stdlib
 
 obj box "коробка"
-  disabled
+  disabled =
     pass

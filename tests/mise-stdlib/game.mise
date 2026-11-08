@@ -6,7 +6,7 @@ include stdlib
 
 room hall "зал"
   dsc = "Зал."
-  OnError
+  OnError =
     say (err)
 
 fn describe(s: obj) -> str

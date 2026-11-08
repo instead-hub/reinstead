@@ -93,7 +93,7 @@ obj cloak "бархатный плащ,плащ" : clothing
 немного промокший от дождя. Его чернота настолько глубока,
 что возникает ощущение, словно он втягивает в себя весь свет
 из окружающего мира.]]
-  before Drop, PutOn
+  before Drop, PutOn =
     if here == cloakroom
       bar:attr light
       if event == PutOn and not s.scored

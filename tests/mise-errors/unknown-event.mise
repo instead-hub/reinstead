@@ -3,5 +3,5 @@ lang ru
 include stdlib
 
 obj box "коробка"
-  after Open2
+  after Open2 =
     "Текст."

@@ -29,7 +29,7 @@ impl game
   hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" }
 
 class Prop : scenery
-  before Exam pass
+  before Exam = pass
   before Default =
     say 'Вам нет нужды беспокоиться о ' (s:noun {пр}) '.'
 
@@ -193,7 +193,7 @@ Arrow @ quiver
 Arrow @ quiver
 
 NPC son "сын,мальчик,мальчишка,парень|Уолтер" : transparent, scenery
-  before Exam, Listen, Salute, Talk pass
+  before Exam, Listen, Salute, Talk = pass
   found_in =
     return true
 

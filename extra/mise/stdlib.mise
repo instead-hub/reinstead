@@ -210,7 +210,7 @@ class Door(door) : static
 
 class Path : scenery, enterable
   walk_to = none
-  before Walk, Enter
+  before Walk, Enter =
     if check_inside s.walk_to
       stop
     walk s.walk_to

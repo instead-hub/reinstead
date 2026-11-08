@@ -36,11 +36,11 @@ obj x "вещь"
     "Режешь."
 
 obj y "штука"
-  before Cut, Dig
+  before Cut, Dig =
     if w
       w:has scenery
     "Режешь."
-  before Take, AskFor
+  before Take, AskFor =
     if event == AskFor
       say (text_of w)
     else

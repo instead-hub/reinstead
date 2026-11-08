@@ -4,5 +4,5 @@ include stdlib
 
 obj box "коробка"
   attrs = animate
-  life Talk2
+  life Talk2 =
     "Текст."

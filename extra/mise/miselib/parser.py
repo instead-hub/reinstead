@@ -383,28 +383,12 @@ class Parser:
                 self.eat_nl()
                 continue
 
-            if self.match("OP", "="):
-                val = self._value_after_eq()
-                ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
-            elif self.at("NEWLINE") and self.peek().kind == "INDENT":
-                self.eat_nl()
-                self.eat("INDENT")
-                if self.at("IDENT", "lua"):
-                    val = Lit(line=t.line, kind="raw", val=self._parse_lua().code)
-                elif self.at("OP", "-"):
-                    raise Error(f"{pname}: expected '=' before a `-` list value "
-                                f"(write `{pname} =` and indent the list)", t.line, self.src)
-                else:
-                    val = []
-                    while not self.at("DEDENT") and not self.at("EOF"):
-                        val.append(self.parse_stmt())
-                        self.skip_nl()
-                self.eat("DEDENT")
-                ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
-            else:
-                raise Error(f"{pname}: expected '=' before a value "
-                            f"(write `{pname} = …`) or an indented block for a body",
+            if not self.match("OP", "="):
+                raise Error(f"{pname}: a member is written with '=' "
+                            f"(`{pname} = value` or `{pname} =` and an indented body)",
                             t.line, self.src)
+            val = self._value_after_eq()
+            ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
 
     def _header_words(self) -> List[str]:
         """Words of a declaration live in its header: `obj hook "крючок|вешалка"`."""
@@ -520,25 +504,24 @@ class Parser:
             evs = self.sym_list()
         prms = self._opt_ident_parens()
         self.match("OP", "->")
-        return Handler(phase=phase, events=evs, params=prms, body=self._parse_handler_body(), line=tok.line)
+        label = f"{phase} {','.join(evs)}"
+        return Handler(phase=phase, events=evs, params=prms,
+                       body=self._parse_handler_body(label), line=tok.line)
 
-    def _parse_handler_body(self) -> Any:
-        """A handler value (`=` + value) or its body (indented block, `pass`/`stop`)."""
+    def _parse_handler_body(self, label: str = "") -> Any:
+        """A handler always takes `=`: a value on the line, or a body below it."""
         if self.match("OP", "="):
+            if self.match("IDENT", "pass"):
+                self.eat_nl()
+                return "pass"
+            if self.match("IDENT", "stop"):
+                self.eat_nl()
+                return "stop"
             return self._value_after_eq()
-        if self.match("IDENT", "pass"):
-            self.eat_nl()
-            return "pass"
-        if self.match("IDENT", "stop"):
-            self.eat_nl()
-            return "stop"
         t = self.cur()
-        if t.kind in ("STRING", "ISTRING", "RAW", "NUMBER") or (t.kind == "OP" and t.val in ("&", "{")):
-            raise Error("a handler value needs '=' (write `before Take = "
-                        + ("&fn" if t.val == "&" else "\"…\"") + "`); an indented block is a body",
-                        t.line, self.src)
-        res = self._opt_lua_or_stmts()
-        return Lit(line=self.cur().line, kind="raw", val=res) if isinstance(res, str) else res
+        where = label or "a handler"
+        raise Error(f"{where}: a handler is written with '=' (`{where} = …` or "
+                    f"`{where} =` and an indented body)", t.line, self.src)
 
     def _parse_event(self, prog: Program) -> EntityDecl:
         """`event X` registers an event and is sugar for `impl mp : X`."""

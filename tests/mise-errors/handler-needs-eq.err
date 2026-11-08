@@ -1,1 +1,1 @@
-mise: handler-needs-eq.mise:6: a handler value needs '=' (write `before Take = "…"`); an indented block is a body
+mise: handler-needs-eq.mise:6: before Take: a handler is written with '=' (`before Take = …` or `before Take =` and an indented body)
