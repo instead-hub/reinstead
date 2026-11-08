@@ -89,6 +89,6 @@ function init()
   p(_'x':noun_hint())
   pn "line text"
   pr "append text"
-  p(raw)
+  p("raw words")
   p(_'x':noun_hint())
 end

@@ -1,0 +1,14 @@
+game "t"
+lang ru
+include stdlib
+
+obj key "ключ"
+
+fn maybe() -> obj?
+  return key
+
+obj box "коробка"
+  scored = false
+  on Use
+    local o = maybe()
+    o.scored = true

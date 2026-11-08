@@ -16,5 +16,5 @@ fn init()
   say (x:noun())
   line "line text"
   "append text"~
-  note raw words
+  note "raw words"
   note(x:noun())

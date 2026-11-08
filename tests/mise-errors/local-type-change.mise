@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+  on Use
+    local x = 1
+    x = "строка"
