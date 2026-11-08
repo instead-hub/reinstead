@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+fn xxx(s: str)
+  say s
+
+obj box "коробка" : scenery
+  dsc = "Просто коробка."
+  before Pull = &xxx

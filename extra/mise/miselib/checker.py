@@ -534,6 +534,9 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         _check_handler_events(ctx, h, owner or kind)
         if isinstance(h.body, FnRef):
             ctx.used_refs.add(h.body.name)
+            env = _h_env(ctx, owner, kind, h)
+            sig = "fn(" + ",".join(env[pn] for pn in env) + ")"
+            _check_fnref(ctx, h.body, sig, f"{owner or kind}: {h.phase} {','.join(h.events)}")
         elif isinstance(h.body, list):
             _check_stmts(ctx, h.body, _h_env(ctx, owner, kind, h), owner)
         elif isinstance(h.body, Expr):
@@ -546,7 +549,11 @@ def _check_entity(ctx: Context, ent: EntityDecl):
 def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[str, str]:
     is_any = any(ev in ("Any", "Default") for ev in h.events)
     pnames = h.params if h.params is not None else (["s", "ev", "w", "wh"] if is_any else ["s", "w", "wh"])
-    env = {pn: ("event" if (is_any and i == 1) else "obj") for i, pn in enumerate(pnames)}
+    self_t = (ctx.objects.get(owner) if owner else None) or kind
+    if self_t not in ctx.classes and self_t not in ctx.objects:
+        self_t = "obj"
+    env = {pn: ("event" if (is_any and i == 1) else ("obj" if i else self_t))
+           for i, pn in enumerate(pnames)}
     if len(h.events) == 1 and not is_any:
         ev = h.events[0]
         sigs = ctx.life_args.get(ev) if h.phase == "life" else ctx.event_args.get(ev)
@@ -738,6 +745,91 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             _check_stmts(ctx, s.body, benv, owner, rets)
 
 
+def _split_types(t: str) -> List[str]:
+    """Split a type list at top-level commas (`fn(a, b)`, `tbl[a|b]`)."""
+    if not t.strip():
+        return []
+    parts, depth, start = [], 0, 0
+    for i, ch in enumerate(t):
+        depth += (1 if ch in "([" else -1 if ch in ")]" else 0)
+        if ch == "," and depth == 0:
+            parts.append(t[start:i].strip())
+            start = i + 1
+    parts.append(t[start:].strip())
+    return [p for p in parts if p]
+
+
+def _fn_parts(t: str):
+    """`fn(T1,T2) -> R` -> (["T1", "T2"], ["R"])."""
+    if not t.startswith("fn("):
+        return None
+    depth, close = 0, -1
+    for i, ch in enumerate(t):
+        depth += (1 if ch == "(" else -1 if ch == ")" else 0)
+        if depth == 0 and ch == ")":
+            close = i
+            break
+    if close < 0:
+        return None
+    params = _split_types(t[3:close])
+    rest = t[close + 1:]
+    rets = [r.rstrip("?") for r in _split_types(rest[2:])] if rest.startswith("->") else []
+    return params, rets
+
+
+def _sig_ok(ctx: Context, fn: FnDecl, expected: str) -> bool:
+    """Can `fn` be passed where a callback of type `expected` is wanted?"""
+    parts = _fn_parts(expected)
+    if parts is None:
+        return False
+    eparams, erets = parts
+    aparams = [pt for _pn, pt in fn.params]
+    if len(aparams) > len(eparams):
+        return False
+    for i, at in enumerate(aparams):
+        et = eparams[i]
+        if at == "any" or et == "any":
+            continue
+        if not is_subtype(ctx, et, at):
+            return False
+    ar = fn.ret_types or ["any"]
+    if not erets or ar == ["any"]:
+        return True
+    return any(is_subtype(ctx, a, r) for a in ar for r in erets)
+
+
+def _sig_str(fn: FnDecl) -> str:
+    got = "fn(" + ",".join(pt for _pn, pt in fn.params) + ")"
+    return got + ("->" + ",".join(fn.ret_types) if fn.ret_types else "")
+
+
+def _check_fnref(ctx: Context, ref: FnRef, expected: Optional[str], where: str):
+    """Check a `&name` reference against the callback signature expected there."""
+    fn = ctx.fns.get(ref.name)
+    if fn is None or not expected:
+        return
+    alts = [a for a in split_union(expected) if a.startswith("fn(")]
+    if not alts:
+        return
+    if any(_sig_ok(ctx, fn, a) for a in alts):
+        return
+    raise TypeCheckError(f"{where}: {ref.name} is {_sig_str(fn)}, expected "
+                         f"{' | '.join(alts)}", ref.line)
+
+
+def _objectish(ctx: Context, t: str) -> bool:
+    """Can a value of this type have fields (`x.field`)? Scalars cannot."""
+    for alt in split_union(t):
+        alt = alt.rstrip("?").strip()
+        if alt in ("any", "obj", "ref", "room", "door", "talk", "list", "tbl", "class"):
+            return True
+        if alt.startswith("tbl[") or alt.startswith("fn("):
+            return True
+        if alt in ctx.classes or alt in ctx.objects:
+            return True
+    return False
+
+
 def _owner_of(ctx: Context, target: FieldAccess, env: Dict[str, str], owner: Optional[str]) -> Optional[str]:
     """The declaration whose fields `target.obj` exposes, when it is known."""
     base = target.obj
@@ -815,6 +907,7 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         ctx.used_refs.add(e.name)
         if e.name not in ctx.fns and e.name not in ctx.lua_funcs:
             raise Error(f"unknown function {e.name!r} in a function reference", e.line)
+        _check_fnref(ctx, e, expected, _kind_name(e))
         e.typ = "fn"
         return "fn"
     if isinstance(e, ListLit):
@@ -921,6 +1014,9 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, str],
     if is_optional(base_t):
         raise TypeCheckError(
             f"{_kind_name(e.obj)}: possible nil, narrow it first (`if {_kind_name(e.obj)}:`)", e.line)
+    if not _objectish(ctx, base_t):
+        raise TypeCheckError(f"{_kind_name(e.obj)}: {base_t} has no fields "
+                             f"(`.{e.field}`)", e.line)
     holder = _owner_of(ctx, e, env, owner)
     if holder and e.field in ctx.fields.get(holder, {}):
         ft, is_r = ctx.fields[holder][e.field]
