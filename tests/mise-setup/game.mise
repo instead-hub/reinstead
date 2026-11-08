@@ -7,8 +7,7 @@ setup
   fmt = dash
   dsc = "Заставка."
   take = box
-  hero =
-    words = "ты/мр"
+  hero "ты/мр" =
     description = "Герой."
   game =
     hint_verbs = { "#Exam", "#Take" }

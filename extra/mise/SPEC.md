@@ -483,7 +483,9 @@ param       ::= IDENT [ ":" type ]
    Объекты, комнаты, классы, миксины, impl
    ===================================================================== *)
 
-object_decl ::= kind [ SYMBOL ] [ STRING ] [ trait_spec ] [ loc_spec ] [ obj_block ]
+(* Слова объявления — только в заголовке: строка или список. *)
+object_decl ::= kind [ SYMBOL ] [ words_spec ] [ trait_spec ] [ loc_spec ] [ obj_block ]
+words_spec  ::= STRING | list
 kind        ::= "obj" | "room" | "door" | "story" | "ending" | "class" | "mixin" | IDENT
 
 (* Классы, миксины и атрибуты через ':' в заголовке: 'obj hook : scenery, supporter' *)
@@ -503,7 +505,6 @@ member      ::= prop
               | handler_decl
               | object_decl                          (* Kind имя + блок -> with *)
               | ("attr" | "attrs") "=" SYMBOL { "," SYMBOL }
-              | "words" "=" (STRING | list)
               | "with" ("=" SYMBOL { "," SYMBOL } | obj_block)
 
 prop        ::= IDENT [ "(" [ ident_list ] ")" ] ( "=" value | stmt_block )

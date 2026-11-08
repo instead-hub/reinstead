@@ -1,0 +1,1 @@
+mise: words-member.mise:6: words live in the header: write `obj name "слово|слово"` (or `obj name [...]`) instead of a `words =` member

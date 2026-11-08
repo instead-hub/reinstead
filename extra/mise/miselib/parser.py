@@ -311,7 +311,7 @@ class Parser:
         if kind == "class" and self.match("OP", "("):
             parent = self.eat("IDENT").val
             self.eat("OP", ")")
-        words = [self.eat(self.cur().kind).val] if self.cur().kind in ("STRING", "ISTRING") else []
+        words = self._header_words()
         traits = self.sym_list() if (self.match("OP", ":") and not self.at("NEWLINE")) else []
         locs = self.sym_list() if self.match("OP", "@") else []
         ent = EntityDecl(kind=kind, name=name, parent=parent, words=words, traits=traits,
@@ -332,10 +332,9 @@ class Parser:
                 ent.handlers.append(self._parse_handler())
                 continue
             if kw == "words":
-                self.pos += 1
-                self.eat("OP", "=")
-                ent.words.extend(self._str_or_list())
-                continue
+                raise Error('words live in the header: write `obj name "слово|слово"` '
+                            '(or `obj name [...]`) instead of a `words =` member',
+                            t.line, self.src)
             if kw in ("attr", "attrs", "mixin") and self.peek().val != ":":
                 self.pos += 1
                 self.eat("OP", "=")
@@ -406,6 +405,21 @@ class Parser:
                 raise Error(f"{pname}: expected '=' before a value "
                             f"(write `{pname} = …`) or an indented block for a body",
                             t.line, self.src)
+
+    def _header_words(self) -> List[str]:
+        """Words of a declaration live in its header: `obj hook "крючок|вешалка"`."""
+        if self.cur().kind in ("STRING", "ISTRING"):
+            return [self.eat(self.cur().kind).val]
+        if self.at("OP", "["):
+            self.pos += 1
+            res = []
+            while not self.at("OP", "]") and not self.at("EOF"):
+                res.append(self.eat(self.cur().kind).val)
+                if not self.match("OP", ","):
+                    break
+            self.eat("OP", "]")
+            return res
+        return []
 
     def _is_nested_entity(self) -> bool:
         """`Kind name` starts a nested declaration; a property always has `=` or a body."""
@@ -573,10 +587,9 @@ class Parser:
                     self.eat_nl()
             elif kw in ("hero", "game"):
                 self.pos += 1
-                self.eat("OP", "=")
                 sub = EntityDecl(kind="impl", name="pl" if kw == "hero" else "game", line=t.line)
-                if self.cur().kind in ("STRING", "ISTRING"):
-                    sub.words.append(self.eat(self.cur().kind).val)
+                sub.words.extend(self._header_words())
+                self.eat("OP", "=")
                 self.eat_nl()
                 self.eat("INDENT")
                 self._parse_members(sub)
