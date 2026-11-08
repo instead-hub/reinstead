@@ -30,7 +30,7 @@ impl game
 
 class Prop : scenery
   before Exam pass
-  before Default
+  before Default =
     say 'Вам нет нужды беспокоиться о ' (s:noun {пр}) '.'
 
 class Furniture : static, supporter
@@ -42,7 +42,7 @@ class Arrow "стрела,стрел*"
   before Drop, Give, ThrowAt = "Ты не хочешь расставаться со своими острыми стрелами."
 
 class NPC : animate
-  life Answer,Ask,AskTo,AskFor,Tell
+  life Answer,Ask,AskTo,AskFor,Tell =
     say 'Введите просто "говорить с ' (s:noun {тв}) '".'
 
 impl game
@@ -72,7 +72,7 @@ fn init()
 room street "улица"
   title = "Улица Альтдорфа"
   n_to = below_square
-  s_to
+  s_to =
     "Поток народа, движущийся на север, к площади, не даёт тебе пройти."
   Prop ворота "ворота"
     description = "Огромные деревянные ворота в городской стене. Они широко распахнуты."
@@ -89,7 +89,7 @@ Prop торговцы "торговцы,купцы,продавцы,лавочн
 
 Prop жители "жители|люди|народ|толпа"
   description = "Горный народ, такой же, как и ты."
-  found_in
+  found_in =
     return true
 
 room below_square "улица"
@@ -101,7 +101,7 @@ room below_square "улица"
 
 Furniture stall "овощная лавка|лавка|прилавок,стол" : scenery @ below_square
   description = "Это всего лишь маленький стол с большой кучей картошки, кучкой морковки и репы, и парой яблок."
-  before Search
+  before Search =
     xaction Exam s
 
 Prop картошка "картошка|картофель" @ below_square
@@ -146,7 +146,7 @@ Furniture pole "шляпа|столб|перо|шапка" : scenery @ mid_squar
 изогнутыми полями и пучком перьев из мёртвого гуся.]]
   has_been_saluted = false
   before FireAt = "Заманчиво, но ты не хочешь неприятностей."
-  before Salute
+  before Salute =
     s.has_been_saluted = true
     [[Ты отдаёшь честь шляпе на столбе.^^
 "Благодарю вас, сэр", -- ухмыляется солдат.]]
@@ -154,10 +154,10 @@ Furniture pole "шляпа|столб|перо|шапка" : scenery @ mid_squar
 room north_square
   title = "Северный край площади"
   dsc = "Узкая улочка ведёт на север от мощёной площади, в центре которой едва виднеется столб и шапка."
-  n_to
+  n_to =
     "Вместе с Уолтером ты уходишь с площади, направляясь к сыромятне Йохансона."
     walk theend
-  s_to
+  s_to =
     "Ты не можешь себя заставить снова пройти через это."
 
 room marketplace
@@ -194,7 +194,7 @@ Arrow @ quiver
 
 NPC son "сын,мальчик,мальчишка,парень|Уолтер" : transparent, scenery
   before Exam, Listen, Salute, Talk pass
-  found_in
+  found_in =
     return true
 
 obj apple "яблоко,яблочко"
@@ -202,7 +202,7 @@ obj apple "яблоко,яблочко"
   before Eat = "Хельга дала его для Уолтера..."
 
 impl mp : FireAt
-  on FireAt
+  on FireAt =
     if not w
       "Ты не хочешь просто стрелять куда зря."
       stop
@@ -220,7 +220,7 @@ verb FireAt
     - "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse"
 
 impl mp : Salute
-  on Salute
+  on Salute =
     if w:has animate
       if w:hint 'мн'
         say (w:Noun) ' приветствуют тебя.'
@@ -243,7 +243,7 @@ verb Salute2
     - "{noun}/дт,scene : Salute"
 
 impl mp : Untie
-  on Untie
+  on Untie =
     "Ты не можешь развязать это."
 
 verb Untie
@@ -252,7 +252,7 @@ verb Untie
     - "{noun}/вн,scene : Untie"
 
 impl street
-  dsc
+  dsc =
     line [[Узкая улочка тянется на север, к городской площади. Местные жители стекаются в город через ворота на юге.
 Они выкрикивают приветствия, предлагают товары, обмениваются новостями, с наигранным недоверием торгуются с
 лавочниками, чьи прилавки сильно затрудняют движение.]]
@@ -260,13 +260,13 @@ impl street
       line '^"Держись поближе ко мне, сынок, -- говоришь ты. -- Иначе потеряешься в этой толпе".'
 
 impl stallholder
-  init_dsc
+  init_dsc =
     line "Хельга отвлекается от сортировки картошки, чтобы уделить тебе внимание."
     if s:once
       apple:move player
       line [[^"Привет, Вильгельм! Отличный денёк для торговли! Это твой Уолтер? О, как он вырос! Держи яблоко для него --
 тут один край немного подгнил, но всё остальное хорошее. Как там фрау Телль? Передавай ей привет".]]
-  life Talk
+  life Talk =
     s.times_spoken_to += 1
     if s.times_spoken_to == 1
       score_up
@@ -277,7 +277,7 @@ impl stallholder
       pass
 
 impl mid_square
-  before Walk
+  before Walk =
     if compass_dir w == s_to
       s.warnings_count = 0
       pole.has_been_saluted = false
@@ -305,13 +305,13 @@ impl mid_square
     pass
 
 impl tree
-  before FireAt
+  before FireAt =
     if BowOrArrow w
       "Твоя рука слегка дрожит, и стрела входит в ствол на несколько дюймов выше головы Уолтера."
       walk theend
 
 impl governor
-  init_dsc
+  init_dsc =
     line "Гесслер с глумливым лицом наблюдает за происходящим с безопасного расстояния."
     if s:once
       line ([[^"Похоже, нужно преподать тебе урок, глупец. Никто не смеет проходить через площадь, не отдав дань
@@ -319,7 +319,7 @@ impl governor
 но проявлю снисхождение. Не жди моей милости, если снова проявишь подобную глупость, но в этот раз я отпущу
 тебя... после того, как ты продемонстрируешь своё мастерство владения луком. Попади в это яблоко с того места,
 где ты стоишь. Это не должно быть слишком сложным. Сержант, лови. Поставь его на голову этого мелкого ублюдка".]])
-  before FireAt
+  before FireAt =
     if BowOrArrow w
       [[Прежде, чем солдаты успевают среагировать, ты разворачиваешься, и выпускаешь стрелу в Гесслера.
 Она пронзает его сердце, и герцог оседает на землю. На мгновение толпа замирает в недоумении, но тут же
@@ -327,41 +327,41 @@ impl governor
       walk theend
 
 impl son
-  description
+  description =
     if here == marketplace
       [[Он смотрит на тебя, пытаясь выглядеть спокойным и смелым. Его руки связаны за спиной.
 Яблоко лежит в его светлых волосах.]]
       stop
     "Тихий светлый мальчик восьми лет, он быстро учится сельской работе."
-  life Give
+  life Give =
     score_up
     w:move s
     [["Спасибо, пап".]]
-  life Talk
+  life Talk =
     if here == marketplace
       [["Стой спокойно, сынок, Господь нам поможет".]]
     else
       "Ты показываешь сыну несколько интересных мест в городе."
-  before FireAt
+  before FireAt =
     if here == marketplace
       if BowOrArrow w
         "Упс! Наверняка вы имели в виду не это?"
         walk theend
       stop
     pass
-  before Default
+  before Default =
     if here == marketplace
       "Солдаты не позволят тебе этого."
       stop
     pass
 
 impl apple
-  description
+  description =
     if here == marketplace
       "Отсюда ты едва видишь его."
     else
       "Яблоко зелёное, с коричневым пятном."
-  before Default
+  before Default =
     if where s == son
       if here == marketplace
         "Отсюда ты едва видишь его."
@@ -369,7 +369,7 @@ impl apple
       "Лучше оставить яблоко сыну."
       stop
     pass
-  before FireAt
+  before FireAt =
     if here == marketplace
       if BowOrArrow w
         score_up
@@ -383,12 +383,12 @@ impl apple
 
 ending theend
   title = "Конец"
-  dsc
+  dsc =
     line 'Вы испортили любимую народную легенду.'
     say 'Ваш счет: ' (cur_score) ' из ' (MAX_SCORE)
 
 ending happyend
   title = "Конец"
-  dsc
+  dsc =
     line 'Поздравляю, вы прошли игру!'
     say 'Ваш счет: ' (cur_score) ' из ' (MAX_SCORE)

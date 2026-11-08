@@ -33,7 +33,7 @@ and gold, with glittering chandeliers overhead. The entrance from
 the street is to the north, and there are doorways south and west.]]
   s_to = bar
   w_to = cloakroom
-  n_to
+  n_to =
     "You've only just arrived, and besides, the weather outside seems to be getting worse."
 
 room cloakroom "cloakroom"
@@ -42,7 +42,7 @@ room cloakroom "cloakroom"
 though now only one remains. The exit is a door to the east.]]
   e_to = foyer
   obj hook "small brass hook,hook|peg" : scenery, supporter
-    description
+    description =
       "It's just a small brass hook, "
       if where cloak == s
         "with a cloak hanging on it."
@@ -55,13 +55,13 @@ room bar "bar" : ~light
 of the foyer to the north, is completely empty. There seems to
 be some sort of message scrawled in the sawdust on the floor.]]
   n_to = foyer
-  before Walk
+  before Walk =
     if compass_dir w != n_to and not w:has light
       message.number += 2
       "Blundering around in the dark isn't a good idea!"
       stop
     pass
-  before Default
+  before Default =
     if ev == Exit
       pass
     if not s:has light
@@ -71,7 +71,7 @@ be some sort of message scrawled in the sawdust on the floor.]]
     pass
   obj message "message,floor,sawdust" : scenery
     number = 0
-    description
+    description =
       if s.number < 2
         say ("The message, neatly marked in the sawdust, reads...")
         walk goodend
@@ -94,7 +94,7 @@ almost seems to suck light from the room.]]
     else
       "This isn't the best place to leave a smart cloak lying around."
       stop
-  after Take
+  after Take =
     bar:attr ~light
     pass
 
@@ -104,5 +104,5 @@ ending badend
 
 ending goodend
   title = "You win"
-  dsc
+  dsc =
     say 'Score: ' (score)

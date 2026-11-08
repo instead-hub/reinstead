@@ -18,5 +18,4 @@ extend verb #Help
   words = "помощь"
 
 impl computer
-  on Help
-    "Помощь."
+  on Help = "Помощь."

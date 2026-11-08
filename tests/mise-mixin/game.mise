@@ -6,12 +6,12 @@ include stdlib
 
 mixin Talkative
   heard = false
-  before Talk
+  before Talk =
     s.heard = true
     [[поговорили]]
 
 mixin Flying
-  before Climb
+  before Climb =
     [[взлетел]]
 
 class Bird : animate, Flying
@@ -21,5 +21,4 @@ Bird eagle "орёл"
 obj parrot "попугай" : Talkative
 
 obj crow "ворона" : Talkative
-  before Talk
-    [[кар]]
+  before Talk = [[кар]]

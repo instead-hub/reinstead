@@ -27,7 +27,7 @@ room before_cottage "перед домом"
   title = "Перед домом"
   dsc = "Ты стоишь около избушки, на восток от которой раскинулся лес."
   e_to = forest
-  in_to
+  in_to =
     "Такой славный денек... Он слишком хорош, чтобы прятаться внутри."
   cant_go = "Единственный путь ведет на восток."
   obj cottage "домик,дом|избушка,избу*,терем*,коттедж*,хат*,строени*" : scenery
@@ -52,25 +52,25 @@ room clearing "полянка,поляна"
   sw_to = forest
   u_to = top_of_tree
   obj nest "гнездо|мох|прутики,прутья" : container, open
-    description
+    description =
       "Гнездо сплетено из прутиков и аккуратно устлано мхом."
       content s
   obj tree "платан|дерево|ствол" : scenery
     description = [[Величавое дерево стоит посреди поляны.
 Кажется, по его стволу будет несложно влезть наверх.]]
-    before Climb
+    before Climb =
       player:move top_of_tree
 
 room top_of_tree "верхушка"
   title = "На верхушке дерева"
   dsc = "На этой высоте цепляться за ствол уже не так удобно."
   d_to = clearing
-  after Drop
+  after Drop =
     w:move clearing
     pass
   obj branch "сук|ветка" : supporter, static
     description = "Сук достаточно ровный и крепкий, чтобы на нем надежно держалось что-то не очень большое."
-    each_turn
+    each_turn =
       if bird:inside nest and nest:inside branch
         walk happyend
 

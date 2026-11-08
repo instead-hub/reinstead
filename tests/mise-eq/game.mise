@@ -21,7 +21,7 @@ obj box "коробка" : scenery
 
   before Take = &on_take
   before Exam = "Нечего рассматривать."
-  after Drop
+  after Drop =
     "Упало."
   before Open pass
 
@@ -31,8 +31,7 @@ verb Probe
   prio = 7
   patterns =
     - "{noun}/вн : Probe"
-  hint =
-    [[Подсказка.]]
+  hint = [[Подсказка.]]
 
 event Probe
 

@@ -416,7 +416,11 @@ class Parser:
         return nxt.kind in ("IDENT", "TAG") and self.peek(2).val not in ("=", "(", ":")
 
     def _value_after_eq(self) -> Any:
-        """A value after `=`: on the same line, or an indented `-` list / single value."""
+        """After `=`: a value on the same line, or an indented body.
+
+        A body is a block of statements (or a `lua` block); a `-` list is still
+        read as a list value until lists become `[...]` literals everywhere.
+        """
         if not self.at("NEWLINE"):
             val = self._parse_prop_val()
             self.eat_nl()
@@ -425,11 +429,18 @@ class Parser:
         self.eat("INDENT")
         if self.at("OP", "-"):
             val = self._parse_dash_items()
-        else:
-            val = self._parse_prop_val()
-            self.eat_nl()
+            self.eat("DEDENT")
+            return val
+        if self.at("IDENT", "lua"):
+            val = Lit(line=self.cur().line, kind="raw", val=self._parse_lua().code)
+            self.eat("DEDENT")
+            return val
+        stmts = []
+        while not self.at("DEDENT") and not self.at("EOF"):
+            stmts.append(self.parse_stmt())
+            self.skip_nl()
         self.eat("DEDENT")
-        return val
+        return stmts
 
     def _opt_ident_parens(self) -> Optional[List[str]]:
         if not self.match("OP", "("):
@@ -555,7 +566,7 @@ class Parser:
             kw = t.val
             if kw in ("dsc", "fmt", "take"):
                 self.pos += 1
-                self.match("OP", "=")
+                self.eat("OP", "=")
                 if kw == "fmt":
                     prog.fmt.extend(self.sym_list())
                     self.eat_nl()
@@ -570,6 +581,7 @@ class Parser:
                     self.eat_nl()
             elif kw in ("hero", "game"):
                 self.pos += 1
+                self.eat("OP", "=")
                 sub = EntityDecl(kind="impl", name="pl" if kw == "hero" else "game", line=t.line)
                 if self.cur().kind in ("STRING", "ISTRING"):
                     sub.words.append(self.eat(self.cur().kind).val)
@@ -585,6 +597,7 @@ class Parser:
             elif kw in ("init", "start"):
                 self.pos += 1
                 prms = self._opt_ident_parens()
+                self.eat("OP", "=")
                 body = self.parse_stmt_block()
                 fn = FnDecl(name=kw, params=[(pn, "bool" if pn == "load" else "any") for pn in (prms or [])],
                             body=body, line=t.line)

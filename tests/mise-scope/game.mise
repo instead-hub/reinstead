@@ -9,7 +9,7 @@ fn start(load)
 
 room hall "зал"
   dsc = "Зал."
-  scope
+  scope =
     add w coin
     w:add star
     add w moon

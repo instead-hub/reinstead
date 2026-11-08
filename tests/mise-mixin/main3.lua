@@ -117,7 +117,5 @@ obj {
   -"ворона";
   nam = "crow";
   heard = false;
-  before_Talk = function(s, w, wh)
-    p "кар"
-  end;
+  before_Talk = "кар";
 }

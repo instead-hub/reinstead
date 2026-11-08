@@ -94,9 +94,7 @@ _'box'.before_Take = function(s, w, wh)
     p "взяли"
   end
 end;
-_'box'.Take = function(s, w, wh)
-  p "метод"
-end;
+_'box'.Take = "метод";
 _'box'.after_Drop = "use &helper";
 _'box'.Wait = "use &helper";
 _'box'["Open,Close"] = "use &helper";

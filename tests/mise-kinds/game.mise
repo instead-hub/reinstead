@@ -41,7 +41,7 @@ fn start(load)
 
 story intro
   dsc = "Пролог."
-  after Enter
+  after Enter =
     [[История началась.]]
 
 story prologue
@@ -63,42 +63,42 @@ room hall "зал"
   obj_note = 2
   dict = { "зал" }
   with = sky
-  on Enter
+  on Enter =
     [[Вы вошли.]]
-  on Walk
+  on Walk =
     [[Вы идёте.]]
-  on Look
+  on Look =
     [[Вы осматриваетесь.]]
-  post Look
+  post Look =
     [[Уже осмотрелись.]]
   life Give, Show
     [[Жизнь кипит.]]
-  after Turn
+  after Turn =
     [[Повернулись.]]
-  compass_look
+  compass_look =
     if to
       pass
-  scope
+  scope =
     pass
-  enter
+  enter =
     w:noun
-  exit
+  exit =
     pass
-  onenter
+  onenter =
     w:noun
-  onexit
+  onexit =
     pass
-  each_turn
+  each_turn =
     pass
-  found_in
+  found_in =
     pass
-  when_open
+  when_open =
     pass
-  when_closed
+  when_closed =
     pass
-  when_on
+  when_on =
     pass
-  when_off
+  when_off =
     pass
   s_to = garden
 
@@ -107,7 +107,7 @@ door gate "ворота"
 Door gate2 "калитка"
   from = hall
   to = garden
-  door_to
+  door_to =
     return hall
 
 room garden "сад"
@@ -131,11 +131,11 @@ obj relic "реликвия" @ garden
   help = "Подсказка."
   disp = "Реликвия."
   gfx = "relic.png"
-  word
+  word =
     return 'реликвия'
-  on Use
+  on Use =
     [[Применили.]]
-  on AskTo
+  on AskTo =
     [[Попросили.]]
 
 obj key "ключ"
@@ -156,7 +156,7 @@ verb Probe
   tag = #Probe
   words = "пробовать"
   prio = 10
-  hint
+  hint =
     [[Подсказка.]]
   patterns =
     - "{noun}/вн : Probe"

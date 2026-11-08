@@ -22,11 +22,11 @@ remove #Zap
 remove #Wear
 
 room r "комната"
-  before Zap
+  before Zap =
     w:has scenery
-  before Whisper
+  before Whisper =
     say (wh)
 
 obj x "вещь"
-  before Whisper
+  before Whisper =
     say (w)

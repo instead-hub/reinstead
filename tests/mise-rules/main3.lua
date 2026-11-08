@@ -91,6 +91,4 @@ mp.Any = function(s, ev, w, wh)
   end
 end;
 
-mp.Default = function(s, ev, w, wh)
-  p "нет обработчика"
-end;
+mp.Default = "нет обработчика";

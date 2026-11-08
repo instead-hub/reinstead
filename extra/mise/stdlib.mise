@@ -227,7 +227,7 @@ fn door_next(s: obj, w: obj) -> obj?
 
 class Door(door) : static
   walk_to = none
-  door_to
+  door_to =
     local n = door_next s here
     if n
       return n
@@ -239,7 +239,7 @@ class Path : scenery, enterable
     if check_inside s.walk_to
       stop
     walk s.walk_to
-  before Default
+  before Default =
     local d = desc s
     if d
       say d

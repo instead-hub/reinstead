@@ -12,11 +12,10 @@ obj box "коробка"
   score_value = 0
 
 impl box
-  before Take
+  before Take =
     if s.score_value + 1 > 0
       [[взяли]]
-  on Take
-    [[метод]]
+  on Take = [[метод]]
   after Drop = "use &helper"
   on Wait = "use &helper"
   on Open, Close = "use &helper"

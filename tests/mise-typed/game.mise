@@ -60,7 +60,7 @@ Box crate "ящик"
 obj orb "сфера"
 
 obj lamp "лампа"
-  before Take
+  before Take =
     say (s.target:noun вн)
 
 impl lamp

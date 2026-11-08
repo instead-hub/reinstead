@@ -37,7 +37,7 @@ room foyer "фойе"
 две другие двери ведут в южном и западном направлении.]]
   s_to = bar
   w_to = cloakroom
-  n_to
+  n_to =
     "Вы только пришли сюда. К тому же, погода снаружи заметно ухудшается."
 
 room cloakroom "гардероб"
@@ -47,7 +47,7 @@ room cloakroom "гардероб"
 Единственный выход отсюда -- восточная дверь.]]
   e_to = foyer
   obj hook "маленький бронзовый крючок,крючок|вешалка" : scenery, supporter
-    description
+    description =
       "Всего лишь маленький бронзовый крючок для одежды,"
       if where cloak == s
         "с которого свисает черный бархатный плащ."
@@ -61,13 +61,13 @@ room bar "буфет" : ~light
 расположенного к северу отсюда) совершенно пуст.
 Но похоже, что в пыли на полу написано что-то важное.]]
   n_to = foyer
-  before Walk
+  before Walk =
     if compass_dir w != n_to and not w:has light
       message.number += 2
       "Слоняться в кромешной тьме -- не самая лучшая идея."
       stop
     pass
-  before Default
+  before Default =
     if ev == Exit
       pass
     if not s:has light
@@ -77,7 +77,7 @@ room bar "буфет" : ~light
     pass
   obj message "надпись|пыль" : scenery
     number = 0
-    description
+    description =
       if s.number < 2
         "Начертанная в пыли надпись сообщает Вам, что..."
         walk goodend
@@ -103,10 +103,10 @@ obj cloak "бархатный плащ,плащ" : clothing
     else
       "Не самое подходящее место для того, чтобы оставлять здесь свою одежду."
       stop
-  after Take
+  after Take =
     bar:attr ~light
     pass
-  after PutOn
+  after PutOn =
     if w != hook
       pass
     "Ты повесил плащ на крючок."
@@ -117,5 +117,5 @@ ending badend
 
 ending goodend
   title = "Вы выиграли"
-  dsc
+  dsc =
     say 'Ваш счет: ' (score)

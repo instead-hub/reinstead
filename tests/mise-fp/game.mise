@@ -14,7 +14,7 @@ fn mark(w: obj)
 Tree tree "дерево"
 
 impl tree
-  before Take
+  before Take =
     for_plural s &mark
     trace s &mark
     if s:isa Tree

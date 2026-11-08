@@ -87,6 +87,4 @@ Verb({ "#Help", "пом/ощь" }, _'computer')
 
 VerbExtendWord({ "#Help", "помощь" }, _'computer')
 
-_'computer'.Help = function(s, w, wh)
-  p "Помощь."
-end;
+_'computer'.Help = "Помощь.";

@@ -28,7 +28,7 @@ fn total(n: num) -> num
   return r
 
 obj box "коробка"
-  on Take
+  on Take =
     if run &is_lit
       [[светло]]
     for_plural s &mark

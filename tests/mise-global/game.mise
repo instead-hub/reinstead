@@ -11,7 +11,7 @@ global
 obj box "коробка"
 
 room r "комната"
-  dsc
+  dsc =
     "Комната."
     append (picked:noun вн)
     "."
@@ -21,7 +21,7 @@ room r "комната"
       "Цели нет."
 
 obj lever "рычаг" @ r
-  before Pull
+  before Pull =
     if target == none
       target = box
       "Взял."

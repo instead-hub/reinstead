@@ -4,19 +4,19 @@ lang ru
 include stdlib
 
 setup
-  fmt dash
-  dsc "Заставка."
-  take box
-  hero
+  fmt = dash
+  dsc = "Заставка."
+  take = box
+  hero =
     words = "ты/мр"
     description = "Герой."
-  game
+  game =
     hint_verbs = { "#Exam", "#Take" }
-  before Exam
+  before Exam =
     "Нечего осматривать."
-  init
+  init =
     player:move hall
-  start
+  start =
     player:move hall
 
 obj box "коробка"

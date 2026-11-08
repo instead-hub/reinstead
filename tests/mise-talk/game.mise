@@ -46,7 +46,7 @@ talk разговор_с_гидом
     walkout
   * "Расспросить"
     "-- О чём?"
-    onempty
+    onempty =
       "-- Гид угрюмо молчит."
       met = true
       walkout
@@ -72,7 +72,7 @@ talk разговор_с_гидом
       return met and true
     "-- И это правда."
   * ""
-    ask
+    ask =
       return 'Вопрос из блока?'
     "-- Ответ из блока."
   * &ask_text

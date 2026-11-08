@@ -11,7 +11,7 @@ Thing x : static
 Thing y "вещица"
 
 room r "комната"
-  dsc
+  dsc =
     say (x:noun)
     say (y:noun)
 

@@ -5,15 +5,14 @@ lang ru
 include stdlib
 
 impl mp : Any
-  before Any
+  before Any =
     if ev == Walk and w:has door
       [[дверь]]
-  on Any
+  on Any =
     if ev == Exam and w:has scenery
       [[осмотр декорации]]
     elseif ev == Wear
       [[надели]]
 
 impl mp : Default
-  on Default
-    [[нет обработчика]]
+  on Default = [[нет обработчика]]
