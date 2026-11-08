@@ -240,6 +240,13 @@ def prescan(prog: Program) -> Context:
             collect_fields(item)
 
     for item in prog.items:
+        if isinstance(item, EntityDecl):
+            _check_refs(ctx, item)
+        elif isinstance(item, VarDecl):
+            for vn, ve, vl in item.items:
+                _check_var_ref(ctx, vn, ve, vl)
+
+    for item in prog.items:
         if isinstance(item, FnDecl) and not item.is_extern and isinstance(item.body, list):
             env = {pn: pt for pn, pt in item.params}
             owner = item.params[0][1] if (item.params and item.params[0][0] == "s" and item.params[0][1] in ctx.classes) else None
@@ -276,6 +283,58 @@ def _lit_type(ctx: Context, e: Expr) -> Tuple[str, bool]:
     if isinstance(e, ListLit):
         return "tbl", False
     return "any", False
+
+
+def _ref_error(ctx: Context, where: str, name: str, line: int):
+    raise Error(f"{where}: unknown object reference {name!r}", line)
+
+
+def _check_ref_name(ctx: Context, where: str, name: str, line: int):
+    """A bare object name in a reference position must be declared."""
+    if name != "none" and name not in ctx.objects:
+        _ref_error(ctx, where, name, line)
+
+
+def _check_ref_value(ctx: Context, where: str, val: Any, line: int = 0):
+    """Validate a reference field value: a bare name or a list of them."""
+    items = val.items if isinstance(val, ListLit) else [val]
+    for it in items:
+        if isinstance(it, Sym):
+            _check_ref_name(ctx, where, it.name, it.line or line)
+        elif isinstance(it, Lit) and it.kind == "str" and isinstance(val, ListLit):
+            _check_ref_name(ctx, where, it.val.strip(), it.line or line)
+        elif isinstance(it, Lit) or isinstance(it, ListLit) or isinstance(it, FnRef):
+            continue  # raw/nil/bool/number/tables and handlers are not references
+        else:
+            raise Error(f"{where}: expected object reference, got expression", line)
+
+
+def _check_refs(ctx: Context, ent: EntityDecl):
+    """Validate reference values of every declaration, including nested ones."""
+    for p in ent.props:
+        if p.name not in ctx.ref_fields or p.value is None or isinstance(p.value, (list, FnRef)):
+            continue
+        where = f"{ent.name}.{p.name}" if ent.name else p.name
+        if isinstance(p.value, Lit) and p.value.kind in ("raw", "num", "bool", "nil"):
+            continue
+        if isinstance(p.value, Lit) and p.value.kind == "str":
+            raise Error(f"{where}: object reference must be a bare name, not a quoted string ({p.value.val!r})", p.line)
+        _check_ref_value(ctx, where, p.value, p.line)
+    for ref in ent.with_refs:
+        where = f"{ent.name}.with" if ent.name else "with"
+        _check_ref_name(ctx, where, ref, ent.line)
+    for ch in ent.children:
+        _check_refs(ctx, ch)
+
+
+def _check_var_ref(ctx: Context, name: str, val: Expr, line: int):
+    """A bare name as an initial value must be a declared object, event or enum value."""
+    if not isinstance(val, Sym):
+        return
+    n = val.name
+    if n == "none" or n in ctx.objects or n in ctx.event_names or n.lstrip("~") in ctx.enum_owner:
+        return
+    raise Error(f"{name}: unknown name {n!r}", line)
 
 
 def _check_entity(ctx: Context, ent: EntityDecl):

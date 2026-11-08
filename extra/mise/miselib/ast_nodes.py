@@ -10,7 +10,7 @@ class Error(Exception):
 
     def format(self) -> str:
         loc = f"{self.src}:{self.line}: " if self.src and self.line else (f"line {self.line}: " if self.line else "")
-        return f"mise2: {loc}{self.msg}"
+        return f"mise: {loc}{self.msg}"
 
 
 # --- Expressions ---
