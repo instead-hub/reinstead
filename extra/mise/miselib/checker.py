@@ -114,7 +114,7 @@ def _atom_fits(ctx: Context, actual: str, expected: str) -> bool:
     if in_a is not None and in_e is not None:
         return in_a == "" or is_subtype(ctx, in_a, in_e)
     if expected == "list" and in_a is not None:
-        return in_a == "" or is_subtype(ctx, in_a, "obj")
+        return in_a == "" or is_subtype(ctx, in_a, _root(ctx))
     if expected.startswith("fn") and (actual == "fn" or actual.startswith("fn(")):
         return True  # a Lua fn is opaque, callback bodies are not compared structurally
     return False
@@ -194,7 +194,7 @@ def load_includes(prog: Program, src_dir: str) -> Program:
     return prog
 
 
-def _verb_pat_sig(pat: str) -> Optional[Tuple[str, List[str]]]:
+def _verb_pat_sig(pat: str, obj_type: str = "obj") -> Optional[Tuple[str, List[str]]]:
     if ":" not in pat:
         return None
     lhs, rhs = pat.rsplit(":", 1)
@@ -204,7 +204,7 @@ def _verb_pat_sig(pat: str) -> Optional[Tuple[str, List[str]]]:
     toks = lhs.strip().split()
     if toks and toks[0] == "~":
         toks = toks[1:]
-    slots = ["obj" if _SLOT_OBJ_RE.search(t) else "str" for t in toks if _SLOT_OBJ_RE.search(t) or t in ("*", "~*")]
+    slots = [obj_type if _SLOT_OBJ_RE.search(t) else "str" for t in toks if _SLOT_OBJ_RE.search(t) or t in ("*", "~*")]
     if len(ev_parts) > 1 and ev_parts[1] == "reverse" and len(slots) >= 2:
         slots[0], slots[1] = slots[1], slots[0]
     return ev_parts[0], slots
@@ -326,7 +326,7 @@ def prescan(prog: Program) -> Context:
             else:
                 contribs = active_verbs.setdefault(tag, [])
                 for pat in item.patterns:
-                    ps = _verb_pat_sig(pat)
+                    ps = _verb_pat_sig(pat, _root(ctx))
                     if ps:
                         ctx.event_names.add(ps[0])
                         contribs.append(ps)
@@ -593,7 +593,7 @@ def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[st
 
 
 def _check_talk(ctx: Context, td: TalkDecl):
-    env = {"s": "obj"}
+    env = {"s": _root(ctx)}
     labels = [ln for ln, _say, _ch in td.labels]
     for ln in labels:
         if labels.count(ln) > 1:
@@ -764,7 +764,7 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             _check_stmts(ctx, s.body, benv, owner, rets)
         elif isinstance(s, ForInStmt):
             it = _check_expr(ctx, s.iter_expr, env, owner)
-            el = tbl_inner(it) or ("obj" if it == "list" else "any")
+            el = tbl_inner(it) or (_root(ctx) if it == "list" else "any")
             benv = dict(env)
             for i, (vn, vt) in enumerate(s.vars):
                 benv[vn] = vt or ("num" if (s.is_of and len(s.vars) == 2 and i == 0) else el)
@@ -922,7 +922,7 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, str],
     if name in declared:
         ft, is_ref = declared[name]
         if ft != "any":
-            expect(ctx, f"{name}", "obj" if (is_ref and vt == "obj") else vt, ft, line)
+            expect(ctx, f"{name}", _root(ctx) if (is_ref and vt == "obj") else vt, ft, line)
         return
     if name not in ctx.field_names and name not in ctx.ref_fields:
         raise Error(f"unknown field {name!r} (use __{name} for dynamic values)", line)
@@ -981,7 +981,7 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         in_exp = tbl_inner(ot)
         expect(ctx, "index", ot, "tbl|list|str", e.line)
         _check_expr(ctx, e.index, env, owner, "num" if ot != "str" else "num")
-        e.typ = in_exp if in_exp is not None else ("obj" if ot == "list" else ("str" if ot == "str" else "any"))
+        e.typ = in_exp if in_exp is not None else (_root(ctx) if ot == "list" else ("str" if ot == "str" else "any"))
         return e.typ
     if isinstance(e, UnaryOp):
         if e.op == "-" and isinstance(e.operand, Lit) and e.operand.kind == "str":
@@ -1014,7 +1014,7 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str], owner: Optional[str],
         raise Error(f"unknown name {n!r} (declare it with `local` or `global`)", e.line)
     if n == "none":
         e.rk, e.typ = "none", "obj"
-        return "obj"
+        return _root(ctx)
     if n in env:
         e.rk, e.typ = "var", env[n]
         return e.typ
@@ -1076,8 +1076,8 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, str],
         e.is_ref, e.typ = is_r, ft
         return ft
     if e.field in ctx.ref_fields:
-        e.is_ref, e.typ = True, "obj"
-        return "obj"
+        e.is_ref, e.typ = True, _root(ctx)
+        return _root(ctx)
     if e.field in ctx.field_names:
         e.typ = "any"
         return "any"
