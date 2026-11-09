@@ -520,7 +520,14 @@ member      ::= prop
               | "with" ("=" SYMBOL { "," SYMBOL } | obj_block)
 
 prop        ::= IDENT [ "(" [ ident_list ] ")" ] ( "=" value | stmt_block )
-              | IDENT ":" type                        (* объявление поля в class *)
+              | IDENT ":" type [ "=" method_spec ]     (* объявление поля в class *)
+
+(* Как значение поля попадает в Lua (`with`, `attr`, `disabled`, `dict`):
+   обычное поле, или вызов метода движка. Формы: each — аргументы россыпью,
+   join — одна строка через запятую, list — таблица ссылок, table — таблица,
+   none — вызов по булеву значению (`else` — метод для `false`). *)
+method_spec ::= "method" IDENT [ "(" ("each"|"join"|"list"|"table"|"none") ")" ]
+                [ "else" IDENT ]
 
 value       ::= expr | list | raw_lua
 
