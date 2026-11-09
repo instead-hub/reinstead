@@ -32,6 +32,7 @@ class Context:
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
     prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
     ctors: Dict[str, str] = field(default_factory=dict)                  # class -> engine constructor
+    root_class: Optional[str] = None                                     # the first class with no parent
     seen_types: Set[str] = field(default_factory=set)
     field_names: Set[str] = field(default_factory=set)
     lua_globals: Dict[str, str] = field(default_factory=dict)     # `extern global` -> type
@@ -254,7 +255,10 @@ def prescan(prog: Program) -> Context:
                 raise Error(f"class {item.name!r}: parent differs from an earlier declaration", item.line)
             if prev is None and item.parent:
                 ctx.classes[item.name] = item.parent
-            ctx.classes.setdefault(item.name, item.parent or "obj")
+            if item.parent is None and ctx.root_class is None:
+                ctx.root_class = item.name
+            # a class without a parent extends the root class (as `Class(t)` does)
+            ctx.classes.setdefault(item.name, item.parent or ctx.root_class or item.name)
             # Merge repeated `class obj`/`props obj` declarations
             if item.name in ctx.class_decls:
                 ctx.class_decls[item.name].props.extend(item.props)

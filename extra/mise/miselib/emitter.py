@@ -76,14 +76,13 @@ class Emitter:
 
     def _emit_entity(self, ent: EntityDecl, ind: int = 0) -> str:
         if ent.kind == "class":
-            # Built-in base classes (`class obj`, `class room`, etc.) that only declare field types emit nothing
-            if ent.name in ("obj", "room", "door", "story", "ending", "option") or (
-                not ent.words and not ent.traits and not ent.handlers and all(p.value is None for p in ent.props)
-            ):
+            # A class that only declares field types emits nothing
+            if not ent.words and not ent.traits and not ent.handlers \
+                    and all(p.value is None for p in ent.props):
                 return ""
             lines, tails = self._obj_parts(ent, is_class=True, ind=0)
             inner = "\n".join(lines)
-            if ent.parent and ent.parent != "obj":
+            if ent.parent and ent.parent != self.ctx.root_class:
                 head = f"{ent.name} = Class({{\n{inner}\n}}, {ent.parent})" if inner else f"{ent.name} = Class({{}}, {ent.parent})"
             else:
                 head = f"{ent.name} = Class {{\n{inner}\n}}" if inner else f"{ent.name} = Class {{}}"
@@ -120,7 +119,7 @@ class Emitter:
             if p.name == "dict" and isinstance(p.value, Lit):
                 tails.append(f":dict {p.value.val}")
                 continue
-            if p.name == "text" and ent.kind == "story" and isinstance(p.value, ListLit):
+            if p.name == "text" and isinstance(p.value, ListLit):
                 pgs = ", ".join(self._expr(it) for it in p.value.items)
                 lines.append(f"{fpad}text = {{\n{fpad}  {pgs};\n{fpad}}};")
                 continue
