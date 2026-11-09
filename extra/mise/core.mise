@@ -113,8 +113,6 @@ extern global os: any = "os"
 extern global math: any = "math"
 extern global table: any = "table"
 extern global string: any = "string"
-extern global me: any = "me"
-extern global here: any = "here"
 
 # Lua functions callable from expressions
 extern fn p(...: any) = "p($*)"
