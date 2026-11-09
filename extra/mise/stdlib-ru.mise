@@ -1,5 +1,17 @@
 # stdlib: russian language part
 
+# Russian morphology: cases and grammar hints
+type case = им, рд, дт, вн, тв, пр, зв
+type gram = ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
+
+extern fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str = "$1:noun_hint($2...)"
+extern fn Noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str = "$1:Noun_hint($2...)"
+extern fn It(s: obj, n: tbl[case|gram]|case|num?) -> str = "$1:It($2)"
+extern fn it(s: obj, n: tbl[case|gram]|case|num?) -> str = "$1:it($2)"
+extern fn This(s: obj, n: tbl[case|gram]|case|num?) -> str = "$1:This($2)"
+extern fn this(s: obj, n: tbl[case|gram]|case|num?) -> str = "$1:this($2)"
+extern fn gram(s: obj) -> tbl = "$1:gram()"
+
 fn where_prep(w: obj) -> str
   if has w supporter
     return "на"

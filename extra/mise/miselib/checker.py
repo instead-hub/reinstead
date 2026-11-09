@@ -4,17 +4,13 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
 from .ast_nodes import *
-from .parser import parse_source
+from .parser import PHASES, parse_source
 
 # the class chain of `room` decides whether an object is room-like
 ROOM_ROOT = "room"
 _SLOT_OBJ_RE = re.compile(r"\{(?:noun|noun_obj|compass\w*)\}")
-_ENGINE_FIELDS = frozenset({"nam", "tag", "obj", "way", "lifes"})
-# engine globals and Lua libraries reachable from expressions (`mp.event`, ...)
-_ENGINE_GLOBALS = frozenset({
-    "mp", "std", "game", "pl", "instead", "snd", "theme", "io", "os",
-    "math", "table", "string", "me", "here",
-})
+# engine fields the game must not assign (the engine owns them)
+READONLY_FIELDS = frozenset({"nam"})
 
 
 class TypeCheckError(Error):
@@ -37,7 +33,9 @@ class Context:
     prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
     ctors: Dict[str, str] = field(default_factory=dict)                  # class -> engine constructor
     seen_types: Set[str] = field(default_factory=set)
-    field_names: Set[str] = field(default_factory=lambda: set(_ENGINE_FIELDS))
+    field_names: Set[str] = field(default_factory=set)
+    lua_globals: Dict[str, str] = field(default_factory=dict)     # `extern global` -> type
+    globals_lua: Dict[str, str] = field(default_factory=dict)     # `extern global` -> template
     ref_fields: Set[str] = field(default_factory=lambda: {"with", "found_in", "scope"})
 
     fns: Dict[str, FnDecl] = field(default_factory=dict)
@@ -213,16 +211,8 @@ def _verb_pat_sig(pat: str) -> Optional[Tuple[str, List[str]]]:
 
 
 # engine print helpers and plain Lua functions callable from game logic
-_LUA_CALLS = frozenset({
-    "p", "pr", "pn", "tostring", "tonumber", "type", "next", "select",
-    "error", "assert", "unpack", "rawget", "rawset", "setmetatable",
-    "getmetatable", "print", "pcall", "xcally",
-})
-
-
 def prescan(prog: Program) -> Context:
     ctx = Context(lang=prog.lang)
-    ctx.lua_funcs.update(_LUA_CALLS)
     base_evs: Dict[str, List[str]] = {}
 
     for item in prog.items:
@@ -250,6 +240,9 @@ def prescan(prog: Program) -> Context:
             if item.name in ctx.fns:
                 raise Error(f"duplicate fn {item.name!r}", item.line)
             ctx.fns[item.name] = item
+        elif isinstance(item, GlobalDecl):
+            ctx.lua_globals[item.name] = item.typ
+            ctx.globals_lua[item.name] = item.template
         elif isinstance(item, LuaDecl):
             for m in re.finditer(r"\bfunction\s+([A-Za-z_]\w*)", item.code):
                 ctx.lua_funcs.add(m.group(1))
@@ -299,7 +292,7 @@ def prescan(prog: Program) -> Context:
 
         if ent.kind not in ("class", "impl") and ent.name:
             if ent.kind not in ctx.classes:
-                raise Error(f"unknown kind {ent.kind!r}", ent.line)
+                raise Error(f"unknown kind {ent.kind!r}{_kind_hint(ctx, ent)}", ent.line)
             if not ent.name.startswith("#") and ent.name in ctx.objects:
                 raise Error(f"duplicate declaration {ent.name!r}", ent.line)
             ctx.objects[ent.name] = ent.kind
@@ -475,6 +468,18 @@ def _check_var_ref(ctx: Context, name: str, val: Expr, line: int):
     if n == "none" or n in ctx.objects or n in ctx.event_names or n.lstrip("~") in ctx.enum_owner:
         return
     raise Error(f"{name}: unknown name {n!r}", line)
+
+
+def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
+    """A hint for a mistyped kind or a member written without '='."""
+    import difflib
+    phase = difflib.get_close_matches(ent.kind, sorted(PHASES), 1, 0.75)
+    if phase and ent.name in ctx.event_names:
+        return f" (did you mean `{phase[0]} {ent.name}`?)"
+    if ent.kind in ctx.field_names or any(ent.kind in d for d in ctx.prop_types.values()):
+        return f" (did you mean `{ent.kind} = ...`?)"
+    near = difflib.get_close_matches(ent.kind, sorted(ctx.classes), 1, 0.75)
+    return f" (did you mean class {near[0]!r}?)" if near else ""
 
 
 def _decl_type(ctx: Context, kind: str, name: str) -> Optional[str]:
@@ -878,7 +883,7 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, str],
             f"{_kind_name(target.obj)}: possible nil, narrow it first (`if {_kind_name(target.obj)}:`)",
             line)
     name = target.field
-    if name in _ENGINE_FIELDS:
+    if name in READONLY_FIELDS:
         raise Error(f"{name}: an engine field cannot be assigned", line)
     if name.startswith("__"):
         return
@@ -1015,9 +1020,9 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str], owner: Optional[str],
         sig = ctx.fns.get(n)
         e.typ = sig.ret_types[0] if (sig and sig.ret_types) else "any"
         return e.typ
-    if n in _ENGINE_GLOBALS:
-        e.rk, e.typ = "var", "any"
-        return "any"
+    if n in ctx.lua_globals:
+        e.rk, e.typ = "lua_global", ctx.lua_globals[n]
+        return e.typ
     if n.startswith("#"):
         raise Error(f"unknown tag {n!r}", e.line)
     raise Error(f"unknown name {n!r}{_enum_hint(ctx, n)}", e.line)
@@ -1043,9 +1048,6 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, str],
     if e.field in ctx.ref_fields:
         e.is_ref, e.typ = True, "obj"
         return "obj"
-    if e.field in _ENGINE_FIELDS:
-        e.typ = "obj" if e.field in ("obj", "way", "lifes") else "str"
-        return e.typ
     if e.field in ctx.field_names:
         e.typ = "any"
         return "any"

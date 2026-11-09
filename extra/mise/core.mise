@@ -11,11 +11,14 @@ type attr = [
 ]
 type direction = n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to
 
-type case = им, рд, дт, вн, тв, пр, зв
-
-type gram = ед, мн, 2, од, но, мр, жр, ср, имя, фам, разг
 
 class obj = obj
+  # engine fields that have no props type of their own
+  nam: str
+  tag: str | bool
+  obj: tbl[obj]
+  way: ref
+  lifes: tbl[obj]
   daemon: fn(obj)
   description: str | bool | fn(obj) -> str
   dsc: str | bool | fn(obj) -> str
@@ -92,6 +95,42 @@ type event
 
 type phase = after, before, life, post
 
+# Lua globals reachable from expressions (`mp.event`, `math.floor`, ...)
+extern global mp: any = "mp"
+extern global std: any = "std"
+extern global game: any = "game"
+extern global pl: any = "pl"
+extern global instead: any = "instead"
+extern global snd: any = "snd"
+extern global theme: any = "theme"
+extern global io: any = "io"
+extern global os: any = "os"
+extern global math: any = "math"
+extern global table: any = "table"
+extern global string: any = "string"
+extern global me: any = "me"
+extern global here: any = "here"
+
+# Lua functions callable from expressions
+extern fn p(...: any) = "p($*)"
+extern fn pr(...: any) = "pr($*)"
+extern fn pn(...: any) = "pn($*)"
+extern fn tostring(v: any) -> str = "tostring($1)"
+extern fn tonumber(v: any) -> num? = "tonumber($1)"
+extern fn type(v: any) -> str = "type($1)"
+extern fn next(t: tbl) -> any = "next($@)"
+extern fn select(...: any) -> any = "select($*)"
+extern fn error(...: any) = "error($*)"
+extern fn assert(...: any) = "assert($*)"
+extern fn unpack(t: tbl) -> any = "unpack($@)"
+extern fn rawget(t: tbl, k: any) -> any = "rawget($1, $2)"
+extern fn rawset(t: tbl, k: any, v: any) -> tbl = "rawset($1, $2, $3)"
+extern fn setmetatable(t: tbl, m: tbl) -> tbl = "setmetatable($1, $2)"
+extern fn getmetatable(t: tbl) -> any = "getmetatable($1)"
+extern fn print(...: any) = "print($*)"
+extern fn pcall(...: any) -> bool = "pcall($*)"
+extern fn xcally(...: any) -> bool = "xcally($*)"
+
 # Engine extern functions
 extern fn here() -> room = "here()"
 extern fn player() -> obj = "me()"
@@ -143,15 +182,8 @@ extern fn visible_scope(where: obj) -> obj? = "mp:visible_scope($1)"
 extern fn where(w: obj) -> obj? = "where($1)"
 extern fn inroom(w: obj) -> obj = "inroom($1)"
 extern fn thedark(what: obj) -> bool = "mp:thedark($1)"
-extern fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str = "$1:noun_hint($2...)"
-extern fn Noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str = "$1:Noun_hint($2...)"
-extern fn It(s: obj, n: tbl[case|gram]|case|num?) -> str = "$1:It($2)"
-extern fn it(s: obj, n: tbl[case|gram]|case|num?) -> str = "$1:it($2)"
-extern fn This(s: obj, n: tbl[case|gram]|case|num?) -> str = "$1:This($2)"
-extern fn this(s: obj, n: tbl[case|gram]|case|num?) -> str = "$1:this($2)"
 extern fn hint(s: obj, h: str) = "$1:hint($2)"
 extern fn multi_alias(s: obj) -> num = "$1:multi_alias()"
-extern fn gram(s: obj) -> tbl = "$1:gram()"
 extern fn walkback(w: obj?) = "walkback($1)"
 extern fn remove(w: obj) = "remove($1)"
 extern fn lookup(w: list, wh: obj) -> obj?, num? = "$1:lookup($2)"

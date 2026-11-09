@@ -1,4 +1,15 @@
 # stdlib: english language part
 
+# English morphology: no cases, grammar hints instead
+type gram = [live, nonlive, male, female, plural, proper, surname,
+             first, second, third]
+extern fn noun(s: obj, n: tbl[gram]|gram|num?, nn: num?) -> str = "$1:noun_hint($2...)"
+extern fn Noun(s: obj, n: tbl[gram]|gram|num?, nn: num?) -> str = "$1:Noun_hint($2...)"
+extern fn It(s: obj, n: tbl[gram]|gram|num?) -> str = "$1:It($2)"
+extern fn it(s: obj, n: tbl[gram]|gram|num?) -> str = "$1:it($2)"
+extern fn This(s: obj, n: tbl[gram]|gram|num?) -> str = "$1:This($2)"
+extern fn this(s: obj, n: tbl[gram]|gram|num?) -> str = "$1:this($2)"
+extern fn gram(s: obj) -> tbl = "$1:gram()"
+
 fn path_dsc(w: obj) -> str
   return "{#Me} can go to " .. noun w .. "."

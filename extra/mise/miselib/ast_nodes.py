@@ -176,6 +176,15 @@ class FnDecl:
     line: int = 0
 
 @dataclass
+class GlobalDecl:
+    """`extern global mp: any = "mp"` — a Lua global reachable from expressions."""
+    name: str
+    typ: str
+    template: str
+    line: int = 0
+
+
+@dataclass
 class TypeDecl:
     name: str
     values: List[str] = field(default_factory=list)

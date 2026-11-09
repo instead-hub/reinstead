@@ -408,6 +408,8 @@ class Emitter:
                 return n
             if e.rk == "none":
                 return "_'none'"
+            if e.rk == "lua_global":
+                return self.ctx.globals_lua.get(n, n)
             if e.rk == "obj":
                 return f"_'{n}'"
             if e.rk == "global_ref":

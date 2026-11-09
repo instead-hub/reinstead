@@ -227,6 +227,14 @@ before Any(s, ev, w)
 - имя события в ключе (`on`/`before`/`after`/`post`/`life`) должно быть объявлено; опечатка получает подсказку `did you mean 'Open'?`;
 - опечатка в фазе (`befor Open`) сообщается как `bad field name ... (did you mean 'before Open'?)`.
 
+**Слои stdlib**
+- `core.mise` — контракт движка: виды и их конструкторы (`class story(room) = cutscene`),
+  типы движка (`attr`, `direction`, `event`, `phase`), движковые глобалы
+  (`extern global mp: any = "mp"`) и extern-функции движка. Игра его не включает.
+- `stdlib.mise` — игровой API (`include core`): `Door`, `Path`, хелперы.
+- `stdlib-ru.mise` / `stdlib-en.mise` — язык: морфология (`case`/`gram` и функции
+  `noun`/`It`/`This`/`gram`), сообщения.
+
 **Сигнатуры событий**
 - выводятся из слотов паттернов `verb`/`extend verb` (`{noun}` → `obj`, `*` → `str`, пропуск слота → `?`), источники объединяются; `remove verb #Tag` сужает вклад снятого глагола.
 
@@ -486,7 +494,9 @@ param       ::= IDENT [ ":" type ]
 (* Слова объявления — только в заголовке: строка или список. *)
 object_decl ::= kind [ SYMBOL ] [ words_spec ] [ trait_spec ] [ loc_spec ] [ obj_block ]
 words_spec  ::= STRING | list
-kind        ::= "obj" | "room" | "door" | "story" | "ending" | "class" | "mixin" | IDENT
+(* Вид — не ключевое слово: `obj`/`room`/`story` объявлены как классы в core.mise.
+   Декларация узнаётся по форме: `Имя имя` (два идентификатора), член — по `=`. *)
+kind        ::= IDENT
 
 (* Классы, миксины и атрибуты через ':' в заголовке: 'obj hook : scenery, supporter' *)
 trait_spec  ::= ":" SYMBOL { "," SYMBOL }

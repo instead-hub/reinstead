@@ -1,1 +1,1 @@
-mise: line 6: unknown kind 'n_to'
+mise: line 6: unknown kind 'n_to' (did you mean `n_to = ...`?)

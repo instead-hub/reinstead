@@ -5,9 +5,8 @@ from .lexer import Token, tokenize
 
 PHASES = frozenset({"on", "before", "after", "post", "life"})
 META_KEYS = frozenset({"game", "name", "version", "author", "info"})
-# Grammar keywords, like `fn`/`talk`/`verb`; which engine constructor a kind maps to
-# is declared in stdlib (`class story(room) = cutscene`), not here.
-TOP_KINDS = frozenset({"obj", "room", "door", "story", "ending", "class"})
+# Kind keywords are not known here: `obj`/`room`/`story` are classes declared in
+# core.mise, and a declaration is recognised by its shape (`Kind name`).
 STMT_KWS = frozenset({
     "if", "elseif", "else", "when", "default", "match", "for", "in", "of",
     "local", "return", "stop", "pass", "break", "and", "or", "not", "then",
@@ -18,11 +17,6 @@ _BIN_PREC = {
     "..": 4, "+": 4, "-": 4,
     "*": 5, "/": 5, "%": 5, "//": 5,
 }
-
-
-def _looks_like_kind(kw: str) -> bool:
-    """A member head that may start a nested declaration (`obj`, a class, ...)."""
-    return kw in TOP_KINDS or kw == "mixin" or kw[:1].isupper()
 
 
 class Parser:
@@ -230,8 +224,16 @@ class Parser:
         line = self.eat("IDENT").line
         if is_extern:
             kind = self.eat("IDENT")
+            if kind.val == "global":
+                name = self.eat("IDENT").val
+                self.eat("OP", ":")
+                typ = self._parse_type_str()
+                self.eat("OP", "=")
+                tmpl = self.eat(self.cur().kind).val
+                self.eat_nl()
+                return GlobalDecl(name=name, typ=typ, template=tmpl, line=kind.line)
             if kind.val != "fn":
-                raise Error(f"extern {kind.val}: expected `fn`", kind.line, self.src)
+                raise Error(f"extern {kind.val}: expected `fn` or `global`", kind.line, self.src)
         name = self.eat("IDENT").val
         params, var = [], None
         if self.match("OP", "("):
@@ -374,12 +376,11 @@ class Parser:
                     raise Error(f"bad field name {kw + ' ' + self.peek().val!r} "
                                 f"(did you mean {near[0] + ' ' + self.peek().val!r}?)",
                                 t.line, self.src)
-            if self._is_nested_entity():
-                ent.children.append(self._parse_entity())
-                continue
-
             if kw == "var" and self.peek().kind == "IDENT":
                 self.pos += 1
+            elif self._is_nested_entity():
+                ent.children.append(self._parse_entity())
+                continue
             pname = self.eat("IDENT").val
             prms = self._opt_ident_parens()
 
@@ -411,11 +412,8 @@ class Parser:
         return []
 
     def _is_nested_entity(self) -> bool:
-        """`Kind name` starts a nested declaration; a property always has `=` or a body."""
-        t, nxt = self.cur(), self.peek()
-        if t.val in TOP_KINDS or t.val == "mixin":
-            return nxt.val != "="
-        return nxt.kind in ("IDENT", "TAG") and self.peek(2).val not in ("=", "(", ":")
+        """`Kind name` starts a nested declaration; a member is always `key = ...`."""
+        return self.peek().kind in ("IDENT", "TAG")
 
     def _value_after_eq(self) -> Any:
         """After `=`: a value on the same line, or an indented body.
