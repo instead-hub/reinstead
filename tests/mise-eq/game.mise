@@ -3,7 +3,7 @@ game "eq"
 lang ru
 include stdlib
 
-fn on_take(s: obj, w: obj)
+fn on_take(s: obj)
   "взято"
 
 setup

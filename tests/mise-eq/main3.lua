@@ -39,7 +39,7 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_on_take(s, w)
+local function fn_on_take(s)
   p "взято"
 end
 

@@ -1,1 +1,1 @@
-mise: line 10: box: before Exam: four is fn(obj,obj,obj,obj)->any, expected fn(obj,obj,obj)
+mise: line 10: box: before Exam: four is fn(obj,obj,obj,obj)->any, expected fn(obj)

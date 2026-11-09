@@ -1,1 +1,1 @@
-mise: line 10: box: before Pull: xxx is fn(str)->any, expected fn(obj,obj,obj)
+mise: line 10: box: before Pull: xxx is fn(str)->any, expected fn(obj)

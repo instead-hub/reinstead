@@ -25,6 +25,7 @@ class Context:
     enum_owner: Dict[str, Set[str]] = field(default_factory=dict)
     event_names: Set[str] = field(default_factory=set)
     event_args: Dict[str, List[str]] = field(default_factory=dict)
+    event_acted: Set[str] = field(default_factory=set)   # the action takes an acted object
     life_args: Dict[str, List[str]] = field(default_factory=dict)
 
     classes: Dict[str, str] = field(default_factory=dict)                  # class -> parent
@@ -196,7 +197,7 @@ def load_includes(prog: Program, src_dir: str) -> Program:
     return prog
 
 
-def _verb_pat_sig(pat: str, obj_type: str = "obj") -> Optional[Tuple[str, List[str]]]:
+def _verb_pat_sig(pat: str, obj_type: str = "obj") -> Optional[Tuple[str, List[str], bool]]:
     if ":" not in pat:
         return None
     lhs, rhs = pat.rsplit(":", 1)
@@ -206,10 +207,12 @@ def _verb_pat_sig(pat: str, obj_type: str = "obj") -> Optional[Tuple[str, List[s
     toks = lhs.strip().split()
     if toks and toks[0] == "~":
         toks = toks[1:]
+    first = next((t for t in toks if _SLOT_OBJ_RE.search(t) or t in ("*", "~*")), "")
+    acted = bool(_SLOT_OBJ_RE.search(first)) and not first.startswith("~")
     slots = [obj_type if _SLOT_OBJ_RE.search(t) else "str" for t in toks if _SLOT_OBJ_RE.search(t) or t in ("*", "~*")]
     if len(ev_parts) > 1 and ev_parts[1] == "reverse" and len(slots) >= 2:
         slots[0], slots[1] = slots[1], slots[0]
-    return ev_parts[0], slots
+    return ev_parts[0], slots, acted
 
 
 # engine print helpers and plain Lua functions callable from game logic
@@ -225,8 +228,8 @@ def prescan(prog: Program) -> Context:
                         ctx.event_names.add(ev)
                         if life:
                             ctx.life_args[ev] = list(ats)
-                        elif ats:
-                            base_evs[ev] = list(ats)
+                        else:
+                            base_evs[ev] = list(ats)      # `[]` = the handler gets only `s`
             else:
                 if item.extend and item.name not in ctx.enums:
                     raise Error(f"extend type {item.name!r}: unknown type", item.line)
@@ -338,11 +341,19 @@ def prescan(prog: Program) -> Context:
                     ps = _verb_pat_sig(pat, _root(ctx))
                     if ps:
                         ctx.event_names.add(ps[0])
-                        contribs.append(ps)
+                        if ps[2]:
+                            ctx.event_acted.add(ps[0])
+                        contribs.append((ps[0], ps[1]))
 
     ctx.event_args = {k: list(v) for k, v in base_evs.items()}
+    for ev, sigs in base_evs.items():
+        first = sigs[0].rstrip("?").strip() if sigs else ""
+        if first and (first.startswith("obj") or first in ctx.classes):
+            ctx.event_acted.add(ev)       # a declared first argument is the acted object
     for contribs in active_verbs.values():
         for ev, slots in contribs:
+            if ev in base_evs:          # declared in `type event`: that signature wins
+                continue
             cur = ctx.event_args.get(ev)
             if cur is None:
                 ctx.event_args[ev] = list(slots)
@@ -585,38 +596,88 @@ def _check_entity(ctx: Context, ent: EntityDecl):
             _check_expr(ctx, p.value, {"s": _root(ctx)}, owner, declared)
     for h in ent.handlers:
         _check_handler_events(ctx, h, owner or kind)
+        params, arg_names = _handler_params(ctx, owner, kind, h)
         if isinstance(h.body, FnRef):
             ctx.used_refs.add(h.body.name)
-            env = _h_env(ctx, owner, kind, h)
-            sig = "fn(" + ",".join(env[pn] for pn in env) + ")"
+            sig = "fn(" + ",".join(t for _n, t in params) + ")"
             _check_fnref(ctx, h.body, sig, f"{owner or kind}: {h.phase} {','.join(h.events)}")
         elif isinstance(h.body, list):
-            _check_stmts(ctx, h.body, _h_env(ctx, owner, kind, h), owner)
+            _check_stmts(ctx, h.body, dict(params), owner, None, arg_names)
         elif isinstance(h.body, Expr):
             # a handler holds a string, a boolean or a function (as the engine allows)
-            _check_expr(ctx, h.body, _h_env(ctx, owner, kind, h), owner, "str|bool|fn")
+            _check_expr(ctx, h.body, dict(params), owner, "str|bool|fn")
     for ch in ent.children:
         _check_entity(ctx, ch)
 
 
-def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[str, str]:
-    is_any = any(ev in ("Any", "Default") for ev in h.events)
-    pnames = h.params if h.params is not None else (["s", "ev", "w", "wh"] if is_any else ["s", "w", "wh"])
+# Names of a handler's parameters, in order: `s`, then the arguments.
+HANDLER_PARAMS = ("s", "w", "wh", "w2", "w3")
+
+
+def _handler_event_args(ctx: Context, h: Handler) -> List[str]:
+    """The event's arguments, merged over the handler's events."""
+    src = ctx.life_args if h.phase == "life" else ctx.event_args
+    per: List[List[str]] = []
+    for ev in h.events:
+        sigs = src.get(ev)
+        if sigs is None and h.phase == "life":
+            sigs = ctx.event_args.get(ev)      # a life handler sees the action args too
+        per.append(list(sigs or []))
+    n = max((len(x) for x in per), default=0)
+    out: List[str] = []
+    for i in range(n):
+        ts = [x[i] for x in per if i < len(x)]
+        # an argument is optional when only some of the handler's events take it;
+        # such code guards by `event == ...`, and a `?` would force a nil check on
+        # paths the guard already excludes, so the type is not marked optional
+        out.append(canon_type("|".join(dict.fromkeys(ts))))
+    return out
+
+
+def _handler_params(ctx: Context, owner: Optional[str], kind: str, h: Handler
+                    ) -> Tuple[List[Tuple[str, str]], Dict[int, str]]:
+    """What a handler receives, and which parameter name each event argument has.
+
+    The engine calls a handler as `(receiver, *action_args)`; when the receiver is
+    the acted object itself the object is stripped from the arguments, otherwise
+    it is passed as the first argument (named `w`).
+    """
     self_t = (ctx.objects.get(owner) if owner else None) or kind
     if self_t not in ctx.classes and self_t not in ctx.objects:
         self_t = _root(ctx)
-    env = {pn: ("event" if (is_any and i == 1) else (_root(ctx) if i else self_t))
-           for i, pn in enumerate(pnames)}
-    if len(h.events) == 1 and not is_any:
-        ev = h.events[0]
-        sigs = ctx.life_args.get(ev) if h.phase == "life" else ctx.event_args.get(ev)
-        if sigs:
-            room_like = _inherits(ctx, kind, _room_root(ctx)) or owner in ("game", "mp", "setup", None)
-            off = 1 if (room_like and h.phase != "life") else 0
-            for idx, st in enumerate(sigs):
-                if 0 < idx + off < len(pnames):
-                    env[pnames[idx + off]] = st
-    return env
+    params: List[Tuple[str, str]] = [("s", self_t)]
+    arg_names: Dict[int, str] = {}
+    is_any = any(ev in ("Any", "Default") for ev in h.events)
+    if is_any:                      # `before_Default(s, ev, w, wh)` and `before_Any(...)`
+        params += [("ev", "event"), ("w", _root(ctx)), ("wh", _root(ctx))]
+        stripped = not (_inherits(ctx, kind, _room_root(ctx)) or owner in ("game", "mp", "setup", None))
+        # the arguments follow `ev`; on the acted object the object itself is stripped
+        names = ("w", "wh", "w2", "w3")
+        if stripped:
+            return params, {i: names[i - 1] for i in range(1, len(names) + 1)}
+        return params, {i: names[i] for i in range(len(names))}
+    sigs = _handler_event_args(ctx, h)
+    acted = bool(sigs) and any(ev in ctx.event_acted for ev in h.events)
+    room_like = _inherits(ctx, kind, _room_root(ctx)) or owner in ("game", "mp", "setup", None)
+    stripped = acted and not room_like
+    if acted and not stripped:      # the acted object comes in as `w`
+        params.append(("w", _root(ctx)))
+        arg_names[0] = "w"
+    for i, st in enumerate(sigs[1:] if acted else sigs, start=1 if acted else 0):
+        name = HANDLER_PARAMS[len(params)]
+        params.append((name, st))
+        arg_names[i] = name
+    if h.params is not None:                      # the handler names its own
+        if len(h.params) > len(params):
+            raise Error(f"{h.phase} {','.join(h.events)}: the engine passes "
+                        f"{len(params)} parameter(s) here, the handler declares {len(h.params)}",
+                        h.line)
+        params = [(h.params[i], params[i][1]) for i in range(len(h.params))]
+    return params, arg_names
+
+
+def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[str, str]:
+    return dict(_handler_params(ctx, owner, kind, h)[0])
 
 
 def _check_talk(ctx: Context, td: TalkDecl):
@@ -674,7 +735,8 @@ def _check_talk(ctx: Context, td: TalkDecl):
             chk_c(c)
 
 
-def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool) -> Dict[str, str]:
+def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool,
+            arg_names: Optional[Dict[int, str]] = None) -> Dict[str, str]:
     """Refine optional types inside a branch of `if`/`when`/`match`.
 
     Handled conditions: `x`, `not x`, `x != nil` / `x == nil`, `a and b`,
@@ -687,16 +749,16 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool) -> Dict
         else:
             res[cond.name] = "nil"
     elif isinstance(cond, UnaryOp) and cond.op == "not":
-        return _narrow(ctx, cond.operand, env, not truthy)
+        return _narrow(ctx, cond.operand, env, not truthy, arg_names)
     elif isinstance(cond, BinOp):
         if cond.op == "and":
             if truthy:  # both sides hold
-                return _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, True), True)
+                return _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, True, arg_names), True, arg_names)
             return res
         if cond.op == "or":
             if truthy:  # the second operand only matters when the first is false
                 return res
-            return _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, False), False)
+            return _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, False, arg_names), False, arg_names)
         if cond.op in ("==", "!="):
             left, right = cond.left, cond.right
             if isinstance(right, Lit) and right.kind == "nil":
@@ -714,16 +776,17 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool) -> Dict
                 cond.left.name in CURRENT_EVENT
                 or res.get(cond.left.name, "").rstrip("?") == "event")
             if cond.op == "==" and truthy and is_event and isinstance(cond.right, Sym):
-                sigs = ctx.event_args.get(cond.right.name)
-                if sigs and "w" in res and len(sigs) >= 2:
-                    res["w"] = sigs[1]
-                    if len(sigs) >= 3 and "wh" in res:
-                        res["wh"] = sigs[2]
+                sigs = ctx.event_args.get(cond.right.name) or []
+                for i, t in enumerate(sigs):
+                    name = (arg_names or {}).get(i)
+                    if name and name in res:
+                        res[name] = t
     return res
 
 
 def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
-                 owner: Optional[str] = None, rets: Optional[List[str]] = None):
+                 owner: Optional[str] = None, rets: Optional[List[str]] = None,
+                 arg_names: Optional[Dict[int, str]] = None):
     for s in stmts:
         if isinstance(s, SayStmt):
             where = "text to print"
@@ -767,10 +830,10 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             cenv = dict(env)
             for cond, body, _l in s.branches:
                 _check_cond(ctx, cond, cenv, owner)
-                _check_stmts(ctx, body, _narrow(ctx, cond, cenv, True), owner, rets)
-                cenv = _narrow(ctx, cond, cenv, False)
+                _check_stmts(ctx, body, _narrow(ctx, cond, cenv, True, arg_names), owner, rets, arg_names)
+                cenv = _narrow(ctx, cond, cenv, False, arg_names)
             if s.else_body is not None:
-                _check_stmts(ctx, s.else_body, cenv, owner, rets)
+                _check_stmts(ctx, s.else_body, cenv, owner, rets, arg_names)
         elif isinstance(s, MatchStmt):
             st = _check_expr(ctx, s.subject, env, owner)
             for pats, guard, body, _l in s.arms:
