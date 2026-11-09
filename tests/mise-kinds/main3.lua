@@ -85,7 +85,7 @@ end
 
 _'game'.hint_verbs = { "#Look" };
 
-pl.word = -"ты";
+pl.word = "ты";
 
 function start(load)
   move(me(), _'hall')
@@ -281,3 +281,9 @@ _'key':enable()
 _'game':dict { ["зал/вн"] = "зал" }
 _'game'.time = 0;
 _'game'.Look = 2;
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}

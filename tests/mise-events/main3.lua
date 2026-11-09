@@ -173,3 +173,21 @@ end;
 mp.Ask = function(s, w, wh)
   p(fn_text_of(wh))
 end;
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'x'.found_in = 'test_room';
+
+_'y'.found_in = 'test_room';
+
+_'z'.found_in = 'test_room';
+
+_'npc'.found_in = 'test_room';
+
+function start(load)
+  move(me(), _'test_room')
+end

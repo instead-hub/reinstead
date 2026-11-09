@@ -107,3 +107,17 @@ fn probe(w: obj, t: tbl, ev: event)
   len xs
   local daemons = getDaemons
   len daemons
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl box
+  found_in = test_room
+
+impl note
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

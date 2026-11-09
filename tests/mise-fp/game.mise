@@ -19,3 +19,14 @@ impl tree
     trace s &mark
     if s:isa Tree
       [[дерево]]
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl tree
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

@@ -68,3 +68,20 @@ impl lamp
 
 impl crate
   before Take = &on_take
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl crate
+  found_in = test_room
+
+impl orb
+  found_in = test_room
+
+impl lamp
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

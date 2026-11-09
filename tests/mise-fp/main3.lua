@@ -92,3 +92,15 @@ _'tree'.before_Take = function(s, w, wh)
     p "дерево"
   end
 end;
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'tree'.found_in = 'test_room';
+
+function start(load)
+  move(me(), _'test_room')
+end

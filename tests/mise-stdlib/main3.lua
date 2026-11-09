@@ -68,7 +68,7 @@ local function fn_probe(w, t, ev)
   ipairs(t)
   walkout()
   visits(w)
-  (mp.xevent or nil)
+  local _ = (mp.xevent or nil)
   visited(w)
   w:access()
   mp:offerslight(w)
@@ -116,14 +116,14 @@ local function fn_probe(w, t, ev)
   theme.name()
   std.pclr()
   std.ref("box")
-  ((mp.args[1] or {}).word or '')
-  (instead.tiny)
+  local _ = ((mp.args[1] or {}).word or '')
+  local _ = (instead.tiny)
   snd.music("x")
   rnd(1)
   local xs = inv()
-  (#xs)
+  local _ = (#xs)
   local daemons = getDaemons()
-  (#daemons)
+  local _ = (#daemons)
 end
 
 obj {
@@ -192,3 +192,17 @@ obj {
   };
   before_Disrobe = "pass";
 }
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'box'.found_in = 'test_room';
+
+_'note'.found_in = 'test_room';
+
+function start(load)
+  move(me(), _'test_room')
+end

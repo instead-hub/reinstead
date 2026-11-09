@@ -75,3 +75,23 @@ impl game
 impl mp : Ask
   on Ask =
     say (text_of wh)
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl x
+  found_in = test_room
+
+impl y
+  found_in = test_room
+
+impl z
+  found_in = test_room
+
+impl npc
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

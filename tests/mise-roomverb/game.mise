@@ -5,17 +5,26 @@ lang ru
 include stdlib
 
 extend events
-  Help:
+  Assist:
 
 room computer "компьютер"
 
-verb Help
+verb Assist
   target = computer
-  words = "пом/ощь"
+  words = "ассист/ировать"
+  patterns = ["{noun}/вн : Assist"]
 
-extend verb #Help
+extend verb #Assist
   target = computer
-  words = "помощь"
+  words = "ассистировать"
 
 impl computer
-  on Help = "Помощь."
+  on Assist = "Помощь."
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+fn start(load)
+  player:move test_room

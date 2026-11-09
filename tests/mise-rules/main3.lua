@@ -88,3 +88,13 @@ mp.Any = function(s, ev, w, wh)
 end;
 
 mp.Default = "нет обработчика";
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+function start(load)
+  move(me(), _'test_room')
+end

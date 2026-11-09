@@ -16,3 +16,11 @@ impl mp : Any
 
 impl mp : Default
   on Default = [[нет обработчика]]
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+fn start(load)
+  player:move test_room

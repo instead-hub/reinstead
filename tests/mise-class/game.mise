@@ -23,3 +23,11 @@ path way "тропа"
 darkroom cellar "подвал"
   dsc = "Подвал."
   hall_note = 1
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+fn start(load)
+  player:move test_room

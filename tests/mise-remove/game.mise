@@ -26,3 +26,14 @@ room r "комната"
 obj x "вещь"
   before Whisper =
     say (w)
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl x
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

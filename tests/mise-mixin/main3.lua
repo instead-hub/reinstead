@@ -115,3 +115,19 @@ obj {
   heard = false;
   before_Talk = "кар";
 }
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'eagle'.found_in = 'test_room';
+
+_'parrot'.found_in = 'test_room';
+
+_'crow'.found_in = 'test_room';
+
+function start(load)
+  move(me(), _'test_room')
+end

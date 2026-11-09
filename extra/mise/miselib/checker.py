@@ -198,6 +198,10 @@ def load_includes(prog: Program, src_dir: str) -> Program:
     return prog
 
 
+def tool_name(name: str) -> str:
+    return name.lstrip("#")
+
+
 def _verb_pat_sig(pat: str, obj_type: str = "obj") -> Optional[Tuple[str, List[str], bool]]:
     if ":" not in pat:
         return None
@@ -341,6 +345,9 @@ def prescan(prog: Program) -> Context:
     for item in prog.items:
         if isinstance(item, VerbDecl):
             tag = item.tag if item.tag is not None else (item.name if item.name.startswith("#") else f"#{item.name}")
+            if item.mode == "verb" and not item.patterns:
+                raise Error(f"verb {item.name}: no patterns — the engine needs at least one "
+                            f"(write `patterns = [\"{{noun}}/вн : {tool_name(item.name)}\"]`)", item.line)
             if item.mode == "remove":
                 active_verbs.pop(tag, None)
             else:

@@ -10,11 +10,21 @@ fn note(t: str)
 
 obj x "вещь"
 
-fn init()
-  "x"
-  "x:noun()"
-  say (x:noun)
-  line "line text"
-  "append text"~
-  note "raw words"
-  note (x:noun)
+fn start(load)
+  player:move test_room
+
+impl game
+  before Inv =
+    "x"
+    "x:noun()"
+    say (x:noun)
+    line "line text"
+    "append text"~
+    note "raw words"
+    note (x:noun)
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl x
+  found_in = test_room

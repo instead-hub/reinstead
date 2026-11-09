@@ -100,3 +100,15 @@ obj {
     p(w)
   end;
 }
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'x'.found_in = 'test_room';
+
+function start(load)
+  move(me(), _'test_room')
+end

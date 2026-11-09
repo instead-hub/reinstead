@@ -79,7 +79,11 @@ obj {
   nam = "x";
 }
 
-function init()
+function start(load)
+  move(me(), _'test_room')
+end
+
+_'game'.before_Inv = function(s, w, wh)
   p "x"
   p "x:noun()"
   p(_'x':noun_hint())
@@ -87,4 +91,12 @@ function init()
   pr "append text"
   p("raw words")
   p(_'x':noun_hint())
-end
+end;
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'x'.found_in = 'test_room';

@@ -12,10 +12,28 @@ obj rock "камень" : scenery
 
 obj coin "монета"
 
-fn init()
-  for w of {box, rock}
-    say (w:noun)
-  for i, w of {box, rock}
-    say (i)
-  for w of plurals box
-    say (w:noun)
+fn start(load)
+  player:move test_room
+
+impl game
+  before Inv =
+    for w of {box, rock}
+      say (w:noun)
+    for i, w of {box, rock}
+      say (i)
+    for w of plurals box
+      say (w:noun)
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl box
+  found_in = test_room
+
+impl rock
+  found_in = test_room
+
+impl coin
+  found_in = test_room

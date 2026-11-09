@@ -96,3 +96,13 @@ darkroom {
   dsc = "Подвал.";
   hall_note = 1;
 }
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+function start(load)
+  move(me(), _'test_room')
+end

@@ -35,3 +35,14 @@ fn demo()
   local p, q = swap box
   local o, i = lookup (where_list box) box
   p (minmax 7 8)
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl box
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

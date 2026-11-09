@@ -91,7 +91,11 @@ obj {
   nam = "coin";
 }
 
-function init()
+function start(load)
+  move(me(), _'test_room')
+end
+
+_'game'.before_Inv = function(s, w, wh)
   for _, w in ipairs({ _'box', _'rock' }) do
     p(w:noun_hint())
   end
@@ -101,4 +105,16 @@ function init()
   for _, w in ipairs(fn_plurals(_'box')) do
     p(w:noun_hint())
   end
-end
+end;
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'box'.found_in = 'test_room';
+
+_'rock'.found_in = 'test_room';
+
+_'coin'.found_in = 'test_room';

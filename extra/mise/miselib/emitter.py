@@ -257,7 +257,11 @@ class Emitter:
                 if call:
                     lines.append(f"{ref}{call}")
                 continue
-            lines.append(f"{ref}.{p.name} = {self._prop_val(p, ent)};")
+            val = self._prop_val(p, ent)
+            if p.name in ("word", "raw_word") and val.startswith("-"):
+                # the `-"…"` marker is for table constructors; an assignment takes a string
+                val = val[1:]
+            lines.append(f"{ref}.{p.name} = {val};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h)
             if k.startswith("["):
@@ -381,7 +385,10 @@ class Emitter:
             rhs = ", ".join(self._assign_rhs(s.target, v) for v in s.values)
             return f"{lhs} = {rhs}" if s.op == "=" else f"{lhs} = {lhs} {s.op[0]} ({rhs})"
         if isinstance(s, CallStmt):
-            return self._call(s.call, as_stmt=True)
+            code = self._call(s.call, as_stmt=True)
+            if code.startswith("(") or code.startswith(("#", "-")):
+                return f"local _ = {code}"          # an expression, not a call statement
+            return code
         if isinstance(s, IfStmt):
             parts = []
             for i, (cond, body, _l) in enumerate(s.branches):

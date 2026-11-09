@@ -83,7 +83,7 @@ _'game'.dsc = [[^Пример простой игры на Inform.
 ^
 ]];
 
-pl.word = -"ты/жр,2л";
+pl.word = "ты/жр,2л";
 pl.description = "Здесь нет зеркала.";
 pl.capacity = 1;
 

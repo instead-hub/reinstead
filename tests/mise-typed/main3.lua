@@ -151,3 +151,19 @@ obj {
 _'lamp'.target = 'orb';
 
 _'crate'.before_Take = fn_on_take;
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'crate'.found_in = 'test_room';
+
+_'orb'.found_in = 'test_room';
+
+_'lamp'.found_in = 'test_room';
+
+function start(load)
+  move(me(), _'test_room')
+end

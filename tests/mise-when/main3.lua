@@ -112,7 +112,8 @@ _'box'.Gaze = function(s, w, wh)
   end
 end;
 
-function init()
+function start(load)
+  move(me(), _'test_room')
   if true then
     p "one"
   end
@@ -120,3 +121,11 @@ function init()
     p "two"
   end
 end
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'box'.found_in = 'test_room';

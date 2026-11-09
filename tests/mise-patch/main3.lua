@@ -97,3 +97,15 @@ _'box'["Open,Close"] = "use &helper";
 _'box'.after_Any = "use &helper";
 _'box'.Any = "use &helper";
 _'box'.Default = "use &helper";
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+_'box'.found_in = 'test_room';
+
+function start(load)
+  move(me(), _'test_room')
+end
