@@ -101,6 +101,8 @@ class Parser:
             self.pos += 1
             if self.match("IDENT", "type"):
                 return prog.items.append(self._parse_type(extend=True))
+            if self.match("IDENT", "events"):
+                return prog.items.append(self._parse_events(True, t.line))
             self.match("IDENT", "verb")
             return prog.items.append(self._parse_verb("extend", t.line))
         if kw == "remove":
@@ -112,6 +114,10 @@ class Parser:
         if kw == "type":
             self.pos += 1
             return prog.items.append(self._parse_type(extend=False))
+        if kw == "events":
+            self.pos += 1
+            prog.items.append(self._parse_events(False, t.line))
+            return
         if kw == "entry":
             self.pos += 1
             tok = self.eat("IDENT")
@@ -181,28 +187,26 @@ class Parser:
             return f"tbl[{inner}]{'?' if self.match('OP', '?') else ''}"
         return self.eat("IDENT").val + ("?" if self.match("OP", "?") else "")
 
+    def _parse_events(self, extend: bool, line: int) -> EventsDecl:
+        """`events` — каждое имя с аргументами, которые получает обработчик."""
+        self.eat_nl()
+        decl = EventsDecl(extend=extend, line=line)
+        self.eat("INDENT")
+        while not self.at("DEDENT") and not self.at("EOF"):
+            names = self.sym_list()
+            args: List[str] = []
+            if self.match("OP", ":") and not self.at("NEWLINE"):
+                args.append(self._parse_type_str())
+                while self.match("OP", ","):
+                    args.append(self._parse_type_str())
+            decl.sigs.append((names, args))
+            self.eat_nl()
+        self.eat("DEDENT")
+        return decl
+
     def _parse_type(self, extend: bool) -> TypeDecl:
         line = self.cur().line
         name = self.eat("IDENT").val
-        if name == "event":
-            self.match("OP", "=")
-            self.eat_nl()
-            self.eat("INDENT")
-            sigs = []
-            while not self.at("DEDENT") and not self.at("EOF"):
-                life = bool(self.match("IDENT", "life"))
-                evs = self.sym_list()
-                ats = []
-                if self.match("OP", ":") or self.match("OP", "="):
-                    if not self.at("NEWLINE"):
-                        ats.append(self._parse_type_str())
-                        while self.match("OP", ","):
-                            ats.append(self._parse_type_str())
-                sigs.append((life, evs, ats))
-                self.eat_nl()
-            self.eat("DEDENT")
-            return TypeDecl(name="event", extend=extend, event_sigs=sigs, line=line)
-
         self.match("OP", "=")
         neg, vals = False, []
 

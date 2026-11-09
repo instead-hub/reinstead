@@ -227,6 +227,17 @@ before Any(s, ev, w)
 - имя события в ключе (`on`/`before`/`after`/`post`/`life`) должно быть объявлено; опечатка получает подсказку `did you mean 'Open'?`;
 - опечатка в фазе (`befor Open`) сообщается как `bad field name ... (did you mean 'before Open'?)`.
 
+**События** — отдельное объявление, не особая форма `type`:
+
+```mise
+events
+  Answer, Ask, AskFor: obj, str
+  Take, Pull, Push: obj
+  Inv, Look, Wake:
+```
+Имя без аргументов означает «обработчик получает только `s`»;
+`extend events` добавляет события игры.
+
 **Точки входа движка** объявляются, а не зашиты в компилятор:
 
 ```mise

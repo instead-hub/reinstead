@@ -93,7 +93,7 @@ class list = std.list
 entry init()
 entry start(load: bool)
 
-type event
+events
   # Full action arguments, the acted object first.  A handler on that object
   # receives them after `s`; a room/game/mp handler gets the object as `w`.
   Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str
@@ -101,7 +101,6 @@ type event
   Give, Insert, Lock, PutOn, Remove, Show, ThrowAt, Transfer, Unlock: obj, obj
   LetGo: obj, obj, obj
   LetIn: obj, obj
-  life Ask, Tell, Answer: obj, str
   Attack, Blow, Buy, Climb, Close, Drop, Eat, Enter, Exam, Exit, Fill, GetOff: obj
   JumpOver, Kiss, Listen, LookUnder, Open, Pull, Push, Rub, Search, Smell: obj
   SwitchOff, SwitchOn, Talk, Taste, Tear, Touch, Turn, Use, WakeOther, Walk: obj

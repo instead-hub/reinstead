@@ -179,6 +179,14 @@ class FnDecl:
     line: int = 0
 
 @dataclass
+class EventsDecl:
+    """`events` — event names and the action arguments each one takes."""
+    sigs: List[Tuple[List[str], List[str]]] = field(default_factory=list)
+    extend: bool = False
+    line: int = 0
+
+
+@dataclass
 class EntryDecl:
     """`entry init()` — a global the engine calls itself."""
     name: str

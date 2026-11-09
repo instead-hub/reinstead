@@ -26,7 +26,6 @@ class Context:
     event_names: Set[str] = field(default_factory=set)
     event_args: Dict[str, List[str]] = field(default_factory=dict)
     event_acted: Set[str] = field(default_factory=set)   # the action takes an acted object
-    life_args: Dict[str, List[str]] = field(default_factory=dict)
 
     classes: Dict[str, str] = field(default_factory=dict)                  # class -> parent
     class_decls: Dict[str, EntityDecl] = field(default_factory=dict)
@@ -223,26 +222,29 @@ def prescan(prog: Program) -> Context:
     base_evs: Dict[str, List[str]] = {}
 
     for item in prog.items:
-        if isinstance(item, TypeDecl):
-            if item.name == "event":
-                for life, evs, ats in item.event_sigs:
-                    for ev in evs:
-                        ctx.event_names.add(ev)
-                        if life:
-                            ctx.life_args[ev] = list(ats)
-                        else:
-                            base_evs[ev] = list(ats)      # `[]` = the handler gets only `s`
-            else:
-                if item.extend and item.name not in ctx.enums:
-                    raise Error(f"extend type {item.name!r}: unknown type", item.line)
-                if item.name in ctx.seen_types and not item.extend:
-                    raise Error(f"duplicate type {item.name!r}", item.line)
-                ctx.seen_types.add(item.name)
-                vals, neg = ctx.enums.get(item.name, (set(), False))
-                vals.update(item.values)
-                ctx.enums[item.name] = (vals, neg or item.negate)
-                for v in item.values:
-                    ctx.enum_owner.setdefault(v, set()).add(item.name)
+        if isinstance(item, EventsDecl):
+            for evs, ats in item.sigs:
+                for at in ats:
+                    for alt in split_union(at):
+                        if alt.rstrip("?").strip() in PRIMITIVES or alt.rstrip("?").strip() in ctx.enums \
+                                or alt.rstrip("?").strip() in ctx.classes \
+                                or alt.startswith(("obj", "str", "num", "bool")):
+                            continue
+                        raise Error(f"event {evs[0]}: unknown argument type {alt!r}", item.line)
+                for ev in evs:
+                    ctx.event_names.add(ev)
+                    base_evs[ev] = list(ats)      # `[]` = the handler gets only `s`
+        elif isinstance(item, TypeDecl):
+            if item.extend and item.name not in ctx.enums:
+                raise Error(f"extend type {item.name!r}: unknown type", item.line)
+            if item.name in ctx.seen_types and not item.extend:
+                raise Error(f"duplicate type {item.name!r}", item.line)
+            ctx.seen_types.add(item.name)
+            vals, neg = ctx.enums.get(item.name, (set(), False))
+            vals.update(item.values)
+            ctx.enums[item.name] = (vals, neg or item.negate)
+            for v in item.values:
+                ctx.enum_owner.setdefault(v, set()).add(item.name)
         elif isinstance(item, FnDecl):
             if item.name in ctx.fns:
                 raise Error(f"duplicate fn {item.name!r}", item.line)
@@ -652,13 +654,7 @@ HANDLER_PARAMS = ("s", "w", "wh", "w2", "w3")
 
 def _handler_event_args(ctx: Context, h: Handler) -> List[str]:
     """The event's arguments, merged over the handler's events."""
-    src = ctx.life_args if h.phase == "life" else ctx.event_args
-    per: List[List[str]] = []
-    for ev in h.events:
-        sigs = src.get(ev)
-        if sigs is None and h.phase == "life":
-            sigs = ctx.event_args.get(ev)      # a life handler sees the action args too
-        per.append(list(sigs or []))
+    per = [list(ctx.event_args.get(ev) or []) for ev in h.events]
     n = max((len(x) for x in per), default=0)
     out: List[str] = []
     for i in range(n):

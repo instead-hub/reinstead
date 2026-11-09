@@ -4,7 +4,7 @@ lang ru
 
 include stdlib
 
-extend type event
+extend events
   Help:
 
 room computer "компьютер"
