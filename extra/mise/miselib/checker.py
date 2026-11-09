@@ -188,7 +188,10 @@ def load_includes(prog: Program, src_dir: str) -> Program:
             raise Error(f"include file not found: {inc!r}")
         for p in paths:
             with open(p, "r", encoding="utf-8") as f:
-                merged.extend(parse_source(f.read(), os.path.basename(p)).items)
+                sub = parse_source(f.read(), os.path.basename(p))
+            # an include may include others (`stdlib` includes `core`)
+            sub = load_includes(sub, os.path.dirname(p))
+            merged.extend(sub.items)
     prog.items = merged + prog.items
     return prog
 
