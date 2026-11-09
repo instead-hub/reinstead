@@ -37,7 +37,7 @@ class Context:
     field_names: Set[str] = field(default_factory=set)
     lua_globals: Dict[str, str] = field(default_factory=dict)     # `extern global` -> type
     globals_lua: Dict[str, str] = field(default_factory=dict)     # `extern global` -> template
-    ref_fields: Set[str] = field(default_factory=lambda: {"with", "found_in", "scope"})
+    ref_fields: Set[str] = field(default_factory=set)   # fields whose declared type says "reference"
 
     fns: Dict[str, FnDecl] = field(default_factory=dict)
     fn_names: Set[str] = field(default_factory=set)
