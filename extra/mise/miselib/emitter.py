@@ -178,7 +178,7 @@ class Emitter:
 
     def _prop_scalar(self, e: Expr, is_ref: bool = False) -> str:
         if isinstance(e, Sym):
-            if is_ref or e.name in self.ctx.objects or e.name == "none":
+            if is_ref or e.name in self.ctx.objects:
                 return f"'{e.name}'"
             if e.name in self.ctx.event_names or e.rk in ("enum", "event"):
                 return lua_str(e.name)
@@ -399,7 +399,7 @@ class Emitter:
         is_ref = (isinstance(target, FieldAccess) and target.field in self.ctx.ref_fields) or (
             isinstance(target, Sym) and self.ctx.globals.get(target.name, ("", False))[1]
         )
-        if is_ref and isinstance(val, Sym) and (val.name in self.ctx.objects or val.name == "none"):
+        if is_ref and isinstance(val, Sym) and val.name in self.ctx.objects:
             return f"_'{val.name}'"
         return self._expr(val)
 
@@ -416,8 +416,6 @@ class Emitter:
             n = e.name
             if as_lhs or e.rk == "var":
                 return n
-            if e.rk == "none":
-                return "_'none'"
             if e.rk == "lua_global":
                 return self.ctx.globals_lua.get(n, n)
             if e.rk == "obj":

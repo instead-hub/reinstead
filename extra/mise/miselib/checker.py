@@ -415,9 +415,9 @@ def _lit_type(ctx: Context, e: Expr) -> Tuple[str, bool]:
     if isinstance(e, InterpStr):
         return "str", False
     if isinstance(e, Sym):
-        if e.name in ctx.objects or e.name == "none":
-            e.rk = "none" if e.name == "none" else "obj"
-            return ctx.objects.get(e.name, _root(ctx)), True
+        if e.name in ctx.objects:
+            e.rk = "obj"
+            return ctx.objects[e.name], True
         if e.name in ctx.event_names:
             e.rk = "event"
             return "event", False
@@ -436,7 +436,7 @@ def _ref_error(ctx: Context, where: str, name: str, line: int):
 
 def _check_ref_name(ctx: Context, where: str, name: str, line: int):
     """A bare object name in a reference position must be declared."""
-    if name != "none" and name not in ctx.objects:
+    if name not in ctx.objects:
         _ref_error(ctx, where, name, line)
 
 
@@ -477,7 +477,7 @@ def _check_var_ref(ctx: Context, name: str, val: Expr, line: int):
     if not isinstance(val, Sym):
         return
     n = val.name
-    if n == "none" or n in ctx.objects or n in ctx.event_names or n.lstrip("~") in ctx.enum_owner:
+    if n in ctx.objects or n in ctx.event_names or n.lstrip("~") in ctx.enum_owner:
         return
     raise Error(f"{name}: unknown name {n!r}", line)
 
@@ -1040,9 +1040,6 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str], owner: Optional[str],
             e.rk, e.typ = "var", "any"
             return "any"
         raise Error(f"unknown name {n!r} (declare it with `local` or `global`)", e.line)
-    if n == "none":
-        e.rk, e.typ = "none", "obj"
-        return _root(ctx)
     if n in env:
         e.rk, e.typ = "var", env[n]
         return e.typ
