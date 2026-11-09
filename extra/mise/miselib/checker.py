@@ -6,8 +6,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from .ast_nodes import *
 from .parser import PHASES, parse_source
 
-# the class chain of `room` decides whether an object is room-like
-ROOM_ROOT = "room"
+# the class that declares the compass fields (`n_to` ...) is the room-like root
 _SLOT_OBJ_RE = re.compile(r"\{(?:noun|noun_obj|compass\w*)\}")
 # engine fields the game must not assign (the engine owns them)
 READONLY_FIELDS = frozenset({"nam"})
@@ -267,7 +266,7 @@ def prescan(prog: Program) -> Context:
             for p in item.props:
                 if p.typ:
                     ctx.prop_types.setdefault(item.name, {})[p.name] = p.typ
-                if p.typ and any(k in p.typ for k in ("ref", "room", "door", "talk", "list")):
+                if p.typ and _is_ref_type(ctx, p.typ):
                     ctx.ref_fields.add(p.name)
 
     def register_entity(ent: EntityDecl):
@@ -280,9 +279,10 @@ def prescan(prog: Program) -> Context:
             if cdecl and ent.kind != "class" and tr not in ctx.enums.get("attr", (set(), False))[0]:
                 # Only inline mixin-like classes if `ent.kind` is `obj` or another class
                 pass
+            # inline the props/handlers of a class used as a trait (a mixin)
             if cdecl and not any(
                 isinstance(it, EntityDecl) and it.kind == tr for it in prog.items
-            ) and tr not in ("obj", "room", "door", "story", "ending", "option"):
+            ):
                 exp_p.extend(p for p in cdecl.props if p.value is not None)
                 exp_h.extend(cdecl.handlers)
                 kept_tr.extend(t for t in cdecl.traits if t not in kept_tr)
@@ -474,6 +474,18 @@ def _check_var_ref(ctx: Context, name: str, val: Expr, line: int):
     raise Error(f"{name}: unknown name {n!r}", line)
 
 
+def _is_ref_type(ctx: Context, typ: str) -> bool:
+    """Does this declared type hold object references (a name or an object)?"""
+    for alt in split_union(typ):
+        alt = alt.rstrip("?").strip()
+        if alt in ("ref", "list") or _is_object_type(ctx, alt):
+            return True
+        inner = tbl_inner(alt)
+        if inner is not None and (inner == "ref" or _is_object_type(ctx, inner)):
+            return True
+    return False
+
+
 def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
     """A hint for a mistyped kind or a member written without '='."""
     import difflib
@@ -571,7 +583,7 @@ def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[st
         ev = h.events[0]
         sigs = ctx.life_args.get(ev) if h.phase == "life" else ctx.event_args.get(ev)
         if sigs:
-            room_like = _inherits(ctx, kind, ROOM_ROOT) or owner in ("game", "mp", "setup", None)
+            room_like = _inherits(ctx, kind, _room_root(ctx)) or owner in ("game", "mp", "setup", None)
             off = 1 if (room_like and h.phase != "life") else 0
             for idx, st in enumerate(sigs):
                 if 0 < idx + off < len(pnames):
@@ -828,6 +840,14 @@ def _check_fnref(ctx: Context, ref: FnRef, expected: Optional[str], where: str):
         return
     raise TypeCheckError(f"{where}: {ref.name} is {_sig_str(fn)}, expected "
                          f"{' | '.join(alts)}", ref.line)
+
+
+def _room_root(ctx: Context) -> str:
+    """The class whose instances behave like rooms — the one declaring `n_to`."""
+    for cname, fields in ctx.prop_types.items():
+        if "n_to" in fields:
+            return cname
+    return ""   # nothing declared: no kind is room-like
 
 
 def _inherits(ctx: Context, kind: str, root: str) -> bool:
