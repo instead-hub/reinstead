@@ -443,7 +443,7 @@ class Parser:
                         "(`text = [\"page 1\", \"page 2\"]` or a multi-line `[` block)",
                         self.cur().line, self.src)
         if self.at("IDENT", "lua"):
-            val = Lit(line=self.cur().line, kind="raw", val=self._parse_lua().code)
+            val = Lit(line=self.cur().line, kind="lua", val=self._parse_lua().code)
             self.eat("DEDENT")
             return val
         stmts = []

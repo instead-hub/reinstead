@@ -91,7 +91,7 @@ obj {
   description = "Просто коробка.";
   capacity = 2;
   found_in = 'hall';
-  scope = std.list { "box" };
+  scope = 'box';
   before_Take = fn_on_take;
   before_Exam = "Нечего рассматривать.";
   after_Drop = function(s, w, wh)

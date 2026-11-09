@@ -208,7 +208,7 @@ room {
   dsc = "Тихий сад.";
   d_to = 'hall';
   home_to = 'hall';
-  scope = std.list { "statue", "relic" };
+  scope = { "statue", "relic" };
   default_Event = "Exam";
 }
 

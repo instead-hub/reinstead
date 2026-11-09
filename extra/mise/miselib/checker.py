@@ -460,7 +460,7 @@ def _check_refs(ctx: Context, ent: EntityDecl):
         if p.name not in ctx.ref_fields or p.value is None or isinstance(p.value, (list, FnRef)):
             continue
         where = f"{ent.name}.{p.name}" if ent.name else p.name
-        if isinstance(p.value, Lit) and p.value.kind in ("raw", "num", "bool", "nil"):
+        if isinstance(p.value, Lit) and p.value.kind in ("raw", "lua", "num", "bool", "nil"):
             continue
         if isinstance(p.value, Lit) and p.value.kind == "str":
             raise Error(f"{where}: object reference must be a bare name, not a quoted string ({p.value.val!r})", p.line)
@@ -577,8 +577,8 @@ def _check_entity(ctx: Context, ent: EntityDecl):
                 if want and not any(is_subtype(ctx, t, w) for w in want):
                     raise TypeCheckError(f"{where}: return {t}, declared returns "
                                          f"{', '.join(want)}", p.line)
-        elif isinstance(p.value, Lit) and p.value.kind == "raw":
-            pass  # a `lua` block: opaque
+        elif isinstance(p.value, Lit) and p.value.kind == "lua":
+            pass  # a `lua` block: an opaque body
         elif isinstance(p.value, Expr):
             _check_expr(ctx, p.value, {"s": _root(ctx)}, owner, declared)
     for h in ent.handlers:
@@ -1279,12 +1279,12 @@ def _check_override(ctx: Context, ent: EntityDecl):
         return
     methods = {}
     for p in cdecl.props:
-        if isinstance(p.value, (list, FnRef)) or (isinstance(p.value, Lit) and p.value.kind == "raw"):
+        if isinstance(p.value, (list, FnRef)) or (isinstance(p.value, Lit) and p.value.kind == "lua"):
             methods[p.name] = p
     for p in ent.props:
         if p.name in methods and p.value is not None \
                 and not isinstance(p.value, (list, FnRef)) \
-                and not (isinstance(p.value, Lit) and p.value.kind == "raw"):
+                and not (isinstance(p.value, Lit) and p.value.kind == "lua"):
             raise Error(
                 f"{ent.name}.{p.name}: cannot overwrite the method of class {base!r} with a value "
                 f"(use a block, `&fn` or `impl {ent.name}`)", p.line)

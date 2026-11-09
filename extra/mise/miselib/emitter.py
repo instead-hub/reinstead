@@ -2,7 +2,7 @@
 import re
 from typing import Any, List, Optional, Tuple
 from .ast_nodes import *
-from .checker import Context, load_includes, prescan
+from .checker import Context, load_includes, prescan, split_union
 from .parser import parse_source
 
 _PREC = {"or": 1, "and": 2, "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3, "..": 4, "+": 4, "-": 4, "*": 5, "/": 5, "%": 5, "//": 5}
@@ -123,7 +123,7 @@ class Emitter:
                 pgs = ", ".join(self._expr(it) for it in p.value.items)
                 lines.append(f"{fpad}text = {{\n{fpad}  {pgs};\n{fpad}}};")
                 continue
-            lines.append(f"{fpad}{p.name} = {self._prop_val(p, ind + 2)};")
+            lines.append(f"{fpad}{p.name} = {self._prop_val(p, ent, ind + 2)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h, ind + 2)
             lines.append(f"{fpad}{k} = {fn};")
@@ -134,23 +134,23 @@ class Emitter:
             tails.insert(0, f":attr '{','.join(attrs)}'")
         return lines, tails
 
-    def _prop_val(self, p: Prop, ind: int = 0) -> str:
+    def _prop_val(self, p: Prop, ent: Optional[EntityDecl] = None, ind: int = 0) -> str:
         v, pad = p.value, " " * ind
         if isinstance(v, FnRef):
             return self._fnref(v.name)
         if isinstance(v, Lit) and v.kind == "table":
             return v.val
-        if isinstance(v, Lit) and v.kind == "raw" and p.name in ("scope", "word", "raw_word", "dsc", "description"):
-            prms = self._prop_prms(p)
+        if isinstance(v, Lit) and v.kind == "raw":
+            return v.val                       # a `` `lua expression` ``
+        if isinstance(v, Lit) and v.kind == "lua":
+            prms = self._prop_prms(p, ent)
             return f"function({prms})\n{_ind(v.val, ind + 2)}\n{pad}end"
         if isinstance(v, list):
-            prms = self._prop_prms(p)
+            prms = self._prop_prms(p, ent)
             b = _ind(self._stmts(v), ind + 2)
             return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
         if isinstance(v, ListLit):
             is_r = p.name in self.ctx.ref_fields
-            if p.name == "scope":
-                return "std.list { " + ", ".join(f'"{it.name}"' if isinstance(it, Sym) else self._expr(it) for it in v.items) + " }"
             if is_r and len(v.items) == 1 and isinstance(v.items[0], Sym):
                 return f"'{v.items[0].name}'"
             return "{ " + ", ".join((f'"{it.name}"' if (is_r and isinstance(it, Sym)) else self._expr(it)) for it in v.items) + " }"
@@ -158,12 +158,23 @@ class Emitter:
             return self._prop_scalar(v, p.name in self.ctx.ref_fields or (isinstance(v, Sym) and v.name in self.ctx.objects))
         return "nil"
 
-    def _prop_prms(self, p: Prop) -> str:
+    def _prop_prms(self, p: Prop, ent: Optional[EntityDecl] = None) -> str:
+        """Parameters of a prop body, from the declared `fn(...)` of the field."""
         if p.params is not None:
             return ", ".join(p.params)
-        return {"compass_look": "s, to", "OnError": "s, err", "text": "s, n"}.get(
-            p.name, "s, w" if p.name in ("scope", "enter", "exit", "onenter", "onexit") else "s"
-        )
+        if ent is None:
+            return "s"
+        kind = ent.name if ent.kind == "class" else (
+            ent.kind if ent.kind != "impl" else self.ctx.objects.get(ent.name or "", self.ctx.root_class or "obj"))
+        names: List[str] = []
+        cur, seen = kind, set()
+        while cur and cur not in seen:
+            seen.add(cur)
+            names = self.ctx.prop_params.get(cur, {}).get(p.name, names)
+            if names:
+                break
+            cur = self.ctx.classes.get(cur)
+        return ", ".join(names) if names else "s"
 
     def _prop_scalar(self, e: Expr, is_ref: bool = False) -> str:
         if isinstance(e, Sym):
@@ -188,7 +199,7 @@ class Emitter:
             return key, self._fnref(h.body.name)
         if isinstance(h.body, Lit) and h.body.kind == "str":
             return key, lua_str(h.body.val)
-        if isinstance(h.body, Lit) and h.body.kind == "raw":
+        if isinstance(h.body, Lit) and h.body.kind == "lua":
             return key, f"function({prms})\n{_ind(h.body.val, ind + 2)}\n{pad}end"
         if isinstance(h.body, InterpStr):
             return key, f"function({prms})\n{_ind(self._p_call(h.body, 'p'), ind + 2)}\n{pad}end"
@@ -209,7 +220,7 @@ class Emitter:
             elif p.name == "dict" and isinstance(p.value, Lit):
                 lines.append(f"{ref}:dict {p.value.val}")
             else:
-                lines.append(f"{ref}.{p.name} = {self._prop_val(p)};")
+                lines.append(f"{ref}.{p.name} = {self._prop_val(p, ent)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h)
             if k.startswith("["):

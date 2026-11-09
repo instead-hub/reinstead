@@ -186,6 +186,6 @@ obj {
   -"записка";
   nam = "note";
   description = "use heal";
-  scope = std.list { "box", "note" };
+  scope = { "box", "note" };
   before_Disrobe = "pass";
 }
