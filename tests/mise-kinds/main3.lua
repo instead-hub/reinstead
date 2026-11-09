@@ -255,7 +255,7 @@ obj {
       nam = "shard";
     }:disable();
   };
-}
+}:enable()
 
 Ghost = Class {
   word = -"призрак";

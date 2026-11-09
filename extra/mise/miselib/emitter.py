@@ -128,7 +128,7 @@ class Emitter:
             tails.insert(0, f":attr '{','.join(attrs)}'")
         return lines, tails
 
-    def _field_emit(self, ent: Optional[EntityDecl], name: str) -> Optional[Tuple[str, str, str]]:
+    def _field_emit(self, ent: Optional[EntityDecl], name: str) -> Optional[Tuple[str, str, str, str]]:
         """How a declared field reaches Lua (`= method attr(join)` in core)."""
         if ent is None:
             return None
@@ -148,10 +148,12 @@ class Emitter:
         spec = self._field_emit(ent, p.name)
         if spec is None:
             return None
-        _kind, mname, form = spec
+        _kind, mname, form, other = spec
         v = p.value
         if form == "none":
-            return f":{mname}()" if isinstance(v, Lit) and v.val is True else ""
+            if not isinstance(v, Lit) or v.kind != "bool":
+                return ""
+            return f":{mname}()" if v.val else (f":{other}()" if other else "")
         if form == "table":
             return f":{mname} {v.val}" if isinstance(v, Lit) and v.kind == "table" else ""
         items = v.items if isinstance(v, ListLit) else [v]
@@ -250,12 +252,12 @@ class Emitter:
         if ent.words:
             lines.append(f"{ref}.word = -{lua_str('|'.join(ent.words))}")
         for p in ent.props:
-            if p.name == "disabled" and isinstance(p.value, Lit):
-                lines.append(f"{ref}:{'disable' if p.value.val else 'enable'}()")
-            elif p.name == "dict" and isinstance(p.value, Lit):
-                lines.append(f"{ref}:dict {p.value.val}")
-            else:
-                lines.append(f"{ref}.{p.name} = {self._prop_val(p, ent)};")
+            call = self._method_call(ent, p)
+            if call is not None:
+                if call:
+                    lines.append(f"{ref}{call}")
+                continue
+            lines.append(f"{ref}.{p.name} = {self._prop_val(p, ent)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h)
             if k.startswith("["):

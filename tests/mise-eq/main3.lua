@@ -112,7 +112,7 @@ obj {
       p "мимо"
     end
   end;
-}:attr 'scenery':dict { ["коробка/вн"] = "коробку" }
+}:attr 'scenery':enable():dict { ["коробка/вн"] = "коробку" }
 
 Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 7, hint = "Подсказка." }
 

@@ -34,7 +34,7 @@ class Context:
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
     prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
     prop_params: Dict[str, Dict[str, List[str]]] = field(default_factory=dict)  # their fn param names
-    prop_emit: Dict[str, Dict[str, Tuple[str, str, str]]] = field(default_factory=dict)  # method emission
+    prop_emit: Dict[str, Dict[str, Tuple[str, str, str, str]]] = field(default_factory=dict)  # method emission
     ctors: Dict[str, str] = field(default_factory=dict)                  # class -> engine constructor
     root_class: Optional[str] = None                                     # the first class with no parent
     seen_types: Set[str] = field(default_factory=set)
@@ -546,7 +546,7 @@ def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, str]:
     return env
 
 
-def _decl_emit(ctx: Context, kind: str, name: str) -> Optional[Tuple[str, str, str]]:
+def _decl_emit(ctx: Context, kind: str, name: str) -> Optional[Tuple[str, str, str, str]]:
     """How the declared field reaches Lua (`= method attr(join)`)."""
     cur, seen = kind, set()
     while cur and cur not in seen:
@@ -558,9 +558,9 @@ def _decl_emit(ctx: Context, kind: str, name: str) -> Optional[Tuple[str, str, s
     return None
 
 
-def _check_emit(ctx: Context, where: str, emit: Tuple[str, str, str], value: Any, line: int):
+def _check_emit(ctx: Context, where: str, emit: Tuple[str, str, str, str], value: Any, line: int):
     """A method-emitted field takes the value shape its form needs."""
-    _k, mname, form = emit
+    _k, mname, form, _other = emit
     if form == "none":
         if not (isinstance(value, Lit) and value.kind == "bool"):
             raise TypeCheckError(f"{where}: `:{mname}()` takes a `true`/`false` value", line)

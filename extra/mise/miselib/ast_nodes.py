@@ -148,7 +148,7 @@ class Prop:
     params: Optional[List[str]] = None
     type_params: Optional[List[str]] = None   # names of `fn(s: obj, w: list)`
     # how the value reaches Lua: a field (default) or a method call
-    emit: Optional[Tuple[str, str, str]] = None   # ("method", name, "each"|"join"|"table"|"none")
+    emit: Optional[Tuple[str, str, str, str]] = None  # ("method", name, form, other_name)
     line: int = 0
 
 @dataclass

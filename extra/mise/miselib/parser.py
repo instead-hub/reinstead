@@ -398,7 +398,10 @@ class Parser:
         if form not in ("each", "join", "list", "table", "none"):
             raise Error(f"unknown method form {form!r} (each, join, list, table, none)",
                         self.cur().line, self.src)
-        return ("method", mname, form)
+        other = ""
+        if self.match("IDENT", "else"):        # `= method disable(none) else enable`
+            other = self.eat("IDENT").val
+        return ("method", mname, form, other)
 
     def _header_words(self) -> List[str]:
         """Words of a declaration live in its header: `obj hook "крючок|вешалка"`."""
