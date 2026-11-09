@@ -627,10 +627,10 @@ def _handler_event_args(ctx: Context, h: Handler) -> List[str]:
     out: List[str] = []
     for i in range(n):
         ts = [x[i] for x in per if i < len(x)]
-        # an argument is optional when only some of the handler's events take it;
-        # such code guards by `event == ...`, and a `?` would force a nil check on
-        # paths the guard already excludes, so the type is not marked optional
-        out.append(canon_type("|".join(dict.fromkeys(ts))))
+        t = canon_type("|".join(dict.fromkeys(ts)))
+        if any(i >= len(x) for x in per) and not t.endswith("?"):
+            t += "?"                # only some of the events pass this argument
+        out.append(t)
     return out
 
 
@@ -735,6 +735,17 @@ def _check_talk(ctx: Context, td: TalkDecl):
             chk_c(c)
 
 
+def _nonnil(ctx: Context, e: Expr) -> bool:
+    """Is this expression known to be a value, never nil?"""
+    if isinstance(e, Lit):
+        return e.kind != "nil"
+    if isinstance(e, Sym):
+        return (e.name in ctx.objects or e.name in ctx.event_names
+                or bool(ctx.enum_owner.get(e.name.lstrip("~"))))
+    # a call or a field may well be nil, a list literal never is
+    return isinstance(e, (ListLit, InterpStr))
+
+
 def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool,
             arg_names: Optional[Dict[int, str]] = None) -> Dict[str, str]:
     """Refine optional types inside a branch of `if`/`when`/`match`.
@@ -760,17 +771,18 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool,
                 return res
             return _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, False, arg_names), False, arg_names)
         if cond.op in ("==", "!="):
-            left, right = cond.left, cond.right
-            if isinstance(right, Lit) and right.kind == "nil":
-                pass
-            elif isinstance(left, Lit) and left.kind == "nil":
-                left, right = right, left
-            else:
-                left = None
-            if left is not None and isinstance(left, Sym) and left.name in res:
-                plain = (cond.op == "!=") == truthy  # `!= nil` really means "not nil"
-                res[left.name] = strip_nil(res[left.name]) if plain else "nil"
-                return res
+            for a, b in ((cond.left, cond.right), (cond.right, cond.left)):
+                if not (isinstance(a, Sym) and a.name in res):
+                    continue
+                if isinstance(b, Lit) and b.kind == "nil":
+                    plain = (cond.op == "!=") == truthy  # `!= nil` really means "not nil"
+                    res[a.name] = strip_nil(res[a.name]) if plain else "nil"
+                    return res
+                if _nonnil(ctx, b):
+                    # `x == <a value that is never nil>` says x is not nil
+                    if (cond.op == "==") == truthy:
+                        res[a.name] = strip_nil(res[a.name])
+                    break
             # the current event: its accessor, or a parameter typed as one
             is_event = isinstance(cond.left, Sym) and (
                 cond.left.name in CURRENT_EVENT

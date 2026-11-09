@@ -24,6 +24,16 @@ obj box "коробка" : scenery
   after Drop =
     "Упало."
   before Open = pass
+  before Pull, Ask =
+    if w
+      say "спросили: " w
+    else
+      say "ничего"
+  before Drop, PutOn =
+    if w == hall
+      say "в " (w:noun вн)
+    else
+      say "мимо"
 
 verb Probe
   tag = #Probe

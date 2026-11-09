@@ -98,6 +98,20 @@ obj {
     p "Упало."
   end;
   before_Open = function(s, w, wh) return false end;
+  ["before_Pull,Ask"] = function(s, w, wh)
+    if w then
+      p("спросили: ", w)
+    else
+      p "ничего"
+    end
+  end;
+  ["before_Drop,PutOn"] = function(s, w, wh)
+    if w == _'hall' then
+      p("в ", w:noun_hint("вн"))
+    else
+      p "мимо"
+    end
+  end;
 }:attr 'scenery':dict { ["коробка/вн"] = "коробку" }
 
 Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 7, hint = "Подсказка." }
