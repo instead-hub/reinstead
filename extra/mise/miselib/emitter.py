@@ -257,11 +257,9 @@ class Emitter:
                 if call:
                     lines.append(f"{ref}{call}")
                 continue
-            val = self._prop_val(p, ent)
-            if p.name in ("word", "raw_word") and val.startswith("-"):
-                # the `-"…"` marker is for table constructors; an assignment takes a string
-                val = val[1:]
-            lines.append(f"{ref}.{p.name} = {val};")
+            # `-"…"` is the engine's word marker (`__unm` on a string is identity),
+            # so an assignment keeps it: `pl.word = -"ты"` as mp-ru.lua does
+            lines.append(f"{ref}.{p.name} = {self._prop_val(p, ent)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h)
             if k.startswith("["):

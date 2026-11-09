@@ -4,6 +4,9 @@ lang ru
 
 include stdlib
 
+# MetaVerb "~помощь,помоги/те" из mp-ru.lua принадлежит метапарсеру, и
+# объявить его заново из игры нельзя, поэтому у тестового глагола своё имя
+# и своё слово.
 extend events
   Assist:
 
@@ -12,7 +15,7 @@ room computer "компьютер"
 verb Assist
   target = computer
   words = "ассист/ировать"
-  patterns = ["{noun}/вн : Assist"]
+  patterns = [": Assist"]
 
 extend verb #Assist
   target = computer
@@ -21,10 +24,6 @@ extend verb #Assist
 impl computer
   on Assist = "Помощь."
 
-# --- тестовая комната: транскрипт должен что-то видеть ---
-
-room test_room "тестовая комната"
-  dsc = "Тестовая комната."
-
+# глагол привязан к комнате-компьютеру, поэтому игрок стартует там
 fn start(load)
-  player:move test_room
+  player:move computer

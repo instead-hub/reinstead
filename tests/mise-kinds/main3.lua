@@ -85,7 +85,7 @@ end
 
 _'game'.hint_verbs = { "#Look" };
 
-pl.word = "ты";
+pl.word = -"ты";
 
 function start(load)
   move(me(), _'hall')

@@ -79,18 +79,12 @@ room {
   nam = "computer";
 }
 
-Verb({ "#Assist", "ассист/ировать", "{noun}/вн : Assist" }, _'computer')
+Verb({ "#Assist", "ассист/ировать", ": Assist" }, _'computer')
 
 VerbExtendWord({ "#Assist", "ассистировать" }, _'computer')
 
 _'computer'.Assist = "Помощь.";
 
-room {
-  -"тестовая комната";
-  nam = "test_room";
-  dsc = "Тестовая комната.";
-}
-
 function start(load)
-  move(me(), _'test_room')
+  move(me(), _'computer')
 end
