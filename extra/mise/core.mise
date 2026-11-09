@@ -13,7 +13,12 @@ type direction = n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to,
 
 
 class obj = obj
-  # engine fields that have no props type of their own
+  # engine fields that have no props type of their own, and the keys that are
+  # not fields at all but engine method calls
+  with: ref | tbl[ref] = method with(list)
+  attr: attr | tbl[attr] = method attr(join)
+  disabled: bool = method disable(none)
+  dict: tbl = method dict(table)
   nam: str
   tag: str | bool
   obj: tbl[obj]

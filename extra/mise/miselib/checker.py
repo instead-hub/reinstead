@@ -34,6 +34,7 @@ class Context:
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
     prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
     prop_params: Dict[str, Dict[str, List[str]]] = field(default_factory=dict)  # their fn param names
+    prop_emit: Dict[str, Dict[str, Tuple[str, str, str]]] = field(default_factory=dict)  # method emission
     ctors: Dict[str, str] = field(default_factory=dict)                  # class -> engine constructor
     root_class: Optional[str] = None                                     # the first class with no parent
     seen_types: Set[str] = field(default_factory=set)
@@ -278,6 +279,8 @@ def prescan(prog: Program) -> Context:
                     ctx.prop_types.setdefault(item.name, {})[p.name] = p.typ
                     if p.type_params:
                         ctx.prop_params.setdefault(item.name, {})[p.name] = p.type_params
+                    if p.emit:
+                        ctx.prop_emit.setdefault(item.name, {})[p.name] = p.emit
                 if p.typ and _is_ref_type(ctx, p.typ):
                     ctx.ref_fields.add(p.name)
 
@@ -478,9 +481,6 @@ def _check_refs(ctx: Context, ent: EntityDecl):
         if isinstance(p.value, Lit) and p.value.kind == "str":
             raise Error(f"{where}: object reference must be a bare name, not a quoted string ({p.value.val!r})", p.line)
         _check_ref_value(ctx, where, p.value, p.line)
-    for ref in ent.with_refs:
-        where = f"{ent.name}.with" if ent.name else "with"
-        _check_ref_name(ctx, where, ref, ent.line)
     for ch in ent.children:
         _check_refs(ctx, ch)
 

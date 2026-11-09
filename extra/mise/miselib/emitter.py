@@ -112,23 +112,59 @@ class Emitter:
         for p in ent.props:
             if p.value is None:
                 continue
-            if p.name == "disabled":
-                if isinstance(p.value, Lit) and p.value.val is True:
-                    tails.append(":disable()")
-                continue
-            if p.name == "dict" and isinstance(p.value, Lit):
-                tails.append(f":dict {p.value.val}")
+            call = self._method_call(ent, p)
+            if call is not None:
+                if call:
+                    tails.append(call)
                 continue
             lines.append(f"{fpad}{p.name} = {self._prop_val(p, ent, ind + 2)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h, ind + 2)
             lines.append(f"{fpad}{k} = {fn};")
-        if ent.with_refs or ent.children:
-            objs = [f"{fpad}  '{r}';" for r in ent.with_refs] + [self._emit_entity(c, ind + 4) + ";" for c in ent.children]
+        if ent.children:
+            objs = [self._emit_entity(c, ind + 4) + ";" for c in ent.children]
             lines.append(f"{fpad}obj = {{\n" + "\n".join(objs) + f"\n{fpad}}};")
         if attrs:
             tails.insert(0, f":attr '{','.join(attrs)}'")
         return lines, tails
+
+    def _field_emit(self, ent: Optional[EntityDecl], name: str) -> Optional[Tuple[str, str, str]]:
+        """How a declared field reaches Lua (`= method attr(join)` in core)."""
+        if ent is None:
+            return None
+        kind = ent.name if ent.kind == "class" else (
+            ent.kind if ent.kind != "impl" else self.ctx.objects.get(ent.name or "", self.ctx.root_class or "obj"))
+        cur, seen = kind, set()
+        while cur and cur not in seen:
+            seen.add(cur)
+            spec = self.ctx.prop_emit.get(cur, {}).get(name)
+            if spec:
+                return spec
+            cur = self.ctx.classes.get(cur)
+        return None
+
+    def _method_call(self, ent: EntityDecl, p: Prop) -> Optional[str]:
+        """The engine method call a field turns into, or None for a plain field."""
+        spec = self._field_emit(ent, p.name)
+        if spec is None:
+            return None
+        _kind, mname, form = spec
+        v = p.value
+        if form == "none":
+            return f":{mname}()" if isinstance(v, Lit) and v.val is True else ""
+        if form == "table":
+            return f":{mname} {v.val}" if isinstance(v, Lit) and v.kind == "table" else ""
+        items = v.items if isinstance(v, ListLit) else [v]
+        if form == "join":
+            parts = [it.name if (isinstance(it, Sym) and it.name in self.ctx.objects) else self._expr(it)
+                     for it in items]
+            return f":{mname} '{','.join(parts)}'"
+        if form == "list":                  # `:with{ 'a', 'b' }` — names, resolved by the engine
+            parts = [f"'{it.name}'" if (isinstance(it, Sym) and it.name in self.ctx.objects)
+                     else self._expr(it) for it in items]
+            return f":{mname}{{ {', '.join(parts)} }}" if parts else ""
+        args = [self._expr(it) for it in items]
+        return f":{mname}({', '.join(args)})" if args else ""
 
     def _prop_val(self, p: Prop, ent: Optional[EntityDecl] = None, ind: int = 0) -> str:
         v, pad = p.value, " " * ind

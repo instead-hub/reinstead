@@ -183,10 +183,7 @@ room {
   after_Turn = function(s, w, wh)
     p "Повернулись."
   end;
-  obj = {
-    'sky';
-  };
-}:dict { "зал" }
+}:dict { "зал" }:with{ 'sky' }
 
 door {
   -"ворота";

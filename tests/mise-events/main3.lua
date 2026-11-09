@@ -96,13 +96,7 @@ room {
   before_Consult = function(s, w, wh)
     p(fn_text_of(wh))
   end;
-  obj = {
-    'x';
-    'npc';
-    'y';
-    'z';
-  };
-}
+}:with{ 'x', 'npc', 'y', 'z' }
 
 obj {
   -"вещь";

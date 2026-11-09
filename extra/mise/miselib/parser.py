@@ -357,26 +357,6 @@ class Parser:
                 ent.traits.extend(self.sym_list())
                 self.eat_nl()
                 continue
-            if kw == "with":
-                self.pos += 1
-                if self.match("OP", "="):
-                    ent.with_refs.extend(self.sym_list())
-                    self.eat_nl()
-                    continue
-                if self.match("NEWLINE"):
-                    self.skip_nl()
-                    self.eat("INDENT")
-                    while not self.at("DEDENT") and not self.at("EOF"):
-                        if self.match("OP", "-"):
-                            ent.with_refs.extend(self.sym_list())
-                            self.eat_nl()
-                        else:
-                            ent.children.append(self._parse_entity())
-                    self.eat("DEDENT")
-                else:
-                    raise Error("with: expected '=' before reference names or an indented block "
-                                "of nested declarations", t.line, self.src)
-                continue
             if kw[:1].islower() and kw not in PHASES and self.peek().kind == "IDENT" \
                     and self.peek(2).val not in ("=", "(", "@", ","):
                 import difflib
@@ -395,7 +375,8 @@ class Parser:
 
             if ent.kind == "class" and self.match("OP", ":"):
                 typ = self._parse_type_str()
-                ent.props.append(Prop(name=pname, typ=typ,
+                emit = self._field_emit()
+                ent.props.append(Prop(name=pname, typ=typ, emit=emit,
                                       type_params=list(self._last_type_params), line=t.line))
                 self.eat_nl()
                 continue
@@ -406,6 +387,24 @@ class Parser:
                             t.line, self.src)
             val = self._value_after_eq()
             ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
+
+    def _field_emit(self) -> Optional[Tuple[str, str]]:
+        """`= method with(each)` — how a declared field's value reaches Lua."""
+        if not self.match("OP", "="):
+            return None
+        kw = self.eat("IDENT")
+        if kw.val != "method":
+            raise Error(f"expected `method` after '=', got {kw.val!r}", kw.line, self.src)
+        mname = self.eat("IDENT").val           # the engine method name
+        form = "each"
+        if self.match("OP", "("):
+            if not self.at("OP", ")"):
+                form = self.eat("IDENT").val
+            self.eat("OP", ")")
+        if form not in ("each", "join", "list", "table", "none"):
+            raise Error(f"unknown method form {form!r} (each, join, list, table, none)",
+                        self.cur().line, self.src)
+        return ("method", mname, form)
 
     def _header_words(self) -> List[str]:
         """Words of a declaration live in its header: `obj hook "крючок|вешалка"`."""
