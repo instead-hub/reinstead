@@ -154,6 +154,9 @@ def expect(ctx: Context, where: str, actual: str, expected: Optional[str], line:
     """Report a type mismatch unless `actual` can be used as `expected`."""
     if not expected or expected == "any" or is_subtype(ctx, actual, expected):
         return
+    if is_optional(actual) and not is_optional(expected):
+        raise TypeCheckError(f"{where}: possible nil, narrow it first "
+                             f"(`if {where}:`)", line)
     raise TypeCheckError(f"{where}: expected {expected}, got {actual}", line)
 
 
@@ -1127,8 +1130,10 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         if not (_is_object_type(ctx, ot) or ot in ("tbl", "str") or tbl_inner(ot) is not None):
             expect(ctx, "index", ot, "tbl|str", e.line)
         _check_expr(ctx, e.index, env, owner, "num" if ot != "str" else "num")
-        e.typ = in_exp if in_exp is not None else (
+        base = in_exp if in_exp is not None else (
             _root(ctx) if _is_object_type(ctx, ot) else ("str" if ot == "str" else "any"))
+        # an index may be out of range, so the element is optional
+        e.typ = base if (ot == "str" or base in ("any", "nil") or base.endswith("?")) else base + "?"
         return e.typ
     if isinstance(e, UnaryOp):
         if e.op == "-" and isinstance(e.operand, Lit) and e.operand.kind == "str":

@@ -66,12 +66,18 @@ run_game() {
 	rm -f "$_d"/log*.txt
 	_appdata=$(mktemp -d)
 	SDL_VIDEODRIVER=dummy timeout 120 "$BIN" -appdata "$_appdata" \
-		-noautosave "$_d" -i "$_s" >/dev/null 2>&1
+		-noautosave -stop "$_d" -i "$_s" >"$_o.err" 2>&1
 	_r=$?
 	_last=$(ls -t "$_d"/log*.txt 2>/dev/null | head -1)
 	if [ -z "$_last" ]; then
 		rm -rf "$_appdata"
 		return 1
+	fi
+	if [ "$_r" -ne 0 ]; then
+		# the engine stops a scripted run on a game error (or the run timed out)
+		rm -f "$_d"/log*.txt
+		rm -rf "$_appdata"
+		return 2
 	fi
 	cp "$_last" "$_o"
 	rm -f "$_d"/log*.txt
@@ -80,6 +86,10 @@ run_game() {
 }
 
 strip_head() { tail -n +2 "$1"; }
+
+show_engine_err() {
+	[ -f "$1.err" ] && grep -aiE "error|attempt|timeout" "$1.err" | head -5 >&2
+}
 alice_flt() {
 	tail -n +2 "$1" | grep -vE '^(Белый|Чёрный) котёнок |^Тут есть |^$'
 }
@@ -96,10 +106,12 @@ if [ "$ENGINE" = 1 ]; then
 		prep_script "$dir/autoscript" "$script"
 		if ! run_game "$orig" "$script" "$WORK/$name.orig"; then
 			fail "$name: original run"
+			show_engine_err "$WORK/$name.orig"
 			continue
 		fi
 		if ! run_game "$dir" "$script" "$WORK/$name.new"; then
 			fail "$name: converted run"
+			show_engine_err "$WORK/$name.new"
 			continue
 		fi
 		case "$base" in
@@ -156,6 +168,7 @@ if [ "$ENGINE" = 1 ]; then
 		prep_script "$dir/autoscript" "$script"
 		if ! run_game "$dir" "$script" "$WORK/$name.new"; then
 			fail "$name: run"
+			show_engine_err "$WORK/$name.new"
 			continue
 		fi
 		rm -f "$dir/dict.mrd"

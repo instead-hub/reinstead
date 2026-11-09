@@ -1,1 +1,1 @@
-mise: line 13: o: expected obj, got obj?
+mise: line 13: o: possible nil, narrow it first (`if o:`)

@@ -24,7 +24,7 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 
 - Pass the game directory as an absolute path; relative `games/trial` fails with "Can not detect game format":
   `SDL_VIDEODRIVER=dummy ./reinstead -appdata /tmp/x -noautosave /work/data/games/trial -i /work/data/games/trial/autoscript`
-- `-i` script is opened relative to CWD (use an absolute path). CLI options are parsed in `data/core/core.lua`: positional = game dir, plus `-i`, `-appdata`, `-noautosave`, `-debug`, `-scale`, `-tts`, `-noautoload`.
+- `-i` script is opened relative to CWD (use an absolute path). CLI options are parsed in `data/core/core.lua`: positional = game dir, plus `-i`, `-appdata`, `-noautosave`, `-debug`, `-scale`, `-tts`, `-noautoload`, `-stop`. `-stop` ends a scripted run with status 1 as soon as a command raises an engine error (without it the engine stops the script and waits for input, which looks like a hang); the test harness passes it.
 - Autoscript = one player command per line; lines starting with `!`/`/` are system commands (`!game`, `!script`, `!restart`, `!font`, `!quit`, ...). `data/games/autoscript` is an orchestrator over all games, not a game.
 - `dict.mrd` beside a game is a generated, tracked cache; the engine regenerates it when sources change, so it can appear modified after runs.
 

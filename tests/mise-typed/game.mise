@@ -23,8 +23,8 @@ fn label(w: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str
 fn label2(w: obj, n: case|num) -> str
   return w:noun n
 
-fn first_str(t: tbl[str]) -> str
-  return t[1]
+fn first_str(t: tbl[str]) -> str?
+  return t[1]   # элемента может не быть
 
 fn spot(s: obj) -> obj
   return s:where and s:where or none
@@ -51,7 +51,10 @@ fn on_take(s: Box)
   say (chosen:noun вн)
   say ( (spot s):noun вн)
   local w = inv[1]
-  w:noun
+  if w
+    w:noun
+  else
+    say "пусто"
   say (label2 s 2)
   label s 1 2
 

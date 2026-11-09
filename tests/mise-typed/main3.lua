@@ -83,7 +83,11 @@ local function fn_on_take(s)
   p(_(chosen):noun_hint("вн"))
   p(fn_spot(s):noun_hint("вн"))
   local w = inv()[1]
-  w:noun_hint()
+  if w then
+    w:noun_hint()
+  else
+    p "пусто"
+  end
   p(fn_label2(s, 2))
   fn_label(s, 1, 2)
 end

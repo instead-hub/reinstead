@@ -32,6 +32,7 @@ return {
 	settings = true, -- store font size
 --	settings_game = true, -- store selected game
 	autoload = true,
+	stop_on_err = false, -- `-stop`: end a scripted run on a command error
 --	debug = true,
 --	tts = true,
 --	cmd_aliases = { ['стоп'] = 'stop', ['шрифт'] = 'font', ['рестарт'] = 'restart',
