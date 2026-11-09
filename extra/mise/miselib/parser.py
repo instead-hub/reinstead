@@ -112,6 +112,14 @@ class Parser:
         if kw == "type":
             self.pos += 1
             return prog.items.append(self._parse_type(extend=False))
+        if kw == "entry":
+            self.pos += 1
+            tok = self.eat("IDENT")
+            line, name = tok.line, tok.val
+            params = self._opt_params()
+            self.eat_nl()
+            prog.items.append(EntryDecl(name=name, params=params, line=line))
+            return
         if kw == "extern":
             return prog.items.append(self._parse_fn(is_extern=True))
         if kw in ("global", "const"):
@@ -382,6 +390,22 @@ class Parser:
             val = self._value_after_eq()
             ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
 
+    def _opt_params(self) -> List[Tuple[str, str]]:
+        """`(a, b: obj)` after a name."""
+        params: List[Tuple[str, str]] = []
+        if not self.match("OP", "("):
+            return params
+        while not self.at("OP", ")") and not self.at("EOF"):
+            pname = self.eat("IDENT").val
+            ptype = "any"
+            if self.match("OP", ":"):
+                ptype = self._parse_type_str()
+            params.append((pname, ptype))
+            if not self.match("OP", ","):
+                break
+        self.eat("OP", ")")
+        return params
+
     def _field_emit(self) -> Optional[Tuple[str, str]]:
         """`= method with(each)` — how a declared field's value reaches Lua."""
         if not self.match("OP", "="):
@@ -557,27 +581,19 @@ class Parser:
         hero = None
         init_body: Optional[List[Stmt]] = None
         start_body: Optional[List[Stmt]] = None
-        init_head: List[Stmt] = []
         self.eat_nl()
         self.eat("INDENT")
         while not self.at("DEDENT") and not self.at("EOF"):
             t = self.cur()
             kw = t.val
-            if kw in ("dsc", "fmt", "take"):
+            if kw in ("dsc", "fmt"):
                 self.pos += 1
                 self.eat("OP", "=")
                 if kw == "fmt":
                     prog.fmt.extend(self.sym_list())
-                    self.eat_nl()
-                elif kw == "dsc":
-                    val = self._parse_str_tok()
-                    game.props.append(Prop(name="dsc", value=val, line=t.line))
-                    self.eat_nl()
                 else:
-                    for name in self.sym_list():
-                        init_head.append(CallStmt(line=t.line, call=Call(
-                            line=t.line, func="take", args=[Sym(line=t.line, name=name)])))
-                    self.eat_nl()
+                    game.props.append(Prop(name="dsc", value=self._parse_str_tok(), line=t.line))
+                self.eat_nl()
             elif kw in ("hero", "game"):
                 self.pos += 1
                 sub = EntityDecl(kind="impl", name="pl" if kw == "hero" else "game", line=t.line)
@@ -606,13 +622,14 @@ class Parser:
             elif kw in PHASES:
                 game.handlers.append(self._parse_handler())
             else:
-                raise Error(f"unknown setup field {kw!r}", t.line, self.src)
+                hint = " (write `init =` and `take …` there)" if kw == "take" else ""
+                raise Error(f"unknown setup field {kw!r}{hint}", t.line, self.src)
         self.eat("DEDENT")
         out: List[Any] = [game]
         if hero is not None:
             out.append(hero)
-        if init_body is not None or init_head:
-            out.append(FnDecl(name="init", params=[], body=init_head + (init_body or []), line=line))
+        if init_body is not None:
+            out.append(FnDecl(name="init", params=[], body=init_body, line=line))
         if start_body is not None:
             out.append(FnDecl(name="start", params=[("load", "bool")], body=start_body, line=line))
         return out

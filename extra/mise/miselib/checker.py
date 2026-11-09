@@ -39,6 +39,7 @@ class Context:
     root_class: Optional[str] = None                                     # the first class with no parent
     seen_types: Set[str] = field(default_factory=set)
     field_names: Set[str] = field(default_factory=set)
+    entries: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)  # engine entry points
     lua_globals: Dict[str, str] = field(default_factory=dict)     # `extern global` -> type
     globals_lua: Dict[str, str] = field(default_factory=dict)     # `extern global` -> template
     ref_fields: Set[str] = field(default_factory=set)   # fields whose declared type says "reference"
@@ -246,6 +247,8 @@ def prescan(prog: Program) -> Context:
             if item.name in ctx.fns:
                 raise Error(f"duplicate fn {item.name!r}", item.line)
             ctx.fns[item.name] = item
+        elif isinstance(item, EntryDecl):
+            ctx.entries[item.name] = list(item.params)
         elif isinstance(item, GlobalDecl):
             ctx.lua_globals[item.name] = item.typ
             ctx.globals_lua[item.name] = item.template
@@ -403,6 +406,13 @@ def prescan(prog: Program) -> Context:
             for vn, ve, vl in item.items:
                 _check_var_ref(ctx, vn, ve, vl)
 
+    for item in prog.items:
+        if isinstance(item, FnDecl) and item.name in ctx.entries:
+            want = ctx.entries[item.name]
+            got = [pt for _pn, pt in item.params]
+            if len(got) != len(want):
+                raise Error(f"entry {item.name}: the engine calls it with "
+                            f"{len(want)} argument(s), declared {len(got)}", item.line)
     for item in prog.items:
         if isinstance(item, FnDecl):
             _check_signature(ctx, item)

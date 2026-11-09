@@ -227,6 +227,16 @@ before Any(s, ev, w)
 - имя события в ключе (`on`/`before`/`after`/`post`/`life`) должно быть объявлено; опечатка получает подсказку `did you mean 'Open'?`;
 - опечатка в фазе (`befor Open`) сообщается как `bad field name ... (did you mean 'before Open'?)`.
 
+**Точки входа движка** объявляются, а не зашиты в компилятор:
+
+```mise
+entry init()
+entry start(load: bool)
+```
+
+`fn init` / `fn start` эмитятся как глобальные функции (движок зовёт их сам),
+и их арность сверяется с объявлением.
+
 **Слои stdlib**
 - `core.mise` — контракт движка: виды и их конструкторы (`class story(room) = cutscene`),
   типы движка (`attr`, `direction`, `event`, `phase`), движковые глобалы

@@ -37,14 +37,14 @@ class Emitter:
 
         for it in self.prog.items:
             if isinstance(it, FnDecl) and not it.is_extern:
-                if it.name in ("init", "start"):
+                if it.name in self.ctx.entries:
                     continue
                 if isinstance(it.body, str) and not it.body.strip().startswith(("local ", "return ")) and "\n" not in it.body and it.name not in self.ctx.used_refs:
                     continue
                 chunks.append(self._emit_fn(it))
 
         for it in self.prog.items:
-            if isinstance(it, FnDecl) and not it.is_extern and it.name in ("init", "start"):
+            if isinstance(it, FnDecl) and not it.is_extern and it.name in self.ctx.entries:
                 prms = ", ".join(pn for pn, _pt in it.params)
                 body = _ind(self._stmts(it.body), 2) if isinstance(it.body, list) else _ind(it.body, 2)
                 chunks.append(f"function {it.name}({prms})\n{body}\nend" if body.strip() else f"function {it.name}({prms})\nend")

@@ -89,6 +89,10 @@ class talk(room)
 # it holds objects; the engine also accepts a plain table of objects
 class list = std.list
 
+# entry points: the engine calls these globals itself
+entry init()
+entry start(load: bool)
+
 type event
   # Full action arguments, the acted object first.  A handler on that object
   # receives them after `s`; a room/game/mp handler gets the object as `w`.

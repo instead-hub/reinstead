@@ -179,6 +179,14 @@ class FnDecl:
     line: int = 0
 
 @dataclass
+class EntryDecl:
+    """`entry init()` — a global the engine calls itself."""
+    name: str
+    params: List[Tuple[str, str]] = field(default_factory=list)
+    line: int = 0
+
+
+@dataclass
 class GlobalDecl:
     """`extern global mp: any = "mp"` — a Lua global reachable from expressions."""
     name: str

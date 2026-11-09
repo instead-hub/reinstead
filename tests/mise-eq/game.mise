@@ -9,7 +9,8 @@ fn on_take(s: obj)
 setup
   fmt = dash
   dsc = "Заставка."
-  take = box
+  init =
+    take box
 
 obj box "коробка" : scenery
   description = "Просто коробка."

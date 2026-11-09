@@ -6,7 +6,6 @@ include stdlib
 setup
   fmt = dash
   dsc = "Заставка."
-  take = box
   hero "ты/мр" =
     description = "Герой."
   game =
@@ -14,6 +13,7 @@ setup
   before Exam =
     "Нечего осматривать."
   init =
+    take box
     player:move hall
   start =
     player:move hall
