@@ -77,7 +77,8 @@ class story(room) = cutscene
 
 class ending(room) = gameover
 
-class talk(obj)
+# a dialogue is a room-like object (`std.dlg = std.class({...}, std.room)`)
+class talk(room)
 
 type event
   Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str
