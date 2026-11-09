@@ -383,10 +383,7 @@ class Emitter:
             rhs = ", ".join(self._assign_rhs(s.target, v) for v in s.values)
             return f"{lhs} = {rhs}" if s.op == "=" else f"{lhs} = {lhs} {s.op[0]} ({rhs})"
         if isinstance(s, CallStmt):
-            code = self._call(s.call, as_stmt=True)
-            if code.startswith("(") or code.startswith(("#", "-")):
-                return f"local _ = {code}"          # an expression, not a call statement
-            return code
+            return self._call(s.call, as_stmt=True)
         if isinstance(s, IfStmt):
             parts = []
             for i, (cond, body, _l) in enumerate(s.branches):
@@ -468,6 +465,9 @@ class Emitter:
                 return lua_str(n)
             if e.rk == "fn0":
                 return self._call(Call(line=e.line, func=n))
+            if e.rk == "value":
+                fn = self.ctx.fns.get(n)
+                return self._expand(fn, [], False) if fn and isinstance(fn.body, str) else n
             return n
         if isinstance(e, FieldAccess):
             c = f"{self._expr(e.obj)}.{e.field}"

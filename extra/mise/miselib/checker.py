@@ -876,6 +876,8 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             else:
                 _check_store(ctx, s.target, vt[0] if vt else "any", env, owner, s.line)
         elif isinstance(s, CallStmt):
+            if s.call.receiver is None and s.call.callee is None:
+                _check_value_use(ctx, s.call.func, s.line)
             _check_call(ctx, s.call, env, owner)
         elif isinstance(s, IfStmt):
             cenv = dict(env)
@@ -1188,8 +1190,8 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str], owner: Optional[str],
         e.rk, e.typ = "enum", next(iter(owners))
         return e.typ
     if n in ctx.fns or n in ctx.lua_funcs:
-        e.rk = "fn0"
         sig = ctx.fns.get(n)
+        e.rk = "value" if (sig and sig.is_value) else "fn0"
         e.typ = sig.ret_types[0] if (sig and sig.ret_types) else "any"
         return e.typ
     if n in ctx.lua_globals:
@@ -1261,6 +1263,13 @@ def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, str], owner: Optional[st
     else:
         e.typ = rt
     return e.typ
+
+
+def _check_value_use(ctx: Context, name: str, line: int):
+    """`extern value` is an expression: using it as a statement is a mistake."""
+    fn = ctx.fns.get(name)
+    if fn is not None and fn.is_value:
+        raise Error(f"{name}: an expression, not a statement (use its value)", line)
 
 
 def _check_call(ctx: Context, c: Call, env: Dict[str, str], owner: Optional[str] = None) -> str:

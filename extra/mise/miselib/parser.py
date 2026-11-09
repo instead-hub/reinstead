@@ -241,6 +241,7 @@ class Parser:
 
     def _parse_fn(self, is_extern: bool) -> FnDecl:
         line = self.eat("IDENT").line
+        is_value = False
         if is_extern:
             kind = self.eat("IDENT")
             if kind.val == "global":
@@ -251,8 +252,9 @@ class Parser:
                 tmpl = self.eat(self.cur().kind).val
                 self.eat_nl()
                 return GlobalDecl(name=name, typ=typ, template=tmpl, line=kind.line)
-            if kind.val != "fn":
-                raise Error(f"extern {kind.val}: expected `fn` or `global`", kind.line, self.src)
+            if kind.val not in ("fn", "value"):
+                raise Error(f"extern {kind.val}: expected `fn`, `value` or `global`", kind.line, self.src)
+            is_value = kind.val == "value"
         name = self.eat("IDENT").val
         params, var = [], None
         if self.match("OP", "("):
@@ -276,7 +278,8 @@ class Parser:
             self.match("OP", "=")
             raw = self.eat(self.cur().kind).val
             self.eat_nl()
-            return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=raw, is_extern=is_extern, line=line)
+            return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=raw,
+                          is_extern=is_extern, is_value=is_value, line=line)
         body = self._opt_lua_or_stmts()
         return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=body, line=line)
 

@@ -52,7 +52,14 @@ fn probe(w: obj, t: tbl, ev: event)
   ipairs t
   walkout
   visits w
-  xevent
+  say (xevent)
+  say (event)
+  say (len t)
+  say (tiny)
+  say (desc w)
+  say (compass_dir w)
+  say (arg_word 1)
+  say (isa w 'list')
   visited w
   access w
   offerslight w
@@ -99,14 +106,15 @@ fn probe(w: obj, t: tbl, ev: event)
   theme_name
   pclr
   ref 'box'
-  arg_word 1
-  tiny
+  say (arg_word 1)
+  say (tiny)
   music 'x'
   rnd 1
   local xs = inv
-  len xs
+  local n = len xs
+  say n
   local daemons = getDaemons
-  len daemons
+  say (len daemons)
 
 # --- тестовая комната: транскрипт должен что-то видеть ---
 
