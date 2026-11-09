@@ -147,9 +147,13 @@ class Emitter:
             return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
         if isinstance(v, ListLit):
             is_r = p.name in self.ctx.ref_fields
-            if is_r and len(v.items) == 1 and isinstance(v.items[0], Sym):
+            items = [f'"{it.name}"' if (is_r and isinstance(it, Sym)) else self._expr(it) for it in v.items]
+            if is_r and len(items) == 1 and isinstance(v.items[0], Sym):
                 return f"'{v.items[0].name}'"
-            return "{ " + ", ".join((f'"{it.name}"' if (is_r and isinstance(it, Sym)) else self._expr(it)) for it in v.items) + " }"
+            if len(items) > 1:                      # a field list: one item per line
+                body = "".join(f"{pad}  {it},\n" for it in items)
+                return "{\n" + body + pad + "}"
+            return "{ " + ", ".join(items) + " }"
         if isinstance(v, Expr):
             return self._prop_scalar(v, p.name in self.ctx.ref_fields or (isinstance(v, Sym) and v.name in self.ctx.objects))
         return "nil"

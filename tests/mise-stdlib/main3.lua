@@ -186,6 +186,9 @@ obj {
   -"записка";
   nam = "note";
   description = "use heal";
-  scope = { "box", "note" };
+  scope = {
+    "box",
+    "note",
+  };
   before_Disrobe = "pass";
 }

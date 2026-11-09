@@ -101,8 +101,11 @@ cutscene {
 
 cutscene {
   nam = "prologue";
-  text = { [[Первая страница.
-Вторая строка первой страницы.]], "Вторая страница." };
+  text = {
+    [[Первая страница.
+Вторая строка первой страницы.]],
+    "Вторая страница.",
+  };
 }
 
 cutscene {
@@ -206,7 +209,10 @@ room {
   dsc = "Тихий сад.";
   d_to = 'hall';
   home_to = 'hall';
-  scope = { "statue", "relic" };
+  scope = {
+    "statue",
+    "relic",
+  };
   default_Event = "Exam";
 }
 
