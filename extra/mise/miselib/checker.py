@@ -357,13 +357,13 @@ def prescan(prog: Program) -> Context:
             for k, v in ctx.fields[base].items():
                 fmap.setdefault(k, v)
         for p in ent.props:
-            if p.typ and any(k in p.typ for k in ("ref", "room", "door", "talk")):
+            is_ref = bool(p.typ) and _is_ref_type(ctx, p.typ)
+            if is_ref:
                 ctx.ref_fields.add(p.name)
             if p.value is not None and ent.name:
                 fmap[p.name] = _lit_type(ctx, p.value) if isinstance(p.value, Expr) else ("fn", False)
             elif p.typ and ent.name:
-                is_r = any(k in p.typ for k in ("ref", "room", "door", "talk"))
-                fmap[p.name] = (p.typ, is_r)
+                fmap[p.name] = (p.typ, is_ref)
         for ch in ent.children:
             collect_fields(ch)
 
