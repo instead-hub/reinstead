@@ -30,6 +30,7 @@ class Context:
     objects: Dict[str, str] = field(default_factory=dict)                  # id -> kind/class
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
     prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
+    prop_params: Dict[str, Dict[str, List[str]]] = field(default_factory=dict)  # their fn param names
     ctors: Dict[str, str] = field(default_factory=dict)                  # class -> engine constructor
     root_class: Optional[str] = None                                     # the first class with no parent
     seen_types: Set[str] = field(default_factory=set)
@@ -87,7 +88,7 @@ def tbl_inner(t: str) -> Optional[str]:
 # --- Type compatibility -----------------------------------------------------
 
 # type names that are part of the type language; object types are classes
-PRIMITIVES = frozenset({"str", "num", "bool", "any", "event", "tbl", "list", "nil", "ref"})
+PRIMITIVES = frozenset({"str", "num", "bool", "any", "event", "tbl", "nil", "ref"})
 
 
 def _atom_fits(ctx: Context, actual: str, expected: str) -> bool:
@@ -109,12 +110,11 @@ def _atom_fits(ctx: Context, actual: str, expected: str) -> bool:
     if expected == "str" and actual in ctx.enums:
         return True  # an enum value can be passed where a string is wanted
     if expected == "tbl":
-        return actual == "list" or tbl_inner(actual) is not None
+        # an instance of a class is a Lua table as well
+        return tbl_inner(actual) is not None or _is_object_type(ctx, actual)
     in_a, in_e = tbl_inner(actual), tbl_inner(expected)
     if in_a is not None and in_e is not None:
         return in_a == "" or is_subtype(ctx, in_a, in_e)
-    if expected == "list" and in_a is not None:
-        return in_a == "" or is_subtype(ctx, in_a, _root(ctx))
     if expected.startswith("fn") and (actual == "fn" or actual.startswith("fn(")):
         return True  # a Lua fn is opaque, callback bodies are not compared structurally
     return False
@@ -254,10 +254,15 @@ def prescan(prog: Program) -> Context:
                 raise Error(f"class {item.name!r}: parent differs from an earlier declaration", item.line)
             if prev is None and item.parent:
                 ctx.classes[item.name] = item.parent
-            if item.parent is None and ctx.root_class is None:
+            external = bool(item.ctor) and "." in item.ctor
+            if item.parent is None and ctx.root_class is None and not external:
                 ctx.root_class = item.name
-            # a class without a parent extends the root class (as `Class(t)` does)
-            ctx.classes.setdefault(item.name, item.parent or ctx.root_class or item.name)
+            # a class without a parent extends the root class (as `Class(t)` does);
+            # an external class (`std.list`) is a root of its own
+            if external:
+                ctx.classes.setdefault(item.name, item.name)
+            else:
+                ctx.classes.setdefault(item.name, item.parent or ctx.root_class or item.name)
             # Merge repeated `class obj`/`props obj` declarations
             if item.name in ctx.class_decls:
                 ctx.class_decls[item.name].props.extend(item.props)
@@ -266,6 +271,8 @@ def prescan(prog: Program) -> Context:
             for p in item.props:
                 if p.typ:
                     ctx.prop_types.setdefault(item.name, {})[p.name] = p.typ
+                    if p.type_params:
+                        ctx.prop_params.setdefault(item.name, {})[p.name] = p.type_params
                 if p.typ and _is_ref_type(ctx, p.typ):
                     ctx.ref_fields.add(p.name)
 
@@ -479,7 +486,7 @@ def _is_ref_type(ctx: Context, typ: str) -> bool:
     """Does this declared type hold object references (a name or an object)?"""
     for alt in split_union(typ):
         alt = alt.rstrip("?").strip()
-        if alt in ("ref", "list") or _is_object_type(ctx, alt):
+        if alt == "ref" or _is_object_type(ctx, alt):
             return True
         inner = tbl_inner(alt)
         if inner is not None and (inner == "ref" or _is_object_type(ctx, inner)):
@@ -497,6 +504,33 @@ def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
         return f" (did you mean `{ent.kind} = ...`?)"
     near = difflib.get_close_matches(ent.kind, sorted(ctx.classes), 1, 0.75)
     return f" (did you mean class {near[0]!r}?)" if near else ""
+
+
+def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, str]:
+    """Parameters of a prop body, taken from the declared `fn(...)` of the field."""
+    typ = _decl_type(ctx, kind, p.name) or ""
+    names: List[str] = []
+    cur = kind
+    seen = set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        names = ctx.prop_params.get(cur, {}).get(p.name, names)
+        if names:
+            break
+        cur = ctx.classes.get(cur)
+    params: List[str] = []
+    for alt in split_union(typ):
+        parts = _fn_parts(alt)
+        if parts:
+            params = parts[0]
+            break
+    env: Dict[str, str] = {}
+    for i, t in enumerate(params):
+        env[names[i] if i < len(names) and names[i] else f"_{i}"] = t
+    env.setdefault("s", _root(ctx))
+    for pn in p.params or []:
+        env.setdefault(pn, "any")
+    return env
 
 
 def _decl_type(ctx: Context, kind: str, name: str) -> Optional[str]:
@@ -531,17 +565,8 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         if isinstance(p.value, FnRef):
             ctx.used_refs.add(p.value.name)
         elif isinstance(p.value, list):
-            env = {"s": owner if (owner and owner in ctx.classes) else _root(ctx), "load": "bool"}
-            if p.name == "compass_look":
-                env["to"] = "direction"
-            elif p.name == "OnError":
-                env["err"] = "str"
-            elif p.name == "scope":
-                env["w"] = "list"
-            elif p.name in ("enter", "exit", "onenter", "onexit"):
-                env["w"] = _root(ctx)
-            for pn in p.params or []:
-                env.setdefault(pn, "any")
+            env = _prop_body_env(ctx, kind, p)
+            env["load"] = "bool"
             if declared is not None and "fn(" not in declared:
                 raise TypeCheckError(f"{where}: expected {declared}, got a block "
                                      f"(a block is a function)", p.line)
@@ -764,7 +789,8 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             _check_stmts(ctx, s.body, benv, owner, rets)
         elif isinstance(s, ForInStmt):
             it = _check_expr(ctx, s.iter_expr, env, owner)
-            el = tbl_inner(it) or (_root(ctx) if it == "list" else "any")
+            # iterating a class walks its array part, so an item is an object
+            el = tbl_inner(it) or (_root(ctx) if _is_object_type(ctx, it) else "any")
             benv = dict(env)
             for i, (vn, vt) in enumerate(s.vars):
                 benv[vn] = vt or ("num" if (s.is_of and len(s.vars) == 2 and i == 0) else el)
@@ -876,7 +902,7 @@ def _objectish(ctx: Context, t: str) -> bool:
     """Can a value of this type have fields (`x.field`)? Scalars cannot."""
     for alt in split_union(t):
         alt = alt.rstrip("?").strip()
-        if alt in ("any", "ref", "list") or alt.startswith("tbl["):
+        if alt in ("any", "ref") or alt.startswith("tbl[") or _is_object_type(ctx, alt):
             return True          # dynamic values, references and collections
         if _is_object_type(ctx, alt):
             return True
@@ -979,9 +1005,11 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
     if isinstance(e, IndexAccess):
         ot = _check_expr(ctx, e.obj, env, owner)
         in_exp = tbl_inner(ot)
-        expect(ctx, "index", ot, "tbl|list|str", e.line)
+        if not (_is_object_type(ctx, ot) or ot in ("tbl", "str") or tbl_inner(ot) is not None):
+            expect(ctx, "index", ot, "tbl|str", e.line)
         _check_expr(ctx, e.index, env, owner, "num" if ot != "str" else "num")
-        e.typ = in_exp if in_exp is not None else (_root(ctx) if ot == "list" else ("str" if ot == "str" else "any"))
+        e.typ = in_exp if in_exp is not None else (
+            _root(ctx) if _is_object_type(ctx, ot) else ("str" if ot == "str" else "any"))
         return e.typ
     if isinstance(e, UnaryOp):
         if e.op == "-" and isinstance(e.operand, Lit) and e.operand.kind == "str":

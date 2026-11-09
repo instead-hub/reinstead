@@ -32,7 +32,7 @@ class obj = obj
   when_closed: str | bool | fn(obj) -> str
   when_on: str | bool | fn(obj) -> str
   when_off: str | bool | fn(obj) -> str
-  scope: ref | list | fn(obj, list)
+  scope: ref | tbl[ref] | fn(s: obj, w: list)
   found_in: ref | tbl[ref] | fn(obj) -> bool
   talk_to: ref | fn(obj) -> ref
   with_key: ref | fn(obj) -> ref
@@ -47,12 +47,12 @@ class obj = obj
 
 class room(obj) = room
   cant_go: str | bool | fn(obj, direction) -> str
-  OnError: fn(obj, str)
-  compass_look: fn(obj, direction)
-  onenter: fn(obj, obj)
-  onexit: fn(obj, obj)
-  enter: fn(obj, obj)
-  exit: fn(obj, obj)
+  OnError: fn(s: obj, err: str)
+  compass_look: fn(s: obj, to: direction)
+  onenter: fn(s: obj, w: obj)
+  onexit: fn(s: obj, w: obj)
+  enter: fn(s: obj, w: obj)
+  exit: fn(s: obj, w: obj)
   n_to: ref | fn(obj) -> ref
   ne_to: ref | fn(obj) -> ref
   e_to: ref | fn(obj) -> ref
@@ -79,6 +79,10 @@ class ending(room) = gameover
 
 # a dialogue is a room-like object (`std.dlg = std.class({...}, std.room)`)
 class talk(room)
+
+# a list is its own root in the engine (`std.list = std.class{__list_type = true}`),
+# it holds objects; the engine also accepts a plain table of objects
+class list = std.list
 
 type event
   Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str

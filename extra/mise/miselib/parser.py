@@ -134,21 +134,28 @@ class Parser:
     # --- Types, Vars, Fns ---
 
     def _parse_type_str(self) -> str:
-        res = [self._parse_type_atom()]
+        names: List[str] = []
+        res = [self._parse_type_atom(names)]
+        self._last_type_params = names
         while self.match("OP", "|"):
-            res.append(self._parse_type_atom())
+            res.append(self._parse_type_atom(names))
+        self._last_type_params = names
         return "|".join(res)
 
-    def _parse_type_atom(self) -> str:
+    def _parse_type_atom(self, names: List[str]) -> str:
         t = self.cur()
         if t.val == "fn" and self.peek().val == "(":
             self.pos += 2
             pts = []
             if not self.at("OP", ")"):
                 while True:
+                    pname = None
                     if self.cur().kind == "IDENT" and self.peek().val == ":":
+                        pname = self.cur().val
                         self.pos += 2
                     pts.append(self._parse_type_str())
+                    if pname:
+                        names.append(pname)
                     if not self.match("OP", ","):
                         break
             self.eat("OP", ")")
@@ -321,6 +328,8 @@ class Parser:
         ctor = None
         if kind == "class" and self.match("OP", "="):
             ctor = self.eat("IDENT").val
+            while self.match("OP", "."):
+                ctor += "." + self.eat("IDENT").val
         ent = EntityDecl(kind=kind, name=name, parent=parent, ctor=ctor, words=words, traits=traits,
                          locations=locs, line=tok.line, src=self.src)
         self.eat_nl()
@@ -385,7 +394,9 @@ class Parser:
             prms = self._opt_ident_parens()
 
             if ent.kind == "class" and self.match("OP", ":"):
-                ent.props.append(Prop(name=pname, typ=self._parse_type_str(), line=t.line))
+                typ = self._parse_type_str()
+                ent.props.append(Prop(name=pname, typ=typ,
+                                      type_params=list(self._last_type_params), line=t.line))
                 self.eat_nl()
                 continue
 

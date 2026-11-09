@@ -146,6 +146,7 @@ class Prop:
     value: Any = None          # Expr, List[Stmt], FnRef, None (type-only field in class)
     typ: Optional[str] = None  # declared type in `class` (`n_to: room?`)
     params: Optional[List[str]] = None
+    type_params: Optional[List[str]] = None   # names of `fn(s: obj, w: list)`
     line: int = 0
 
 @dataclass
