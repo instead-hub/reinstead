@@ -8,6 +8,8 @@ from .parser import PHASES, parse_source
 
 # the class that declares the compass fields (`n_to` ...) is the room-like root
 _SLOT_OBJ_RE = re.compile(r"\{(?:noun|noun_obj|compass\w*)\}")
+# names of the current event: the handler parameter and the engine accessor
+CURRENT_EVENT = frozenset({"ev", "event"})
 # engine fields the game must not assign (the engine owns them)
 READONLY_FIELDS = frozenset({"nam"})
 
@@ -707,9 +709,10 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool) -> Dict
                 plain = (cond.op == "!=") == truthy  # `!= nil` really means "not nil"
                 res[left.name] = strip_nil(res[left.name]) if plain else "nil"
                 return res
-            is_event = (isinstance(cond.left, Sym) and cond.left.name in ("ev", "event")) or (
-                isinstance(cond.left, Call) and cond.left.func == "event"
-                and cond.left.receiver is None and not cond.left.args)
+            # the current event: its accessor, or a parameter typed as one
+            is_event = isinstance(cond.left, Sym) and (
+                cond.left.name in CURRENT_EVENT
+                or res.get(cond.left.name, "").rstrip("?") == "event")
             if cond.op == "==" and truthy and is_event and isinstance(cond.right, Sym):
                 sigs = ctx.event_args.get(cond.right.name)
                 if sigs and "w" in res and len(sigs) >= 2:

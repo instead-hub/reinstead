@@ -119,10 +119,6 @@ class Emitter:
             if p.name == "dict" and isinstance(p.value, Lit):
                 tails.append(f":dict {p.value.val}")
                 continue
-            if p.name == "text" and isinstance(p.value, ListLit):
-                pgs = ", ".join(self._expr(it) for it in p.value.items)
-                lines.append(f"{fpad}text = {{\n{fpad}  {pgs};\n{fpad}}};")
-                continue
             lines.append(f"{fpad}{p.name} = {self._prop_val(p, ent, ind + 2)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h, ind + 2)
