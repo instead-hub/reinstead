@@ -312,6 +312,7 @@ def prescan(prog: Program) -> Context:
         if isinstance(item, EntityDecl):
             register_entity(item)
         elif isinstance(item, TalkDecl):
+            # a talk is an instance of the class `talk` (declared in core)
             ctx.objects[item.name] = "talk"
             ctx.field_names.update(p.name for p in item.props)
 
@@ -409,7 +410,7 @@ def _lit_type(ctx: Context, e: Expr) -> Tuple[str, bool]:
     if isinstance(e, Sym):
         if e.name in ctx.objects or e.name == "none":
             e.rk = "none" if e.name == "none" else "obj"
-            return ctx.objects.get(e.name, "obj"), True
+            return ctx.objects.get(e.name, _root(ctx)), True
         if e.name in ctx.event_names:
             e.rk = "event"
             return "event", False
@@ -523,14 +524,14 @@ def _fn_returns(declared: str) -> List[str]:
 def _check_entity(ctx: Context, ent: EntityDecl):
     owner = ent.name
     kind = ent.name if ent.kind == "class" else (
-        ent.kind if ent.kind != "impl" else ctx.objects.get(owner or "", "obj"))
+        ent.kind if ent.kind != "impl" else ctx.objects.get(owner or "", _root(ctx)))
     for p in ent.props:
         where = f"{owner}.{p.name}" if owner else p.name
         declared = _decl_type(ctx, kind, p.name) if kind else None
         if isinstance(p.value, FnRef):
             ctx.used_refs.add(p.value.name)
         elif isinstance(p.value, list):
-            env = {"s": owner if (owner and owner in ctx.classes) else "obj", "load": "bool"}
+            env = {"s": owner if (owner and owner in ctx.classes) else _root(ctx), "load": "bool"}
             if p.name == "compass_look":
                 env["to"] = "direction"
             elif p.name == "OnError":
@@ -538,7 +539,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
             elif p.name == "scope":
                 env["w"] = "list"
             elif p.name in ("enter", "exit", "onenter", "onexit"):
-                env["w"] = "obj"
+                env["w"] = _root(ctx)
             for pn in p.params or []:
                 env.setdefault(pn, "any")
             if declared is not None and "fn(" not in declared:
@@ -554,7 +555,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         elif isinstance(p.value, Lit) and p.value.kind == "raw":
             pass  # a `lua` block: opaque
         elif isinstance(p.value, Expr):
-            _check_expr(ctx, p.value, {"s": "obj"}, owner, declared)
+            _check_expr(ctx, p.value, {"s": _root(ctx)}, owner, declared)
     for h in ent.handlers:
         _check_handler_events(ctx, h, owner or kind)
         if isinstance(h.body, FnRef):
@@ -576,8 +577,8 @@ def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[st
     pnames = h.params if h.params is not None else (["s", "ev", "w", "wh"] if is_any else ["s", "w", "wh"])
     self_t = (ctx.objects.get(owner) if owner else None) or kind
     if self_t not in ctx.classes and self_t not in ctx.objects:
-        self_t = "obj"
-    env = {pn: ("event" if (is_any and i == 1) else ("obj" if i else self_t))
+        self_t = _root(ctx)
+    env = {pn: ("event" if (is_any and i == 1) else (_root(ctx) if i else self_t))
            for i, pn in enumerate(pnames)}
     if len(h.events) == 1 and not is_any:
         ev = h.events[0]
@@ -840,6 +841,11 @@ def _check_fnref(ctx: Context, ref: FnRef, expected: Optional[str], where: str):
         return
     raise TypeCheckError(f"{where}: {ref.name} is {_sig_str(fn)}, expected "
                          f"{' | '.join(alts)}", ref.line)
+
+
+def _root(ctx: Context) -> str:
+    """The root class (`class obj` in core) — the type of "some object"."""
+    return ctx.root_class or "obj"
 
 
 def _room_root(ctx: Context) -> str:
