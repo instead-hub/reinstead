@@ -546,6 +546,29 @@ def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, str]:
     return env
 
 
+def _decl_emit(ctx: Context, kind: str, name: str) -> Optional[Tuple[str, str, str]]:
+    """How the declared field reaches Lua (`= method attr(join)`)."""
+    cur, seen = kind, set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        spec = ctx.prop_emit.get(cur, {}).get(name)
+        if spec:
+            return spec
+        cur = ctx.classes.get(cur)
+    return None
+
+
+def _check_emit(ctx: Context, where: str, emit: Tuple[str, str, str], value: Any, line: int):
+    """A method-emitted field takes the value shape its form needs."""
+    _k, mname, form = emit
+    if form == "none":
+        if not (isinstance(value, Lit) and value.kind == "bool"):
+            raise TypeCheckError(f"{where}: `:{mname}()` takes a `true`/`false` value", line)
+    elif form == "table":
+        if not (isinstance(value, Lit) and value.kind == "table"):
+            raise TypeCheckError(f"{where}: `:{mname}{{...}}` takes a `{{ ... }}` table", line)
+
+
 def _decl_type(ctx: Context, kind: str, name: str) -> Optional[str]:
     """The declared type of a field, looked up through the class chain of `kind`."""
     cur, seen = kind, set()
@@ -594,6 +617,9 @@ def _check_entity(ctx: Context, ent: EntityDecl):
             pass  # a `lua` block: an opaque body
         elif isinstance(p.value, Expr):
             _check_expr(ctx, p.value, {"s": _root(ctx)}, owner, declared)
+        emit = _decl_emit(ctx, kind, p.name) if kind else None
+        if emit and p.value is not None:
+            _check_emit(ctx, where, emit, p.value, p.line)
     for h in ent.handlers:
         _check_handler_events(ctx, h, owner or kind)
         params, arg_names = _handler_params(ctx, owner, kind, h)

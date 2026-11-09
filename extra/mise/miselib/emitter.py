@@ -155,9 +155,8 @@ class Emitter:
         if form == "table":
             return f":{mname} {v.val}" if isinstance(v, Lit) and v.kind == "table" else ""
         items = v.items if isinstance(v, ListLit) else [v]
-        if form == "join":
-            parts = [it.name if (isinstance(it, Sym) and it.name in self.ctx.objects) else self._expr(it)
-                     for it in items]
+        if form == "join":                  # `:attr 'a,b'` — one comma-joined string
+            parts = [it.name if isinstance(it, Sym) else self._expr(it).strip("'\"") for it in items]
             return f":{mname} '{','.join(parts)}'"
         if form == "list":                  # `:with{ 'a', 'b' }` — names, resolved by the engine
             parts = [f"'{it.name}'" if (isinstance(it, Sym) and it.name in self.ctx.objects)

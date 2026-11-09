@@ -351,12 +351,6 @@ class Parser:
                 raise Error('words live in the header: write `obj name "слово|слово"` '
                             '(or `obj name [...]`) instead of a `words =` member',
                             t.line, self.src)
-            if kw in ("attr", "attrs", "mixin") and self.peek().val != ":":
-                self.pos += 1
-                self.eat("OP", "=")
-                ent.traits.extend(self.sym_list())
-                self.eat_nl()
-                continue
             if kw[:1].islower() and kw not in PHASES and self.peek().kind == "IDENT" \
                     and self.peek(2).val not in ("=", "(", "@", ","):
                 import difflib
