@@ -736,7 +736,7 @@ stmt        ::= STRING [ "~" ]                       (* печать: p(...) и�
               | "->" IDENT                           (* переход к label в talk *)
               | choice_decl                          (* вложенная реплика в talk *)
               | "local" ident_list [ "=" expr_list ]
-              | lvalue ("=" | "+=" | "-=") expr
+              | lvalue ("=" | "+=" | "-=") expr      (* `+=`/`-=` — только для num *)
               | if_stmt | match_stmt | for_stmt | call_stmt
 
 (* Вызов в позиции инструкции: `walkout`, `move cloak player`, `bar:attr light` *)

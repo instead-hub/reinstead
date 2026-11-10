@@ -893,6 +893,9 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
                 env[vn] = dt or (vts[i] if i < len(vts) else "any")
         elif isinstance(s, AssignStmt):
             vt = _value_types(ctx, s.values, env, owner)
+            if s.op in ("+=", "-="):
+                for t in vt:
+                    expect(ctx, f"'{s.op}'", t, "num", s.line)
             if isinstance(s.target, Sym):
                 name = s.target.name
                 if name in ctx.globals:
@@ -911,10 +914,12 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
                                 s.line)
                 if cur is not None and s.op == "=" and vt:
                     expect(ctx, f"assignment to {name}", vt[0], cur, s.line)
+                if cur is not None and s.op in ("+=", "-=") and cur != "any":
+                    expect(ctx, f"{name} ({s.op})", cur, "num", s.line)
                 if cur in (None, "any") and vt and s.op == "=":
                     env[name] = vt[0]
             else:
-                _check_store(ctx, s.target, vt[0] if vt else "any", env, owner, s.line)
+                _check_store(ctx, s.target, vt[0] if vt else "any", env, owner, s.line, s.op)
         elif isinstance(s, CallStmt):
             if s.call.receiver is None:
                 _check_value_use(ctx, s.call.func, s.line)
@@ -1104,7 +1109,7 @@ def _owner_of(ctx: Context, target: FieldAccess, env: Dict[str, str], owner: Opt
 
 
 def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, str],
-                 owner: Optional[str], line: int = 0):
+                 owner: Optional[str], line: int = 0, op: str = "="):
     """Validate a write: field type stability and declared field names."""
     if not isinstance(target, FieldAccess):
         _check_expr(ctx, target, env, owner, is_lhs=True)
@@ -1123,6 +1128,10 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, str],
     spec = _fields_of(ctx, holder).get(name) if holder else None
     if spec is not None:
         ft, is_ref = spec
+        if op in ("+=", "-="):                                # `+=`/`-=` are arithmetic
+            if ft not in ("any", "num"):
+                raise Error(f"{name}: '{op}' needs a number field (it is {ft})", line)
+            return
         if ft != "any":
             expect(ctx, f"{name}", _root(ctx) if (is_ref and vt == "obj") else vt, ft, line)
         return
