@@ -228,6 +228,18 @@ before Any(s, ev, w)
 - имя события в ключе (`on`/`before`/`after`/`post`/`life`) должно быть объявлено; опечатка получает подсказку `did you mean 'Open'?`;
 - опечатка в фазе (`befor Open`) сообщается как `bad field name ... (did you mean 'before Open'?)`.
 
+**Связывание в условии**: `if w := inv[1]` выражает значение один раз,
+определяет имя только в ветке then и сужает тип (`obj?` -> `obj`):
+
+```mise
+if w := inv[1]
+  say (w:noun вн)
+else
+  say "пусто"
+if obj, i := lookup (where_list box) box     # истина, когда не nil оба
+  say "нашли"
+```
+
 **Принадлежность множеству**: `in` — оператор-предикат (сравнение с любым из
 вариантов), `not in` — его отрицание. Субъект вычисляется один раз, если это
 вызов (`(function(c) … end)(subj)`), и дублируется, если это простое значение.
@@ -655,9 +667,12 @@ stmt        ::= STRING [ "~" ]                       (* Печать: p(...) и�
 (* Вызов на уровне строки: 'walkout', 'move cloak player', 'bar:attr light' *)
 call_stmt   ::= postfix_expr [ ":" IDENT ] { arg_atom }
 
-if_stmt     ::= "if" expr stmt_block
-                { "elseif" expr stmt_block }
+(* Условие — выражение или связывание `x := expr` (`a, b := expr`: истина,
+   когда все значения не nil; имена видны только в своей ветке). *)
+if_stmt     ::= "if" cond stmt_block
+                { "elseif" cond stmt_block }
                 [ "else" stmt_block ]
+cond        ::= expr | ident_list ":=" expr
 
 match_stmt  ::= "match" expr INDENT { match_arm NEWLINE } DEDENT
 match_arm   ::= pattern_list [ "when" expr ] "->" ( stmt | stmt_block )

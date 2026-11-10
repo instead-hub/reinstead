@@ -65,6 +65,13 @@ class BinOp(Expr):
     right: Expr = field(default_factory=Expr)
 
 @dataclass
+class Bind(Expr):
+    """`x := expr` / `a, b := expr` — a binding condition (`if`/`elseif`)."""
+    names: List[str] = field(default_factory=list)
+    value: Expr = field(default_factory=Expr)
+    vtyp: str = ""             # type of the value, filled by the checker
+
+@dataclass
 class InOp(Expr):
     """`x in a, b` — is x equal to any of the alternatives."""
     subject: Expr = field(default_factory=Expr)

@@ -812,13 +812,29 @@ class Parser:
             return CallStmt(line=line, call=Call(line=line, func=lhs.name, args=args))
         raise Error("expected statement", line, self.src)
 
+    def _parse_cond(self) -> Expr:
+        """A condition: an expression, or `x := expr` / `a, b := expr`."""
+        save = self.pos
+        if self.cur().kind == "IDENT":
+            line = self.cur().line
+            names = [self.eat("IDENT").val]
+            while self.match("OP", ","):
+                if self.cur().kind != "IDENT":
+                    names = []
+                    break
+                names.append(self.eat("IDENT").val)
+            if names and self.match("OP", ":="):
+                return Bind(line=line, names=names, value=self.parse_expr())
+        self.pos = save
+        return self.parse_expr()
+
     def _parse_if(self) -> IfStmt:
         line = self.eat("IDENT").line
-        cond = self.parse_expr()
+        cond = self._parse_cond()
         branches = [(cond, self.parse_stmt_block(), line)]
         while self.at("IDENT", "elseif"):
             el = self.eat("IDENT").line
-            ec = self.parse_expr()
+            ec = self._parse_cond()
             branches.append((ec, self.parse_stmt_block(), el))
         else_body = self.parse_stmt_block() if self.match("IDENT", "else") else None
         return IfStmt(line=line, branches=branches, else_body=else_body)

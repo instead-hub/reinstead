@@ -168,6 +168,52 @@ class Emitter:
         args = [self._expr(it) for it in items]
         return f":{mname}({', '.join(args)})" if args else ""
 
+    def _if_chain(self, branches, else_body, ind: int = 0) -> str:
+        """`if`/`elseif` chain; a `:=` branch binds its names in a `do` block."""
+        pad = " " * ind
+        cond, body, _l = branches[0]
+        if isinstance(cond, Bind):
+            b = _ind(self._stmts(body), ind + 4)
+            lines = [f"{pad}do",
+                     f"{pad}  local {', '.join(cond.names)} = {self._expr(cond.value)}",
+                     f"{pad}  if {' and '.join(cond.names)} then"]
+            if b.strip():
+                lines.append(b)
+            tail = self._if_else(branches[1:], else_body, ind + 2)
+            if tail:
+                lines.append(tail)
+            lines += [f"{pad}  end", f"{pad}end"]
+            return "\n".join(lines)
+        b = _ind(self._stmts(body), ind + 2)
+        lines = [f"{pad}if {self._expr(cond)} then"]
+        if b.strip():
+            lines.append(b)
+        tail = self._if_else(branches[1:], else_body, ind)
+        if tail:
+            lines.append(tail)
+        lines.append(f"{pad}end")
+        return "\n".join(lines)
+
+    def _if_else(self, branches, else_body, ind: int) -> str:
+        """The rest of a chain: `elseif` arms, or `else` with the remaining chain."""
+        pad = " " * ind
+        if not branches:
+            if else_body is None:
+                return ""
+            eb = _ind(self._stmts(else_body), ind + 2)
+            return f"{pad}else" + (("\n" + eb) if eb.strip() else "")
+        cond, body, _l = branches[0]
+        if isinstance(cond, Bind):
+            return f"{pad}else\n" + self._if_chain(branches, else_body, ind + 2)
+        b = _ind(self._stmts(body), ind + 2)
+        head = f"{pad}elseif {self._expr(cond)} then"
+        if b.strip():
+            head += "\n" + b
+        tail = self._if_else(branches[1:], else_body, ind)
+        if tail:
+            head += "\n" + tail
+        return head
+
     def _pure(self, e: Expr) -> bool:
         """Can this expression be evaluated twice without side effects?"""
         if isinstance(e, Lit):
@@ -412,16 +458,7 @@ class Emitter:
         if isinstance(s, CallStmt):
             return self._call(s.call, as_stmt=True)
         if isinstance(s, IfStmt):
-            parts = []
-            for i, (cond, body, _l) in enumerate(s.branches):
-                kw = "if" if i == 0 else "elseif"
-                b = _ind(self._stmts(body), 2)
-                parts.append(f"{kw} {self._expr(cond)} then\n{b}" if b.strip() else f"{kw} {self._expr(cond)} then")
-            if s.else_body is not None:
-                eb = _ind(self._stmts(s.else_body), 2)
-                parts.append(f"else\n{eb}" if eb.strip() else "else")
-            parts.append("end")
-            return "\n".join(parts)
+            return self._if_chain(s.branches, s.else_body)
         if isinstance(s, MatchStmt):
             # the subject is evaluated once; arms are `or`-chains (like `in`)
             subj = self._expr(s.subject)

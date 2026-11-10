@@ -50,8 +50,7 @@ fn on_take(s: Box)
   say (s:noun h)
   say (chosen:noun вн)
   say ( (spot s):noun вн)
-  local w = inv[1]
-  if w
+  if w := inv[1]
     w:noun
   else
     say "пусто"

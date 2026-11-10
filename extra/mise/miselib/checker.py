@@ -796,6 +796,11 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool,
     `a or b` (short circuit) and `ev == Event` (event argument narrowing).
     """
     res = dict(env)
+    if isinstance(cond, Bind) and truthy:
+        vt = cond.vtyp or "any"
+        for n in cond.names:
+            res[n] = strip_nil(vt) if vt != "any" else "any"
+        return res
     if isinstance(cond, Sym) and cond.name in res:
         if truthy:
             res[cond.name] = strip_nil(res[cond.name])
@@ -1107,6 +1112,14 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
                 _check_expr(ctx, p, env, owner, "str")
         e.typ = "str"
         return "str"
+    if isinstance(e, Bind):
+        vt = _value_types(ctx, [e.value], env, owner)
+        e.vtyp = vt[0] if vt else "any"
+        for n in e.names:
+            if n in env:
+                raise Error(f"{n}: already defined (choose another name for `:=`)", e.line)
+        e.typ = "bool"
+        return "bool"
     if isinstance(e, InOp):
         st = _check_expr(ctx, e.subject, env, owner)
         for a in e.alts:
