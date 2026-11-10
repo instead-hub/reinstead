@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+room hall "зал"
+
+obj box "коробка"
+  found_in = 1 + 2

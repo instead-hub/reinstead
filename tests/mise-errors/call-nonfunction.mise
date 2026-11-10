@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+
+fn f(s: obj)
+  local g = 5
+  say (g s)

@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+
+class C
+  x: num = method disable(eachh)
