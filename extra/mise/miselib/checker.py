@@ -108,7 +108,15 @@ def _atom_fits(ctx: Context, actual: str, expected: str) -> bool:
     if actual == "any":
         return False  # `any` never silently narrows into a concrete type
     if expected == "ref":
-        return _is_object_type(ctx, actual) or actual == "str"
+        return _is_object_type(ctx, actual) or actual == "str" or _ref_inner(actual) is not None
+    want_ref = _ref_inner(expected)
+    if want_ref is not None:
+        got_ref = _ref_inner(actual)
+        if got_ref is not None:
+            return is_subtype(ctx, got_ref if got_ref else "obj", want_ref or "obj")
+        if actual == "str":
+            return True          # a name of an object (the engine resolves it)
+        return _is_object_type(ctx, actual) and is_subtype(ctx, actual, want_ref or "obj")
     if expected in ctx.classes:
         cur, seen = actual, set()
         while cur in ctx.classes and cur not in seen:
@@ -441,6 +449,9 @@ def prescan(prog: Program) -> Context:
 
     for item in prog.items:
         if isinstance(item, EntityDecl):
+            for p in item.props:
+                if p.typ:                    # declared field types (`class K`: `x: T`)
+                    _check_type(ctx, p.typ, f"{item.name or ''}.{p.name}".lstrip("."), p.line)
             _check_refs(ctx, item)
         elif isinstance(item, VarDecl):
             for vn, ve, vl in item.items:
@@ -557,12 +568,20 @@ def _is_ref_type(ctx: Context, typ: str) -> bool:
     """Does this declared type hold object references (a name or an object)?"""
     for alt in split_union(typ):
         alt = alt.rstrip("?").strip()
-        if alt == "ref" or _is_object_type(ctx, alt):
+        if alt == "ref" or _ref_inner(alt) is not None or _is_object_type(ctx, alt):
             return True
         inner = tbl_inner(alt)
-        if inner is not None and (inner == "ref" or _is_object_type(ctx, inner)):
+        if inner is not None and (inner == "ref" or _ref_inner(inner) is not None
+                                  or _is_object_type(ctx, inner)):
             return True
     return False
+
+
+def _ref_inner(t: str) -> Optional[str]:
+    """`ref[C]` -> C; bare `ref` is `ref[obj]`, so it returns None only for non-refs."""
+    if t.startswith("ref[") and t.endswith("]"):
+        return t[4:-1]
+    return None
 
 
 def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
@@ -1500,6 +1519,29 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, str], owner: Optional[str]
 
     c.typ = fn.ret_types[0] if fn.ret_types else "any"
     return c.typ
+
+
+def _type_alt_ok(ctx: Context, alt: str) -> bool:
+    """Is this single type alternative known? `ref[C]` takes declared classes only."""
+    alt = alt.rstrip("?").strip()
+    inner = tbl_inner(alt)
+    if inner is not None:
+        return all(_type_alt_ok(ctx, a) for a in split_union(inner)) if inner else True
+    ref_in = _ref_inner(alt)
+    if ref_in is not None:
+        return bool(ref_in) and all(a.rstrip("?").strip() in ctx.classes
+                                    for a in split_union(ref_in))
+    if alt in PRIMITIVES or alt in ctx.enums or alt in ctx.classes or alt == "nil":
+        return True
+    return alt.startswith("fn(")
+
+
+def _check_type(ctx: Context, typ: str, where: str, line: int):
+    """A declared type must name known classes and primitives (`ref[C]`: C is a class)."""
+    for alt in split_union(typ):
+        if _type_alt_ok(ctx, alt):
+            continue
+        raise Error(f"{where}: unknown type {alt!r}", line)
 
 
 def _check_signature(ctx: Context, fn: FnDecl):

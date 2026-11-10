@@ -187,6 +187,12 @@ class Parser:
             inner = self._parse_type_str(single)
             self.eat("OP", "]")
             return f"tbl[{inner}]{'?' if self.match('OP', '?') else ''}"
+        if t.val == "ref" and self.peek().val == "[":
+            # `ref[C]` — a reference to an object of class C (`ref` is `ref[obj]`)
+            self.pos += 2
+            inner = self._parse_type_str(single)
+            self.eat("OP", "]")
+            return f"ref[{inner}]{'?' if self.match('OP', '?') else ''}"
         return self.eat("IDENT").val + ("?" if self.match("OP", "?") else "")
 
     def _parse_events(self, extend: bool, line: int) -> EventsDecl:

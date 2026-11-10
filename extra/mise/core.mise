@@ -37,7 +37,7 @@ class obj = obj
   when_off: str | bool | fn(obj) -> str
   scope: ref | tbl[ref] | fn(s: obj, w: list)
   found_in: ref | tbl[ref] | fn(obj) -> bool
-  talk_to: ref | fn(obj) -> ref
+  talk_to: ref[talk] | fn(obj) -> ref      # `ref` = `ref[obj]`
   with_key: ref | fn(obj) -> ref
   default_Event: event | fn(obj) -> event
   capacity: num | fn(obj) -> num
