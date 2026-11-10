@@ -557,7 +557,8 @@ class Emitter:
                 t = t.replace(f"${i}", args[i - 1] if i - 1 < len(args) else "")
             return re.sub(r",\s*\)", ")", re.sub(r"\(\s*,\s*", "(", t))
         for (pn, _pt), av in zip(fn.params, args):
-            t = re.sub(rf"\b{re.escape(pn)}\b", av, t)
+            # a lambda keeps `\1`/`\g<…>` in the argument from being read as a group
+            t = re.sub(rf"\b{re.escape(pn)}\b", lambda _m, av=av: av, t)
         if as_stmt or t.startswith("(") or _SIMPLE_EXPR.match(t.strip()):
             return t
         return f"({t})"
