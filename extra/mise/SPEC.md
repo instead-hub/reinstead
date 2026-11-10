@@ -861,21 +861,22 @@ app_expr ::= postfix_expr [ ":" IDENT { arg_atom } | arg_atom { arg_atom } ]
 | **API движка**      | `extern fn` / `extern value` / `extern global` с шаблонами `$1`, `$2`                                                |
 | **Диалоги**         | компактные `* [cond] "Вопрос"` / `+ "Вопрос"`, транслируются в `phr`                                                 |
 
-Текущие размеры: `lexer.py` 185, `ast_nodes.py` 293, `parser.py` 1064,
-`checker.py` 1485, `emitter.py` 608 строк Python; `core.mise` 234,
+Текущие размеры: `lexer.py` 184, `ast_nodes.py` 292, `parser.py` 1064,
+`checker.py` 1621, `emitter.py` 606 строк Python; `core.mise` 232,
 `stdlib.mise` 46, языковые слои — 24 и 15 строк.
 
 ---
 
 ## 8. Инструменты и проверки
 
-- `tests/run-mise-tests.sh [--engine]` — 29 игр: сверка `main3.lua` байт-в-байт
-  и 27 прогонов в движке с транскриптами;
-- `tests/run-mise-error-tests.sh` — 78 негативных случаев с точными сообщениями
+- `tests/run-mise-tests.sh [--engine]` — 30 игр: сверка `main3.lua` байт-в-байт
+  и 30 прогонов в движке (25 с записанным транскриптом, 5 — против оригинала
+  metaparser); `dict.mrd` рядом с игрой — кэш слов, его валидирует сам движок;
+- `tests/run-mise-error-tests.sh` — 126 негативных случаев с точными сообщениями
   и номерами строк;
 - `tests/run-parser-tests.sh` — 46 проверок `mp:match`/`mp:compl`/падежей самого
   движка.
 
 Точки входа (`entry init()`, `entry start(load: bool)`) объявлены в `core.mise`,
-их арность сверяется с `fn` того же имени; `-stop` завершает сценарный прогон
-с ненулевым кодом на первой ошибке игры.
+их арность сверяется с `fn` того же имени; `-stop` делает сценарный прогон
+неинтерактивным: код 1 на первой ошибке игры и код 0, когда сценарий закончился.
