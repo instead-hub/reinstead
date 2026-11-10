@@ -413,7 +413,7 @@ class Parser:
         self.eat("OP", ")")
         return params
 
-    def _field_emit(self) -> Optional[Tuple[str, str]]:
+    def _field_emit(self) -> Optional[Emit]:
         """`= method with(each)` — how a declared field's value reaches Lua."""
         if not self.match("OP", "="):
             return None
@@ -432,7 +432,7 @@ class Parser:
         other = ""
         if self.match("IDENT", "else"):        # `= method disable(none) else enable`
             other = self.eat("IDENT").val
-        return ("method", mname, form, other)
+        return Emit(method=mname, form=form, other=other)
 
     def _header_words(self) -> List[str]:
         """Words of a declaration live in its header: `obj hook "крючок|вешалка"`."""

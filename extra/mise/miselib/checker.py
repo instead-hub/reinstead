@@ -33,7 +33,7 @@ class Context:
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
     prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
     prop_params: Dict[str, Dict[str, List[str]]] = field(default_factory=dict)  # their fn param names
-    prop_emit: Dict[str, Dict[str, Tuple[str, str, str, str]]] = field(default_factory=dict)  # method emission
+    prop_emit: Dict[str, Dict[str, Emit]] = field(default_factory=dict)  # method emission
     ctors: Dict[str, str] = field(default_factory=dict)                  # class -> engine constructor
     root_class: Optional[str] = None                                     # the first class with no parent
     seen_types: Set[str] = field(default_factory=set)
@@ -50,17 +50,23 @@ class Context:
     globals: Dict[str, Tuple[str, bool]] = field(default_factory=dict)
 
 
+def split_top(t: str, sep: str) -> List[str]:
+    """Split at a top-level separator: `a|b`, `fn(x, y)`, `tbl[a|b]`."""
+    parts, depth, start = [], 0, 0
+    for i, ch in enumerate(t):
+        depth += (1 if ch in "([" else -1 if ch in ")]" else 0)
+        if ch == sep and depth == 0:
+            parts.append(t[start:i].strip())
+            start = i + 1
+    parts.append(t[start:].strip())
+    return parts
+
+
 def split_union(t: str) -> List[str]:
     t = t.strip()
     if t.endswith("?"):
         return [p for p in split_union(t[:-1]) if p != "nil"] + ["nil"]
-    parts, depth, start = [], 0, 0
-    for i, ch in enumerate(t):
-        depth += (1 if ch in "([" else -1 if ch in ")]" else 0)
-        if ch == "|" and depth == 0:
-            parts.append(t[start:i].strip())
-            start = i + 1
-    parts.append(t[start:].strip())
+    parts = split_top(t, "|")
     res, has_nil = [], False
     for p in parts:
         if p == "nil":
@@ -419,16 +425,15 @@ def prescan(prog: Program) -> Context:
                 _check_var_ref(ctx, vn, ve, vl)
 
     for item in prog.items:
-        if isinstance(item, FnDecl) and item.name in ctx.entries:
+        if not isinstance(item, FnDecl):
+            continue
+        if item.name in ctx.entries:
             want = ctx.entries[item.name]
-            got = [pt for _pn, pt in item.params]
-            if len(got) != len(want):
+            if len(item.params) != len(want):
                 raise Error(f"entry {item.name}: the engine calls it with "
-                            f"{len(want)} argument(s), declared {len(got)}", item.line)
-    for item in prog.items:
-        if isinstance(item, FnDecl):
-            _check_signature(ctx, item)
-        if isinstance(item, FnDecl) and not item.is_extern and isinstance(item.body, list):
+                            f"{len(want)} argument(s), declared {len(item.params)}", item.line)
+        _check_signature(ctx, item)
+        if not item.is_extern and isinstance(item.body, list):
             env = {pn: pt for pn, pt in item.params}
             owner = item.params[0][1] if (item.params and item.params[0][0] == "s" and item.params[0][1] in ctx.classes) else None
             rets: List[str] = []
@@ -541,18 +546,22 @@ def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
     return f" (did you mean class {near[0]!r}?)" if near else ""
 
 
+def _decl_lookup(ctx: Context, table: Dict[str, Dict[str, Any]], kind: str, name: str) -> Any:
+    """A field declaration looked up through the class chain of `kind`."""
+    cur, seen = kind, set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        val = table.get(cur, {}).get(name)
+        if val:
+            return val
+        cur = ctx.classes.get(cur)
+    return None
+
+
 def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, str]:
     """Parameters of a prop body, taken from the declared `fn(...)` of the field."""
     typ = _decl_type(ctx, kind, p.name) or ""
-    names: List[str] = []
-    cur = kind
-    seen = set()
-    while cur and cur not in seen:
-        seen.add(cur)
-        names = ctx.prop_params.get(cur, {}).get(p.name, names)
-        if names:
-            break
-        cur = ctx.classes.get(cur)
+    names: List[str] = _decl_lookup(ctx, ctx.prop_params, kind, p.name) or []
     params: List[str] = []
     for alt in split_union(typ):
         parts = _fn_parts(alt)
@@ -568,39 +577,24 @@ def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, str]:
     return env
 
 
-def _decl_emit(ctx: Context, kind: str, name: str) -> Optional[Tuple[str, str, str, str]]:
+def _decl_emit(ctx: Context, kind: str, name: str) -> Optional[Emit]:
     """How the declared field reaches Lua (`= method attr(join)`)."""
-    cur, seen = kind, set()
-    while cur and cur not in seen:
-        seen.add(cur)
-        spec = ctx.prop_emit.get(cur, {}).get(name)
-        if spec:
-            return spec
-        cur = ctx.classes.get(cur)
-    return None
+    return _decl_lookup(ctx, ctx.prop_emit, kind, name)
 
 
-def _check_emit(ctx: Context, where: str, emit: Tuple[str, str, str, str], value: Any, line: int):
+def _check_emit(ctx: Context, where: str, emit: Emit, value: Any, line: int):
     """A method-emitted field takes the value shape its form needs."""
-    _k, mname, form, _other = emit
-    if form == "none":
+    if emit.form == "none":
         if not (isinstance(value, Lit) and value.kind == "bool"):
-            raise TypeCheckError(f"{where}: `:{mname}()` takes a `true`/`false` value", line)
-    elif form == "table":
+            raise TypeCheckError(f"{where}: `:{emit.method}()` takes a `true`/`false` value", line)
+    elif emit.form == "table":
         if not (isinstance(value, Lit) and value.kind == "table"):
-            raise TypeCheckError(f"{where}: `:{mname}{{...}}` takes a `{{ ... }}` table", line)
+            raise TypeCheckError(f"{where}: `:{emit.method}{{...}}` takes a `{{ ... }}` table", line)
 
 
 def _decl_type(ctx: Context, kind: str, name: str) -> Optional[str]:
     """The declared type of a field, looked up through the class chain of `kind`."""
-    cur, seen = kind, set()
-    while cur and cur not in seen:
-        seen.add(cur)
-        t = ctx.prop_types.get(cur, {}).get(name)
-        if t:
-            return t
-        cur = ctx.classes.get(cur)
-    return None
+    return _decl_lookup(ctx, ctx.prop_types, kind, name)
 
 
 def _fn_returns(declared: str) -> List[str]:
@@ -613,10 +607,18 @@ def _fn_returns(declared: str) -> List[str]:
     return res
 
 
+def _entity_kind(ctx: Context, ent: EntityDecl) -> str:
+    """The class whose field declarations apply to this entity."""
+    if ent.kind == "class":
+        return ent.name or ""
+    if ent.kind == "impl":
+        return ctx.objects.get(ent.name or "", _root(ctx))
+    return ent.kind
+
+
 def _check_entity(ctx: Context, ent: EntityDecl):
     owner = ent.name
-    kind = ent.name if ent.kind == "class" else (
-        ent.kind if ent.kind != "impl" else ctx.objects.get(owner or "", _root(ctx)))
+    kind = _entity_kind(ctx, ent)
     for p in ent.props:
         where = f"{owner}.{p.name}" if owner else p.name
         declared = _decl_type(ctx, kind, p.name) if kind else None
@@ -684,9 +686,7 @@ def _handler_params(ctx: Context, owner: Optional[str], kind: str, h: Handler
     the acted object itself the object is stripped from the arguments, otherwise
     it is passed as the first argument (named `w`).
     """
-    self_t = (ctx.objects.get(owner) if owner else None) or kind
-    if self_t not in ctx.classes and self_t not in ctx.objects:
-        self_t = _root(ctx)
+    self_t = kind if (kind in ctx.classes or kind in ctx.objects) else _root(ctx)
     params: List[Tuple[str, str]] = [("s", self_t)]
     arg_names: Dict[int, str] = {}
     is_any = any(ev in ("Any", "Default") for ev in h.events)
@@ -716,10 +716,6 @@ def _handler_params(ctx: Context, owner: Optional[str], kind: str, h: Handler
                         h.line)
         params = [(h.params[i], params[i][1]) for i in range(len(h.params))]
     return params, arg_names
-
-
-def _h_env(ctx: Context, owner: Optional[str], kind: str, h: Handler) -> Dict[str, str]:
-    return dict(_handler_params(ctx, owner, kind, h)[0])
 
 
 def _check_talk(ctx: Context, td: TalkDecl):
@@ -929,16 +925,7 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
 
 def _split_types(t: str) -> List[str]:
     """Split a type list at top-level commas (`fn(a, b)`, `tbl[a|b]`)."""
-    if not t.strip():
-        return []
-    parts, depth, start = [], 0, 0
-    for i, ch in enumerate(t):
-        depth += (1 if ch in "([" else -1 if ch in ")]" else 0)
-        if ch == "," and depth == 0:
-            parts.append(t[start:i].strip())
-            start = i + 1
-    parts.append(t[start:].strip())
-    return [p for p in parts if p]
+    return [p for p in split_top(t, ",") if p]
 
 
 def _fn_parts(t: str):

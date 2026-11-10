@@ -162,14 +162,21 @@ class Handler:
     line: int = 0
 
 @dataclass
+class Emit:
+    """How a declared field reaches Lua (`= method attr(join)` in core)."""
+    method: str
+    form: str = "each"         # "each" | "join" | "list" | "table" | "none"
+    other: str = ""            # the method for `false` (`disable` -> `enable`)
+
+
+@dataclass
 class Prop:
     name: str
     value: Any = None          # Expr, List[Stmt], FnRef, None (type-only field in class)
     typ: Optional[str] = None  # declared type in `class` (`n_to: room?`)
     params: Optional[List[str]] = None
     type_params: Optional[List[str]] = None   # names of `fn(s: obj, w: list)`
-    # how the value reaches Lua: a field (default) or a method call
-    emit: Optional[Tuple[str, str, str, str]] = None  # ("method", name, form, other_name)
+    emit: Optional[Emit] = None   # a method call instead of a plain field
     line: int = 0
 
 @dataclass

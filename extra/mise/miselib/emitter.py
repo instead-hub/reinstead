@@ -129,28 +129,37 @@ class Emitter:
             tails.insert(0, f":attr '{','.join(attrs)}'")
         return lines, tails
 
-    def _field_emit(self, ent: Optional[EntityDecl], name: str) -> Optional[Tuple[str, str, str, str]]:
-        """How a declared field reaches Lua (`= method attr(join)` in core)."""
+    def _entity_kind(self, ent: EntityDecl) -> str:
+        """The class whose field declarations apply to this entity."""
+        if ent.kind == "class":
+            return ent.name or ""
+        if ent.kind == "impl":
+            return self.ctx.objects.get(ent.name or "", self.ctx.root_class or "")
+        return ent.kind
+
+    def _decl_lookup(self, table, ent: Optional[EntityDecl], name: str):
+        """A field declaration looked up through the class chain of the entity."""
         if ent is None:
             return None
-        kind = ent.name if ent.kind == "class" else (
-            ent.kind if ent.kind != "impl" else self.ctx.objects.get(ent.name or "", self.ctx.root_class or "obj"))
-        cur, seen = kind, set()
+        cur, seen = self._entity_kind(ent), set()
         while cur and cur not in seen:
             seen.add(cur)
-            spec = self.ctx.prop_emit.get(cur, {}).get(name)
-            if spec:
-                return spec
+            val = table.get(cur, {}).get(name)
+            if val:
+                return val
             cur = self.ctx.classes.get(cur)
         return None
+
+    def _field_emit(self, ent: Optional[EntityDecl], name: str) -> Optional[Emit]:
+        """How a declared field reaches Lua (`= method attr(join)` in core)."""
+        return self._decl_lookup(self.ctx.prop_emit, ent, name)
 
     def _method_call(self, ent: EntityDecl, p: Prop) -> Optional[str]:
         """The engine method call a field turns into, or None for a plain field."""
         spec = self._field_emit(ent, p.name)
         if spec is None:
             return None
-        _kind, mname, form, other = spec
-        v = p.value
+        mname, form, other, v = spec.method, spec.form, spec.other, p.value
         if form == "none":
             if not isinstance(v, Lit) or v.kind != "bool":
                 return ""
@@ -244,13 +253,12 @@ class Emitter:
         v, pad = p.value, " " * ind
         if isinstance(v, FnRef):
             return self._fnref(v.name)
-        if isinstance(v, Lit) and v.kind == "table":
-            return v.val
-        if isinstance(v, Lit) and v.kind == "raw":
-            return v.val                       # a `` `lua expression` ``
-        if isinstance(v, Lit) and v.kind == "lua":
-            prms = self._prop_prms(p, ent)
-            return f"function({prms})\n{_ind(v.val, ind + 2)}\n{pad}end"
+        if isinstance(v, Lit):
+            if v.kind in ("table", "raw"):     # `{ ... }` verbatim, a `` `lua expression` ``
+                return v.val
+            if v.kind == "lua":                # a `lua` block: an opaque body
+                prms = self._prop_prms(p, ent)
+                return f"function({prms})\n{_ind(v.val, ind + 2)}\n{pad}end"
         if isinstance(v, list):
             prms = self._prop_prms(p, ent)
             b = _ind(self._stmts(v), ind + 2)
@@ -272,18 +280,7 @@ class Emitter:
         """Parameters of a prop body, from the declared `fn(...)` of the field."""
         if p.params is not None:
             return ", ".join(p.params)
-        if ent is None:
-            return "s"
-        kind = ent.name if ent.kind == "class" else (
-            ent.kind if ent.kind != "impl" else self.ctx.objects.get(ent.name or "", self.ctx.root_class or "obj"))
-        names: List[str] = []
-        cur, seen = kind, set()
-        while cur and cur not in seen:
-            seen.add(cur)
-            names = self.ctx.prop_params.get(cur, {}).get(p.name, names)
-            if names:
-                break
-            cur = self.ctx.classes.get(cur)
+        names: List[str] = self._decl_lookup(self.ctx.prop_params, ent, p.name) or []
         return ", ".join(names) if names else "s"
 
     def _prop_scalar(self, e: Expr, is_ref: bool = False) -> str:
