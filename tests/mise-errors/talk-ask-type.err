@@ -1,1 +1,1 @@
-mise: line 7: 5: expected str, got num
+mise: line 7: 5: expected str|fn(obj)->str, got num

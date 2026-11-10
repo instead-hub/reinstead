@@ -729,7 +729,7 @@ class Parser:
                     c.children.append(self._parse_choice())
                 elif self.cur().val in ("onempty", "when", "ask", "reply", "do"):
                     kw = self.eat("IDENT").val
-                    setattr(c, {"when": "cond", "do": "do_body"}.get(kw, kw), self._parse_handler_body())
+                    setattr(c, {"when": "cond"}.get(kw, kw), self._parse_handler_body())
                 elif self.match("OP", "->"):
                     c.next_label = self.eat("IDENT").val
                     self.eat_nl()
@@ -739,7 +739,7 @@ class Parser:
                     if first and isinstance(st, SayStmt) and st.mode == "p":
                         c.reply = st.expr
                     else:
-                        c.do_body.append(st)
+                        c.do.append(st)
                 first = False
             self.eat("DEDENT")
         return c

@@ -392,12 +392,12 @@ class Emitter:
         its = [f"{pad}{{"]
         if c.ask is not None:
             its.append(self._talk_val(c.ask, ind + 2))
-        has_do = bool(c.do_body)
+        has_do = bool(c.do)
         if c.reply is not None and not has_do:
             its.append(self._talk_val(c.reply, ind + 2))
         elif c.reply is not None or has_do:
-            if c.reply is None and isinstance(c.do_body, FnRef):
-                its.append(f"{ipad}{self._fnref(c.do_body.name)};")
+            if c.reply is None and isinstance(c.do, FnRef):
+                its.append(f"{ipad}{self._fnref(c.do.name)};")
             else:
                 act = []
                 if isinstance(c.reply, (Lit, InterpStr)):
@@ -406,10 +406,10 @@ class Emitter:
                     act.append(f"p({self._fnref(c.reply.name)}(s))")
                 elif isinstance(c.reply, list):
                     act.append(self._stmts(c.reply))
-                if isinstance(c.do_body, FnRef):
-                    act.append(f"{self._fnref(c.do_body.name)}(s)")
-                elif isinstance(c.do_body, list):
-                    act.append(self._stmts(c.do_body))
+                if isinstance(c.do, FnRef):
+                    act.append(f"{self._fnref(c.do.name)}(s)")
+                elif isinstance(c.do, list):
+                    act.append(self._stmts(c.do))
                 its.append(f"{ipad}function(s)\n{_ind(chr(10).join(act), ind + 4)}\n{ipad}end;")
         its.extend(self._talk_choice(sub, ind + 2) for sub in c.children)
         if c.onempty is not None:

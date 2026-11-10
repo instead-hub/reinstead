@@ -749,8 +749,18 @@ def _handler_params(ctx: Context, owner: Optional[str], kind: str, h: Handler
     return params, arg_names
 
 
+# the `choice` fields that are written as `name = …` in a choice (a condition is
+# a truthiness test, like `if`, so it is not among them)
+CHOICE_FIELDS = ("ask", "reply", "do", "onempty")
+
+
 def _check_talk(ctx: Context, td: TalkDecl):
-    env = {"s": _root(ctx)}
+    env = {"s": "talk"}
+    own = ctx.fields.setdefault(td.name, {})
+    for p in td.props:                       # talk-level fields (a game may add its own)
+        own[p.name] = _lit_type(ctx, p.value) if isinstance(p.value, Expr) else ("fn", False)
+    for name, spec in ctx.fields.get("talk", {}).items():   # what `class talk` declares
+        own.setdefault(name, spec)
     labels = [ln for ln, _say, _ch in td.labels]
     for ln in labels:
         if labels.count(ln) > 1:
@@ -776,20 +786,25 @@ def _check_talk(ctx: Context, td: TalkDecl):
         _check_expr(ctx, td.intro, dict(env), td.name)
 
     def chk_c(c: TalkChoice):
-        # a condition is a truthiness test (like `if`), no type check there
-        for part, want in ((c.cond, None), (c.ask, "str"), (c.reply, "str"),
-                           (c.onempty, "fn"), (c.do_body, "fn")):
+        # a condition is a truthiness test (like `if`); the rest is typed by the
+        # `choice` field it is written as
+        parts = [(c.cond, None, "when")]
+        for field in CHOICE_FIELDS:
+            parts.append((getattr(c, field), _decl_type(ctx, "choice", field), field))
+        for part, want, what in parts:
             if isinstance(part, FnRef):
                 ctx.used_refs.add(part.name)
             elif isinstance(part, list):
+                # a body is a function: its `return`s must be what the field's
+                # function alternative returns (`ask: str | fn(s) -> str` -> str)
                 rets: List[str] = []
                 _check_stmts(ctx, part, dict(env), td.name, rets)
-                if want == "str":
-                    for t in rets:
-                        expect(ctx, f"talk {td.name}: phrase text", t, "str", c.line)
+                returns = [r for alt in split_union(want or "") if alt.startswith("fn(")
+                           for r in (_fn_parts(alt)[1] if _fn_parts(alt) else [])]
+                for t in rets if returns else []:
+                    expect(ctx, f"talk {td.name}: {what}", t, "|".join(returns), c.line)
             elif isinstance(part, Expr):
-                _check_expr(ctx, part, dict(env), td.name,
-                            None if want == "fn" else want)
+                _check_expr(ctx, part, dict(env), td.name, want)
         for sub in c.children:
             chk_c(sub)
 

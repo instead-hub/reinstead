@@ -82,7 +82,23 @@ class story(room) = cutscene
 class ending(room) = gameover
 
 # a dialogue is a room-like object (`std.dlg = std.class({...}, std.room)`)
-class talk(room)
+class talk(room) = dlg
+  phr: tbl[choice]
+  obj: tbl[choice]
+
+# A `*`/`+` choice in a dialogue. These are the words the author writes; the
+# emitter maps them onto the engine's `phr` fields (ask -> dsc, reply/do -> act).
+# A condition (`[expr]`/`when = …`) is a truthiness test, like `if`, so it is
+# not typed here.
+class choice
+  ask: str | fn(s: obj) -> str      # the line in the choice list
+  reply: str | fn(s: obj) -> str    # what is printed when it is chosen
+  do: fn(s: obj)                    # the action after the reply
+  onempty: fn(s: obj) -> str        # no selectable sub-choice: dlg.lua calls it
+  next: str                         # a tag: `-> label`
+  hidden: bool
+  only: bool
+  always: bool
 
 # a list is its own root in the engine (`std.list = std.class{__list_type = true}`),
 # it holds objects; the engine also accepts a plain table of objects

@@ -256,7 +256,7 @@ class TalkChoice:
     cond: Any = None
     ask: Any = None
     reply: Any = None
-    do_body: Any = field(default_factory=list)
+    do: Any = field(default_factory=list)
     onempty: Any = None
     children: List["TalkChoice"] = field(default_factory=list)
     next_label: Optional[str] = None
