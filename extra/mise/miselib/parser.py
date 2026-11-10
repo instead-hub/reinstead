@@ -988,6 +988,26 @@ class Parser:
         return _split_interp_str(t.val, t.line, self.src)
 
 
+def _interp_end(s: str, start: int) -> int:
+    """The `}` closing the `{` at `start`, counting nested braces (`{tbl[1]}`,
+    `{ {1,2} }`) and skipping string literals inside the expression."""
+    depth, i, n = 1, start + 1, len(s)
+    while i < n:
+        ch = s[i]
+        if ch in "\"'":
+            i += 1
+            while i < n and s[i] != ch:
+                i += 2 if s[i] == "\\" else 1
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return -1
+
+
 def _split_interp_str(s: str, line: int, src: str) -> Expr:
     parts: List[Any] = []
     i, n = 0, len(s)
@@ -996,12 +1016,16 @@ def _split_interp_str(s: str, line: int, src: str) -> Expr:
         if j == -1:
             parts.append(s[i:])
             break
-        k = s.find("}", j + 1)
-        if k == -1 or (j + 1 < n and s[j + 1] in "$#"):
+        if j + 1 < n and s[j + 1] in "$#":     # `{$fmt …}` — the engine's own markup
+            k = s.find("}", j + 1)
             end = (k + 1) if k != -1 else n
             parts.append(s[i:end])
             i = end
             continue
+        k = _interp_end(s, j)
+        if k == -1:
+            parts.append(s[i:])
+            break
         if j > i:
             parts.append(s[i:j])
         parts.append(Parser(tokenize(s[j + 1:k].strip(), src), src).parse_expr())

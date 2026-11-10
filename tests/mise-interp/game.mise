@@ -1,0 +1,28 @@
+game "interp"
+
+lang ru
+
+include stdlib
+
+global nums = [10, 20]
+
+fn tag(t: str) -> str
+  return t
+
+obj key "ключ"
+
+impl key
+  found_in = hall
+
+room hall "зал"
+  dsc = "Зал."
+
+fn start(load)
+  player:move hall
+
+impl game
+  before Inv =
+    say "просто {tostr nums[1]} и {tostr nums[2]}"
+    say "вложенные {tag(tostring(len({1, 2})))} скобки"
+    say "кавычка {tag '}'} внутри"
+    say "движок {$fmt b|жирный} и {tag 'x'}"
