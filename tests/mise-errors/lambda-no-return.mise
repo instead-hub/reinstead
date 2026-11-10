@@ -1,0 +1,13 @@
+game "t"
+lang ru
+include stdlib
+
+
+fn test(w: obj, cb: fn(x: obj) -> bool) -> bool
+  return cb w
+
+obj box "коробка"
+
+fn f(s: obj)
+  local r = test box &(w)
+    w:hasnt light

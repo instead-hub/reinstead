@@ -795,6 +795,24 @@ def _check_talk(ctx: Context, td: TalkDecl):
             chk_c(c)
 
 
+def _has_value_return(stmts: List[Stmt]) -> bool:
+    """Does this lambda body return a value anywhere?"""
+    for s in stmts:
+        if isinstance(s, ReturnStmt) and s.kind == "return" and s.values:
+            return True
+        if isinstance(s, IfStmt):
+            if any(_has_value_return(b) for _c, b, _l in s.branches):
+                return True
+            if s.else_body and _has_value_return(s.else_body):
+                return True
+        elif isinstance(s, MatchStmt):
+            if any(_has_value_return(b) for _p, _g, b, _l in s.arms):
+                return True
+        elif isinstance(s, (ForNumStmt, ForInStmt)) and _has_value_return(s.body):
+            return True
+    return False
+
+
 def _nonnil(ctx: Context, e: Expr) -> bool:
     """Is this expression known to be a value, never nil?"""
     if isinstance(e, Lit):
@@ -1165,9 +1183,12 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         e.typ = "any" if e.kind == "raw" else e.kind
         return e.typ
     if isinstance(e, InterpStr):
+        # interpolation is concatenation: any printable value, as with `..`
         for p in e.parts:
             if isinstance(p, Expr):
-                _check_expr(ctx, p, env, owner, "str")
+                t = _check_expr(ctx, p, env, owner)
+                if not is_subtype(ctx, t, "str|num|bool|obj|event") and t != "any":
+                    raise TypeCheckError(f"interpolation: expected str, got {t}", p.line)
         e.typ = "str"
         return "str"
     if isinstance(e, Lambda):
@@ -1192,6 +1213,10 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
             ptypes.append(pt)
         if isinstance(e.body, list):
             _check_stmts(ctx, e.body, env2, owner, erets or None)
+            if erets and not _has_value_return(e.body):
+                raise TypeCheckError(
+                    f"&(…): the callback returns {'|'.join(erets)}, but the body has no "
+                    f"`return` (write an expression body or add `return`)", e.line)
         else:
             _check_expr(ctx, e.body, env2, owner, erets[0] if erets else None)
         e.typ = "fn(" + ",".join(ptypes) + ")" + (("->" + ",".join(erets)) if erets else "")
@@ -1396,7 +1421,9 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, str], owner: Optional[str]
     is_method = c.receiver is not None
     all_args = ([c.receiver] + c.args) if is_method else list(c.args)
     label = f"{_kind_name(c.receiver)}:{c.func}" if is_method else c.func
-    fn = ctx.fns.get(c.func)
+    # a local or a parameter of function type shadows a global `fn` of that name
+    shadowed = not is_method and env.get(c.func, "").startswith("fn")
+    fn = None if shadowed else ctx.fns.get(c.func)
 
     if is_method:
         rt = c.receiver.typ

@@ -48,6 +48,10 @@ local function fn_each(t, f)
   end
 end
 
+local function fn_apply(cb, w)
+  return cb(w) + 1
+end
+
 local function fn_total(n)
   local r = 0
   for i = 1, n do
@@ -111,6 +115,7 @@ obj {
     if fn_run(function(w) return w:has("light") end) then
       p "светло"
     end
+    p("apply: ", fn_apply(function(x) return 41 end, _'box'))
     s:for_plural(function(w) return w:attr("seen") end)
     fn_each(inv(), function(w) return w:attr("seen") end)
     if fn_total(3) > 0 then

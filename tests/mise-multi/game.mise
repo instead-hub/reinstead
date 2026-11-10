@@ -22,7 +22,7 @@ fn fwd() -> num, num
 fn single() -> num
   return minmax 1 2
 
-fn cb(f: fn(n: num) -> num, num)
+fn cb(f: fn(n: num) -> num)
   f 1
 
 fn caller()

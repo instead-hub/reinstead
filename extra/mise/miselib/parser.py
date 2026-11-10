@@ -147,16 +147,18 @@ class Parser:
 
     # --- Types, Vars, Fns ---
 
-    def _parse_type_str(self) -> str:
+    def _parse_type_str(self, single: bool = False) -> str:
+        """`single` stops the `->` return list at a comma: inside a parameter list
+        `fn(a) -> b, c` means "a callback returning b, then a parameter c"."""
         names: List[str] = []
-        res = [self._parse_type_atom(names)]
+        res = [self._parse_type_atom(names, single)]
         self._last_type_params = names
         while self.match("OP", "|"):
-            res.append(self._parse_type_atom(names))
+            res.append(self._parse_type_atom(names, single))
         self._last_type_params = names
         return "|".join(res)
 
-    def _parse_type_atom(self, names: List[str]) -> str:
+    def _parse_type_atom(self, names: List[str], single: bool = False) -> str:
         t = self.cur()
         if t.val == "fn" and self.peek().val == "(":
             self.pos += 2
@@ -167,7 +169,7 @@ class Parser:
                     if self.cur().kind == "IDENT" and self.peek().val == ":":
                         pname = self.cur().val
                         self.pos += 2
-                    pts.append(self._parse_type_str())
+                    pts.append(self._parse_type_str(single=True))
                     if pname:
                         names.append(pname)
                     if not self.match("OP", ","):
@@ -175,14 +177,14 @@ class Parser:
             self.eat("OP", ")")
             ret = ""
             if self.match("OP", "->"):
-                rts = [self._parse_type_str()]
-                while self.match("OP", ","):
+                rts = [self._parse_type_str(single)]
+                while not single and self.match("OP", ","):
                     rts.append(self._parse_type_str())
                 ret = "->" + ",".join(rts)
             return f"fn({','.join(pts)}){ret}{'?' if self.match('OP', '?') else ''}"
         if t.val == "tbl" and self.peek().val == "[":
             self.pos += 2
-            inner = self._parse_type_str()
+            inner = self._parse_type_str(single)
             self.eat("OP", "]")
             return f"tbl[{inner}]{'?' if self.match('OP', '?') else ''}"
         return self.eat("IDENT").val + ("?" if self.match("OP", "?") else "")
@@ -261,10 +263,10 @@ class Parser:
             if not self.at("OP", ")"):
                 while True:
                     if self.match("OP", "..."):
-                        var = self._parse_type_str() if self.match("OP", ":") else "any"
+                        var = self._parse_type_str(single=True) if self.match("OP", ":") else "any"
                         break
                     pn = self.eat("IDENT").val
-                    pt = self._parse_type_str() if self.match("OP", ":") else ("obj" if pn == "s" else "any")
+                    pt = self._parse_type_str(single=True) if self.match("OP", ":") else ("obj" if pn == "s" else "any")
                     params.append((pn, pt))
                     if not self.match("OP", ","):
                         break
@@ -404,7 +406,7 @@ class Parser:
             pname = self.eat("IDENT").val
             ptype = "any"
             if self.match("OP", ":"):
-                ptype = self._parse_type_str()
+                ptype = self._parse_type_str(single=True)
             params.append((pname, ptype))
             if not self.match("OP", ","):
                 break
