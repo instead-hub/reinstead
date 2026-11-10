@@ -66,6 +66,8 @@ local function fn_probe(w, t, ev)
   drop(w)
   pairs(t)
   ipairs(t)
+  next(t)
+  std.unpack(t)
   walkout()
   visits(w)
   p((mp.xevent or nil))
@@ -210,6 +212,13 @@ room {
 _'box'.found_in = 'test_room';
 
 _'note'.found_in = 'test_room';
+
+_'game'.before_Inv = function(s, w, wh)
+  local xs = { 7, 8 }
+  local a, b = std.unpack(xs)
+  p("unpack ", tostring(a), " ", tostring(b), " next ", tostring(next(xs)))
+  return false
+end;
 
 function start(load)
   move(me(), _'test_room')

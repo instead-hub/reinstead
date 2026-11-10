@@ -50,6 +50,8 @@ fn probe(w: obj, t: tbl, ev: event)
   drop w
   pairs t
   ipairs t
+  next t
+  unpack t
   walkout
   visits w
   say (xevent)
@@ -126,6 +128,13 @@ impl box
 
 impl note
   found_in = test_room
+
+impl game
+  before Inv =
+    local xs = [7, 8]
+    local a, b = unpack xs
+    say "unpack {tostr a} {tostr b} next {tostr (next xs)}"
+    pass
 
 fn start(load)
   player:move test_room
