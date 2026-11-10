@@ -28,24 +28,11 @@ bad=0
 pass() { ok=$((ok + 1)); echo "ok - $1"; }
 fail() { bad=$((bad + 1)); rc=1; echo "FAIL - $1" >&2; }
 
-# --- transpile and compare ---------------------------------------------
-for g in "$ROOT"/tests/mise-*/game.mise; do
-	[ -f "$g" ] || continue
-	dir=$(dirname "$g")
-	name=$(basename "$dir")
-	out="$WORK/$name.lua"
-	if ! python3 "$ROOT/extra/mise/mise.py" "$g" -o "$out" 2>"$WORK/$name.err"; then
-		fail "$name: transpile"
-		cat "$WORK/$name.err" >&2
-		continue
-	fi
-	if cmp -s "$out" "$dir/main3.lua"; then
-		pass "$name: lua"
-	else
-		fail "$name: lua differs"
-		diff -u "$dir/main3.lua" "$out" | head -40 >&2
-	fi
-done
+# --- transpile and compare (one python process for every game) ----------
+python3 "$ROOT/tests/mise-check.py" goldens "$ROOT" >"$WORK/goldens.log" 2>&1 || rc=1
+cat "$WORK/goldens.log"
+ok=$((ok + $(grep -c '^ok - ' "$WORK/goldens.log" || true)))
+bad=$((bad + $(grep -c '^FAIL - ' "$WORK/goldens.log" || true)))
 
 # --- engine transcripts -------------------------------------------------
 prep_script() {
@@ -179,6 +166,57 @@ if [ "$ENGINE" = 1 ]; then
 			head -40 "$WORK/$name.diff" >&2
 		fi
 	done
+fi
+
+# --- `-stop`: a scripted run is non-interactive --------------------------
+# Without it the engine waits for input after the script ends (looks like a
+# hang); with it the run ends: status 0 when the script is exhausted, status 1
+# when a command raises an engine error.
+check_stop() {
+	_dir=$WORK/stop
+	mkdir -p "$_dir"
+	cat > "$WORK/stop.mise" <<'EOF'
+game "stop"
+lang ru
+include stdlib
+
+obj box "коробка"
+  found_in = hall
+
+room hall "зал"
+  dsc = "Зал."
+
+fn start(load)
+  player:move hall
+
+impl box
+  before Exam =
+    say (`boom()`)
+EOF
+	if ! python3 "$ROOT/extra/mise/mise.py" "$WORK/stop.mise" -o "$_dir/main3.lua" 2>"$WORK/stop.log"; then
+		fail "-stop: fixture does not compile"
+		cat "$WORK/stop.log" >&2
+		return
+	fi
+	_app=$(mktemp -d)
+	# no `!quit`: the run must end because the script is exhausted
+	printf 'транскрипт\nосмотреть\n' > "$WORK/stop-ok.script"
+	SDL_VIDEODRIVER=dummy timeout 20 "$BIN" -appdata "$_app" -noautosave -stop \
+		"$_dir" -i "$WORK/stop-ok.script" >/dev/null 2>&1
+	_r=$?
+	[ "$_r" -eq 0 ] && pass "-stop: exits 0 when the script is done" \
+		|| fail "-stop: status $_r instead of 0 when the script is done"
+	printf 'транскрипт\nосмотреть коробку\n!quit\n' > "$WORK/stop-err.script"
+	SDL_VIDEODRIVER=dummy timeout 20 "$BIN" -appdata "$_app" -noautosave -stop \
+		"$_dir" -i "$WORK/stop-err.script" >/dev/null 2>&1
+	_r=$?
+	[ "$_r" -eq 1 ] && pass "-stop: exits 1 on a game error" \
+		|| fail "-stop: status $_r instead of 1 on a game error"
+	rm -rf "$_app"
+}
+
+if [ "$ENGINE" = 1 ]; then
+	check_stop
 fi
 
 echo "== mise: ok=$ok failed=$bad =="
