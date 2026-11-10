@@ -202,9 +202,13 @@ opaque-строка**. Всё остальное вокруг типизиров
 
 ### 2.5. Мелкие расхождения спеки и реализации (симптом, не причина)
 
-- `SPEC.md` (§ 5, `base_type`) объявляет `list` базовым типом; в
-  `checker.py::PRIMITIVES` его нет — `list` работает как класс из `core.mise`,
-  и `fn ids() -> list` + `return []` даёт `expected list, got tbl[]`.
+- ~~`SPEC.md` (§ 5, `base_type`) объявляет `list` базовым типом~~ — найдено
+  и исправлено: `list` убран из `base_type` (он попадает туда как класс через
+  `IDENT`), а в § 3.5 появился раздел про `tbl`/`tbl[T]`/`list`; сам дефект был
+  именно в спецификации: `list` — класс движка (`class list = std.list`), и
+  `fn ids() -> list` + `return []` законно даёт `expected list, got tbl[]`.
+  Показательно, что расхождение прожило долго: `tbl`/`tbl[...]` вообще не были
+  описаны в разделе про типы, и никто этого не заметил.
 - `STRING` в EBNF поддерживает `"""…"""`, лексер — ещё и `'''…'''`.
 - Описание «парсер контекстно-независимый» (§ 2) соседствует со значимыми
   отступами, которые лексер разворачивает в `INDENT`/`DEDENT` (это допустимо,
@@ -455,8 +459,10 @@ model checker», а **дать языку state schema и effect annotations**. 
 2. `fn pick(o: tbl) -> any = \`(rawget(o, 1) or rawget(o, 2))\`` + вызов
    `pick mk` → `rawget(fn_mk(), 1) or rawget(fn_mk(), 2)`: аргумент вычислен
    дважды.
-3. `fn ids() -> list` + `return []` → `expected list, got tbl[]`
-   (расхождение с `SPEC.md`, где `list` — базовый тип).
+3. `fn ids() -> list` + `return []` → `return value 1 of ids: expected list,
+   got tbl[]`: `list` — класс (`std.list`), а не встроенный тип; литерал `[...]`
+   имеет тип `tbl[…]`. Была ошибка в `SPEC.md` (объявляла `list` базовым типом) —
+   исправлена вместе с добавлением раздела про `tbl`/`tbl[T]`/`list`.
 4. `say "{f '}'}"` и `say "{f(tostring(len({1, 2})))}"` до правки
    `_interp_end` разбирались неверно (`expected }, got '\n'`); после — корректно
    (коммит `566cf7e`, тест `tests/mise-interp`).
