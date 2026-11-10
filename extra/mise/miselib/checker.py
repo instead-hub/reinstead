@@ -422,12 +422,15 @@ def _register_entity(ctx: Context, ent: EntityDecl, idx: int,
     if ent.kind == "impl" and ent.name == "mp":
         ctx.event_names.update(ent.traits)
     _inline_mixin_traits(ctx, ent, instantiated_classes)
-    if ent.kind not in ("class", "impl") and ent.name:
+    # a nameless declaration is legal (`obj "вещь"` — the engine names it), but the
+    # kind must be a declared class either way: a mistyped kind is a typo, not a new kind
+    if ent.kind not in ("class", "impl"):
         if ent.kind not in ctx.classes:
             raise Error(f"unknown kind {ent.kind!r}{_kind_hint(ctx, ent)}", ent.line)
-        if not ent.name.startswith("#") and ent.name in ctx.objects:
+        if ent.name and not ent.name.startswith("#") and ent.name in ctx.objects:
             raise Error(f"duplicate declaration {ent.name!r}", ent.line)
-        ctx.objects[ent.name] = ent.kind
+        if ent.name:
+            ctx.objects[ent.name] = ent.kind
     if ent.kind == "impl" and ent.name and ent.name not in ("game", "pl", "mp") \
             and not ent.name.startswith("@") and ent.name not in ctx.objects \
             and ent.name not in ctx.classes and ent.name not in ctx.fns \
@@ -729,6 +732,10 @@ def _entity_kind(ctx: Context, ent: EntityDecl) -> str:
 def _check_entity(ctx: Context, ent: EntityDecl):
     owner = ent.name
     kind = _entity_kind(ctx, ent)
+    if ent.kind == "impl" and ent.children:
+        raise Error(f"impl {owner}: cannot hold an object — declare it at the top level "
+                    f"(or put it into another object with `with`/`found_in`)",
+                    ent.children[0].line)
     for p in ent.props:
         _check_ref_prop(ctx, owner, p)
         where = f"{owner}.{p.name}" if owner else p.name
@@ -807,7 +814,7 @@ def _handler_params(ctx: Context, owner: Optional[str], kind: str, h: Handler
     is_any = any(ev in ("Any", "Default") for ev in h.events)
     if is_any:                      # `before_Default(s, ev, w, wh)` and `before_Any(...)`
         params += [("ev", "event"), ("w", _root(ctx)), ("wh", _root(ctx))]
-        stripped = not (_inherits(ctx, kind, _room_root(ctx)) or owner in ("game", "mp", "setup", None))
+        stripped = not (_inherits(ctx, kind, _room_root(ctx)) or owner in ("game", "mp", None))
         # the arguments follow `ev`; on the acted object the object itself is stripped
         names = ("w", "wh", "w2", "w3")
         if stripped:
@@ -815,7 +822,7 @@ def _handler_params(ctx: Context, owner: Optional[str], kind: str, h: Handler
         return params, {i: names[i] for i in range(len(names))}
     sigs = _handler_event_args(ctx, h)
     acted = bool(sigs) and any(ev in ctx.event_acted for ev in h.events)
-    room_like = _inherits(ctx, kind, _room_root(ctx)) or owner in ("game", "mp", "setup", None)
+    room_like = _inherits(ctx, kind, _room_root(ctx)) or owner in ("game", "mp", None)
     stripped = acted and not room_like
     if acted and not stripped:      # the acted object comes in as `w`
         params.append(("w", _root(ctx)))

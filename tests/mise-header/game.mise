@@ -1,22 +1,25 @@
-game "setup"
+game "header"
 
 lang ru
 include stdlib
 
-setup
-  fmt = dash
+fmt = dash
+
+impl game
   dsc = "Заставка."
-  hero "ты/мр" =
-    description = "Герой."
-  game =
-    hint_verbs = { "#Exam", "#Take" }
+  hint_verbs = { "#Exam", "#Take" }
   before Exam =
     "Нечего осматривать."
-  init =
-    take box
-    player:move hall
-  start =
-    player:move hall
+
+impl pl "ты/мр"
+  description = "Герой."
+
+fn init()
+  take box
+  player:move hall
+
+fn start(load)
+  player:move hall
 
 obj box "коробка"
   found_in = hall

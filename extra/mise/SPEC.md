@@ -118,8 +118,26 @@ extern fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str = "$1:noun_
 ### Идея 8: Унификация сущностей
 - **Настройка игры и игрока — обычные `impl game` / `impl pl`**, глобальные
   обработчики событий — `impl mp` (`on Tune`, `before Any`), старт — обычные
-  `fn init()` / `fn start(load)` (имя объявлено через `entry`). `setup` остаётся
-  сокращением: он разворачивается в `impl game`, `impl pl` и `fn init`/`fn start`.
+  `fn init()` / `fn start(load)` (имя объявлено через `entry`). Шапка игры — это
+  те же объявления:
+
+  ```mise
+  fmt = dash                    # модули форматирования
+
+  impl game                     # заставка и общие обработчики
+    dsc = "Заставка."
+    before Exam =
+      pass
+
+  impl pl "ты/мр"               # герой: слова в заголовке, поля — ниже
+    description = "Герой."
+
+  fn init()
+    take box
+
+  fn start(load)
+    player:move hall
+  ```
 - **Поля и их типы объявляются прямо в `class`** (`class obj`, `class room(obj)`,
   пользовательские классы), а `mixin` — это просто `class`; отдельного списка
   объявленных полей нет.
@@ -462,7 +480,6 @@ entry start(load: bool)
 | класс: трейт (`: Thing`), вид (`Thing item`), родитель (`class B(A)`), `impl` | класс **выше** использования                                                   |
 | ссылки на объекты (`found_in`, `n_to`, `scope`, …)                            | не важен                                                                       |
 | `impl X`                                                                      | **после** `X` (эмитится `_'X'.field = …`, ссылка разворачивается при загрузке) |
-| `setup`                                                                       | разворачивается на месте в `impl game`/`impl pl` + `fn init`/`fn start`        |
 
 ```
 mise: item: class 'Thing' is used before its declaration (move `class Thing` above)
@@ -669,7 +686,7 @@ file      ::= { top_item NEWLINE }
 top_item  ::= header_decl | "lang" IDENT | ("include" | "require" | "fmt") ident_list
             | type_decl | event_decl
             | entry_decl | extern_decl | vars_decl | fn_decl
-            | verb_decl | object_decl | impl_decl | talk_decl | setup_decl | lua_decl
+            | verb_decl | object_decl | impl_decl | talk_decl | lua_decl
 
 header_decl ::= ("game" | "name" | "author" | "version" | "info") STRING
 
@@ -735,13 +752,6 @@ trait_spec  ::= ":" SYMBOL { "," SYMBOL }
 loc_spec    ::= "@" SYMBOL { "," SYMBOL }
 
 impl_decl   ::= "impl" (SYMBOL | "game") [ trait_spec ] obj_block
-setup_decl  ::= "setup" INDENT { setup_item NEWLINE } DEDENT
-setup_item  ::= "dsc" "=" STRING
-              | "fmt" "=" ident_list
-              | ("hero" | "game") [ words_spec ] "=" INDENT { member NEWLINE } DEDENT
-              | ("init" | "start") [ "(" [ ident_list ] ")" ] "=" stmt_block
-              | handler_decl
-
 obj_block   ::= INDENT { member NEWLINE } DEDENT
 
 (* У члена ВСЕГДА есть "=":

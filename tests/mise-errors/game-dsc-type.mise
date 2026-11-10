@@ -2,5 +2,5 @@ game "t"
 lang ru
 include stdlib
 
-setup
-  foo = 1
+impl game
+  dsc = 5

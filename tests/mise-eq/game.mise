@@ -6,11 +6,13 @@ include stdlib
 fn on_take(s: obj)
   "взято"
 
-setup
-  fmt = dash
+fmt = dash
+
+impl game
   dsc = "Заставка."
-  init =
-    take box
+
+fn init()
+  take box
 
 obj box "коробка" : scenery
   description = "Просто коробка."

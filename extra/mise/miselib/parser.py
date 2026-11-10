@@ -139,8 +139,6 @@ class Parser:
             return prog.items.append(self._parse_event(prog))
         if kw == "talk":
             return prog.items.append(self._parse_talk())
-        if kw == "setup":
-            return prog.items.extend(self._parse_setup(prog))
         if kw == "lua":
             return prog.items.append(self._parse_lua())
         prog.items.append(self._parse_entity())
@@ -575,50 +573,6 @@ class Parser:
             handlers.append(Handler(phase=ptok.val, events=[name], params=prms,
                                     body=self._parse_handler_body(), line=ptok.line))
         return handlers
-
-    def _parse_setup(self, prog: Program) -> List[Any]:
-        """`setup` is sugar: it expands into `impl game`/`impl pl`, `fn init`/`fn start`."""
-        line = self.eat("IDENT", "setup").line
-        game = EntityDecl(kind="impl", name="game", line=line)
-        hero: Optional[EntityDecl] = None
-        fns: dict = {}
-        self.eat_nl()
-        self.eat("INDENT")
-        while not self.at("DEDENT") and not self.at("EOF"):
-            t = self.cur()
-            kw = t.val
-            if kw in ("dsc", "fmt"):
-                self.pos += 1
-                self.eat("OP", "=")
-                if kw == "fmt":
-                    prog.fmt.extend(self.sym_list())
-                else:
-                    game.props.append(Prop(name="dsc", value=self._parse_str_tok(), line=t.line))
-                self.eat_nl()
-            elif kw in ("hero", "game"):
-                self.pos += 1
-                target = EntityDecl(kind="impl", name="pl", line=t.line) if kw == "hero" else game
-                target.words.extend(self._header_words())
-                self.eat("OP", "=")
-                self.eat_nl()
-                self.eat("INDENT")
-                self._parse_members(target)
-                self.eat("DEDENT")
-                if kw == "hero":
-                    hero = target
-            elif kw in ("init", "start"):
-                self.pos += 1
-                self._opt_ident_parens()
-                self.eat("OP", "=")
-                prms = [("load", "bool")] if kw == "start" else []
-                fns[kw] = FnDecl(name=kw, params=prms, body=self.parse_stmt_block(), line=line)
-            elif kw in PHASES:
-                game.handlers.append(self._parse_handler())
-            else:
-                hint = " (write `init =` and `take …` there)" if kw == "take" else ""
-                raise Error(f"unknown setup field {kw!r}{hint}", t.line, self.src)
-        self.eat("DEDENT")
-        return [x for x in (game, hero, fns.get("init"), fns.get("start")) if x is not None]
 
     # --- Verbs & Talk (`*` / `+` Choice Syntax) ---
 
