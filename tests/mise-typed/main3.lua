@@ -83,6 +83,12 @@ local function fn_on_take(s)
   p(_(chosen):noun_hint("вн"))
   p(fn_spot(s):noun_hint("вн"))
   do
+    local o, i = fn_where_list(_'crate'):lookup(_'crate')
+    if o and i then
+      p(o:noun_hint("вн"))
+    end
+  end
+  do
     local w = inv()[1]
     if w then
       w:noun_hint()

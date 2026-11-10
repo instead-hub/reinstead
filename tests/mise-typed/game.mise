@@ -50,6 +50,8 @@ fn on_take(s: Box)
   say (s:noun h)
   say (chosen:noun вн)
   say ( (spot s):noun вн)
+  if o, i := lookup (where_list crate) crate
+    say (o:noun вн)
   if w := inv[1]
     w:noun
   else

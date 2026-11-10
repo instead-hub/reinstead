@@ -17,6 +17,12 @@ impl mp : Any
       Wear ->
         [[надели]]
 
+fn by_number(n: num) -> str
+  match n
+    1 -> return "один"
+    2, 3 -> return "два-три"
+    _ -> return "много"
+
 impl mp : Default
   on Default = [[нет обработчика]]
 

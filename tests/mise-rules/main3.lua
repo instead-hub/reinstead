@@ -38,6 +38,19 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
+local function fn_by_number(n)
+  do
+    local __match = n
+    if __match == 1 then
+      return "один"
+    elseif __match == 2 or __match == 3 then
+      return "два-три"
+    else
+      return "много"
+    end
+  end
+end
+
 obj {
   nam = "none";
 }

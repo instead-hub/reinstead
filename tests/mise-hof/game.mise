@@ -40,3 +40,11 @@ impl box
 
 fn start(load)
   player:move test_room
+
+# замыкание: лямбда видит и меняет локальную переменную
+fn closure(s: obj) -> num
+  local n = 0
+  for w of {box}
+    each inv &(x)
+      n += 1
+  return n

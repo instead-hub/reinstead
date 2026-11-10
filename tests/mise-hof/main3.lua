@@ -56,6 +56,16 @@ local function fn_total(n)
   return r
 end
 
+local function fn_closure(s)
+  local n = 0
+  for _, w in ipairs({ _'box' }) do
+    fn_each(inv(), function(x)
+      n = n + (1)
+    end)
+  end
+  return n
+end
+
 obj {
   nam = "none";
 }
