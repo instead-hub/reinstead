@@ -154,7 +154,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -213,7 +213,7 @@ _'box'.found_in = 'test_room';
 
 _'note'.found_in = 'test_room';
 
-_'game'.before_Inv = function(s, w, wh)
+_'game'.before_Inv = function(s)
   local xs = { 7, 8 }
   local a, b = std.unpack(xs)
   p("unpack ", tostring(a), " ", tostring(b), " next ", tostring(next(xs)))

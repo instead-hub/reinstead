@@ -24,8 +24,7 @@ obj box "коробка"
     else
       [[не видно]]
 
-extend events
-  Gaze:
+event Gaze
 
 impl box
   on Gaze =

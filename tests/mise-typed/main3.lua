@@ -118,7 +118,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -155,7 +155,7 @@ obj {
 obj {
   -"лампа";
   nam = "lamp";
-  before_Take = function(s, w, wh)
+  before_Take = function(s, w)
     p(_(s.target):noun_hint("вн"))
   end;
 }

@@ -60,7 +60,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -97,7 +97,7 @@ function start(load)
   move(me(), _'hall')
 end
 
-_'game'.before_Inv = function(s, w, wh)
+_'game'.before_Inv = function(s)
   p("просто ", tostring(nums[1]), " и ", tostring(nums[2]))
   p("вложенные ", fn_tag(tostring((#{ 1, 2 }))), " скобки")
   p("кавычка ", fn_tag("}"), " внутри")

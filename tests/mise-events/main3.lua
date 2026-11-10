@@ -64,7 +64,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -101,10 +101,10 @@ room {
 obj {
   -"вещь";
   nam = "x";
-  before_AskFor = function(s, w, wh)
+  before_AskFor = function(s, w)
     p(fn_text_of(w))
   end;
-  before_Cut = function(s, w, wh)
+  before_Cut = function(s, w)
     if w then
       w:has("scenery")
     end
@@ -115,13 +115,13 @@ obj {
 obj {
   -"штука";
   nam = "y";
-  ["before_Cut,Dig"] = function(s, w, wh)
+  ["before_Cut,Dig"] = function(s, w)
     if w then
       w:has("scenery")
     end
     p "Режешь."
   end;
-  ["before_Take,AskFor"] = function(s, w, wh)
+  ["before_Take,AskFor"] = function(s, w)
     if (mp.event or nil) == "AskFor" then
       p(fn_text_of(w))
     else
@@ -151,7 +151,7 @@ obj {
   before_Consult = function(s, text)
     p(fn_text_of(text))
   end;
-  before_Whisper = function(s, w, wh)
+  before_Whisper = function(s, w)
     p(fn_text_of(w))
   end;
 }
@@ -159,7 +159,7 @@ obj {
 obj {
   -"сторож";
   nam = "npc";
-  life_Ask = function(s, w, wh)
+  life_Ask = function(s, w)
     p(fn_text_of(w))
   end;
 }:attr 'animate'
@@ -167,7 +167,7 @@ obj {
 _'game'.before_Tell = function(s, w, wh)
   p(fn_text_of(wh))
 end;
-_'game'.before_Zap = function(s, w, wh)
+_'game'.before_Zap = function(s, w)
   if w then
     w:has("scenery")
   end

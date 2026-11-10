@@ -101,8 +101,8 @@ class Parser:
             self.pos += 1
             if self.match("IDENT", "type"):
                 return prog.items.append(self._parse_type(extend=True))
-            if self.match("IDENT", "events"):
-                return prog.items.append(self._parse_events(True, t.line))
+            if self.match("IDENT", "event"):
+                return prog.items.extend(self._parse_event(True, t.line))
             self.match("IDENT", "verb")
             return prog.items.append(self._parse_verb("extend", t.line))
         if kw == "remove":
@@ -114,9 +114,9 @@ class Parser:
         if kw == "type":
             self.pos += 1
             return prog.items.append(self._parse_type(extend=False))
-        if kw == "events":
+        if kw == "event":
             self.pos += 1
-            prog.items.append(self._parse_events(False, t.line))
+            prog.items.extend(self._parse_event(False, t.line))
             return
         if kw == "entry":
             self.pos += 1
@@ -192,22 +192,18 @@ class Parser:
             return f"ref[{inner}]{'?' if self.match('OP', '?') else ''}"
         return self.eat("IDENT").val + ("?" if self.match("OP", "?") else "")
 
-    def _parse_events(self, extend: bool, line: int) -> EventsDecl:
-        """`events` — каждое имя с аргументами, которые получает обработчик."""
-        self.eat_nl()
-        decl = EventsDecl(extend=extend, line=line)
-        self.eat("INDENT")
-        while not self.at("DEDENT") and not self.at("EOF"):
-            names = self.sym_list()
-            args: List[str] = []
-            if self.match("OP", ":") and not self.at("NEWLINE"):
-                args.append(self._parse_type_str())
-                while self.match("OP", ","):
-                    args.append(self._parse_type_str())
-            decl.sigs.append((names, args))
-            self.eat_nl()
-        self.eat("DEDENT")
-        return decl
+    def _parse_sig(self) -> List[str]:
+        """`[`: `type, type]` after a name — the arguments an event passes.
+
+        A bare `event X:` (the colon with nothing after it) means "no arguments",
+        so a table of signatures can keep its colons aligned.
+        """
+        if not self.match("OP", ":") or self.at("NEWLINE"):
+            return []
+        args = [self._parse_type_str()]
+        while self.match("OP", ","):
+            args.append(self._parse_type_str())
+        return args
 
     def _parse_type(self, extend: bool) -> TypeDecl:
         line = self.cur().line
@@ -543,22 +539,42 @@ class Parser:
         raise Error(f"{where}: a handler is written with '=' (`{where} = …` or "
                     f"`{where} =` and an indented body)", t.line, self.src)
 
-    def _parse_event(self, prog: Program) -> EntityDecl:
-        """`event X` registers an event and is sugar for `impl mp : X`."""
-        line = self.eat("IDENT", "event").line
-        name = self.eat("IDENT").val
-        ent = EntityDecl(kind="impl", name="mp", traits=[name], line=line)
+    def _parse_event(self, extend: bool, line: int) -> List[Any]:
+        """`event A, B: obj, str` — a signature; a block adds handlers for one name.
+
+        `extend event` replaces the arguments of an event that is declared already
+        (the engine's own signatures live in `core.mise`). A block of phases needs a
+        single name: with several names it would be unclear which one it belongs to.
+        """
+        names = self.sym_list()
+        types = self._parse_sig()
+        sig = EventsDecl(extend=extend, line=line, sigs=[(names, types)])
         self.eat_nl()
-        if self.match("INDENT"):
-            while not self.at("DEDENT") and not self.at("EOF"):
-                ptok = self.eat("IDENT")
-                if ptok.val not in ("on", "before", "after", "post"):
-                    raise Error(f"event {name}: unknown phase {ptok.val!r}", ptok.line, self.src)
-                prms = self._opt_ident_parens()
-                ent.handlers.append(Handler(phase=ptok.val, events=[name], params=prms,
-                                            body=self._parse_handler_body(), line=ptok.line))
+        handlers: List[Handler] = []
+        has_block = bool(self.match("INDENT"))
+        if has_block:
+            if len(names) > 1:
+                raise Error(f"event {', '.join(names)}: a handler block needs a single name",
+                            line, self.src)
+            handlers = self._parse_event_handlers(names[0])
             self.eat("DEDENT")
-        return ent
+        out: List[Any] = [sig]
+        if has_block:
+            out.append(EntityDecl(kind="impl", name="mp", traits=list(names),
+                                  handlers=handlers, line=line))
+        return out
+
+    def _parse_event_handlers(self, name: str) -> List[Handler]:
+        """The phase lines of an `event` block: `on = …`, `before = …` (no name)."""
+        handlers: List[Handler] = []
+        while not self.at("DEDENT") and not self.at("EOF"):
+            ptok = self.eat("IDENT")
+            if ptok.val not in PHASES:
+                raise Error(f"event {name}: unknown phase {ptok.val!r}", ptok.line, self.src)
+            prms = self._opt_ident_parens()
+            handlers.append(Handler(phase=ptok.val, events=[name], params=prms,
+                                    body=self._parse_handler_body(), line=ptok.line))
+        return handlers
 
     def _parse_setup(self, prog: Program) -> List[Any]:
         """`setup` is sugar: it expands into `impl game`/`impl pl`, `fn init`/`fn start`."""

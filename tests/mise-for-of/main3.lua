@@ -56,7 +56,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -95,7 +95,7 @@ function start(load)
   move(me(), _'test_room')
 end
 
-_'game'.before_Inv = function(s, w, wh)
+_'game'.before_Inv = function(s)
   for _, w in ipairs({ _'box', _'rock' }) do
     p(w:noun_hint())
   end

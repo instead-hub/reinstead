@@ -64,7 +64,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -92,7 +92,7 @@ const 'MAX_SCORE' (3)
 _'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" };
 
 Prop = Class {
-  before_Exam = function(s, w, wh) return false end;
+  before_Exam = function(s) return false end;
   before_Default = function(s, ev, w, wh)
     p("Вам нет нужды беспокоиться о ", s:noun_hint({ "пр" }), ".")
   end;
@@ -110,7 +110,7 @@ Arrow = Class {
 }
 
 NPC = Class {
-  ["life_Answer,Ask,AskTo,AskFor,Tell"] = function(s, w, wh)
+  ["life_Answer,Ask,AskTo,AskFor,Tell"] = function(s, w)
     p('Введите просто "говорить с ', s:noun_hint({ "тв" }), '".')
   end;
 }:attr 'animate'
@@ -201,7 +201,7 @@ Furniture {
   nam = "stall";
   found_in = 'below_square';
   description = "Это всего лишь маленький стол с большой кучей картошки, кучкой морковки и репы, и парой яблок.";
-  before_Search = function(s, w, wh)
+  before_Search = function(s)
     mp:xaction("Exam", s)
   end;
 }:attr 'scenery'
@@ -276,7 +276,7 @@ Furniture {
 изогнутыми полями и пучком перьев из мёртвого гуся.]];
   has_been_saluted = false;
   before_FireAt = "Заманчиво, но ты не хочешь неприятностей.";
-  before_Salute = function(s, w, wh)
+  before_Salute = function(s)
     s.has_been_saluted = true
     p([[Ты отдаёшь честь шляпе на столбе.^^
     "Благодарю вас, сэр", -- ухмыляется солдат.]])
@@ -355,7 +355,7 @@ NPC {
   found_in = function(s)
     return true
   end;
-  ["before_Exam,Listen,Salute,Talk"] = function(s, w, wh) return false end;
+  ["before_Exam,Listen,Salute,Talk"] = function(s) return false end;
 }:attr 'transparent,scenery'
 
 obj {
@@ -378,7 +378,7 @@ end;
 
 Verb { "#FireAt", "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить", "в {noun}/вн,scene : FireAt", "~ {noun}/вн,scene : FireAt", "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt", "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse", "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse" }
 
-mp.Salute = function(s, w, wh)
+mp.Salute = function(s, w)
   if w:has("animate") then
     if w:hint("мн") then
       p(w:Noun_hint(), " приветствуют тебя.")
@@ -398,7 +398,7 @@ Verb { "#Salute", "поклони/ться,честь", "{noun}/дт,scene : Sal
 
 Verb { "#Salute2", "мах/ать,помах/ать,помаш/и,маш/и", "{noun}/дт,scene : Salute" }
 
-mp.Untie = function(s, w, wh)
+mp.Untie = function(s, w)
   p "Ты не можешь развязать это."
 end;
 
@@ -421,7 +421,7 @@ _'stallholder'.init_dsc = function(s)
     тут один край немного подгнил, но всё остальное хорошее. Как там фрау Телль? Передавай ей привет".]])
   end
 end;
-_'stallholder'.life_Talk = function(s, w, wh)
+_'stallholder'.life_Talk = function(s)
   s.times_spoken_to = s.times_spoken_to + (1)
   if s.times_spoken_to == 1 then
     mp.score = mp.score + 1
@@ -433,7 +433,7 @@ _'stallholder'.life_Talk = function(s, w, wh)
   end
 end;
 
-_'mid_square'.before_Walk = function(s, w, wh)
+_'mid_square'.before_Walk = function(s, w)
   if (mp:compass_dir(w) or nil) == "s_to" then
     s.warnings_count = 0
     _'pole'.has_been_saluted = false
@@ -465,7 +465,7 @@ _'mid_square'.before_Walk = function(s, w, wh)
   return false
 end;
 
-_'tree'.before_FireAt = function(s, w, wh)
+_'tree'.before_FireAt = function(s, w)
   if fn_BowOrArrow(w) then
     p "Твоя рука слегка дрожит, и стрела входит в ствол на несколько дюймов выше головы Уолтера."
     walk(_'theend')
@@ -482,7 +482,7 @@ _'governor'.init_dsc = function(s)
     где ты стоишь. Это не должно быть слишком сложным. Сержант, лови. Поставь его на голову этого мелкого ублюдка".]])
   end
 end;
-_'governor'.before_FireAt = function(s, w, wh)
+_'governor'.before_FireAt = function(s, w)
   if fn_BowOrArrow(w) then
     p([[Прежде, чем солдаты успевают среагировать, ты разворачиваешься, и выпускаешь стрелу в Гесслера.
     Она пронзает его сердце, и герцог оседает на землю. На мгновение толпа замирает в недоумении, но тут же
@@ -499,19 +499,19 @@ _'son'.description = function(s)
   end
   p "Тихий светлый мальчик восьми лет, он быстро учится сельской работе."
 end;
-_'son'.life_Give = function(s, w, wh)
+_'son'.life_Give = function(s, w)
   mp.score = mp.score + 1
   move(w, s)
   p '"Спасибо, пап".'
 end;
-_'son'.life_Talk = function(s, w, wh)
+_'son'.life_Talk = function(s)
   if here() == _'marketplace' then
     p '"Стой спокойно, сынок, Господь нам поможет".'
   else
     p "Ты показываешь сыну несколько интересных мест в городе."
   end
 end;
-_'son'.before_FireAt = function(s, w, wh)
+_'son'.before_FireAt = function(s, w)
   if here() == _'marketplace' then
     if fn_BowOrArrow(w) then
       p "Упс! Наверняка вы имели в виду не это?"
@@ -547,7 +547,7 @@ _'apple'.before_Default = function(s, ev, w, wh)
   end
   return false
 end;
-_'apple'.before_FireAt = function(s, w, wh)
+_'apple'.before_FireAt = function(s, w)
   if here() == _'marketplace' then
     if fn_BowOrArrow(w) then
       mp.score = mp.score + 1

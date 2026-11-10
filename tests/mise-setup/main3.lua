@@ -57,7 +57,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -77,7 +77,7 @@ Path = Class {
 
 _'game'.dsc = "Заставка.";
 _'game'.hint_verbs = { "#Exam", "#Take" };
-_'game'.before_Exam = function(s, w, wh)
+_'game'.before_Exam = function(s, w)
   p "Нечего осматривать."
 end;
 

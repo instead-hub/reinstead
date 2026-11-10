@@ -56,7 +56,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -182,7 +182,7 @@ obj {
   found_in = 'Drawing_Room';
   moved = false;
   before_Transfer = "[Если так уж хочется сдвинуть кресло с места, попробуйте тянуть или толкать его.]";
-  ["before_Climb,Enter"] = function(s, w, wh)
+  ["before_Climb,Enter"] = function(s)
     move(me(), s)
     p "Алиса забралась с ногами в мягкое удобное кресло."
   end;
@@ -216,25 +216,25 @@ obj {
   found_in = 'Drawing_Room';
   description = [[За окном неторопливо кружатся снежинки,
 заставляющие Алису радоваться, что она внутри дома, в тепле и уюте.]];
-  before_Open = function(s, w, wh)
+  before_Open = function(s)
     p "И подхватить простуду?! Лучше оставить окно закрытым."
   end;
-  before_Search = function(s, w, wh)
+  before_Search = function(s)
     mp:xaction("Exam", s)
   end;
 }:attr 'scenery'
 
 Kitten = Class {
   other_kitten = 'none';
-  life_Kiss = function(s, w, wh)
+  life_Kiss = function(s)
     p("Алиса чмокнула ", s:noun_hint("вн", 1), [[ в носик,
     и тот взглянул на нее сконфуженно, но довольно.]])
   end;
   life_Attack = "Разве можно напасть на такое крохотное и беззащитное создание!";
-  Show = function(s, w, wh)
+  Show = function(s, w)
     p(s:Noun_hint(1), ", протянув лапку, опасливо дотронулся до ", w:noun_hint("рд"), ".")
   end;
-  ["before_Touch,Rub"] = function(s, w, wh)
+  ["before_Touch,Rub"] = function(s)
     p(s:Noun_hint(1), " в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.")
   end;
 }:attr 'animate'
@@ -261,7 +261,7 @@ Kitten {
 
 VerbExtend { "#Exam", "{noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse" }
 
-mp.Untangle = function(s, w, wh)
+mp.Untangle = function(s, w)
   p "Что, распутать ЭТО?!"
 end;
 
@@ -269,7 +269,7 @@ Verb { "#Untangle", "размот/ать,распут/ать", "{noun}/вн : Un
 
 Verb { "#Touch2", "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/", "{noun}/вн : Touch" }
 
-_'Drawing_Room'["before_Exit,Walk"] = function(s, w, wh)
+_'Drawing_Room'["before_Exit,Walk"] = function(s, w)
   if where(me()) ~= _'mantelpiece' then
     return false
   end
@@ -302,7 +302,7 @@ _'red_queen'.dsc = function(s)
   end
   return false
 end;
-_'red_queen'.after_Take = function(s, w, wh)
+_'red_queen'.after_Take = function(s, w)
   if _'white_kitten'.state == QUEEN_STATE then
     _'white_kitten'.state = CHAIR_STATE
   end
@@ -311,7 +311,7 @@ _'red_queen'.after_Take = function(s, w, wh)
   end
   return false
 end;
-_'red_queen'["after_PutOn,Transfer,Insert"] = function(s, w, wh)
+_'red_queen'["after_PutOn,Transfer,Insert"] = function(s, w)
   if w == _'chess_board' then
     p([[В гордом одиночестве на шахматной доске, Черная Королева --
     самодержавная повелительница 32 белых и 32 черных клеток.]])
@@ -320,7 +320,7 @@ _'red_queen'["after_PutOn,Transfer,Insert"] = function(s, w, wh)
   return false
 end;
 
-_'rug'.before_LookUnder = function(s, w, wh)
+_'rug'.before_LookUnder = function(s)
   if where(me()) == _'mantelpiece' or where(me()) == _'armchair' then
     p "Отсюда вряд ли возможно дотянуться до коврика!"
     return
@@ -352,7 +352,7 @@ _'armchair'.description = function(s)
   end
   return false
 end;
-_'armchair'["before_Push,Pull"] = function(s, w, wh)
+_'armchair'["before_Push,Pull"] = function(s)
   do
     local loc = where(me())
     if loc then
@@ -394,7 +394,7 @@ _'mantelpiece'.description = function(s)
   чтобы на ней можно было стоять без риска.]])
   return false
 end;
-_'mantelpiece'["before_Enter,Climb"] = function(s, w, wh)
+_'mantelpiece'["before_Enter,Climb"] = function(s)
   if where(me()) == s then
     p "Но Алиса уже на ней!"
     return
@@ -446,7 +446,7 @@ _'mirror'.before_Any = function(s, ev, w, wh)
   end
   return false
 end;
-_'mirror'.before_Enter = function(s, w, wh)
+_'mirror'.before_Enter = function(s)
   p([[Рука Алисы без труда прошла через серебряный туман...
   за ней последовало остальное тело...
   и вот она уже по ту сторону зеркала!!!]])
@@ -470,7 +470,7 @@ _'worsted'.description = function(s)
     p "Клубок очень хорошей голубой шерсти, готовый к вязанию."
   end
 end;
-_'worsted'.before_Untangle = function(s, w, wh)
+_'worsted'.before_Untangle = function(s)
   if s.sputan then
     s.sputan = false
     p([[Это оказалось не быстрым и не простым делом...
@@ -479,7 +479,7 @@ _'worsted'.before_Untangle = function(s, w, wh)
     p "Но шерсть не спутана!"
   end
 end;
-_'worsted'.after_Take = function(s, w, wh)
+_'worsted'.after_Take = function(s, w)
   if _'white_kitten'.state == WOOL_STATE then
     _'white_kitten'.state = CHAIR_STATE
   end
@@ -608,13 +608,13 @@ Kitten.daemon = function(s)
     end
   end
 end;
-Kitten["life_Ask,Answer,Tell,Talk"] = function(s, w, wh)
+Kitten["life_Ask,Answer,Tell,Talk"] = function(s, w)
   p(s:Noun_hint(1), [[, шевеля усами, смотрит на Алису
   с таким умным видом, что она почти готова поверить,
   будто он понимает каждое ее слово.]])
 end;
 std.fn_aliases(Kitten, "life_Ask,Answer,Tell,Talk")
-Kitten["life_Give,ThrowAt"] = function(s, w, wh)
+Kitten["life_Give,ThrowAt"] = function(s, w)
   if w ~= _'red_queen' and w ~= _'worsted' then
     if (mp.event or nil) == "ThrowAt" then
       move(w, _'Drawing_Room')
@@ -643,7 +643,7 @@ Kitten["life_Give,ThrowAt"] = function(s, w, wh)
   p "."
 end;
 std.fn_aliases(Kitten, "life_Give,ThrowAt")
-Kitten.before_Take = function(s, w, wh)
+Kitten.before_Take = function(s, w)
   if have(_(s.other_kitten)) then
     p "Двух котят сразу Алисе ни за что не удержать!"
     return
@@ -652,12 +652,12 @@ Kitten.before_Take = function(s, w, wh)
   move(s, me())
   p("Алиса взяла на руки ", s:noun_hint("вн"), ". Ну что за прелестное создание!")
 end;
-Kitten.after_Drop = function(s, w, wh)
+Kitten.after_Drop = function(s)
   s.state = CHAIR_STATE
   move(s, _'Drawing_Room')
   p(s:Noun_hint(1), ", выскользнув из рук Алисы, убежал прочь.")
 end;
-Kitten["after_Transfer,PutOn,Insert"] = function(s, w, wh)
+Kitten["after_Transfer,PutOn,Insert"] = function(s, w)
   s.state = CHAIR_STATE
   do
     local p = where(s)

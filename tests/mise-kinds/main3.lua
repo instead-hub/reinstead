@@ -61,7 +61,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -94,7 +94,7 @@ end
 cutscene {
   nam = "intro";
   dsc = "Пролог.";
-  after_Enter = function(s, w, wh)
+  after_Enter = function(s, w)
     p "История началась."
   end;
 }
@@ -165,22 +165,22 @@ room {
     return false
   end;
   s_to = 'garden';
-  Enter = function(s, w, wh)
+  Enter = function(s, w)
     p "Вы вошли."
   end;
-  Walk = function(s, w, wh)
+  Walk = function(s, w)
     p "Вы идёте."
   end;
-  Look = function(s, w, wh)
+  Look = function(s)
     p "Вы осматриваетесь."
   end;
-  post_Look = function(s, w, wh)
+  post_Look = function(s)
     p "Уже осмотрелись."
   end;
   ["life_Give,Show"] = function(s, w, wh)
     p "Жизнь кипит."
   end;
-  after_Turn = function(s, w, wh)
+  after_Turn = function(s, w)
     p "Повернулись."
   end;
 }:dict { ["зал/вн"] = "зал" }:with{ 'sky' }
@@ -231,10 +231,10 @@ obj {
   word = function(s)
     return "реликвия"
   end;
-  Use = function(s, w, wh)
+  Use = function(s)
     p "Применили."
   end;
-  AskTo = function(s, w, wh)
+  AskTo = function(s, w)
     p "Попросили."
   end;
 }:disable()

@@ -56,7 +56,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -141,7 +141,7 @@ room {
 расположенного к северу отсюда) совершенно пуст.
 Но похоже, что в пыли на полу написано что-то важное.]];
   n_to = 'foyer';
-  before_Walk = function(s, w, wh)
+  before_Walk = function(s, w)
     if (mp:compass_dir(w) or nil) ~= "n_to" and not w:has("light") then
       _'message'.number = _'message'.number + (2)
       p "Слоняться в кромешной тьме -- не самая лучшая идея."
@@ -188,7 +188,7 @@ obj {
 немного промокший от дождя. Его чернота настолько глубока,
 что возникает ощущение, словно он втягивает в себя весь свет
 из окружающего мира.]];
-  ["before_Drop,PutOn"] = function(s, w, wh)
+  ["before_Drop,PutOn"] = function(s, w)
     if here() == _'cloakroom' then
       _'bar':attr("light")
       if (mp.event or nil) == "PutOn" and not s.scored then
@@ -201,11 +201,11 @@ obj {
       return
     end
   end;
-  after_Take = function(s, w, wh)
+  after_Take = function(s, w)
     _'bar':attr("~light")
     return false
   end;
-  after_PutOn = function(s, w, wh)
+  after_PutOn = function(s, w)
     if w ~= _'hook' then
       return false
     end

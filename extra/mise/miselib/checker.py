@@ -315,6 +315,8 @@ def _register_class_decl(ctx: Context, item: EntityDecl, idx: int, class_at: Dic
 def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[str]], Dict[str, int]]:
     base_evs: Dict[str, List[str]] = {}
     class_at: Dict[str, int] = {}      # position of every `class` declaration
+    decl_evs: Dict[str, List[str]] = {}
+    ext_evs: Dict[str, Tuple[List[str], int]] = {}
     for idx, item in enumerate(prog.items):
         if isinstance(item, EventsDecl):
             for evs, ats in item.sigs:
@@ -322,7 +324,10 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[s
                     _check_type(ctx, at, f"event {evs[0]}", item.line, "argument type")
                 for ev in evs:
                     ctx.event_names.add(ev)
-                    base_evs[ev] = list(ats)      # `[]` = the handler gets only `s`
+                    if item.extend:
+                        ext_evs[ev] = (list(ats), item.line)
+                    else:
+                        _declare_event(decl_evs, ev, ats, item)
         elif isinstance(item, TypeDecl):
             if item.extend and item.name not in ctx.enums:
                 raise Error(f"extend type {item.name!r}: unknown type", item.line)
@@ -346,7 +351,34 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[s
                 ctx.lua_funcs.add(m.group(1))
         elif isinstance(item, EntityDecl) and item.kind == "class" and item.name:
             _register_class_decl(ctx, item, idx, class_at)
+    base_evs.update(decl_evs)
+    base_evs.update(_apply_event_extends(decl_evs, ext_evs))
     return base_evs, class_at
+
+
+def _types_str(types: List[str]) -> str:
+    """`obj, str?` — a signature for a diagnostic."""
+    return ", ".join(types) if types else "no arguments"
+
+
+def _declare_event(decl_evs: Dict[str, List[str]], ev: str, ats: List[str], item: Any):
+    """`event X: T` — a declaration; a different signature is a conflict."""
+    prev = decl_evs.get(ev)
+    if prev is not None and prev != list(ats):
+        raise Error(f"event {ev}: declared with {_types_str(prev)}, "
+                    f"here with {_types_str(list(ats))} "
+                    f"(use `extend event` to replace)", item.line)
+    decl_evs[ev] = list(ats)
+
+
+def _apply_event_extends(decl_evs: Dict[str, List[str]],
+                         ext_evs: Dict[str, Tuple[List[str], int]]) -> Dict[str, List[str]]:
+    """`extend event X: T` — replace the arguments of an already declared event."""
+    for ev, (ats, line) in ext_evs.items():
+        if ev not in decl_evs:
+            raise Error(f"extend event {ev}: unknown event "
+                        f"(declare it with `event {ev}`)", line)
+    return {ev: ats for ev, (ats, _l) in ext_evs.items()}
 
 
 def _check_class_order(ent: EntityDecl, idx: int, class_at: Dict[str, int]):
@@ -728,6 +760,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
     for h in ent.handlers:
         _check_handler_events(ctx, h, owner or kind)
         params, arg_names = _handler_params(ctx, owner, kind, h)
+        h.params = [pn for pn, _t in params]     # what the emitter prints
         if isinstance(h.body, FnRef):
             _check_fn_target(ctx, h.body)
             ctx.used_refs.add(h.body.name)

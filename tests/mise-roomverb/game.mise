@@ -7,8 +7,7 @@ include stdlib
 # MetaVerb "~помощь,помоги/те" из mp-ru.lua принадлежит метапарсеру, и
 # объявить его заново из игры нельзя, поэтому у тестового глагола своё имя
 # и своё слово.
-extend events
-  Assist:
+event Assist
 
 room computer "компьютер"
 

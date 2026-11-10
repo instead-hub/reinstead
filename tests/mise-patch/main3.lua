@@ -60,7 +60,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -85,7 +85,7 @@ obj {
   score_value = 0;
 }
 
-_'box'.before_Take = function(s, w, wh)
+_'box'.before_Take = function(s, w)
   if s.score_value + 1 > 0 then
     p "взяли"
   end

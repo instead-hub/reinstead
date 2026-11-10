@@ -56,7 +56,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -81,7 +81,7 @@ Tree {
   nam = "tree";
 }
 
-_'tree'.before_Take = function(s, w, wh)
+_'tree'.before_Take = function(s, w)
   s:for_plural(function(w) return w:attr("seen") end)
   mp:trace(s, function(w) return w:attr("seen") end)
   if (((function(o) local m = getmetatable(s) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G["Tree"]))) then

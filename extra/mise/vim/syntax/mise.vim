@@ -43,9 +43,9 @@ syn match miseKey /^\s*\zs\w\+\%(\s*,\s*\w\+\)*\ze\s*[:(]/
 syn match miseSpecialKey /^\s*\zs\%(words\|word\|attrs\|attr\|dict\|disabled\|with\|inside\|text\|found_in\|exit\|enter\|scope\|nam\|tag\|way\|lifes\)\ze\s*[:(]/
 
 " --- декларации и секции (в начале строки) ---
-syn match miseDecl /^\s*\zs\%(obj\|room\|door\|story\|ending\|class\|mixin\|verb\|talk\|setup\|impl\|const\|global\|type\|events\|event\|entry\|extern\|extend\|remove\|fn\|lua\)\>\ze\%(\s\|:\|$\)/
+syn match miseDecl /^\s*\zs\%(obj\|room\|door\|story\|ending\|class\|mixin\|verb\|talk\|setup\|impl\|const\|global\|type\|event\|entry\|extern\|extend\|remove\|fn\|lua\)\>\ze\%(\s\|:\|$\)/
 syn match miseDirective /^\s*\zs\%(game\|name\|version\|author\|info\|lang\|fmt\|include\|require\)\>/
-syn match miseDecl2 /\%(^\s*extend\s\+\)\@<=\%(type\|events\|verb\)\>/
+syn match miseDecl2 /\%(^\s*extend\s\+\)\@<=\%(type\|event\|verb\)\>/
 syn match miseImplTarget /\%(^\s*impl\s\+\)\@<=[^[:space:]:]\+/
 syn match miseMethodSpec /\%(=\s*method\s\+\)\@<=\w\+/
 
@@ -55,7 +55,7 @@ syn match misePhaseEvt /\%(^\s*\%(on\|life\|before\|after\|post\)\s\+\)\@<=\u\w*
 syn match miseEventHandler /\%(^\s*\%(on\|before\|after\|post\|life\)\s\+\%([A-Z]\w*\s*,\s*\)*[A-Z]\w*\%(([^)]*)\)\?\s*=\)\@<==/
 
 " --- логика ---
-syn match miseLogicKw /^\s*\zs\%(if\|elseif\|else\|match\|for\|local\|return\|break\|stop\|pass\|entry\|events\|extern\|value\|global\|method\|else\)\ze\%(\s\|$\|:\)/
+syn match miseLogicKw /^\s*\zs\%(if\|elseif\|else\|match\|for\|local\|return\|break\|stop\|pass\|entry\|event\|extern\|value\|global\|method\|else\)\ze\%(\s\|$\|:\)/
 syn keyword miseLogicOp and or not in of
 syn match miseFnRef /&\%((\)\@!\w\+/
 syn match miseLambda /&\ze(/

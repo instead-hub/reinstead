@@ -49,7 +49,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -127,7 +127,7 @@ room {
 of the foyer to the north, is completely empty. There seems to
 be some sort of message scrawled in the sawdust on the floor.]];
   n_to = 'foyer';
-  before_Walk = function(s, w, wh)
+  before_Walk = function(s, w)
     if (mp:compass_dir(w) or nil) ~= "n_to" and not w:has("light") then
       _'message'.number = _'message'.number + (2)
       p "Blundering around in the dark isn't a good idea!"
@@ -171,7 +171,7 @@ obj {
   description = [[A handsome cloak, of velvet trimmed with satin, and slightly
 spattered with raindrops. Its blackness is so deep that it
 almost seems to suck light from the room.]];
-  ["before_Drop,PutOn"] = function(s, w, wh)
+  ["before_Drop,PutOn"] = function(s, w)
     if here() == _'cloakroom' then
       _'bar':attr("light")
       if (mp.event or nil) == "PutOn" and not s.scored then
@@ -184,7 +184,7 @@ almost seems to suck light from the room.]];
       return
     end
   end;
-  after_Take = function(s, w, wh)
+  after_Take = function(s, w)
     _'bar':attr("~light")
     return false
   end;

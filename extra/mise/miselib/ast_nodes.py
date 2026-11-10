@@ -207,7 +207,7 @@ class FnDecl:
 
 @dataclass
 class EventsDecl:
-    """`events` — event names and the action arguments each one takes."""
+    """`event A, B: obj, str` — names and the action arguments each one takes."""
     sigs: List[Tuple[List[str], List[str]]] = field(default_factory=list)
     extend: bool = False
     line: int = 0

@@ -60,7 +60,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -84,7 +84,7 @@ obj {
   found_in = 'hall';
 }
 
-_'game'.before_Inv = function(s, w, wh)
+_'game'.before_Inv = function(s)
   local t = inv()
   do
     local x = t[1]

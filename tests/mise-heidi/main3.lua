@@ -56,7 +56,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -152,7 +152,7 @@ room {
       nam = "tree";
       description = [[Величавое дерево стоит посреди поляны.
 Кажется, по его стволу будет несложно влезть наверх.]];
-      before_Climb = function(s, w, wh)
+      before_Climb = function(s)
         move(me(), _'top_of_tree')
       end;
     }:attr 'scenery';
@@ -165,7 +165,7 @@ room {
   title = "На верхушке дерева";
   dsc = "На этой высоте цепляться за ствол уже не так удобно.";
   d_to = 'clearing';
-  after_Drop = function(s, w, wh)
+  after_Drop = function(s, w)
     move(w, _'clearing')
     return false
   end;

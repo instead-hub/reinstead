@@ -56,7 +56,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -76,20 +76,20 @@ Path = Class {
 
 Talkative = Class {
   heard = false;
-  before_Talk = function(s, w, wh)
+  before_Talk = function(s)
     s.heard = true
     p "поговорили"
   end;
 }
 
 Flying = Class {
-  before_Climb = function(s, w, wh)
+  before_Climb = function(s)
     p "взлетел"
   end;
 }
 
 Bird = Class {
-  before_Climb = function(s, w, wh)
+  before_Climb = function(s)
     p "взлетел"
   end;
 }:attr 'animate'
@@ -103,7 +103,7 @@ obj {
   -"попугай";
   nam = "parrot";
   heard = false;
-  before_Talk = function(s, w, wh)
+  before_Talk = function(s)
     s.heard = true
     p "поговорили"
   end;

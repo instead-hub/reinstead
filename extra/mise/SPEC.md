@@ -244,7 +244,7 @@ before Any(s, ev, w) =
       pass
 ```
 `match` работает для событий (аргументы `w`, `wh` сужаются по объявлению
-`events` и по паттернам `verb`), перечислений, чисел и объектов. Субъект
+`event` и по паттернам `verb`), перечислений, чисел и объектов. Субъект
 вычисляется один раз.
 
 ### 3.4.1. Значение и тело: `=` — единственный разделитель
@@ -410,13 +410,14 @@ match ev                 # диспетчер: альтернативы + guard 
 **События** — отдельное объявление, не особая форма `type`:
 
 ```mise
-events
-  Answer, Ask, AskFor: obj, str
-  Take, Pull, Push: obj
-  Inv, Look, Wake:
+event Answer, Ask, AskFor: obj, str
+event Take, Pull, Push: obj
+event Inv, Look, Wake:
 ```
-Имя без аргументов означает «обработчик получает только `s`»;
-`extend events` добавляет события игры.
+Имя без аргументов (или с пустым двоеточием) означает «обработчик получает
+только `s`». Блок фаз добавляет обработчики и требует одного имени; `extend
+event` **заменяет** аргументы уже объявленного события (сигнатуры движка
+лежат в `core.mise`), а объявление с другими аргументами без `extend` — ошибка.
 
 **Extern — это функция или значение.** `extern fn` печатает вызов (годится как
 инструкция); `extern value` — выражение (в позиции инструкции это ошибка):
@@ -452,7 +453,7 @@ entry start(load: bool)
 
 ### 3.6. Порядок объявлений
 
-Первый проход собирает `events`, `type`, `fn`, `extern`, `entry` из всего файла
+Первый проход собирает `event`, `type`, `fn`, `extern`, `entry` из всего файла
 независимо от места; классы регистрируются по порядку, и использовать класс
 можно только после его объявления. Итого:
 
@@ -666,10 +667,9 @@ file      ::= { top_item NEWLINE }
 (* `include` подключает mise-файл (`stdlib`), `require` — Lua-модуль движка,
    `fmt` — модуль форматирования; у каждого своя семантика *)
 top_item  ::= header_decl | "lang" IDENT | ("include" | "require" | "fmt") ident_list
-            | type_decl | events_decl | "extend" "events" events_block
+            | type_decl | event_decl
             | entry_decl | extern_decl | vars_decl | fn_decl
             | verb_decl | object_decl | impl_decl | talk_decl | setup_decl | lua_decl
-            | event_decl                            (* `event X` = `impl mp : X` *)
 
 header_decl ::= ("game" | "name" | "author" | "version" | "info") STRING
 
@@ -685,10 +685,11 @@ type_decl   ::= [ "extend" ] "type" IDENT "=" [ "[" ] [ "~" ] enum_item
 
 enum_item   ::= IDENT | NUMBER | "~"              (* `~` — отрицающее значение *)
 
-(* Аргументы события — то, что получает обработчик на самом объекте после `s`;
-   пустой список означает «только `s`» *)
-events_decl  ::= "events" events_block
-events_block ::= INDENT { ident_list [ ":" type_list ] NEWLINE } DEDENT
+(* Событие: имена, необязательная сигнатура (`: типы` — то, что получает
+   обработчик) и необязательный блок фаз (только для одного имени).
+   `extend` заменяет аргументы уже объявленного события. *)
+event_decl  ::= [ "extend" ] "event" ident_list [ ":" [ type_list ] ]
+                [ INDENT { handler_decl NEWLINE } DEDENT ]
 
 (* Глобал, который движок вызывает сам; арность сверяется с `fn` того же имени *)
 entry_decl  ::= "entry" IDENT "(" [ param_list ] ")"
@@ -779,10 +780,6 @@ handler_body ::= value                               (* before Take = "Нель�
                | "pass"
                | "stop"
                | stmt_block
-
-(* `event X` регистрирует событие и разворачивается в `impl mp : X` *)
-event_decl  ::= "event" IDENT INDENT { handler_member NEWLINE } DEDENT
-handler_member ::= handler_decl
 
 (* =====================================================================
    Глаголы

@@ -61,7 +61,7 @@ Door = Class({
 Path = Class {
   walk_to = 'none';
   default_Event = "Walk";
-  ["before_Walk,Enter"] = function(s, w, wh)
+  ["before_Walk,Enter"] = function(s)
     if mp:check_inside(_(s.walk_to)) then
       return
     end
@@ -94,18 +94,18 @@ obj {
   scope = 'box';
   before_Take = fn_on_take;
   before_Exam = "Нечего рассматривать.";
-  after_Drop = function(s, w, wh)
+  after_Drop = function(s)
     p "Упало."
   end;
-  before_Open = function(s, w, wh) return false end;
-  ["before_Pull,Ask"] = function(s, w, wh)
+  before_Open = function(s) return false end;
+  ["before_Pull,Ask"] = function(s, w)
     if w then
       p("спросили: ", w)
     else
       p "ничего"
     end
   end;
-  ["before_Drop,PutOn"] = function(s, w, wh)
+  ["before_Drop,PutOn"] = function(s, w)
     if w == _'hall' then
       p("в ", w:noun_hint("вн"))
     else

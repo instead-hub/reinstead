@@ -2,5 +2,4 @@ game "t"
 lang ru
 include stdlib
 
-extend events
-  Zap: obg
+extend event Zap: obg

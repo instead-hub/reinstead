@@ -4,8 +4,7 @@ lang ru
 
 include stdlib
 
-extend events
-  Zap: obj
+event Zap: obj
 
 verb Zap
   words = "зажиг/ать"

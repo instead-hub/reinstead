@@ -108,22 +108,21 @@ class list = std.list
 entry init()
 entry start(load: bool)
 
-events
-  # Full action arguments, the acted object first.  A handler on that object
-  # receives them after `s`; a room/game/mp handler gets the object as `w`.
-  Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str
-  Burn, Cut, Dig, Tie: obj, obj?
-  Give, Insert, Lock, PutOn, Remove, Show, ThrowAt, Transfer, Unlock: obj, obj
-  LetGo: obj, obj, obj
-  LetIn: obj, obj
-  Attack, Blow, Buy, Climb, Close, Drop, Eat, Enter, Exam, Exit, Fill, GetOff: obj
-  JumpOver, Kiss, Listen, LookUnder, Open, Pull, Push, Rub, Search, Smell: obj
-  SwitchOff, SwitchOn, Talk, Taste, Tear, Touch, Turn, Use, WakeOther, Walk: obj
-  Wave, Wear: obj
-  Disrobe, PushDir, Take: obj, obj
-  Inv, Look, Wake:
-  Any, Default, Drink, Jump, Next, No, Receive, Sing, Sleep, Swim, Think:
-  ThrownAt, Wait, WaveHands, Yes:
+# Events: the full action arguments, the acted object first.  A handler on that
+# object receives them after `s`; a room/game/mp handler gets the object as `w`.
+event Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str
+event Burn, Cut, Dig, Tie: obj, obj?
+event Give, Insert, Lock, PutOn, Remove, Show, ThrowAt, Transfer, Unlock: obj, obj
+event LetGo: obj, obj, obj
+event LetIn: obj, obj
+event Attack, Blow, Buy, Climb, Close, Drop, Eat, Enter, Exam, Exit, Fill, GetOff: obj
+event JumpOver, Kiss, Listen, LookUnder, Open, Pull, Push, Rub, Search, Smell: obj
+event SwitchOff, SwitchOn, Talk, Taste, Tear, Touch, Turn, Use, WakeOther, Walk: obj
+event Wave, Wear: obj
+event Disrobe, PushDir, Take: obj, obj
+event Inv, Look, Wake:
+event Any, Default, Drink, Jump, Next, No, Receive, Sing, Sleep, Swim, Think:
+event ThrownAt, Wait, WaveHands, Yes:
 
 type phase = after, before, life, post
 
