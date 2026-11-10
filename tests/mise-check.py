@@ -56,9 +56,9 @@ def goldens(root: str):
         detail = ""
         if not ok_:
             import difflib
-            detail = "".join(difflib.unified_diff(
+            detail = "".join(list(difflib.unified_diff(
                 expected.splitlines(True), out.splitlines(True),
-                fromfile=want, tofile="(generated)", n=2)[:40])
+                fromfile=want, tofile="(generated)", n=2))[:40])
         report(f"{name}: lua", ok_, detail)
 
 
