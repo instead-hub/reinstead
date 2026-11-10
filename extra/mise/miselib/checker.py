@@ -31,20 +31,15 @@ class Context:
     class_decls: Dict[str, EntityDecl] = field(default_factory=dict)
     objects: Dict[str, str] = field(default_factory=dict)                  # id -> kind/class
     fields: Dict[str, Dict[str, Tuple[str, bool]]] = field(default_factory=dict)
-    prop_types: Dict[str, Dict[str, str]] = field(default_factory=dict)  # declared field types
-    prop_params: Dict[str, Dict[str, List[str]]] = field(default_factory=dict)  # their fn param names
-    prop_emit: Dict[str, Dict[str, Emit]] = field(default_factory=dict)  # method emission
+    prop_decls: Dict[str, Dict[str, Prop]] = field(default_factory=dict)   # declared class fields
     ctors: Dict[str, str] = field(default_factory=dict)                  # class -> engine constructor
     root_class: Optional[str] = None                                     # the first class with no parent
-    seen_types: Set[str] = field(default_factory=set)
     field_names: Set[str] = field(default_factory=set)
     entries: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)  # engine entry points
-    lua_globals: Dict[str, str] = field(default_factory=dict)     # `extern global` -> type
-    globals_lua: Dict[str, str] = field(default_factory=dict)     # `extern global` -> template
+    lua_globals: Dict[str, GlobalDecl] = field(default_factory=dict)     # `extern global`
     ref_fields: Set[str] = field(default_factory=set)   # fields whose declared type says "reference"
 
     fns: Dict[str, FnDecl] = field(default_factory=dict)
-    fn_names: Set[str] = field(default_factory=set)
     used_refs: Set[str] = field(default_factory=set)
     lua_funcs: Set[str] = field(default_factory=set)
     globals: Dict[str, Tuple[str, bool]] = field(default_factory=dict)
@@ -242,28 +237,64 @@ def _verb_pat_sig(pat: str, obj_type: str = "obj") -> Optional[Tuple[str, List[s
 # engine print helpers and plain Lua functions callable from game logic
 def prescan(prog: Program) -> Context:
     ctx = Context(lang=prog.lang)
+    base_evs, class_at = _collect_declarations(ctx, prog)
+    _register_entities(ctx, prog, class_at)
+    _resolve_verb_events(ctx, prog, base_evs)
+    _collect_fields_and_refs(ctx, prog)
+    _typecheck_program(ctx, prog)
+    return ctx
+
+
+def _register_class_decl(ctx: Context, item: EntityDecl, idx: int, class_at: Dict[str, int]):
+    assert item.name is not None
+    if item.ctor:
+        ctx.ctors[item.name] = item.ctor
+    prev = ctx.class_decls.get(item.name)
+    if prev is not None and prev.parent and item.parent and prev.parent != item.parent:
+        raise Error(f"class {item.name!r}: parent differs from an earlier declaration", item.line)
+    if prev is None and item.parent:
+        ctx.classes[item.name] = item.parent
+    external = bool(item.ctor) and "." in item.ctor
+    if item.parent is None and ctx.root_class is None and not external:
+        ctx.root_class = item.name
+    # a class without a parent extends the root class (as `Class(t)` does);
+    # an external class (`std.list`) is a root of its own
+    if external:
+        ctx.classes.setdefault(item.name, item.name)
+    else:
+        ctx.classes.setdefault(item.name, item.parent or ctx.root_class or item.name)
+    # Merge repeated `class obj`/`props obj` declarations
+    class_at.setdefault(item.name, idx)
+    if item.name in ctx.class_decls:
+        ctx.class_decls[item.name].props.extend(item.props)
+    else:
+        ctx.class_decls[item.name] = item
+    for p in item.props:
+        if p.typ:
+            prev_p = ctx.prop_decls.setdefault(item.name, {}).get(p.name)
+            if prev_p is not None and p.emit is None and prev_p.emit is not None:
+                p.emit = prev_p.emit
+            ctx.prop_decls[item.name][p.name] = p
+            if _is_ref_type(ctx, p.typ):
+                ctx.ref_fields.add(p.name)
+
+
+def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[str]], Dict[str, int]]:
     base_evs: Dict[str, List[str]] = {}
     class_at: Dict[str, int] = {}      # position of every `class` declaration
-
     for idx, item in enumerate(prog.items):
         if isinstance(item, EventsDecl):
             for evs, ats in item.sigs:
                 for at in ats:
-                    for alt in split_union(at):
-                        if alt.rstrip("?").strip() in PRIMITIVES or alt.rstrip("?").strip() in ctx.enums \
-                                or alt.rstrip("?").strip() in ctx.classes \
-                                or alt.startswith(("obj", "str", "num", "bool")):
-                            continue
-                        raise Error(f"event {evs[0]}: unknown argument type {alt!r}", item.line)
+                    _check_type(ctx, at, f"event {evs[0]}", item.line, "argument type")
                 for ev in evs:
                     ctx.event_names.add(ev)
                     base_evs[ev] = list(ats)      # `[]` = the handler gets only `s`
         elif isinstance(item, TypeDecl):
             if item.extend and item.name not in ctx.enums:
                 raise Error(f"extend type {item.name!r}: unknown type", item.line)
-            if item.name in ctx.seen_types and not item.extend:
+            if item.name in ctx.enums and not item.extend:
                 raise Error(f"duplicate type {item.name!r}", item.line)
-            ctx.seen_types.add(item.name)
             vals, neg = ctx.enums.get(item.name, (set(), False))
             vals.update(item.values)
             ctx.enums[item.name] = (vals, neg or item.negate)
@@ -276,110 +307,82 @@ def prescan(prog: Program) -> Context:
         elif isinstance(item, EntryDecl):
             ctx.entries[item.name] = list(item.params)
         elif isinstance(item, GlobalDecl):
-            ctx.lua_globals[item.name] = item.typ
-            ctx.globals_lua[item.name] = item.template
+            ctx.lua_globals[item.name] = item
         elif isinstance(item, LuaDecl):
             for m in re.finditer(r"\bfunction\s+([A-Za-z_]\w*)", item.code):
                 ctx.lua_funcs.add(m.group(1))
         elif isinstance(item, EntityDecl) and item.kind == "class" and item.name:
-            if item.ctor:
-                ctx.ctors[item.name] = item.ctor
-            prev = ctx.class_decls.get(item.name)
-            if prev is not None and prev.parent and item.parent and prev.parent != item.parent:
-                raise Error(f"class {item.name!r}: parent differs from an earlier declaration", item.line)
-            if prev is None and item.parent:
-                ctx.classes[item.name] = item.parent
-            external = bool(item.ctor) and "." in item.ctor
-            if item.parent is None and ctx.root_class is None and not external:
-                ctx.root_class = item.name
-            # a class without a parent extends the root class (as `Class(t)` does);
-            # an external class (`std.list`) is a root of its own
-            if external:
-                ctx.classes.setdefault(item.name, item.name)
-            else:
-                ctx.classes.setdefault(item.name, item.parent or ctx.root_class or item.name)
-            # Merge repeated `class obj`/`props obj` declarations
-            class_at.setdefault(item.name, idx)
-            if item.name in ctx.class_decls:
-                ctx.class_decls[item.name].props.extend(item.props)
-            else:
-                ctx.class_decls[item.name] = item
-            for p in item.props:
-                if p.typ:
-                    ctx.prop_types.setdefault(item.name, {})[p.name] = p.typ
-                    if p.type_params:
-                        ctx.prop_params.setdefault(item.name, {})[p.name] = p.type_params
-                    if p.emit:
-                        ctx.prop_emit.setdefault(item.name, {})[p.name] = p.emit
-                if p.typ and _is_ref_type(ctx, p.typ):
-                    ctx.ref_fields.add(p.name)
+            _register_class_decl(ctx, item, idx, class_at)
+    return base_evs, class_at
 
-    def check_class_order(ent: EntityDecl, idx: int):
-        """A class must be declared above every use of it (the emitter keeps the source order)."""
-        if ent.kind == "class":
-            used = list(ent.traits) + ([ent.parent] if ent.parent else [])
-        elif ent.kind == "impl":
-            used = [ent.name] if ent.name else []
-        else:
-            used = [ent.kind] + list(ent.traits)
-        for name in used:
-            if name and class_at.get(name, -1) > idx:
-                raise Error(f"{ent.name or ent.kind}: class {name!r} is used before its declaration "
-                            f"(move `class {name}` above)", ent.line)
 
-    def register_entity(ent: EntityDecl, idx: int = 0):
-        check_class_order(ent, idx)
-        _check_override(ctx, ent)      # before mixin traits are inlined into the entity
-        if ent.kind == "impl" and ent.name == "mp":
-            ctx.event_names.update(ent.traits)
-        # Expand traits that refer to classes/mixins with bodies
-        exp_p, exp_h, kept_tr = [], [], []
-        for tr in ent.traits:
-            cdecl = ctx.class_decls.get(tr)
-            if cdecl and ent.kind != "class" and tr not in ctx.enums.get("attr", (set(), False))[0]:
-                # Only inline mixin-like classes if `ent.kind` is `obj` or another class
-                pass
-            # inline the props/handlers of a class used as a trait (a mixin)
-            if cdecl and not any(
-                isinstance(it, EntityDecl) and it.kind == tr for it in prog.items
-            ):
-                exp_p.extend(p for p in cdecl.props if p.value is not None)
-                exp_h.extend(cdecl.handlers)
-                kept_tr.extend(t for t in cdecl.traits if t not in kept_tr)
-                # keep the mixin itself: it declares the field *types*
-                if tr not in kept_tr:
-                    kept_tr.append(tr)
-            else:
+def _check_class_order(ent: EntityDecl, idx: int, class_at: Dict[str, int]):
+    """A class must be declared above every use of it (the emitter keeps the source order)."""
+    if ent.kind == "class":
+        used = list(ent.traits) + ([ent.parent] if ent.parent else [])
+    elif ent.kind == "impl":
+        used = [ent.name] if ent.name else []
+    else:
+        used = [ent.kind] + list(ent.traits)
+    for cname in used:
+        if cname and class_at.get(cname, -1) > idx:
+            raise Error(f"{ent.name or ent.kind}: class {cname!r} is used before its declaration "
+                        f"(move `class {cname}` above)", ent.line)
+
+
+def _inline_mixin_traits(ctx: Context, ent: EntityDecl, instantiated_classes: Set[str]):
+    """Inline props/handlers of classes used as traits (mixins)."""
+    exp_p, exp_h, kept_tr = [], [], []
+    for tr in ent.traits:
+        cdecl = ctx.class_decls.get(tr)
+        if cdecl and tr not in instantiated_classes:
+            exp_p.extend(p for p in cdecl.props if p.value is not None)
+            exp_h.extend(cdecl.handlers)
+            kept_tr.extend(t for t in cdecl.traits if t not in kept_tr)
+            if tr not in kept_tr:
                 kept_tr.append(tr)
-        ent.traits = kept_tr
-        own_p = {p.name for p in ent.props}
-        own_h = {(h.phase, tuple(h.events)) for h in ent.handlers}
-        ent.props = [p for p in exp_p if p.name not in own_p] + ent.props
-        ent.handlers = [h for h in exp_h if (h.phase, tuple(h.events)) not in own_h] + ent.handlers
+        else:
+            kept_tr.append(tr)
+    ent.traits = kept_tr
+    own_p = {p.name for p in ent.props}
+    own_h = {(h.phase, tuple(h.events)) for h in ent.handlers}
+    ent.props = [p for p in exp_p if p.name not in own_p] + ent.props
+    ent.handlers = [h for h in exp_h if (h.phase, tuple(h.events)) not in own_h] + ent.handlers
 
-        if ent.kind not in ("class", "impl") and ent.name:
-            if ent.kind not in ctx.classes:
-                raise Error(f"unknown kind {ent.kind!r}{_kind_hint(ctx, ent)}", ent.line)
-            if not ent.name.startswith("#") and ent.name in ctx.objects:
-                raise Error(f"duplicate declaration {ent.name!r}", ent.line)
-            ctx.objects[ent.name] = ent.kind
-        if ent.kind == "impl" and ent.name and ent.name not in ("game", "pl", "mp") \
-                and not ent.name.startswith("@") and ent.name not in ctx.objects \
-                and ent.name not in ctx.classes and ent.name not in ctx.fns \
-                and ent.name not in ctx.lua_funcs:
-            raise Error(f"impl {ent.name!r}: unknown target", ent.line)
-        for ch in ent.children:
-            register_entity(ch, idx)
 
+def _register_entity(ctx: Context, ent: EntityDecl, idx: int,
+                     class_at: Dict[str, int], instantiated_classes: Set[str]):
+    _check_class_order(ent, idx, class_at)
+    _check_override(ctx, ent)      # before mixin traits are inlined into the entity
+    if ent.kind == "impl" and ent.name == "mp":
+        ctx.event_names.update(ent.traits)
+    _inline_mixin_traits(ctx, ent, instantiated_classes)
+    if ent.kind not in ("class", "impl") and ent.name:
+        if ent.kind not in ctx.classes:
+            raise Error(f"unknown kind {ent.kind!r}{_kind_hint(ctx, ent)}", ent.line)
+        if not ent.name.startswith("#") and ent.name in ctx.objects:
+            raise Error(f"duplicate declaration {ent.name!r}", ent.line)
+        ctx.objects[ent.name] = ent.kind
+    if ent.kind == "impl" and ent.name and ent.name not in ("game", "pl", "mp") \
+            and not ent.name.startswith("@") and ent.name not in ctx.objects \
+            and ent.name not in ctx.classes and ent.name not in ctx.fns \
+            and ent.name not in ctx.lua_funcs:
+        raise Error(f"impl {ent.name!r}: unknown target", ent.line)
+    for ch in ent.children:
+        _register_entity(ctx, ch, idx, class_at, instantiated_classes)
+
+
+def _register_entities(ctx: Context, prog: Program, class_at: Dict[str, int]):
+    instantiated = {it.kind for it in prog.items if isinstance(it, EntityDecl)}
     for idx, item in enumerate(prog.items):
         if isinstance(item, EntityDecl):
-            register_entity(item, idx)
+            _register_entity(ctx, item, idx, class_at, instantiated)
         elif isinstance(item, TalkDecl):
-            # a talk is an instance of the class `talk` (declared in core)
             ctx.objects[item.name] = "talk"
             ctx.field_names.update(p.name for p in item.props)
 
-    # Verb pattern signature inference
+
+def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[str]]):
     active_verbs: Dict[str, List[Tuple[str, List[str]]]] = {}
     for item in prog.items:
         if isinstance(item, VerbDecl):
@@ -403,10 +406,10 @@ def prescan(prog: Program) -> Context:
     for ev, sigs in base_evs.items():
         first = sigs[0].rstrip("?").strip() if sigs else ""
         if first and (first.startswith("obj") or first in ctx.classes):
-            ctx.event_acted.add(ev)       # a declared first argument is the acted object
+            ctx.event_acted.add(ev)
     for contribs in active_verbs.values():
         for ev, slots in contribs:
-            if ev in base_evs:          # declared in `type event`: that signature wins
+            if ev in base_evs:
                 continue
             cur = ctx.event_args.get(ev)
             if cur is None:
@@ -418,80 +421,80 @@ def prescan(prog: Program) -> Context:
                     for i in range(ml)
                 ]
 
+
+def _collect_entity_fields(ctx: Context, ent: EntityDecl):
+    for p in ent.props:
+        ctx.field_names.add(p.name)
+    fmap = ctx.fields.setdefault(ent.name, {}) if ent.name else {}
+    base = ent.parent if ent.kind == "class" else ent.kind
+    for src in [base] + [tr for tr in ent.traits if tr in ctx.classes]:
+        for k, v in ctx.fields.get(src, {}).items():
+            fmap.setdefault(k, v)
+    for p in ent.props:
+        is_ref = bool(p.typ) and _is_ref_type(ctx, p.typ)
+        if is_ref:
+            ctx.ref_fields.add(p.name)
+        if p.value is not None and ent.name:
+            fmap[p.name] = _lit_type(ctx, p.value) if isinstance(p.value, Expr) else ("fn", False)
+        elif p.typ and ent.name:
+            fmap[p.name] = (p.typ, is_ref)
+    for ch in ent.children:
+        _collect_entity_fields(ctx, ch)
+
+
+def _collect_fields_and_refs(ctx: Context, prog: Program):
     for item in prog.items:
         if isinstance(item, VarDecl):
             for vn, ve, _l in item.items:
                 ctx.globals[vn] = _lit_type(ctx, ve)
-
-    def collect_fields(ent: EntityDecl):
-        for p in ent.props:
-            ctx.field_names.add(p.name)
-        fmap = ctx.fields.setdefault(ent.name, {}) if ent.name else {}
-        base = ent.parent if ent.kind == "class" else ent.kind
-        # the kind's chain and every trait class (a mixin declares fields too)
-        for src in [base] + [tr for tr in ent.traits if tr in ctx.classes]:
-            for k, v in ctx.fields.get(src, {}).items():
-                fmap.setdefault(k, v)
-        for p in ent.props:
-            is_ref = bool(p.typ) and _is_ref_type(ctx, p.typ)
-            if is_ref:
-                ctx.ref_fields.add(p.name)
-            if p.value is not None and ent.name:
-                fmap[p.name] = _lit_type(ctx, p.value) if isinstance(p.value, Expr) else ("fn", False)
-            elif p.typ and ent.name:
-                fmap[p.name] = (p.typ, is_ref)
-        for ch in ent.children:
-            collect_fields(ch)
-
-    for item in prog.items:
-        if isinstance(item, EntityDecl):
-            collect_fields(item)
+        elif isinstance(item, EntityDecl):
+            _collect_entity_fields(ctx, item)
 
     for item in prog.items:
         if isinstance(item, EntityDecl):
             for p in item.props:
-                if p.typ:                    # declared field types (`class K`: `x: T`)
+                if p.typ:
                     _check_type(ctx, p.typ, f"{item.name or ''}.{p.name}".lstrip("."), p.line)
             _check_refs(ctx, item)
         elif isinstance(item, VarDecl):
             for vn, ve, vl in item.items:
                 _check_var_ref(ctx, vn, ve, vl)
 
-    for item in prog.items:
-        if not isinstance(item, FnDecl):
-            continue
-        if item.name in ctx.entries:
-            want = ctx.entries[item.name]
-            if len(item.params) != len(want):
-                raise Error(f"entry {item.name}: the engine calls it with "
-                            f"{len(want)} argument(s), declared {len(item.params)}", item.line)
-        _check_signature(ctx, item)
-        if not item.is_extern and isinstance(item.body, list):
-            env = {pn: pt for pn, pt in item.params}
-            owner = item.params[0][1] if (item.params and item.params[0][0] == "s" and item.params[0][1] in ctx.classes) else None
-            rets: List[str] = []
-            _check_stmts(ctx, item.body, env, owner, rets)
-            falls_through = bool(item.body) and not _returns_all(item.body)
-            if item.ret_types:
-                _check_returns(ctx, item, env, owner)
-                if falls_through and "nil" not in split_union("|".join(item.ret_types)):
-                    raise Error(f"fn {item.name}: {', '.join(item.ret_types)} is declared, but a "
-                                f"path leaves the body without `return` (add `return` or `pass`, "
-                                f"or declare `{strip_nil(item.ret_types[0])}?`)", item.line)
-            else:
-                # a value on some paths only: the type is optional (`num?`); a body
-                # that never returns a value stays `any` (a printing callback)
-                if rets and falls_through:
-                    rets.append("nil")
-                item.ret_types = [canon_type("|".join(rets))] if rets else ["any"]
 
+def _typecheck_fn(ctx: Context, item: FnDecl):
+    if item.name in ctx.entries:
+        want = ctx.entries[item.name]
+        if len(item.params) != len(want):
+            raise Error(f"entry {item.name}: the engine calls it with "
+                        f"{len(want)} argument(s), declared {len(item.params)}", item.line)
+    _check_signature(ctx, item)
+    if item.is_extern or not isinstance(item.body, list):
+        return
+    env = {pn: pt for pn, pt in item.params}
+    owner = item.params[0][1] if (item.params and item.params[0][0] == "s" and item.params[0][1] in ctx.classes) else None
+    rets: List[str] = []
+    _check_stmts(ctx, item.body, env, owner, rets, fn_decl=item if item.ret_types else None)
+    falls_through = bool(item.body) and not _returns_all(item.body)
+    if item.ret_types:
+        if falls_through and "nil" not in split_union("|".join(item.ret_types)):
+            raise Error(f"fn {item.name}: {', '.join(item.ret_types)} is declared, but a "
+                        f"path leaves the body without `return` (add `return` or `pass`, "
+                        f"or declare `{strip_nil(item.ret_types[0])}?`)", item.line)
+    else:
+        if rets and falls_through:
+            rets.append("nil")
+        item.ret_types = [canon_type("|".join(rets))] if rets else ["any"]
+
+
+def _typecheck_program(ctx: Context, prog: Program):
+    for item in prog.items:
+        if isinstance(item, FnDecl):
+            _typecheck_fn(ctx, item)
     for item in prog.items:
         if isinstance(item, EntityDecl):
             _check_entity(ctx, item)
         elif isinstance(item, TalkDecl):
             _check_talk(ctx, item)
-
-    return ctx
 
 
 def _lit_type(ctx: Context, e: Expr) -> Tuple[str, bool]:
@@ -515,14 +518,14 @@ def _lit_type(ctx: Context, e: Expr) -> Tuple[str, bool]:
     return "any", False
 
 
-def _ref_error(ctx: Context, where: str, name: str, line: int):
+def _ref_error(where: str, name: str, line: int):
     raise Error(f"{where}: unknown object reference {name!r}", line)
 
 
 def _check_ref_name(ctx: Context, where: str, name: str, line: int):
     """A bare object name in a reference position must be declared."""
     if name not in ctx.objects:
-        _ref_error(ctx, where, name, line)
+        _ref_error(where, name, line)
 
 
 def _check_ref_value(ctx: Context, where: str, val: Any, line: int = 0):
@@ -590,19 +593,19 @@ def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
     phase = difflib.get_close_matches(ent.kind, sorted(PHASES), 1, 0.75)
     if phase and ent.name in ctx.event_names:
         return f" (did you mean `{phase[0]} {ent.name}`?)"
-    if ent.kind in ctx.field_names or any(ent.kind in d for d in ctx.prop_types.values()):
+    if ent.kind in ctx.field_names or any(ent.kind in d for d in ctx.prop_decls.values()):
         return f" (did you mean `{ent.kind} = ...`?)"
     near = difflib.get_close_matches(ent.kind, sorted(ctx.classes), 1, 0.75)
     return f" (did you mean class {near[0]!r}?)" if near else ""
 
 
-def _decl_lookup(ctx: Context, table: Dict[str, Dict[str, Any]], kind: str, name: str) -> Any:
+def _decl_prop(ctx: Context, kind: str, name: str) -> Optional[Prop]:
     """A field declaration looked up through the class chain of `kind`."""
     cur, seen = kind, set()
     while cur and cur not in seen:
         seen.add(cur)
-        val = table.get(cur, {}).get(name)
-        if val:
+        val = ctx.prop_decls.get(cur, {}).get(name)
+        if val is not None:
             return val
         cur = ctx.classes.get(cur)
     return None
@@ -610,8 +613,11 @@ def _decl_lookup(ctx: Context, table: Dict[str, Dict[str, Any]], kind: str, name
 
 def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, str]:
     """Parameters of a prop body, taken from the declared `fn(...)` of the field."""
-    typ = _decl_type(ctx, kind, p.name) or ""
-    names: List[str] = _decl_lookup(ctx, ctx.prop_params, kind, p.name) or []
+    decl = _decl_prop(ctx, kind, p.name)
+    typ = (decl.typ if decl else None) or ""
+    names: List[str] = (decl.type_params if decl and decl.type_params else None) or []
+    if p.params is None and names:
+        p.params = list(names)
     params: List[str] = []
     for alt in split_union(typ):
         parts = _fn_parts(alt)
@@ -629,10 +635,11 @@ def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, str]:
 
 def _decl_emit(ctx: Context, kind: str, name: str) -> Optional[Emit]:
     """How the declared field reaches Lua (`= method attr(join)`)."""
-    return _decl_lookup(ctx, ctx.prop_emit, kind, name)
+    decl = _decl_prop(ctx, kind, name)
+    return decl.emit if decl else None
 
 
-def _check_emit(ctx: Context, where: str, emit: Emit, value: Any, line: int):
+def _check_emit(where: str, emit: Emit, value: Any, line: int):
     """A method-emitted field takes the value shape its form needs."""
     if emit.form == "none":
         if not (isinstance(value, Lit) and value.kind == "bool"):
@@ -644,7 +651,8 @@ def _check_emit(ctx: Context, where: str, emit: Emit, value: Any, line: int):
 
 def _decl_type(ctx: Context, kind: str, name: str) -> Optional[str]:
     """The declared type of a field, looked up through the class chain of `kind`."""
-    return _decl_lookup(ctx, ctx.prop_types, kind, name)
+    decl = _decl_prop(ctx, kind, name)
+    return decl.typ if decl else None
 
 
 def _fn_returns(declared: str) -> List[str]:
@@ -688,12 +696,13 @@ def _check_entity(ctx: Context, ent: EntityDecl):
                     raise TypeCheckError(f"{where}: return {t}, declared returns "
                                          f"{', '.join(want)}", p.line)
         elif isinstance(p.value, Lit) and p.value.kind == "lua":
-            pass  # a `lua` block: an opaque body
+            _prop_body_env(ctx, kind, p)  # populates p.params if declared on the class
         elif isinstance(p.value, Expr):
             _check_expr(ctx, p.value, {"s": _root(ctx)}, owner, declared)
         emit = _decl_emit(ctx, kind, p.name) if kind else None
         if emit and p.value is not None:
-            _check_emit(ctx, where, emit, p.value, p.line)
+            p.emit = emit
+            _check_emit(where, emit, p.value, p.line)
     for h in ent.handlers:
         _check_handler_events(ctx, h, owner or kind)
         params, arg_names = _handler_params(ctx, owner, kind, h)
@@ -880,6 +889,24 @@ def _nonnil(ctx: Context, e: Expr) -> bool:
     return isinstance(e, (ListLit, InterpStr))
 
 
+def _narrow_event_args(ctx: Context, ev_names: List[str], res: Dict[str, str],
+                       arg_names: Optional[Dict[int, str]]):
+    if not ev_names or not arg_names:
+        return
+    alts = [ctx.event_args.get(n) or [] for n in ev_names]
+    for i in range(max((len(a) for a in alts), default=0)):
+        types = [a[i] for a in alts if i < len(a)]
+        name = arg_names.get(i)
+        if types and name and name in res:
+            res[name] = canon_type("|".join(types))
+
+
+def _is_event_sym(e: Expr, env: Dict[str, str]) -> bool:
+    return isinstance(e, Sym) and (
+        e.name in CURRENT_EVENT or env.get(e.name, "").rstrip("?") == "event"
+    )
+
+
 def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool,
             arg_names: Optional[Dict[int, str]] = None) -> Dict[str, str]:
     """Refine optional types inside a branch of `if`/`when`/`match`.
@@ -894,35 +921,19 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool,
             res[n] = strip_nil(vt) if vt != "any" else "any"
         return res
     if isinstance(cond, Sym) and cond.name in res:
-        if truthy:
-            res[cond.name] = strip_nil(res[cond.name])
-        else:
-            res[cond.name] = "nil"
-    elif isinstance(cond, UnaryOp) and cond.op == "not":
-        return _narrow(ctx, cond.operand, env, not truthy, arg_names)
-    elif isinstance(cond, InOp):
-        # `ev in Ask, Tell` narrows the event arguments to what all alternatives share
-        if truthy and isinstance(cond.subject, Sym) and (
-                cond.subject.name in CURRENT_EVENT
-                or res.get(cond.subject.name, "").rstrip("?") == "event"):
-            alts = [ctx.event_args.get(a.name) or [] for a in cond.alts if isinstance(a, Sym)]
-            if alts and arg_names:
-                for i in range(max(len(a) for a in alts)):
-                    types = [a[i] for a in alts if i < len(a)]
-                    name = arg_names.get(i)
-                    if types and name and name in res:
-                        res[name] = canon_type("|".join(types))
-            return res
+        res[cond.name] = strip_nil(res[cond.name]) if truthy else "nil"
         return res
-    elif isinstance(cond, BinOp):
+    if isinstance(cond, UnaryOp) and cond.op == "not":
+        return _narrow(ctx, cond.operand, env, not truthy, arg_names)
+    if isinstance(cond, InOp):
+        if truthy and _is_event_sym(cond.subject, res):
+            _narrow_event_args(ctx, [a.name for a in cond.alts if isinstance(a, Sym)], res, arg_names)
+        return res
+    if isinstance(cond, BinOp):
         if cond.op == "and":
-            if truthy:  # both sides hold
-                return _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, True, arg_names), True, arg_names)
-            return res
+            return _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, True, arg_names), True, arg_names) if truthy else res
         if cond.op == "or":
-            if truthy:  # the second operand only matters when the first is false
-                return res
-            return _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, False, arg_names), False, arg_names)
+            return res if truthy else _narrow(ctx, cond.right, _narrow(ctx, cond.left, env, False, arg_names), False, arg_names)
         if cond.op in ("==", "!="):
             for a, b in ((cond.left, cond.right), (cond.right, cond.left)):
                 if not (isinstance(a, Sym) and a.name in res):
@@ -932,68 +943,68 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool,
                     res[a.name] = strip_nil(res[a.name]) if plain else "nil"
                     return res
                 if _nonnil(ctx, b):
-                    # `x == <a value that is never nil>` says x is not nil
                     if (cond.op == "==") == truthy:
                         res[a.name] = strip_nil(res[a.name])
                     break
-            # the current event: its accessor, or a parameter typed as one
-            is_event = isinstance(cond.left, Sym) and (
-                cond.left.name in CURRENT_EVENT
-                or res.get(cond.left.name, "").rstrip("?") == "event")
-            if cond.op == "==" and truthy and is_event and isinstance(cond.right, Sym):
-                sigs = ctx.event_args.get(cond.right.name) or []
-                for i, t in enumerate(sigs):
-                    name = (arg_names or {}).get(i)
-                    if name and name in res:
-                        res[name] = t
+            if cond.op == "==" and truthy and _is_event_sym(cond.left, res) and isinstance(cond.right, Sym):
+                _narrow_event_args(ctx, [cond.right.name], res, arg_names)
     return res
+
+
+def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, str], owner: Optional[str]):
+    vt = _value_types(ctx, s.values, env, owner)
+    if s.op in ("+=", "-="):
+        for t in vt:
+            expect(ctx, f"'{s.op}'", t, "num", s.line)
+    if isinstance(s.target, Sym):
+        name = s.target.name
+        if name in ctx.globals:
+            cur = env.get(name)
+        elif name in env:
+            cur = env[name]
+        elif name.startswith("__"):
+            cur = None
+        else:
+            raise Error(f"unknown name {name!r} (declare it with `local` or `global`)", s.line)
+        if cur is not None and s.op == "=" and vt:
+            expect(ctx, f"assignment to {name}", vt[0], cur, s.line)
+        if cur is not None and s.op in ("+=", "-=") and cur != "any":
+            expect(ctx, f"{name} ({s.op})", cur, "num", s.line)
+        if cur in (None, "any") and vt and s.op == "=":
+            env[name] = vt[0]
+    else:
+        _check_store(ctx, s.target, vt[0] if vt else "any", env, owner, s.line, s.op)
+
+
+def _check_return_stmt(ctx: Context, s: ReturnStmt, env: Dict[str, str], owner: Optional[str],
+                       rets: Optional[List[str]], fn_decl: Optional[FnDecl]):
+    for v in s.values:
+        t = _check_expr(ctx, v, env, owner)
+        if rets is not None and t != "nil":
+            rets.append(t)
+    if fn_decl is not None and s.kind == "return" and s.values:
+        expected = fn_decl.ret_types
+        if len(s.values) > len(expected):
+            raise Error(f"fn {fn_decl.name}: returns {len(s.values)} value(s), {len(expected)} declared", s.line)
+        for i, v in enumerate(s.values):
+            expect(ctx, f"return value {i + 1} of {fn_decl.name}", v.typ, expected[i], s.line)
 
 
 def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
                  owner: Optional[str] = None, rets: Optional[List[str]] = None,
-                 arg_names: Optional[Dict[int, str]] = None):
+                 arg_names: Optional[Dict[int, str]] = None,
+                 fn_decl: Optional[FnDecl] = None):
     for s in stmts:
         if isinstance(s, SayStmt):
-            where = "text to print"
-            expect(ctx, where, _check_expr(ctx, s.expr, env, owner, "str"), "str", s.line)
+            expect(ctx, "text to print", _check_expr(ctx, s.expr, env, owner, "str"), "str", s.line)
         elif isinstance(s, ReturnStmt):
-            for v in s.values:
-                t = _check_expr(ctx, v, env, owner)
-                if rets is not None and t != "nil":
-                    rets.append(t)
+            _check_return_stmt(ctx, s, env, owner, rets, fn_decl)
         elif isinstance(s, LocalStmt):
             vts = _value_types(ctx, s.values, env, owner)
             for i, (vn, dt) in enumerate(s.names):
                 env[vn] = dt or (vts[i] if i < len(vts) else "any")
         elif isinstance(s, AssignStmt):
-            vt = _value_types(ctx, s.values, env, owner)
-            if s.op in ("+=", "-="):
-                for t in vt:
-                    expect(ctx, f"'{s.op}'", t, "num", s.line)
-            if isinstance(s.target, Sym):
-                name = s.target.name
-                if name in ctx.globals:
-                    # a game variable (`global`/`const`) keeps the type of its initial
-                    # value for reads, but writes are not type-checked (as in mise1)
-                    if name in env:
-                        cur = env[name]
-                    else:
-                        cur = None
-                elif name in env:
-                    cur = env[name]
-                elif name.startswith("__"):
-                    cur = None
-                else:
-                    raise Error(f"unknown name {name!r} (declare it with `local` or `global`)",
-                                s.line)
-                if cur is not None and s.op == "=" and vt:
-                    expect(ctx, f"assignment to {name}", vt[0], cur, s.line)
-                if cur is not None and s.op in ("+=", "-=") and cur != "any":
-                    expect(ctx, f"{name} ({s.op})", cur, "num", s.line)
-                if cur in (None, "any") and vt and s.op == "=":
-                    env[name] = vt[0]
-            else:
-                _check_store(ctx, s.target, vt[0] if vt else "any", env, owner, s.line, s.op)
+            _check_assign_stmt(ctx, s, env, owner)
         elif isinstance(s, CallStmt):
             if s.call.receiver is None:
                 _check_value_use(ctx, s.call.func, s.line)
@@ -1002,10 +1013,10 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             cenv = dict(env)
             for cond, body, _l in s.branches:
                 _check_cond(ctx, cond, cenv, owner)
-                _check_stmts(ctx, body, _narrow(ctx, cond, cenv, True, arg_names), owner, rets, arg_names)
+                _check_stmts(ctx, body, _narrow(ctx, cond, cenv, True, arg_names), owner, rets, arg_names, fn_decl)
                 cenv = _narrow(ctx, cond, cenv, False, arg_names)
             if s.else_body is not None:
-                _check_stmts(ctx, s.else_body, cenv, owner, rets, arg_names)
+                _check_stmts(ctx, s.else_body, cenv, owner, rets, arg_names, fn_decl)
         elif isinstance(s, MatchStmt):
             st = _check_expr(ctx, s.subject, env, owner)
             for pats, guard, body, _l in s.arms:
@@ -1013,12 +1024,11 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
                 for p in pats:
                     if not (isinstance(p, Sym) and p.name == "_"):
                         expect(ctx, "match pattern", _check_expr(ctx, p, env, owner, st), st, p.line)
-                        # `match ev` arms narrow the event arguments like `if ev == X`
                         aenv = _narrow(ctx, BinOp(line=p.line, op="==", left=s.subject, right=p),
                                        aenv, True, arg_names)
                 if guard:
                     _check_cond(ctx, guard, aenv, owner)
-                _check_stmts(ctx, body, aenv, owner, rets, arg_names)
+                _check_stmts(ctx, body, aenv, owner, rets, arg_names, fn_decl)
         elif isinstance(s, ForNumStmt):
             for bound, what in ((s.start, "start"), (s.stop, "stop"), (s.step, "step")):
                 if bound is not None:
@@ -1027,15 +1037,14 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             benv[s.var] = s.var_type or "num"
             if s.var_type:
                 expect(ctx, f"for variable {s.var}", "num", s.var_type, s.line)
-            _check_stmts(ctx, s.body, benv, owner, rets)
+            _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl)
         elif isinstance(s, ForInStmt):
             it = _check_expr(ctx, s.iter_expr, env, owner)
-            # iterating a class walks its array part, so an item is an object
             el = tbl_inner(it) or (_root(ctx) if _is_object_type(ctx, it) else "any")
             benv = dict(env)
             for i, (vn, vt) in enumerate(s.vars):
                 benv[vn] = vt or ("num" if (s.is_of and len(s.vars) == 2 and i == 0) else el)
-            _check_stmts(ctx, s.body, benv, owner, rets)
+            _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl)
 
 
 def _split_types(t: str) -> List[str]:
@@ -1108,7 +1117,7 @@ def _root(ctx: Context) -> str:
 
 def _room_root(ctx: Context) -> str:
     """The class whose instances behave like rooms — the one declaring `n_to`."""
-    for cname, fields in ctx.prop_types.items():
+    for cname, fields in ctx.prop_decls.items():
         if "n_to" in fields:
             return cname
     return ""   # nothing declared: no kind is room-like
@@ -1224,6 +1233,39 @@ def _check_expr(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str]
     return t
 
 
+def _infer_lambda(ctx: Context, e: Lambda, env: Dict[str, str],
+                  owner: Optional[str], expected: Optional[str]) -> str:
+    fparts = _fn_parts(expected) if expected else None
+    eparams, erets = fparts if fparts else ([], [])
+    if eparams and len(e.params) > len(eparams):
+        raise TypeCheckError(f"&(…): the callback passes {len(eparams)} argument(s), "
+                             f"the lambda takes {len(e.params)}", e.line)
+    env2 = dict(env)
+    ptypes: List[str] = []
+    for i, (pn, pt) in enumerate(e.params):
+        ept = eparams[i] if i < len(eparams) else None
+        if pt is None:
+            if not ept:
+                raise TypeCheckError(
+                    f"&({pn}): annotate the parameter type (`&({pn}: obj)`)", e.line)
+            pt = ept
+        elif ept and pt != "any" and not is_subtype(ctx, ept, pt):
+            raise TypeCheckError(f"&({pn}): the callback passes {ept}, "
+                                 f"the lambda declares {pt}", e.line)
+        env2[pn] = pt
+        ptypes.append(pt)
+    if isinstance(e.body, list):
+        _check_stmts(ctx, e.body, env2, owner, erets or None)
+        if erets and "nil" not in split_union("|".join(erets)) and not _returns_all(e.body):
+            raise TypeCheckError(
+                f"&(…): the callback returns {'|'.join(erets)}, but some path leaves the body "
+                f"without `return` (write an expression body or add `return`)", e.line)
+    else:
+        _check_expr(ctx, e.body, env2, owner, erets[0] if erets else None)
+    e.typ = "fn(" + ",".join(ptypes) + ")" + (("->" + ",".join(erets)) if erets else "")
+    return e.typ
+
+
 def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = None,
            expected: Optional[str] = None, is_lhs: bool = False) -> str:
     if isinstance(e, Lit):
@@ -1231,7 +1273,6 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
             e.typ = "tbl"
             return "tbl"
         if e.kind == "num" and expected:
-            # a number declared as an enum alias (`2` in `gram`) is that enum value
             for alt in split_union(expected):
                 if alt in ctx.enums and str(e.val) in ctx.enums[alt][0]:
                     e.typ = alt
@@ -1239,7 +1280,6 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         e.typ = "any" if e.kind == "raw" else e.kind
         return e.typ
     if isinstance(e, InterpStr):
-        # interpolation is concatenation: any printable value, as with `..`
         for p in e.parts:
             if isinstance(p, Expr):
                 t = _check_expr(ctx, p, env, owner)
@@ -1248,35 +1288,7 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         e.typ = "str"
         return "str"
     if isinstance(e, Lambda):
-        fparts = _fn_parts(expected) if expected else None
-        eparams, erets = fparts if fparts else ([], [])
-        if eparams and len(e.params) > len(eparams):
-            raise TypeCheckError(f"&(…): the callback passes {len(eparams)} argument(s), "
-                                 f"the lambda takes {len(e.params)}", e.line)
-        env2 = dict(env)
-        ptypes: List[str] = []
-        for i, (pn, pt) in enumerate(e.params):
-            ept = eparams[i] if i < len(eparams) else None
-            if pt is None:
-                if not ept:
-                    raise TypeCheckError(
-                        f"&({pn}): annotate the parameter type (`&({pn}: obj)`)", e.line)
-                pt = ept
-            elif ept and pt != "any" and not is_subtype(ctx, ept, pt):
-                raise TypeCheckError(f"&({pn}): the callback passes {ept}, "
-                                     f"the lambda declares {pt}", e.line)
-            env2[pn] = pt
-            ptypes.append(pt)
-        if isinstance(e.body, list):
-            _check_stmts(ctx, e.body, env2, owner, erets or None)
-            if erets and "nil" not in split_union("|".join(erets)) and not _returns_all(e.body):
-                raise TypeCheckError(
-                    f"&(…): the callback returns {'|'.join(erets)}, but some path leaves the body "
-                    f"without `return` (write an expression body or add `return`)", e.line)
-        else:
-            _check_expr(ctx, e.body, env2, owner, erets[0] if erets else None)
-        e.typ = "fn(" + ",".join(ptypes) + ")" + (("->" + ",".join(erets)) if erets else "")
-        return e.typ
+        return _infer_lambda(ctx, e, env, owner, expected)
     if isinstance(e, Bind):
         vt = _value_types(ctx, [e.value], env, owner)
         e.vtyp = vt[0] if vt else "any"
@@ -1288,7 +1300,7 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
     if isinstance(e, InOp):
         st = _check_expr(ctx, e.subject, env, owner)
         for a in e.alts:
-            _check_expr(ctx, a, env, owner, st)   # resolves names, like `==`
+            _check_expr(ctx, a, env, owner, st)
         e.typ = "bool"
         return "bool"
     if isinstance(e, FnRef):
@@ -1299,44 +1311,40 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         e.typ = "fn"
         return "fn"
     if isinstance(e, ListLit):
-        in_exp = None
-        for alt in split_union(expected) if expected else []:
-            in_exp = tbl_inner(alt)
-            if in_exp is not None:
-                break
+        in_exp = next((tbl_inner(alt) for alt in (split_union(expected) if expected else [])
+                       if tbl_inner(alt) is not None), None)
         its = [_check_expr(ctx, it, env, owner, in_exp) for it in e.items]
         e.typ = f"tbl[{canon_type('|'.join(its)) if its else ''}]"
         return e.typ
     if isinstance(e, Sym):
-        return _infer_sym(ctx, e, env, owner, expected, is_lhs)
+        return _infer_sym(ctx, e, env, expected, is_lhs)
     if isinstance(e, FieldAccess):
         return _infer_field(ctx, e, env, owner, is_lhs)
     if isinstance(e, IndexAccess):
         ot = _check_expr(ctx, e.obj, env, owner)
         in_exp = tbl_inner(ot)
-        if not (_is_object_type(ctx, ot) or ot in ("tbl", "str") or tbl_inner(ot) is not None):
+        if not (_is_object_type(ctx, ot) or ot in ("tbl", "str") or in_exp is not None):
             expect(ctx, "index", ot, "tbl|str", e.line)
-        _check_expr(ctx, e.index, env, owner, "num" if ot != "str" else "num")
+        _check_expr(ctx, e.index, env, owner, "num")
         base = in_exp if in_exp is not None else (
             _root(ctx) if _is_object_type(ctx, ot) else ("str" if ot == "str" else "any"))
-        # an index may be out of range, so the element is optional
         e.typ = base if (ot == "str" or base in ("any", "nil") or base.endswith("?")) else base + "?"
         return e.typ
     if isinstance(e, UnaryOp):
         if e.op == "-" and isinstance(e.operand, Lit) and e.operand.kind == "str":
-            e.typ = "str"  # the engine word marker: `-"слово/мр"` in `word = -"..."`
+            e.typ = "str"
             return "str"
         _check_expr(ctx, e.operand, env, owner, None if e.op == "not" else "num")
         e.typ = "bool" if e.op == "not" else "num"
         return e.typ
     if isinstance(e, BinOp):
-        return _infer_binop(ctx, e, env, owner, expected)
+        return _infer_binop(ctx, e, env, owner)
     if isinstance(e, Call):
         return _check_call(ctx, e, env, owner)
     return "any"
 
 
-def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str], owner: Optional[str],
+def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str],
                expected: Optional[str], is_lhs: bool) -> str:
     n = e.name
     if is_lhs:
@@ -1387,7 +1395,7 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str], owner: Optional[str],
         e.typ = sig.ret_types[0] if (sig and sig.ret_types) else "any"
         return e.typ
     if n in ctx.lua_globals:
-        e.rk, e.typ = "lua_global", ctx.lua_globals[n]
+        e.rk, e.typ = "lua_global", ctx.lua_globals[n].typ
         return e.typ
     if n.startswith("#"):
         raise Error(f"unknown tag {n!r}", e.line)
@@ -1431,8 +1439,7 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, str],
     raise Error(f"unknown field {e.field!r} (use __{e.field} for dynamic values)", e.line)
 
 
-def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, str], owner: Optional[str],
-                 expected: Optional[str]) -> str:
+def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, str], owner: Optional[str]) -> str:
     lt = _check_expr(ctx, e.left, env, owner)
     if e.op in ("==", "!="):
         _infer(ctx, e.right, env, owner, lt)  # resolves bare names, comparing is not a type error
@@ -1536,12 +1543,12 @@ def _type_alt_ok(ctx: Context, alt: str) -> bool:
     return alt.startswith("fn(")
 
 
-def _check_type(ctx: Context, typ: str, where: str, line: int):
+def _check_type(ctx: Context, typ: str, where: str, line: int, label: str = "type"):
     """A declared type must name known classes and primitives (`ref[C]`: C is a class)."""
     for alt in split_union(typ):
         if _type_alt_ok(ctx, alt):
             continue
-        raise Error(f"{where}: unknown type {alt!r}", line)
+        raise Error(f"{where}: unknown {label} {alt!r}", line)
 
 
 def _check_signature(ctx: Context, fn: FnDecl):
@@ -1550,49 +1557,13 @@ def _check_signature(ctx: Context, fn: FnDecl):
         return
     seen_optional = False
     for pname, ptype in fn.params:
-        for alt in split_union(ptype):
-            if alt in PRIMITIVES or alt in ctx.enums or alt in ctx.classes \
-                    or alt.startswith("fn(") or tbl_inner(alt) is not None or alt == "nil":
-                continue
-            raise Error(f"fn {fn.name}({pname}): unknown type {alt!r}", fn.line)
+        _check_type(ctx, ptype, f"fn {fn.name}({pname})", fn.line)
         optional = ptype == "nil" or ptype.endswith("?")
         if seen_optional and not optional:
             raise Error(f"fn {fn.name}: required parameter {pname!r} after an optional one", fn.line)
         seen_optional = seen_optional or optional
     for rt in fn.ret_types:
-        for alt in split_union(rt):
-            if alt in PRIMITIVES or alt in ctx.enums or alt in ctx.classes \
-                    or alt.startswith("fn(") or tbl_inner(alt) is not None or alt == "nil":
-                continue
-            raise Error(f"fn {fn.name}: unknown return type {alt!r}", fn.line)
-
-
-def _check_returns(ctx: Context, fn: FnDecl, env: Dict[str, str], owner: Optional[str]):
-    """`return` inside an annotated `fn` must match its declared result types."""
-    expected = fn.ret_types
-
-    def walk(stmts: List[Stmt]):
-        for s in stmts:
-            if isinstance(s, ReturnStmt) and s.kind == "return":
-                if not s.values:
-                    continue
-                if len(s.values) > len(expected):
-                    raise Error(f"fn {fn.name}: returns {len(s.values)} value(s), {len(expected)} declared", s.line)
-                for i, v in enumerate(s.values):
-                    # types were inferred by the narrowing-aware main pass
-                    expect(ctx, f"return value {i + 1} of {fn.name}", v.typ, expected[i], s.line)
-            elif isinstance(s, IfStmt):
-                for _c, body, _l in s.branches:
-                    walk(body)
-                if s.else_body:
-                    walk(s.else_body)
-            elif isinstance(s, MatchStmt):
-                for _p, _g, body, _l in s.arms:
-                    walk(body)
-            elif isinstance(s, (ForNumStmt, ForInStmt)):
-                walk(s.body)
-
-    walk(fn.body)
+        _check_type(ctx, rt, f"fn {fn.name}", fn.line, "return type")
 
 
 def _value_types(ctx: Context, values: List[Expr], env: Dict[str, str],

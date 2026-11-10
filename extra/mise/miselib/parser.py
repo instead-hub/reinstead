@@ -147,18 +147,15 @@ class Parser:
 
     # --- Types, Vars, Fns ---
 
-    def _parse_type_str(self, single: bool = False) -> str:
+    def _parse_type_str(self, single: bool = False, names: Optional[List[str]] = None) -> str:
         """`single` stops the `->` return list at a comma: inside a parameter list
         `fn(a) -> b, c` means "a callback returning b, then a parameter c"."""
-        names: List[str] = []
         res = [self._parse_type_atom(names, single)]
-        self._last_type_params = names
         while self.match("OP", "|"):
             res.append(self._parse_type_atom(names, single))
-        self._last_type_params = names
         return "|".join(res)
 
-    def _parse_type_atom(self, names: List[str], single: bool = False) -> str:
+    def _parse_type_atom(self, names: Optional[List[str]], single: bool = False) -> str:
         t = self.cur()
         if t.val == "fn" and self.peek().val == "(":
             self.pos += 2
@@ -170,7 +167,7 @@ class Parser:
                         pname = self.cur().val
                         self.pos += 2
                     pts.append(self._parse_type_str(single=True))
-                    if pname:
+                    if pname and names is not None:
                         names.append(pname)
                     if not self.match("OP", ","):
                         break
@@ -217,37 +214,46 @@ class Parser:
         name = self.eat("IDENT").val
         self.match("OP", "=")
         neg, vals = False, []
-
-        def read_vals():
-            nonlocal neg
-            while not self.at("NEWLINE") and not self.at("EOF"):
-                if self.match("OP", "~"):
-                    neg = True
-                else:
-                    vals.append(self.cur().val)
-                    self.pos += 1
-                if not self.match("OP", ","):
-                    break
-
-        if self.match("OP", "["):
-            while not self.at("OP", "]") and not self.at("EOF"):
-                if self.match("OP", "~"):
-                    neg = True
-                elif self.cur().kind in ("IDENT", "NUMBER", "TILDE_ID"):
-                    vals.append(self.cur().val)
-                    self.pos += 1
-                else:
-                    raise Error(f"invalid enum value {self.cur().val!r}",
-                                self.cur().line, self.src)
-                self.match("OP", ",")
+        in_brackets = bool(self.match("OP", "["))
+        while not self.at("EOF") and not (self.at("OP", "]") if in_brackets else self.at("NEWLINE")):
+            if self.match("OP", "~"):
+                neg = True
+            elif not in_brackets or self.cur().kind in ("IDENT", "NUMBER", "TILDE_ID"):
+                vals.append(self.cur().val)
+                self.pos += 1
+            else:
+                raise Error(f"invalid enum value {self.cur().val!r}",
+                            self.cur().line, self.src)
+            if not self.match("OP", ",") and not in_brackets:
+                break
+        if in_brackets:
             self.eat("OP", "]")
-            self.eat_nl()
-        else:
-            read_vals()
-            self.eat_nl()
+        self.eat_nl()
         return TypeDecl(name=name, values=vals, negate=neg, extend=extend, line=line)
 
-    def _parse_fn(self, is_extern: bool) -> FnDecl:
+    def _parse_param_list(self, default_s: bool = False, typed: bool = True
+                          ) -> Tuple[List[Tuple[str, Any]], Optional[str]]:
+        """Parse `(a: T, b: U, ...: V)` parameter list."""
+        params: List[Tuple[str, Any]] = []
+        var: Optional[str] = None
+        if not self.match("OP", "("):
+            return params, var
+        while not self.at("OP", ")") and not self.at("EOF"):
+            if default_s and self.match("OP", "..."):
+                var = self._parse_type_str(single=True) if self.match("OP", ":") else "any"
+                break
+            pn = self.eat("IDENT").val
+            if self.match("OP", ":"):
+                pt: Any = self._parse_type_str(single=True)
+            else:
+                pt = ("obj" if (default_s and pn == "s") else "any") if typed else None
+            params.append((pn, pt))
+            if not self.match("OP", ","):
+                break
+        self.eat("OP", ")")
+        return params, var
+
+    def _parse_fn(self, is_extern: bool) -> Any:
         line = self.eat("IDENT").line
         is_value = False
         if is_extern:
@@ -264,19 +270,7 @@ class Parser:
                 raise Error(f"extern {kind.val}: expected `fn`, `value` or `global`", kind.line, self.src)
             is_value = kind.val == "value"
         name = self.eat("IDENT").val
-        params, var = [], None
-        if self.match("OP", "("):
-            if not self.at("OP", ")"):
-                while True:
-                    if self.match("OP", "..."):
-                        var = self._parse_type_str(single=True) if self.match("OP", ":") else "any"
-                        break
-                    pn = self.eat("IDENT").val
-                    pt = self._parse_type_str(single=True) if self.match("OP", ":") else ("obj" if pn == "s" else "any")
-                    params.append((pn, pt))
-                    if not self.match("OP", ","):
-                        break
-            self.eat("OP", ")")
+        params, var = self._parse_param_list(default_s=True, typed=True)
         rets = []
         if self.match("OP", "->"):
             rets.append(self._parse_type_str())
@@ -389,10 +383,11 @@ class Parser:
             prms = self._opt_ident_parens()
 
             if ent.kind == "class" and self.match("OP", ":"):
-                typ = self._parse_type_str()
+                type_params: List[str] = []
+                typ = self._parse_type_str(names=type_params)
                 emit = self._field_emit()
                 ent.props.append(Prop(name=pname, typ=typ, emit=emit,
-                                      type_params=list(self._last_type_params), line=t.line))
+                                      type_params=type_params, line=t.line))
                 self.eat_nl()
                 continue
 
@@ -405,18 +400,7 @@ class Parser:
 
     def _opt_params(self) -> List[Tuple[str, str]]:
         """`(a, b: obj)` after a name."""
-        params: List[Tuple[str, str]] = []
-        if not self.match("OP", "("):
-            return params
-        while not self.at("OP", ")") and not self.at("EOF"):
-            pname = self.eat("IDENT").val
-            ptype = "any"
-            if self.match("OP", ":"):
-                ptype = self._parse_type_str(single=True)
-            params.append((pname, ptype))
-            if not self.match("OP", ","):
-                break
-        self.eat("OP", ")")
+        params, _ = self._parse_param_list(default_s=False, typed=True)
         return params
 
     def _field_emit(self) -> Optional[Emit]:
@@ -440,12 +424,12 @@ class Parser:
             other = self.eat("IDENT").val
         return Emit(method=mname, form=form, other=other)
 
-    def _header_words(self) -> List[str]:
-        """Words of a declaration live in its header: `obj hook "крючок|вешалка"`."""
+    def _header_words(self, allow_empty: bool = True) -> List[str]:
+        """A single string or a `[...]` list of strings (`words`, `patterns`)."""
         if self.cur().kind in ("STRING", "ISTRING"):
             return [self.eat(self.cur().kind).val]
-        if self.at("OP", "["):
-            self.pos += 1
+        if self.at("OP", "[") or not allow_empty:
+            self.eat("OP", "[")
             res = []
             while not self.at("OP", "]") and not self.at("EOF"):
                 res.append(self.eat(self.cur().kind).val)
@@ -454,6 +438,11 @@ class Parser:
             self.eat("OP", "]")
             return res
         return []
+
+    def _str_or_list(self) -> List[str]:
+        res = self._header_words(allow_empty=False)
+        self.eat_nl()
+        return res
 
     def _is_nested_entity(self) -> bool:
         """`Kind name` starts a nested declaration; a member is always `key = ...`."""
@@ -522,22 +511,6 @@ class Parser:
             else:
                 parts.append("~=" if (t.kind == "OP" and t.val == "!=") else t.val)
         return Lit(line=line, kind="table", val="".join(parts))
-
-    def _str_or_list(self) -> List[str]:
-        """A single string or a `[...]` list of strings (`words`, `patterns`)."""
-        if self.cur().kind in ("STRING", "ISTRING"):
-            s = self.eat(self.cur().kind).val
-            self.eat_nl()
-            return [s]
-        self.eat("OP", "[")
-        res = []
-        while not self.at("OP", "]") and not self.at("EOF"):
-            res.append(self.eat(self.cur().kind).val)
-            if not self.match("OP", ","):
-                break
-        self.eat("OP", "]")
-        self.eat_nl()
-        return res
 
     def _parse_handler(self) -> Handler:
         tok = self.eat("IDENT")
@@ -623,11 +596,9 @@ class Parser:
                     game.handlers.extend(sub.handlers)
             elif kw in ("init", "start"):
                 self.pos += 1
-                prms = self._opt_ident_parens()
+                self._opt_ident_parens()
                 self.eat("OP", "=")
                 body = self.parse_stmt_block()
-                fn = FnDecl(name=kw, params=[(pn, "bool" if pn == "load" else "any") for pn in (prms or [])],
-                            body=body, line=t.line)
                 if kw == "init":
                     init_body = body
                 else:
@@ -901,22 +872,16 @@ class Parser:
             left = self.parse_unary()
         while True:
             t = self.cur()
-            if t.kind == "IDENT" and t.val == "not" and self.peek().val == "in" \
-                    and min_prec <= _BIN_PREC["=="]:
-                # `x not in a, b` — the negated membership operator
-                self.pos += 2
+            if t.kind == "IDENT" and min_prec <= _BIN_PREC["=="] and (
+                t.val == "in" or (t.val == "not" and self.peek().val == "in")
+            ):
+                neg = self.match("IDENT", "not") is not None
+                self.eat("IDENT", "in")
                 alts = [self.parse_expr(_BIN_PREC["=="] + 1)]
                 while self.match("OP", ","):
                     alts.append(self.parse_expr(_BIN_PREC["=="] + 1))
-                left = UnaryOp(line=t.line, op="not",
-                               operand=InOp(line=t.line, subject=left, alts=alts))
-                continue
-            if t.kind == "IDENT" and t.val == "in" and min_prec <= _BIN_PREC["=="]:
-                self.pos += 1
-                alts = [self.parse_expr(_BIN_PREC["=="] + 1)]
-                while self.match("OP", ","):
-                    alts.append(self.parse_expr(_BIN_PREC["=="] + 1))
-                left = InOp(line=left.line, subject=left, alts=alts)
+                in_op = InOp(line=t.line if neg else left.line, subject=left, alts=alts)
+                left = UnaryOp(line=t.line, op="not", operand=in_op) if neg else in_op
                 continue
             op = t.val if (t.kind == "OP" or (t.kind == "IDENT" and t.val in ("and", "or"))) else ""
             prec = _BIN_PREC.get(op, 0)
@@ -980,19 +945,8 @@ class Parser:
 
     def _parse_lambda(self) -> Expr:
         line = self.eat("OP", "&").line
-        self.eat("OP", "(")
-        params: List[Tuple[str, Optional[str]]] = []
-        while not self.at("OP", ")") and not self.at("EOF"):
-            pn = self.eat("IDENT").val
-            pt = self._parse_type_str() if self.match("OP", ":") else None
-            params.append((pn, pt))
-            if not self.match("OP", ","):
-                break
-        self.eat("OP", ")")
-        if self.at("NEWLINE"):
-            body: Any = self.parse_stmt_block()
-        else:
-            body = self.parse_expr()
+        params, _ = self._parse_param_list(default_s=False, typed=False)
+        body: Any = self.parse_stmt_block() if self.at("NEWLINE") else self.parse_expr()
         return Lambda(line=line, params=params, body=body)
 
     def parse_primary(self) -> Expr:
@@ -1045,25 +999,30 @@ class Parser:
         t = self.eat(self.cur().kind)
         if t.kind == "STRING":
             return Lit(line=t.line, kind="str", val=t.val)
-        parts, s, i, n = [], t.val, 0, len(t.val)
-        while i < n:
-            j = s.find("{", i)
-            if j == -1:
-                parts.append(s[i:])
-                break
-            k = s.find("}", j + 1)
-            if k == -1 or (j + 1 < n and s[j + 1] in "$#"):
-                end = (k + 1) if k != -1 else n
-                parts.append(s[i:end])
-                i = end
-                continue
-            if j > i:
-                parts.append(s[i:j])
-            parts.append(Parser(tokenize(s[j + 1:k].strip(), self.src), self.src).parse_expr())
-            i = k + 1
-        if len(parts) == 1 and isinstance(parts[0], str):
-            return Lit(line=t.line, kind="str", val=parts[0])
-        return InterpStr(line=t.line, parts=parts)
+        return _split_interp_str(t.val, t.line, self.src)
+
+
+def _split_interp_str(s: str, line: int, src: str) -> Expr:
+    parts: List[Any] = []
+    i, n = 0, len(s)
+    while i < n:
+        j = s.find("{", i)
+        if j == -1:
+            parts.append(s[i:])
+            break
+        k = s.find("}", j + 1)
+        if k == -1 or (j + 1 < n and s[j + 1] in "$#"):
+            end = (k + 1) if k != -1 else n
+            parts.append(s[i:end])
+            i = end
+            continue
+        if j > i:
+            parts.append(s[i:j])
+        parts.append(Parser(tokenize(s[j + 1:k].strip(), src), src).parse_expr())
+        i = k + 1
+    if len(parts) == 1 and isinstance(parts[0], str):
+        return Lit(line=line, kind="str", val=parts[0])
+    return InterpStr(line=line, parts=parts)
 
 
 def parse_source(src: str, src_name: str = "") -> Program:

@@ -3,7 +3,7 @@ MATCH_TMP = "__match"
 import re
 from typing import Any, List, Optional, Tuple
 from .ast_nodes import *
-from .checker import Context, load_includes, prescan, split_union
+from .checker import Context, load_includes, prescan
 from .parser import parse_source
 
 _PREC = {"or": 1, "and": 2, "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3, "..": 4, "+": 4, "-": 4, "*": 5, "/": 5, "%": 5, "//": 5}
@@ -113,12 +113,12 @@ class Emitter:
         for p in ent.props:
             if p.value is None:
                 continue
-            call = self._method_call(ent, p)
+            call = self._method_call(p)
             if call is not None:
                 if call:
                     tails.append(call)
                 continue
-            lines.append(f"{fpad}{p.name} = {self._prop_val(p, ent, ind + 2)};")
+            lines.append(f"{fpad}{p.name} = {self._prop_val(p, ind + 2)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h, ind + 2)
             lines.append(f"{fpad}{k} = {fn};")
@@ -129,34 +129,9 @@ class Emitter:
             tails.insert(0, f":attr '{','.join(attrs)}'")
         return lines, tails
 
-    def _entity_kind(self, ent: EntityDecl) -> str:
-        """The class whose field declarations apply to this entity."""
-        if ent.kind == "class":
-            return ent.name or ""
-        if ent.kind == "impl":
-            return self.ctx.objects.get(ent.name or "", self.ctx.root_class or "")
-        return ent.kind
-
-    def _decl_lookup(self, table, ent: Optional[EntityDecl], name: str):
-        """A field declaration looked up through the class chain of the entity."""
-        if ent is None:
-            return None
-        cur, seen = self._entity_kind(ent), set()
-        while cur and cur not in seen:
-            seen.add(cur)
-            val = table.get(cur, {}).get(name)
-            if val:
-                return val
-            cur = self.ctx.classes.get(cur)
-        return None
-
-    def _field_emit(self, ent: Optional[EntityDecl], name: str) -> Optional[Emit]:
-        """How a declared field reaches Lua (`= method attr(join)` in core)."""
-        return self._decl_lookup(self.ctx.prop_emit, ent, name)
-
-    def _method_call(self, ent: EntityDecl, p: Prop) -> Optional[str]:
+    def _method_call(self, p: Prop) -> Optional[str]:
         """The engine method call a field turns into, or None for a plain field."""
-        spec = self._field_emit(ent, p.name)
+        spec = p.emit
         if spec is None:
             return None
         mname, form, other, v = spec.method, spec.form, spec.other, p.value
@@ -249,7 +224,7 @@ class Emitter:
             return f"({expr})"
         return f"(function(c) return {expr} end)({subj})"
 
-    def _prop_val(self, p: Prop, ent: Optional[EntityDecl] = None, ind: int = 0) -> str:
+    def _prop_val(self, p: Prop, ind: int = 0) -> str:
         v, pad = p.value, " " * ind
         if isinstance(v, FnRef):
             return self._fnref(v.name)
@@ -257,10 +232,10 @@ class Emitter:
             if v.kind in ("table", "raw"):     # `{ ... }` verbatim, a `` `lua expression` ``
                 return v.val
             if v.kind == "lua":                # a `lua` block: an opaque body
-                prms = self._prop_prms(p, ent)
+                prms = self._prop_prms(p)
                 return f"function({prms})\n{_ind(v.val, ind + 2)}\n{pad}end"
         if isinstance(v, list):
-            prms = self._prop_prms(p, ent)
+            prms = self._prop_prms(p)
             b = _ind(self._stmts(v), ind + 2)
             return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
         if isinstance(v, ListLit):
@@ -276,12 +251,9 @@ class Emitter:
             return self._prop_scalar(v, p.name in self.ctx.ref_fields or (isinstance(v, Sym) and v.name in self.ctx.objects))
         return "nil"
 
-    def _prop_prms(self, p: Prop, ent: Optional[EntityDecl] = None) -> str:
-        """Parameters of a prop body, from the declared `fn(...)` of the field."""
-        if p.params is not None:
-            return ", ".join(p.params)
-        names: List[str] = self._decl_lookup(self.ctx.prop_params, ent, p.name) or []
-        return ", ".join(names) if names else "s"
+    def _prop_prms(self, p: Prop) -> str:
+        """Parameters of a prop body, resolved by the checker."""
+        return ", ".join(p.params) if p.params else "s"
 
     def _prop_scalar(self, e: Expr, is_ref: bool = False) -> str:
         if isinstance(e, Sym):
@@ -322,14 +294,14 @@ class Emitter:
         if ent.words:
             lines.append(f"{ref}.word = -{lua_str('|'.join(ent.words))}")
         for p in ent.props:
-            call = self._method_call(ent, p)
+            call = self._method_call(p)
             if call is not None:
                 if call:
                     lines.append(f"{ref}{call}")
                 continue
             # `-"…"` is the engine's word marker (`__unm` on a string is identity),
             # so an assignment keeps it: `pl.word = -"ты"` as mp-ru.lua does
-            lines.append(f"{ref}.{p.name} = {self._prop_val(p, ent)};")
+            lines.append(f"{ref}.{p.name} = {self._prop_val(p)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h)
             if k.startswith("["):
@@ -524,7 +496,8 @@ class Emitter:
             if as_lhs or e.rk == "var":
                 return n
             if e.rk == "lua_global":
-                return self.ctx.globals_lua.get(n, n)
+                g = self.ctx.lua_globals.get(n)
+                return g.template if g else n
             if e.rk == "obj":
                 return f"_'{n}'"
             if e.rk == "global_ref":
