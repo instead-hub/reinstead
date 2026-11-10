@@ -51,6 +51,21 @@ local function fn_by_number(n)
   end
 end
 
+local function fn_by_word(t, loud)
+  do
+    local __match = t
+    if __match == "да" and loud then
+      return "ДА"
+    elseif __match == "да" then
+      return "да"
+    elseif __match == "нет" then
+      return "нет"
+    else
+      return "?"
+    end
+  end
+end
+
 obj {
   nam = "none";
 }
@@ -108,6 +123,14 @@ mp.Any = function(s, ev, w, wh)
     end
   end
   return false
+end;
+
+_'game'.before_Inv = function(s, w, wh)
+  p(fn_by_number(3))
+  p(fn_by_word("да", true))
+  p(fn_by_word("да", false))
+  p(fn_by_word("нет", true))
+  p(fn_by_word("иное", false))
 end;
 
 mp.Default = "нет обработчика";

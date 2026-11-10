@@ -25,6 +25,21 @@ fn by_number(n: num) -> str
     2, 3 -> return "два-три"
     _ -> return "много"
 
+fn by_word(t: str, loud: bool) -> str
+  match t
+    "да" when loud -> return "ДА"
+    "да" -> return "да"
+    "нет" -> return "нет"
+    _ -> return "?"
+
+impl game
+  before Inv =
+    say (by_number 3)
+    say (by_word "да" true)
+    say (by_word "да" false)
+    say (by_word "нет" true)
+    say (by_word "иное" false)
+
 impl mp : Default
   on Default = [[нет обработчика]]
 

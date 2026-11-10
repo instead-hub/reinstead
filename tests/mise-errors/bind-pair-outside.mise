@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+
+fn f(s: obj)
+  if o, i := lookup (where_list s) s
+    say (o:noun вн)
+  say (o:noun вн)

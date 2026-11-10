@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+
+fn f(n: num) -> str
+  match n
+    "a" -> return "x"
+    _ -> return "y"
