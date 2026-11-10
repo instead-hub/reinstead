@@ -40,29 +40,30 @@ syn match miseType /\%(->\s*\)\@<=\%(obj\|str\|num\|bool\|any\|event\|tbl\|list\
 
 " --- ключи полей (до деклараций: спец-ключи и секции важнее) ---
 syn match miseKey /^\s*\zs\w\+\%(\s*,\s*\w\+\)*\ze\s*[:(]/
-syn match miseSpecialKey /^\s*\zs\%(words\|word\|attrs\|dict\|disabled\|with\|inside\|text\|found_in\)\ze\s*[:(]/
+syn match miseSpecialKey /^\s*\zs\%(words\|word\|attrs\|attr\|dict\|disabled\|with\|inside\|text\|found_in\|exit\|enter\|scope\|nam\|tag\|way\|lifes\)\ze\s*[:(]/
 
 " --- декларации и секции (в начале строки) ---
-syn match miseDecl /^\s*\zs\%(obj\|room\|door\|story\|ending\|class\|mixin\|verb\|talk\|setup\|impl\|props\|refs\|const\|global\|event\|type\|extend\|remove\|fn\|lua\)\>\ze\%(\s\|:\|$\)/
-syn match miseDirective /^\s*\zs\%(name\|version\|author\|info\|lang\|fmt\|include\|require\)\ze\s*:/
-syn match miseDecl2 /\%(^\s*extend\s\+\)\@<=\%(refs\|type\)\>/
+syn match miseDecl /^\s*\zs\%(obj\|room\|door\|story\|ending\|class\|mixin\|verb\|talk\|setup\|impl\|const\|global\|type\|events\|event\|entry\|extern\|extend\|remove\|fn\|lua\)\>\ze\%(\s\|:\|$\)/
+syn match miseDirective /^\s*\zs\%(game\|name\|version\|author\|info\|lang\|fmt\|include\|require\)\>/
+syn match miseDecl2 /\%(^\s*extend\s\+\)\@<=\%(type\|events\|verb\)\>/
 syn match miseImplTarget /\%(^\s*impl\s\+\)\@<=[^[:space:]:]\+/
-syn match miseEventName /\%(^\s*event\s\+\)\@<=\u\w*/
+syn match miseMethodSpec /\%(=\s*method\s\+\)\@<=\w\+/
 
-" --- фазы и имена событий (lookbehind: слово фазы уже просканировано) ---
+" --- фазы и имена событий ---
 syn match misePhase /^\s*\zs\%(on\|life\|before\|after\|post\)\ze\s\+\u\w*/
 syn match misePhaseEvt /\%(^\s*\%(on\|life\|before\|after\|post\)\s\+\)\@<=\u\w*\%(\s*,\s*\u\w*\)*/
+syn match miseEventHandler /\%(^\s*\%(on\|before\|after\|post\|life\)\s\+\%([A-Z]\w*\s*,\s*\)*[A-Z]\w*\%(([^)]*)\)\?\s*=\)\@<==/
 
-" --- логика (`|` и `|lua` блоки) ---
-syn match misePipe /|\s*$/
-syn match misePipeLua /|lua\s*$/
-syn match miseLogicKw /^\s*\zs\%(if\|elseif\|else\|when\|default\|for\|local\|return\|break\|stop\|pass\)\ze\%(\s\|$\|:\)/
-syn keyword miseLogicOp and or not in
-syn match miseFnRef /&\w\+/
+" --- логика ---
+syn match miseLogicKw /^\s*\zs\%(if\|elseif\|else\|match\|for\|local\|return\|break\|stop\|pass\|entry\|events\|extern\|value\|global\|method\|else\)\ze\%(\s\|$\|:\)/
+syn keyword miseLogicOp and or not in of
+syn match miseFnRef /&\%((\)\@!\w\+/
+syn match miseLambda /&\ze(/
+syn match miseBind /:=/
 
-" --- паттерны verb/extend: слоты и имя события ---
+" --- паттерны глаголов: {noun}/вн, {direction}; имя события после `:` ---
 syn match misePatternSlot /{[a-z_0-9]\+}/
-syn match misePatternEvent /^\s*-\s.*:\s*\zs\u\w\+\ze\%(\s\+reverse\)\?\s*$/
+syn match misePatternDir /\/[а-яa-z]\+/
 
 " --- ссылки: #тег ---
 syn match miseTag /\%(^\|\s\)\zs#[^[:space:]:,()|{}[\].#]\+/
@@ -81,17 +82,18 @@ hi def link miseType         Type
 hi def link miseArrow        Operator
 hi def link miseKey          Identifier
 hi def link misePatternSlot  Special
-hi def link misePatternEvent Function
+hi def link misePatternDir  Type
 hi def link miseSpecialKey   Type
 hi def link miseDecl         Keyword
 hi def link miseDirective    PreProc
 hi def link miseDecl2        Keyword
 hi def link miseImplTarget   Function
-hi def link miseEventName    Function
 hi def link misePhase        Statement
 hi def link misePhaseEvt     Function
-hi def link misePipe         Special
-hi def link misePipeLua      Special
+hi def link miseLambda       Special
+hi def link miseBind         Operator
+hi def link miseMethodSpec   Function
+hi def link miseEventHandler Keyword
 hi def link miseLogicKw      Statement
 hi def link miseLogicOp      Operator
 hi def link miseFnRef        Function
