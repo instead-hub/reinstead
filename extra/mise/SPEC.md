@@ -90,9 +90,10 @@ else
 ### Идея 6: Единый блочный синтаксис
 Один язык для деклараций и логики — без YAML-двоеточий и `|`-маркеров:
 - **Поле-значение** задаётся через `=`: `title = "Буфет"`, `n_to = foyer`, `scored = false`.
-- **Обработчик, вычисляемое свойство или функция** начинается сразу с заголовка и отступа (без `: |`):
-  - `before Take` + блок с отступом;
-  - или короткая однострочная форма: `before Take "Слишком тяжело."`, `before Exam pass`.
+- **Обработчик, вычисляемое свойство или функция** — это `=` с телом в отступе
+  (без `: |`): `before Take =` + блок;
+  - или короткая однострочная форма: `before Take = "Слишком тяжело."`,
+    `before Exam = pass`.
 - **Заголовок объекта** позволяет сразу указать словарные слова, классы/атрибуты (через `:`) и локацию (через `@`):
   `obj hook "маленький бронзовый крючок,крючок|вешалка" : scenery, supporter @ cloakroom`
 
@@ -105,11 +106,12 @@ extern fn player() -> obj = "me()"
 extern fn event() -> event? = "(mp.event or nil)"
 
 extern fn has(s: obj, a: attr) -> bool = "$1:has($2)"
-extern fn attr(s: obj, a: attr...) = "$1:attr($2)"
-extern fn move(s: obj, to: obj) = "move($1, $2)"
-extern fn noun(s: obj, h: case|gram|num|tbl[case|gram]?, n: num?) -> str = "$1:noun_hint($2, $3)"
+extern fn attr(s: obj, a: attr) = "$1:attr($2)"
+extern fn move(s: obj, where: obj) = "move($1, $2)"
+extern fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str = "$1:noun_hint($2...)"
 ```
-Компилятор проверяет типы аргументов и подставляет их в шаблон `$1`, `$2`.
+Компилятор проверяет типы аргументов и подставляет их в шаблон `$1`, `$2`
+(`$2...` — «все аргументы с второго», `$*` — все).
 `extern value` объявляет выражение (его нельзя вызвать как инструкцию),
 `extern global` — глобал движка.
 
@@ -156,16 +158,20 @@ extern fn noun(s: obj, h: case|gram|num|tbl[case|gram]?, n: num?) -> str = "$1:n
 Виды — это классы, объявленные в `core.mise`, поэтому решётка подтипов
 получается из объявлений:
 - `room <: obj`, `door <: obj`, `story <: room`, `ending <: room`, `talk <: room`
-  (`std.dlg` в движке тоже наследует `std.room`), `list` — отдельный корень;
+  (объект диалога движок пропускает через `std.room`, поэтому у него есть `dsc`,
+  `nam` и переходы), `list` — отдельный корень;
 - каждый пользовательский класс `ClassName <: ParentKind` (по умолчанию `<: obj`);
 - имени конкретного объекта `cloak` соответствует singleton-тип `obj(cloak) <: obj`.
 
 Что это даёт:
-- В `core.mise`: `extern fn here() -> room`, у `class room` поле `n_to: ref`, у `class obj` — `talk_to: ref | fn(obj) -> talk`.
+- В `core.mise`: `extern fn here() -> room`, у `class room` поле `n_to: ref`, у `class obj` — `talk_to: ref | fn(obj) -> ref`.
 - Любую комнату, дверь или экземпляр класса можно передавать в функции, ожидающие `obj` (`move`, `has`, `inside`).
-- Но если написать `n_to = cloak` (предмет вместо комнаты/двери) или `talk_to = foyer` (комната вместо диалога), компилятор выдаст точную ошибку типа на этапе сборки!
-- Тип `ref` означает «ссылка на объект или её имя» и нужен там, где движок
-  принимает и то и другое (`n_to`, `found_in`, `scope`, `with`).
+- Тип `ref` означает «ссылка на объект или её имя»; он стоит там, где движок
+  принимает и объект, и его имя, и **любой** объект-приёмник: направление
+  (`n_to`) может быть комнатой, дверью, `cutscene` или объектом пути, поэтому
+  класс здесь не различается. Проверяется другое: значение должно быть ссылкой,
+  а не скаляром — `n_to = 5` даёт
+  `5: expected ref|fn(obj)->ref, got num`.
 
 ### 3.2. Вывод типов для `fn` и параметра `s`
 `any` запрещено молча передавать в типизированные слоты, поэтому:
@@ -215,13 +221,13 @@ extern fn noun(s: obj, h: case|gram|num|tbl[case|gram]?, n: num?) -> str = "$1:n
 ### 3.4. Сопоставление с образцом (`match`) и сужение типов событий
 Помимо обычного сужения (`if x` для `T?`, `if x := …`, `if ev == Ask`) есть `match`:
 ```mise
-before Any(s, ev, w)
+before Any(s, ev, w) =
   match ev
     Ask, Tell ->
       "Спросили: {w}"          # в этой ветке w автоматически имеет тип str!
     Cut ->
       if w                     # в ветке Cut аргумент w имеет тип obj?
-        w:attr broken          # здесь w сужен до obj
+        w:hasnt light          # здесь w сужен до obj
     Walk when w:has door ->    # поддерживаются guard-условия when!
       "Дверь."
     _ ->
@@ -258,12 +264,13 @@ before Any(s, ev, w)
 | `class K` (`name: type`)    | тип поля: проверка значения, сужение, `ref`-природа, метод-эмиссия |
 | сам объект (`name = value`) | поле без типа — `s.name` имеет тип `any`                           |
 
-Правило проверки: имя должно быть объявлено **хотя бы где-то в программе**
-(в классе или у любого объекта). Тогда чтение и запись `s.name` разрешены —
-у объекта или в `impl` этого объекта. Неизвестное имя даёт ошибку с подсказкой:
+Правило проверки: имя должно быть объявлено **у владельца** — у самого объекта
+или в его классах/трейтах (см. 3.3). У получателя-класса (`fn f(o: obj)`) видны
+поля наследников и экземпляров. Неизвестное имя даёт ошибку с подсказкой:
 
 ```
-mise: unknown field 'kkz' (use __kkz for dynamic values)
+mise: box.kkz: no such field (nothing declares it for box; use __kkz for a dynamic value)
+mise: unknown field 'kkz' (use __kkz for dynamic values)      (* получатель неизвестен *)
 ```
 
 `__имя` — единственный способ работать с именем, не объявленным нигде (оно же
@@ -441,30 +448,33 @@ game "Плащ Тьмы"
 lang ru
 include stdlib
 
-global score = 0
+global
+  score = 0
 
 impl game
   hint_verbs = ["#Exam", "#Walk", "#Take", "#Drop"]
 
 extend verb #Drop
-  words "повес/ить"
-  patterns
-    - "{noun}/вн,held на {noun}/вн,supporter : PutOn"
-    - "~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse"
+  words = "повес/ить"
+  patterns = [
+    "{noun}/вн,held на {noun}/вн,supporter : PutOn",
+    "~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse",
+  ]
 
-setup
+impl game
   dsc = "^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация..."
-  start
-    player:move foyer
-    cloak:move player
-    cloak:attr worn
+
+fn start(load)
+  player:move foyer
+  cloak:move player
+  cloak:attr worn
 
 room foyer "фойе"
   title = "Фойе Оперного Театра"
   dsc = "Вы стоите в центре просторного холла..."
   s_to = bar
   w_to = cloakroom
-  n_to
+  n_to =
     "Вы только пришли сюда. К тому же, погода снаружи заметно ухудшается."
 
 room cloakroom "гардероб"
@@ -473,7 +483,7 @@ room cloakroom "гардероб"
   e_to = foyer
 
   obj hook "маленький бронзовый крючок,крючок|вешалка" : scenery, supporter
-    description
+    description =
       "Всего лишь маленький бронзовый крючок для одежды,"~
       if where cloak == s
         " с которого свисает черный бархатный плащ."
@@ -485,14 +495,14 @@ room bar "буфет" : ~light
   dsc = "Театральный буфет совершенно пуст..."
   n_to = foyer
 
-  before Walk(s, w)
+  before Walk(s, w) =
     if compass_dir w != n_to and not w:has light
       message.number += 2
       "Слоняться в кромешной тьме — не самая лучшая идея."
       stop
     pass
 
-  before Default(s, ev, w)
+  before Default(s, ev, w) =
     if ev == Exit
       pass
     if not s:has light
@@ -503,7 +513,7 @@ room bar "буфет" : ~light
 
   obj message "надпись|пыль" : scenery
     number = 0
-    description
+    description =
       if s.number < 2
         "Начертанная в пыли надпись сообщает Вам, что..."
         walk goodend
@@ -515,7 +525,7 @@ obj cloak "бархатный плащ,плащ" : clothing
   scored = false
   description = "Хороший плащ из черного бархата..."
 
-  before Drop, PutOn
+  before Drop, PutOn =
     if here == cloakroom
       bar:attr light
       if event == PutOn and not s.scored
@@ -526,11 +536,11 @@ obj cloak "бархатный плащ,плащ" : clothing
       "Не самое подходящее место для того, чтобы оставлять одежду."
       stop
 
-  after Take
+  after Take =
     bar:attr ~light
     pass
 
-  after PutOn(s, w)
+  after PutOn(s, w) =
     if w != hook
       pass
     "Ты повесил плащ на крючок."
@@ -541,14 +551,14 @@ ending badend
 
 ending goodend
   title = "Вы выиграли"
-  dsc
+  dsc =
     "Ваш счет: {score}"
 ```
 
 Фрагмент из `data/games/2038/mise/game.mise`:
 
 ```mise
-fn flash
+fn flash()
   flashed = true
   power_out = true
   meddoor:attr ~open
@@ -557,17 +567,14 @@ fn flash
   move shleif medtable
   walkin flash_story
 
-class Bioscan : static
+class Bioscan ["биометрический датчик,датчик", "окуляр,огонёк"] : static
   door = none
-  words
-    - "биометрический датчик,датчик"
-    - "окуляр,огонёк"
   dsc = "Рядом с дверью установлен биометрический датчик."
-  description
+  description =
     "Биометрический датчик с встроенным окуляром."
     if s.door:has locked
       "Датчик светится красным огоньком."
-  on Use, Search
+  on Use, Search =
     "Ты смотришь в окуляр."
     if s.door:has locked
       "Через секунду ты слышишь щелчок замка."
@@ -576,7 +583,7 @@ class Bioscan : static
 
 talk geia_talk
   call_empty = true
-  intro
+  intro =
     "Вызов..."
     here.call_empty = true
     if empty
@@ -588,11 +595,11 @@ talk geia_talk
     "... Алексей... Лёша... Ты сошёл с ума. Не слушай Аргуса!"
     raise_tension 6
 
-  * [know_capsule and tension < 2 and not s:ack] "Почему я оказался в спасательной капсуле?"
-    "... Это для твоей безопасности."
-    s:geia_topic 1
+  * [know_stasis and tension < 5 and s:not_ack] "Я всё знаю про стазис! Но что со мной?"
+    "... Алексей! Аргус совсем запудрил тебе мозги."
+    geia_topic s 4
 
-  + "Конец связи"
+  * [not here.call_empty] "Конец связи."
     walkout
 ```
 
@@ -625,6 +632,8 @@ STRING    ::= '"' { <char> | "{" expr "}" | "\" <esc> } '"'
 
 file      ::= { top_item NEWLINE }
 
+(* `include` подключает mise-файл (`stdlib`), `require` — Lua-модуль движка,
+   `fmt` — модуль форматирования; у каждого своя семантика *)
 top_item  ::= header_decl | "lang" IDENT | ("include" | "require" | "fmt") ident_list
             | type_decl | events_decl | "extend" "events" events_block
             | entry_decl | extern_decl | vars_decl | fn_decl
@@ -643,7 +652,7 @@ ident_list  ::= IDENT { "," IDENT }
 type_decl   ::= [ "extend" ] "type" IDENT "=" [ "[" ] [ "~" ] enum_item
                 { "," enum_item } [ "," ] [ "]" ]
 
-enum_item   ::= IDENT | NUMBER
+enum_item   ::= IDENT | NUMBER | "~"              (* `~` — отрицающее значение *)
 
 (* Аргументы события — то, что получает обработчик на самом объекте после `s`;
    пустой список означает «только `s`» *)
@@ -734,10 +743,9 @@ handler_decl ::= phase event_list [ "(" [ ident_list ] ")" ] "=" handler_body
 phase        ::= "on" | "before" | "after" | "post" | "life"
 event_list   ::= IDENT { "," IDENT }
 
-handler_body ::= STRING                              (* before Take "Нельзя!" *)
+handler_body ::= value                               (* before Take = "Нельзя!" *)
                | "pass"
                | "stop"
-               | "&" IDENT                           (* before Take &on_take *)
                | stmt_block
 
 (* `event X` регистрирует событие и разворачивается в `impl mp : X` *)
@@ -885,7 +893,8 @@ app_expr ::= postfix_expr [ ":" IDENT { arg_atom } | arg_atom { arg_atom } ]
    Обратите внимание: поскольку в `s:once` есть двоеточие `:`, парсер **сразу по синтаксису** знает, что это вызов `once(s)`, даже без `()` на конце!
 4. **Отрицание и сравнения без скобок:**
    - `if not s:once and not w:has light and where player == armchair`
-   Так как `app_expr` связывает сильнее, чем `not`, а `not` сильнее, чем `==`, и `==` сильнее, чем `and`, это выражение разбирается в дерево:
+   Так как `app_expr` связывает сильнее сравнений, сравнения — сильнее `not`,
+   а `not` — сильнее `and` (см. таблицу в идее 2), это выражение разбирается в дерево:
    `And(And(Not(Call(once, [s])), Not(Call(has, [w, light]))), Eq(Call(where, [player]), armchair))`
    **Вообще без скобок и вообще без таблиц типов на этапе парсинга!**
 
@@ -900,7 +909,7 @@ app_expr ::= postfix_expr [ ":" IDENT { arg_atom } | arg_atom { arg_atom } ]
 | **Парсер**          | рекурсивный спуск с приоритетами (~1060 строк на весь язык, включая все объявления); правило аппликации — `app_expr` |
 | **Вывод текста**    | строка в позиции инструкции → `p(...)`, интерполяция `"Счёт: {score}"` → `p("Счёт: ", score)`                        |
 | **API движка**      | `extern fn` / `extern value` / `extern global` с шаблонами `$1`, `$2`                                                |
-| **Диалоги**         | компактные `* [cond] "Вопрос"` / `+ "Вопрос"`, транслируются в `phr`                                                 |
+| **Диалоги**         | компактные `* [cond] "Вопрос"` / `+ "Вопрос"`; поля ветки объявлены как `class choice`, эмиттер переводит их в `phr` |
 
 Текущие размеры: `lexer.py` 184, `ast_nodes.py` 292, `parser.py` 1064,
 `checker.py` 1636, `emitter.py` 606 строк Python; `core.mise` 248,
