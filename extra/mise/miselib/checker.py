@@ -1063,15 +1063,25 @@ def _objectish(ctx: Context, t: str) -> bool:
 
 
 def _fields_of(ctx: Context, holder: str) -> Dict[str, Tuple[str, bool]]:
-    """Fields known for a holder: its own and inherited, plus (for a class) its instances."""
+    """Fields known for a holder: its own and inherited, plus (for a class) its
+    instances and descendants. Conflicting declarations of one name collapse to
+    `any` — that is the dynamic ("duck typing") case."""
     allowed = dict(ctx.fields.get(holder, {}))
-    if holder in ctx.classes:
-        for name, kind in ctx.objects.items():
-            if kind == holder or _inherits(ctx, kind, holder):
-                allowed.update(ctx.fields.get(name, {}))
-        for cname in ctx.classes:
-            if _inherits(ctx, cname, holder):
-                allowed.update(ctx.fields.get(cname, {}))
+    if holder not in ctx.classes:
+        return allowed
+    others = []
+    for name, kind in ctx.objects.items():
+        if kind == holder or _inherits(ctx, kind, holder):
+            others.append(ctx.fields.get(name, {}))
+    for cname in ctx.classes:
+        if _inherits(ctx, cname, holder):
+            others.append(ctx.fields.get(cname, {}))
+    for fmap in others:
+        for k, v in fmap.items():
+            if k not in allowed:
+                allowed[k] = v
+            elif allowed[k][0] != v[0]:
+                allowed[k] = ("any", False)     # seen with different types: dynamic
     return allowed
 
 
@@ -1110,16 +1120,15 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, str],
     if name.startswith("__"):
         return
     holder = _owner_of(ctx, target, env, owner)
-    declared = ctx.fields.get(holder, {}) if holder else {}
-    if name in declared:
-        ft, is_ref = declared[name]
+    spec = _fields_of(ctx, holder).get(name) if holder else None
+    if spec is not None:
+        ft, is_ref = spec
         if ft != "any":
             expect(ctx, f"{name}", _root(ctx) if (is_ref and vt == "obj") else vt, ft, line)
         return
     if holder is not None and not name.startswith("__"):
-        if name not in _fields_of(ctx, holder):
-            raise Error(f"{holder}.{name}: no such field "
-                        f"(nothing declares it for {holder}; use __{name} for a dynamic value)", line)
+        raise Error(f"{holder}.{name}: no such field "
+                    f"(nothing declares it for {holder}; use __{name} for a dynamic value)", line)
     if name not in ctx.field_names and name not in ctx.ref_fields:
         raise Error(f"unknown field {name!r} (use __{name} for dynamic values)", line)
 
@@ -1316,10 +1325,13 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, str],
         e.is_ref, e.typ = True, _root(ctx)
         return _root(ctx)
     if holder is not None and not e.field.startswith("__"):
-        if e.field not in _fields_of(ctx, holder):
+        spec = _fields_of(ctx, holder).get(e.field)
+        if spec is None:
             raise Error(f"{holder}.{e.field}: no such field "
                         f"(nothing declares it for {holder}; use __{e.field} for a dynamic value)",
                         e.line)
+        e.is_ref, e.typ = spec[1], spec[0]
+        return spec[0]
     if e.field in ctx.field_names:
         e.typ = "any"
         return "any"
