@@ -702,6 +702,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         where = f"{owner}.{p.name}" if owner else p.name
         declared = _decl_type(ctx, kind, p.name) if kind else None
         if isinstance(p.value, FnRef):
+            _check_fn_target(ctx, p.value)
             ctx.used_refs.add(p.value.name)
         elif isinstance(p.value, list):
             env = _prop_body_env(ctx, kind, p)
@@ -728,6 +729,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         _check_handler_events(ctx, h, owner or kind)
         params, arg_names = _handler_params(ctx, owner, kind, h)
         if isinstance(h.body, FnRef):
+            _check_fn_target(ctx, h.body)
             ctx.used_refs.add(h.body.name)
             sig = "fn(" + ",".join(t for _n, t in params) + ")"
             _check_fnref(ctx, h.body, sig, f"{owner or kind}: {h.phase} {','.join(h.events)}")
@@ -806,6 +808,7 @@ CHOICE_FIELDS = ("ask", "reply", "do", "onempty")
 def _check_talk_body(ctx: Context, part: Any, env: Dict[str, str], owner: str,
                      want: Optional[str] = None, where: str = "", line: int = 0):
     if isinstance(part, FnRef):
+        _check_fn_target(ctx, part)
         ctx.used_refs.add(part.name)
     elif isinstance(part, list):
         rets: List[str] = []
@@ -1081,6 +1084,24 @@ def _sig_str(fn: FnDecl) -> str:
     return got + ("->" + ",".join(fn.ret_types) if fn.ret_types else "")
 
 
+def _check_fn_target(ctx: Context, ref: FnRef):
+    """A `&name` must name a real function.
+
+    An extern is a macro: it is substituted at the call site and never emitted,
+    so `&has` would produce a reference to a nonexistent `fn_has` and fail at
+    the first call. A plain `lua` function is a real value and stays allowed.
+    """
+    fn = ctx.fns.get(ref.name)
+    if fn is None:
+        if ref.name in ctx.lua_funcs:
+            return
+        raise Error(f"&{ref.name}: unknown function "
+                    f"(declare it with `fn` or in a `lua` block)", ref.line)
+    if fn.is_extern:
+        raise Error(f"&{ref.name}: an extern is a macro, it has no function value "
+                    f"(call it directly, or write a `fn` wrapper)", ref.line)
+
+
 def _check_fnref(ctx: Context, ref: FnRef, expected: Optional[str], where: str):
     """Check a `&name` reference against the callback signature expected there."""
     fn = ctx.fns.get(ref.name)
@@ -1281,9 +1302,8 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         e.typ = "bool"
         return "bool"
     if isinstance(e, FnRef):
+        _check_fn_target(ctx, e)
         ctx.used_refs.add(e.name)
-        if e.name not in ctx.fns and e.name not in ctx.lua_funcs:
-            raise Error(f"unknown function {e.name!r} in a function reference", e.line)
         _check_fnref(ctx, e, expected, _kind_name(e))
         e.typ = "fn"
         return "fn"
