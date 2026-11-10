@@ -303,6 +303,7 @@ def prescan(prog: Program) -> Context:
                     ctx.ref_fields.add(p.name)
 
     def register_entity(ent: EntityDecl):
+        _check_override(ctx, ent)      # before mixin traits are inlined into the entity
         if ent.kind == "impl" and ent.name == "mp":
             ctx.event_names.update(ent.traits)
         # Expand traits that refer to classes/mixins with bodies
@@ -419,7 +420,6 @@ def prescan(prog: Program) -> Context:
     for item in prog.items:
         if isinstance(item, EntityDecl):
             _check_refs(ctx, item)
-            _check_override(ctx, item)
         elif isinstance(item, VarDecl):
             for vn, ve, vl in item.items:
                 _check_var_ref(ctx, vn, ve, vl)
@@ -1434,20 +1434,37 @@ def _value_types(ctx: Context, values: List[Expr], env: Dict[str, str],
     return res
 
 
+def _class_methods(ctx: Context, cls: str) -> Dict[str, Prop]:
+    """Fields a class (and its ancestors) declare as functions."""
+    methods: Dict[str, Prop] = {}
+    cur, seen = cls, set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        cdecl = ctx.class_decls.get(cur)
+        if cdecl is not None:
+            for p in cdecl.props:
+                if isinstance(p.value, (list, FnRef)) \
+                        or (isinstance(p.value, Lit) and p.value.kind == "lua"):
+                    methods.setdefault(p.name, p)
+        cur = ctx.classes.get(cur)
+    return methods
+
+
 def _check_override(ctx: Context, ent: EntityDecl):
     """An instance must not replace a class method with a plain value (STEAD3 crashes)."""
-    base = ent.kind if ent.kind not in ("class", "impl") else None
-    cdecl = ctx.class_decls.get(base) if base else None
-    if cdecl is None:
+    if ent.kind == "impl" or ent.name is None:
         return
-    methods = {}
-    for p in cdecl.props:
-        if isinstance(p.value, (list, FnRef)) or (isinstance(p.value, Lit) and p.value.kind == "lua"):
-            methods[p.name] = p
+    bases = ([ent.kind] if ent.kind != "class" else []) + list(ent.traits)
+    if ent.kind == "class" and ent.parent:
+        bases.append(ent.parent)
+    methods: Dict[str, Prop] = {}
+    for base in bases:
+        methods.update(_class_methods(ctx, base))
     for p in ent.props:
         if p.name in methods and p.value is not None \
                 and not isinstance(p.value, (list, FnRef)) \
                 and not (isinstance(p.value, Lit) and p.value.kind == "lua"):
+            base = next(b for b in bases if p.name in _class_methods(ctx, b))
             raise Error(
                 f"{ent.name}.{p.name}: cannot overwrite the method of class {base!r} with a value "
                 f"(use a block, `&fn` or `impl {ent.name}`)", p.line)

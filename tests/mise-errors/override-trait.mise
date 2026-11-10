@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+class Thing
+  description =
+    say "x"
+
+obj item "вещь" : Thing
+  description = "текст"

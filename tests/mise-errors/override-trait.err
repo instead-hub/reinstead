@@ -1,0 +1,1 @@
+mise: line 10: item.description: cannot overwrite the method of class 'Thing' with a value (use a block, `&fn` or `impl item`)
