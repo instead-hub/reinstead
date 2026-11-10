@@ -22,7 +22,7 @@ class Expr:
 
 @dataclass
 class Lit(Expr):
-    kind: str = "nil"          # "num", "bool", "str", "nil", "raw"
+    kind: str = "nil"          # "num", "bool", "str", "nil", "raw" (backtick), "lua" (block), "table" ({...})
     val: Any = None
 
 @dataclass
@@ -32,7 +32,9 @@ class InterpStr(Expr):
 @dataclass
 class Sym(Expr):
     name: str = ""
-    rk: str = ""               # "var","obj","enum","event","prop","fn0","global","global_ref","none"
+    # how the name is emitted; filled by the checker:
+    #   "var" | "obj" | "enum" | "event" | "global" | "global_ref" | "lua_global" | "fn0" (call) | "value"
+    rk: str = ""
 
 @dataclass
 class FnRef(Expr):
@@ -183,7 +185,6 @@ class EntityDecl:
     props: List[Prop] = field(default_factory=list)
     handlers: List[Handler] = field(default_factory=list)
     children: List["EntityDecl"] = field(default_factory=list)
-    with_refs: List[str] = field(default_factory=list)   # unused: `with` is a field now
     line: int = 0
     src: str = ""
 
@@ -229,7 +230,6 @@ class TypeDecl:
     values: List[str] = field(default_factory=list)
     negate: bool = False
     extend: bool = False
-    event_sigs: List[Tuple[bool, List[str], List[str]]] = field(default_factory=list)
     line: int = 0
 
 @dataclass
