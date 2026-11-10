@@ -8,12 +8,6 @@ extend type attr = seen
 
 class Tree : scenery
 
-fn is_lit(w: obj) -> bool
-  return w:has light
-
-fn mark(w: obj)
-  w:attr seen
-
 fn run(f: fn(w: obj) -> bool) -> bool
   return f box
 
@@ -29,10 +23,10 @@ fn total(n: num) -> num
 
 obj box "коробка"
   on Take =
-    if run &is_lit
+    if run &(w) w:has light
       [[светло]]
-    for_plural s &mark
-    each (inv) &mark
+    for_plural s &(w) w:attr seen
+    each (inv) &(w) w:attr seen
     if total 3 > 0
       pass
 

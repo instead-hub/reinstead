@@ -804,11 +804,11 @@ class Parser:
         if self.match("OP", ":"):
             m = self.eat("IDENT").val
             args = self._app_args()
-            self.eat_nl()
+            self.skip_nl()          # a block-bodied lambda already consumed it
             return CallStmt(line=line, call=Call(line=line, func=m, receiver=lhs, args=args))
         if isinstance(lhs, Sym):
             args = self._app_args()
-            self.eat_nl()
+            self.skip_nl()
             return CallStmt(line=line, call=Call(line=line, func=lhs.name, args=args))
         raise Error("expected statement", line, self.src)
 
@@ -942,7 +942,10 @@ class Parser:
         """Arguments of one call: atoms up to the next operator or end of line."""
         args = []
         while self._can_start_arg():
-            args.append(self.parse_postfix())
+            arg = self.parse_postfix()
+            args.append(arg)
+            if isinstance(arg, Lambda) and isinstance(arg.body, list):
+                break               # a block-bodied lambda closes the argument list
         return args
 
     def _can_start_arg(self) -> bool:
@@ -969,6 +972,23 @@ class Parser:
                 break
         return atom
 
+    def _parse_lambda(self) -> Expr:
+        line = self.eat("OP", "&").line
+        self.eat("OP", "(")
+        params: List[Tuple[str, Optional[str]]] = []
+        while not self.at("OP", ")") and not self.at("EOF"):
+            pn = self.eat("IDENT").val
+            pt = self._parse_type_str() if self.match("OP", ":") else None
+            params.append((pn, pt))
+            if not self.match("OP", ","):
+                break
+        self.eat("OP", ")")
+        if self.at("NEWLINE"):
+            body: Any = self.parse_stmt_block()
+        else:
+            body = self.parse_expr()
+        return Lambda(line=line, params=params, body=body)
+
     def parse_primary(self) -> Expr:
         t = self.cur()
         if t.kind == "NUMBER":
@@ -989,6 +1009,8 @@ class Parser:
         if t.kind in ("TAG", "TILDE_ID"):
             self.pos += 1
             return Sym(line=t.line, name=t.val)
+        if self.at("OP", "&") and self.peek().val == "(":
+            return self._parse_lambda()
         if self.match("OP", "&"):
             return FnRef(line=t.line, name=self.eat("IDENT").val)
         if self.match("OP", "("):

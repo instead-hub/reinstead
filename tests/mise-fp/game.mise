@@ -8,15 +8,12 @@ extend type attr = seen
 
 class Tree : scenery
 
-fn mark(w: obj)
-  w:attr seen
-
 Tree tree "дерево"
 
 impl tree
   before Take =
-    for_plural s &mark
-    trace s &mark
+    for_plural s &(w) w:attr seen
+    trace s &(w) w:attr seen
     if s:isa Tree
       [[дерево]]
 

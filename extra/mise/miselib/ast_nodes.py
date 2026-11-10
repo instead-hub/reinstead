@@ -65,6 +65,12 @@ class BinOp(Expr):
     right: Expr = field(default_factory=Expr)
 
 @dataclass
+class Lambda(Expr):
+    """`&(w) expr` / `&(w) <block>` — an anonymous function."""
+    params: List[Tuple[str, Optional[str]]] = field(default_factory=list)
+    body: Any = None                       # Expr or List[Stmt]
+
+@dataclass
 class Bind(Expr):
     """`x := expr` / `a, b := expr` — a binding condition (`if`/`elseif`)."""
     names: List[str] = field(default_factory=list)

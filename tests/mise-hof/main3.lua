@@ -38,14 +38,6 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_is_lit(w)
-  return w:has("light")
-end
-
-local function fn_mark(w)
-  w:attr("seen")
-end
-
 local function fn_run(f)
   return f(_'box')
 end
@@ -106,11 +98,11 @@ obj {
   -"коробка";
   nam = "box";
   Take = function(s, w, wh)
-    if fn_run(fn_is_lit) then
+    if fn_run(function(w) return w:has("light") end) then
       p "светло"
     end
-    s:for_plural(fn_mark)
-    fn_each(inv(), fn_mark)
+    s:for_plural(function(w) return w:attr("seen") end)
+    fn_each(inv(), function(w) return w:attr("seen") end)
     if fn_total(3) > 0 then
       return false
     end

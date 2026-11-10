@@ -1112,6 +1112,32 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
                 _check_expr(ctx, p, env, owner, "str")
         e.typ = "str"
         return "str"
+    if isinstance(e, Lambda):
+        fparts = _fn_parts(expected) if expected else None
+        eparams, erets = fparts if fparts else ([], [])
+        if eparams and len(e.params) > len(eparams):
+            raise TypeCheckError(f"&(…): the callback passes {len(eparams)} argument(s), "
+                                 f"the lambda takes {len(e.params)}", e.line)
+        env2 = dict(env)
+        ptypes: List[str] = []
+        for i, (pn, pt) in enumerate(e.params):
+            ept = eparams[i] if i < len(eparams) else None
+            if pt is None:
+                if not ept:
+                    raise TypeCheckError(
+                        f"&({pn}): annotate the parameter type (`&({pn}: obj)`)", e.line)
+                pt = ept
+            elif ept and pt != "any" and not is_subtype(ctx, ept, pt):
+                raise TypeCheckError(f"&({pn}): the callback passes {ept}, "
+                                     f"the lambda declares {pt}", e.line)
+            env2[pn] = pt
+            ptypes.append(pt)
+        if isinstance(e.body, list):
+            _check_stmts(ctx, e.body, env2, owner, erets or None)
+        else:
+            _check_expr(ctx, e.body, env2, owner, erets[0] if erets else None)
+        e.typ = "fn(" + ",".join(ptypes) + ")" + (("->" + ",".join(erets)) if erets else "")
+        return e.typ
     if isinstance(e, Bind):
         vt = _value_types(ctx, [e.value], env, owner)
         e.vtyp = vt[0] if vt else "any"

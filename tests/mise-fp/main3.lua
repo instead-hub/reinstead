@@ -38,10 +38,6 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_mark(w)
-  w:attr("seen")
-end
-
 obj {
   nam = "none";
 }
@@ -86,8 +82,8 @@ Tree {
 }
 
 _'tree'.before_Take = function(s, w, wh)
-  s:for_plural(fn_mark)
-  mp:trace(s, fn_mark)
+  s:for_plural(function(w) return w:attr("seen") end)
+  mp:trace(s, function(w) return w:attr("seen") end)
   if (((function(o) local m = getmetatable(s) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G["Tree"]))) then
     p "дерево"
   end

@@ -548,6 +548,12 @@ class Emitter:
         if isinstance(e, UnaryOp):
             in_s = f"({self._expr(e.operand)})" if isinstance(e.operand, BinOp) else self._expr(e.operand)
             return f"not {in_s}" if e.op == "not" else f"-{in_s}"
+        if isinstance(e, Lambda):
+            prms = ", ".join(pn for pn, _t in e.params)
+            if isinstance(e.body, list):
+                b = _ind(self._stmts(e.body), 2)
+                return f"function({prms})\n{b}\nend" if b.strip() else f"function({prms}) end"
+            return f"function({prms}) return {self._expr(e.body)} end"
         if isinstance(e, InOp):
             return self._in_op(e, as_lhs)
         if isinstance(e, BinOp):
