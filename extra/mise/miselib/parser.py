@@ -374,9 +374,7 @@ class Parser:
                     raise Error(f"bad field name {kw + ' ' + self.peek().val!r} "
                                 f"(did you mean {near[0] + ' ' + self.peek().val!r}?)",
                                 t.line, self.src)
-            if kw == "var" and self.peek().kind == "IDENT":
-                self.pos += 1
-            elif self._is_nested_entity():
+            if self._is_nested_entity():
                 ent.children.append(self._parse_entity())
                 continue
             pname = self.eat("IDENT").val
@@ -785,7 +783,7 @@ class Parser:
                     if not self.match("OP", ","):
                         break
                 vals = self.parse_expr_list() if self.match("OP", "=") else []
-                self.eat_nl()
+                self.skip_nl()      # a block-bodied lambda already consumed it
                 return LocalStmt(line=line, names=names, values=vals)
             if kw == "if":
                 return self._parse_if()
@@ -798,7 +796,7 @@ class Parser:
         if self.cur().kind == "OP" and self.cur().val in ("=", "+=", "-="):
             op = self.eat("OP").val
             vals = self.parse_expr_list()
-            self.eat_nl()
+            self.skip_nl()          # a block-bodied lambda already consumed it
             return AssignStmt(line=line, target=lhs, op=op, values=vals)
 
         if self.match("OP", ":"):

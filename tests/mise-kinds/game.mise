@@ -162,8 +162,8 @@ impl key
 
 impl game
   dict = { ["зал/вн"] = "зал" }
-  var game_time = 0
-  var game_look = 2
+  game_time = 0
+  game_look = 2
 
 # --- тестовая комната: транскрипт должен что-то видеть ---
 
