@@ -73,8 +73,6 @@ class room(obj) = room
   next_to: ref | fn(obj) -> ref
 
 class door(obj) = door
-  from: ref
-  to: ref
   door_to: ref | fn(obj) -> ref
 
 class story(room) = cutscene

@@ -58,7 +58,7 @@ room hall "зал"
   dsc = "Большой зал."
   room_note = 1
   obj_note = 2
-  dict = { "зал" }
+  dict = { ["зал/вн"] = "зал" }
   with = sky
   on Enter =
     [[Вы вошли.]]
@@ -102,8 +102,6 @@ room hall "зал"
 door gate "ворота"
 
 Door gate2 "калитка"
-  from = hall
-  to = garden
   door_to =
     return hall
 
@@ -151,8 +149,7 @@ verb Probe
   tag = #Probe
   words = "пробовать"
   prio = 10
-  hint =
-    [[Подсказка.]]
+  hint = "Подсказка."
   patterns = ["{noun}/вн : Probe"]
 impl Ghost
   disabled = false
@@ -165,8 +162,8 @@ impl key
 
 impl game
   dict = { ["зал/вн"] = "зал" }
-  var time = 0
-  var Look = 2
+  var game_time = 0
+  var game_look = 2
 
 # --- тестовая комната: транскрипт должен что-то видеть ---
 

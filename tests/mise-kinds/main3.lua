@@ -183,7 +183,7 @@ room {
   after_Turn = function(s, w, wh)
     p "Повернулись."
   end;
-}:dict { "зал" }:with{ 'sky' }
+}:dict { ["зал/вн"] = "зал" }:with{ 'sky' }
 
 door {
   -"ворота";
@@ -193,8 +193,6 @@ door {
 Door {
   -"калитка";
   nam = "gate2";
-  from = 'hall';
-  to = 'garden';
   door_to = function(s)
     return _'hall'
   end;
@@ -268,9 +266,7 @@ obj {
   capacity = 2;
 }:attr 'lockable,locked'
 
-Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 10, hint = function(s)
-  p "Подсказка."
-end }
+Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 10, hint = "Подсказка." }
 
 Ghost:enable()
 
@@ -279,8 +275,8 @@ _'relic':disable()
 _'key':enable()
 
 _'game':dict { ["зал/вн"] = "зал" }
-_'game'.time = 0;
-_'game'.Look = 2;
+_'game'.game_time = 0;
+_'game'.game_look = 2;
 
 room {
   -"тестовая комната";

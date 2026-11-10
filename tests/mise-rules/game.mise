@@ -9,6 +9,7 @@ impl mp : Any
     match ev
       Walk when w ->
         w:has door
+    pass
   on Any =
     match ev
       Exam when w ->
@@ -16,6 +17,7 @@ impl mp : Any
           [[осмотр декорации]]
       Wear ->
         [[надели]]
+    pass                       # без pass обработчик Any съедает все действия
 
 fn by_number(n: num) -> str
   match n

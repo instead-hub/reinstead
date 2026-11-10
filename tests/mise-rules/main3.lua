@@ -94,6 +94,7 @@ mp.before_Any = function(s, ev, w, wh)
       w:has("door")
     end
   end
+  return false
 end;
 mp.Any = function(s, ev, w, wh)
   do
@@ -106,6 +107,7 @@ mp.Any = function(s, ev, w, wh)
       p "надели"
     end
   end
+  return false
 end;
 
 mp.Default = "нет обработчика";
