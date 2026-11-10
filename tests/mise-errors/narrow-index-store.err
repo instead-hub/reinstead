@@ -1,0 +1,1 @@
+mise: line 9: t[…]: possible nil, narrow it first (`if t[…]:`)

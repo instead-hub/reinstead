@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(w: obj?)
+  if w:has light and w
+    pass

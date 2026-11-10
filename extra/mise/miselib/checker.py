@@ -150,6 +150,8 @@ def _kind_name(expr: Expr) -> str:
         return str(expr.val)
     if isinstance(expr, FieldAccess):
         return f"{_kind_name(expr.obj)}.{expr.field}"
+    if isinstance(expr, IndexAccess):
+        return f"{_kind_name(expr.obj)}[…]"
     if isinstance(expr, Call):
         recv = f"{_kind_name(expr.receiver)}:" if expr.receiver is not None else ""
         return f"{recv}{expr.func or 'call'}()"
@@ -820,6 +822,20 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, str], truthy: bool,
             res[cond.name] = "nil"
     elif isinstance(cond, UnaryOp) and cond.op == "not":
         return _narrow(ctx, cond.operand, env, not truthy, arg_names)
+    elif isinstance(cond, InOp):
+        # `ev in Ask, Tell` narrows the event arguments to what all alternatives share
+        if truthy and isinstance(cond.subject, Sym) and (
+                cond.subject.name in CURRENT_EVENT
+                or res.get(cond.subject.name, "").rstrip("?") == "event"):
+            alts = [ctx.event_args.get(a.name) or [] for a in cond.alts if isinstance(a, Sym)]
+            if alts and arg_names:
+                for i in range(max(len(a) for a in alts)):
+                    types = [a[i] for a in alts if i < len(a)]
+                    name = arg_names.get(i)
+                    if types and name and name in res:
+                        res[name] = canon_type("|".join(types))
+            return res
+        return res
     elif isinstance(cond, BinOp):
         if cond.op == "and":
             if truthy:  # both sides hold

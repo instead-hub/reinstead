@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+
+fn f(s: obj)
+  local t = inv
+  t[1].dsc = "x"
