@@ -217,8 +217,7 @@ impl armchair
       "окном."
     pass
   before Push, Pull =
-    local loc = where player
-    if loc
+    if loc := where player
       if loc != Drawing_Room
         say 'Для начала необходимо покинуть ' (loc:noun вн) '.'
         stop
@@ -384,8 +383,7 @@ impl Kitten
     say (s:Noun 1) ', выскользнув из рук Алисы, убежал прочь.'
   after Transfer, PutOn, Insert =
     s.state = CHAIR_STATE
-    local p = where s
-    if p
+    if p := where s
       append (s:Noun 1) ', спрыгнув с ' (p:noun рд)
     s:move Drawing_Room
     ', ловко приземлился на полу и убежал прочь.'

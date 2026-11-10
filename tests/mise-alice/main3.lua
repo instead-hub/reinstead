@@ -353,11 +353,13 @@ _'armchair'.description = function(s)
   return false
 end;
 _'armchair'["before_Push,Pull"] = function(s, w, wh)
-  local loc = where(me())
-  if loc then
-    if loc ~= _'Drawing_Room' then
-      p("Для начала необходимо покинуть ", loc:noun_hint("вн"), ".")
-      return
+  do
+    local loc = where(me())
+    if loc then
+      if loc ~= _'Drawing_Room' then
+        p("Для начала необходимо покинуть ", loc:noun_hint("вн"), ".")
+        return
+      end
     end
   end
   if have(_'white_kitten') or have(_'black_kitten') then
@@ -657,9 +659,11 @@ Kitten.after_Drop = function(s, w, wh)
 end;
 Kitten["after_Transfer,PutOn,Insert"] = function(s, w, wh)
   s.state = CHAIR_STATE
-  local p = where(s)
-  if p then
-    pr(s:Noun_hint(1), ", спрыгнув с ", p:noun_hint("рд"))
+  do
+    local p = where(s)
+    if p then
+      pr(s:Noun_hint(1), ", спрыгнув с ", p:noun_hint("рд"))
+    end
   end
   move(s, _'Drawing_Room')
   p ", ловко приземлился на полу и убежал прочь."

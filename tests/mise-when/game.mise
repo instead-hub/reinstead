@@ -18,8 +18,7 @@ fn pick(s: obj) -> str
 
 obj box "коробка"
   on Take =
-    local o = seen 'box'
-    if o
+    if o := seen 'box'
       o:attr seen
       say (pick s)
     else

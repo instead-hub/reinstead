@@ -90,12 +90,14 @@ obj {
   -"коробка";
   nam = "box";
   Take = function(s, w, wh)
-    local o = seen("box")
-    if o then
-      o:attr("seen")
-      p(fn_pick(s))
-    else
-      p "не видно"
+    do
+      local o = seen("box")
+      if o then
+        o:attr("seen")
+        p(fn_pick(s))
+      else
+        p "не видно"
+      end
     end
   end;
 }

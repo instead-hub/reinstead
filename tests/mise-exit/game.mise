@@ -14,8 +14,7 @@ fn exit(s: obj, d: direction?) -> obj?
 room r "комната"
   n_to = q
   dsc =
-    local e = exit (here) n_to
-    if e
+    if e := exit (here) n_to
       say (e:noun вн)
 
 room q "зал"
