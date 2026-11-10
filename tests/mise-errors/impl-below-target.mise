@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+impl item
+  before Take = "нельзя"
+
+obj item "вещь"
