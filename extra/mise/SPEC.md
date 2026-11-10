@@ -227,6 +227,21 @@ before Any(s, ev, w)
 - имя события в ключе (`on`/`before`/`after`/`post`/`life`) должно быть объявлено; опечатка получает подсказку `did you mean 'Open'?`;
 - опечатка в фазе (`befor Open`) сообщается как `bad field name ... (did you mean 'before Open'?)`.
 
+**Принадлежность множеству**: `in` — оператор-предикат (сравнение с любым из
+вариантов), `not in` — его отрицание. Субъект вычисляется один раз, если это
+вызов (`(function(c) … end)(subj)`), и дублируется, если это простое значение.
+
+```mise
+if ev in Ask, Tell
+  say "вопрос"
+if where player not in mantelpiece, armchair
+  say "в другом месте"
+match ev                 # диспетчер: альтернативы + guard + `_`
+  Ask, Tell -> …
+  Cut when w -> …
+  _ -> …
+```
+
 **События** — отдельное объявление, не особая форма `type`:
 
 ```mise

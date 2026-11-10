@@ -9,7 +9,7 @@ META_KEYS = frozenset({"game", "name", "version", "author", "info"})
 # core.mise, and a declaration is recognised by its shape (`Kind name`).
 STMT_KWS = frozenset({
     "if", "elseif", "else", "when", "default", "match", "for", "in", "of",
-    "local", "return", "stop", "pass", "break", "and", "or", "not", "then",
+    "local", "return", "stop", "pass", "break", "and", "or", "not", "in", "then",
 })
 _BIN_PREC = {
     "or": 1, "and": 2,
@@ -875,9 +875,31 @@ class Parser:
         return res
 
     def parse_expr(self, min_prec: int = 1) -> Expr:
-        left = self.parse_unary()
+        # `not` binds looser than comparisons (as in Python): `not x in a, b`
+        if min_prec <= _BIN_PREC["=="] and self.match("IDENT", "not"):
+            line = self.tokens[self.pos - 1].line
+            left = UnaryOp(line=line, op="not", operand=self.parse_expr(_BIN_PREC["=="]))
+        else:
+            left = self.parse_unary()
         while True:
             t = self.cur()
+            if t.kind == "IDENT" and t.val == "not" and self.peek().val == "in" \
+                    and min_prec <= _BIN_PREC["=="]:
+                # `x not in a, b` — the negated membership operator
+                self.pos += 2
+                alts = [self.parse_expr(_BIN_PREC["=="] + 1)]
+                while self.match("OP", ","):
+                    alts.append(self.parse_expr(_BIN_PREC["=="] + 1))
+                left = UnaryOp(line=t.line, op="not",
+                               operand=InOp(line=t.line, subject=left, alts=alts))
+                continue
+            if t.kind == "IDENT" and t.val == "in" and min_prec <= _BIN_PREC["=="]:
+                self.pos += 1
+                alts = [self.parse_expr(_BIN_PREC["=="] + 1)]
+                while self.match("OP", ","):
+                    alts.append(self.parse_expr(_BIN_PREC["=="] + 1))
+                left = InOp(line=left.line, subject=left, alts=alts)
+                continue
             op = t.val if (t.kind == "OP" or (t.kind == "IDENT" and t.val in ("and", "or"))) else ""
             prec = _BIN_PREC.get(op, 0)
             if prec < min_prec:

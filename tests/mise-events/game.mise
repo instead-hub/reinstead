@@ -46,13 +46,14 @@ obj y "штука"
     else
       pass
   before Any =
-    if ev == Ask
-      say (text_of w)
-    elseif ev == Cut
-      if w
-        w:has scenery
-    else
-      pass
+    match ev
+      Ask ->
+        say (text_of w)
+      Cut ->
+        if w
+          w:has scenery
+      _ ->
+        pass
 
 obj z "штуковина"
   before AskFor = &reply_text

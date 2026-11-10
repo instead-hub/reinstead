@@ -1,4 +1,5 @@
 """Compact Lua (`main3.lua`) emitter for MISE 2."""
+MATCH_TMP = "__match"
 import re
 from typing import Any, List, Optional, Tuple
 from .ast_nodes import *
@@ -166,6 +167,32 @@ class Emitter:
             return f":{mname}{{ {', '.join(parts)} }}" if parts else ""
         args = [self._expr(it) for it in items]
         return f":{mname}({', '.join(args)})" if args else ""
+
+    def _pure(self, e: Expr) -> bool:
+        """Can this expression be evaluated twice without side effects?"""
+        if isinstance(e, Lit):
+            return True
+        if isinstance(e, Sym):
+            return e.rk not in ("fn0",)          # a bare fn name is a call
+        if isinstance(e, (FieldAccess, IndexAccess)):
+            return self._pure(e.obj) and (not isinstance(e, IndexAccess) or self._pure(e.index))
+        if isinstance(e, InterpStr):
+            return all(self._pure(x) if isinstance(x, Expr) else True for x in e.parts)
+        if isinstance(e, UnaryOp):
+            return self._pure(e.operand)
+        if isinstance(e, BinOp):
+            return self._pure(e.left) and self._pure(e.right)
+        return False
+
+    def _in_op(self, e: InOp, as_lhs: bool = False) -> str:
+        """`x in a, b` — compare once (a call subject is bound to a parameter)."""
+        subj = self._expr(e.subject)
+        chks = [f"{'c' if not self._pure(e.subject) else subj} == {self._expr(a)}"
+                for a in e.alts]
+        expr = " or ".join(chks) if chks else "false"
+        if self._pure(e.subject):
+            return f"({expr})"
+        return f"(function(c) return {expr} end)({subj})"
 
     def _prop_val(self, p: Prop, ent: Optional[EntityDecl] = None, ind: int = 0) -> str:
         v, pad = p.value, " " * ind
@@ -396,23 +423,30 @@ class Emitter:
             parts.append("end")
             return "\n".join(parts)
         if isinstance(s, MatchStmt):
+            # the subject is evaluated once; arms are `or`-chains (like `in`)
             subj = self._expr(s.subject)
-            parts, else_b = [], None
+            arms, else_b = [], None
             for pats, guard, body, _l in s.arms:
                 if len(pats) == 1 and isinstance(pats[0], Sym) and pats[0].name == "_" and not guard:
                     else_b = body
                     break
-                chks = [f"{subj} == {self._expr(p, s.subject.typ)}" for p in pats if not (isinstance(p, Sym) and p.name == "_")]
+                chks = [f"{MATCH_TMP} == {self._expr(p)}" for p in pats
+                        if not (isinstance(p, Sym) and p.name == "_")]
                 cstr = " or ".join(chks) if chks else "true"
                 if guard:
-                    cstr = f"({cstr}) and {self._expr(guard)}" if len(chks) > 1 else f"{cstr} and {self._expr(guard)}"
-                kw, b = ("if" if not parts else "elseif"), _ind(self._stmts(body), 2)
+                    cstr = f"({cstr}) and {self._expr(guard)}" if len(chks) > 1 \
+                        else f"{cstr} and {self._expr(guard)}"
+                arms.append((cstr, body))
+            parts = []
+            for i, (cstr, body) in enumerate(arms):
+                kw = "if" if i == 0 else "elseif"
+                b = _ind(self._stmts(body), 2)
                 parts.append(f"{kw} {cstr} then\n{b}" if b.strip() else f"{kw} {cstr} then")
             if else_b is not None:
                 eb = _ind(self._stmts(else_b), 2)
                 parts.append(f"else\n{eb}" if eb.strip() else "else")
             parts.append("end")
-            return "\n".join(parts)
+            return "do\n" + _ind(f"local {MATCH_TMP} = {subj}\n" + "\n".join(parts), 2) + "\nend"
         if isinstance(s, ForNumStmt):
             hdr = f"{s.var} = {self._expr(s.start)}, {self._expr(s.stop)}" + (f", {self._expr(s.step)}" if s.step else "")
             b = _ind(self._stmts(s.body), 2)
@@ -477,6 +511,8 @@ class Emitter:
         if isinstance(e, UnaryOp):
             in_s = f"({self._expr(e.operand)})" if isinstance(e.operand, BinOp) else self._expr(e.operand)
             return f"not {in_s}" if e.op == "not" else f"-{in_s}"
+        if isinstance(e, InOp):
+            return self._in_op(e, as_lhs)
         if isinstance(e, BinOp):
             op = "~=" if e.op == "!=" else e.op
             ls = self._expr(e.left)

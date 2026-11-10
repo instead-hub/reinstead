@@ -75,15 +75,23 @@ Path = Class {
 --"мочь"
 
 mp.before_Any = function(s, ev, w, wh)
-  if ev == "Walk" and w:has("door") then
-    p "дверь"
+  do
+    local __match = ev
+    if __match == "Walk" and w then
+      w:has("door")
+    end
   end
 end;
 mp.Any = function(s, ev, w, wh)
-  if ev == "Exam" and w:has("scenery") then
-    p "осмотр декорации"
-  elseif ev == "Wear" then
-    p "надели"
+  do
+    local __match = ev
+    if __match == "Exam" and w then
+      if w:has("scenery") then
+        p "осмотр декорации"
+      end
+    elseif __match == "Wear" then
+      p "надели"
+    end
   end
 end;
 

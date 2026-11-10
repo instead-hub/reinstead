@@ -6,13 +6,16 @@ include stdlib
 
 impl mp : Any
   before Any =
-    if ev == Walk and w:has door
-      [[дверь]]
+    match ev
+      Walk when w ->
+        w:has door
   on Any =
-    if ev == Exam and w:has scenery
-      [[осмотр декорации]]
-    elseif ev == Wear
-      [[надели]]
+    match ev
+      Exam when w ->
+        if w:has scenery
+          [[осмотр декорации]]
+      Wear ->
+        [[надели]]
 
 impl mp : Default
   on Default = [[нет обработчика]]

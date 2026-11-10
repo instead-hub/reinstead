@@ -65,6 +65,12 @@ class BinOp(Expr):
     right: Expr = field(default_factory=Expr)
 
 @dataclass
+class InOp(Expr):
+    """`x in a, b` — is x equal to any of the alternatives."""
+    subject: Expr = field(default_factory=Expr)
+    alts: List[Expr] = field(default_factory=list)
+
+@dataclass
 class Call(Expr):
     func: str = ""
     args: List[Expr] = field(default_factory=list)

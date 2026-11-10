@@ -35,7 +35,7 @@ impl mp : Reflect
     if wh != mirror
       "Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!"
       stop
-    if w == hearth or w == mirror or(where player != mantelpiece and where player != armchair)
+    if w in hearth, mirror or where player not in mantelpiece, armchair
       "Но Алисе вряд ли удастся поднести это к зеркалу!"
       stop
     'Отражение '
@@ -153,7 +153,7 @@ impl Drawing_Room
   before Exit, Walk =
     if where player != mantelpiece
       pass
-    if compass_dir w == d_to or compass_dir w == out_to or w == s
+    if (compass_dir w) in d_to, out_to or w == s
       "Таким путем вряд ли удастся спуститься с каминной полки!"
       stop
     pass

@@ -129,14 +129,17 @@ obj {
     end
   end;
   before_Any = function(s, ev, w, wh)
-    if ev == "Ask" then
-      p(fn_text_of(w))
-    elseif ev == "Cut" then
-      if w then
-        w:has("scenery")
+    do
+      local __match = ev
+      if __match == "Ask" then
+        p(fn_text_of(w))
+      elseif __match == "Cut" then
+        if w then
+          w:has("scenery")
+        end
+      else
+        return false
       end
-    else
-      return false
     end
   end;
 }

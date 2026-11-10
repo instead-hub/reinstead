@@ -897,9 +897,12 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
                 for p in pats:
                     if not (isinstance(p, Sym) and p.name == "_"):
                         expect(ctx, "match pattern", _check_expr(ctx, p, env, owner, st), st, p.line)
+                        # `match ev` arms narrow the event arguments like `if ev == X`
+                        aenv = _narrow(ctx, BinOp(line=p.line, op="==", left=s.subject, right=p),
+                                       aenv, True, arg_names)
                 if guard:
                     _check_cond(ctx, guard, aenv, owner)
-                _check_stmts(ctx, body, aenv, owner, rets)
+                _check_stmts(ctx, body, aenv, owner, rets, arg_names)
         elif isinstance(s, ForNumStmt):
             for bound, what in ((s.start, "start"), (s.stop, "stop"), (s.step, "step")):
                 if bound is not None:
@@ -1104,6 +1107,12 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
                 _check_expr(ctx, p, env, owner, "str")
         e.typ = "str"
         return "str"
+    if isinstance(e, InOp):
+        st = _check_expr(ctx, e.subject, env, owner)
+        for a in e.alts:
+            _check_expr(ctx, a, env, owner, st)   # resolves names, like `==`
+        e.typ = "bool"
+        return "bool"
     if isinstance(e, FnRef):
         ctx.used_refs.add(e.name)
         if e.name not in ctx.fns and e.name not in ctx.lua_funcs:

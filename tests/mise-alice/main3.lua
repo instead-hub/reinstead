@@ -102,7 +102,7 @@ mp.Reflect = function(s, w, wh)
     p "Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!"
     return
   end
-  if w == _'hearth' or w == _'mirror' or where(me()) ~= _'mantelpiece' and where(me()) ~= _'armchair' then
+  if (w == _'hearth' or w == _'mirror') or not (function(c) return c == _'mantelpiece' or c == _'armchair' end)(where(me())) then
     p "Но Алисе вряд ли удастся поднести это к зеркалу!"
     return
   end
@@ -273,7 +273,7 @@ _'Drawing_Room'["before_Exit,Walk"] = function(s, w, wh)
   if where(me()) ~= _'mantelpiece' then
     return false
   end
-  if (mp:compass_dir(w) or nil) == "d_to" or (mp:compass_dir(w) or nil) == "out_to" or w == s then
+  if (function(c) return c == "d_to" or c == "out_to" end)((mp:compass_dir(w) or nil)) or w == s then
     p "Таким путем вряд ли удастся спуститься с каминной полки!"
     return
   end
