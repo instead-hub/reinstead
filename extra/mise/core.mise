@@ -41,6 +41,7 @@ class obj = obj
   with_key: ref | fn(obj) -> ref
   default_Event: event | fn(obj) -> event
   capacity: num | fn(obj) -> num
+  pri: num | fn(obj) -> num          # display order: lower goes first (stead.lua, mplib.lua)
   disp: str | fn(obj) -> str
   help: str | fn(obj) -> str
   gfx: str | fn(obj) -> str
