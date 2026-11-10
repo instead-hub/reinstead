@@ -1,1 +1,1 @@
-mise: prop-return-type.mise:6: capacity: a member is written with '=' (`capacity = value` or `capacity =` and an indented body)
+mise: line 9: c.dsc: return num, declared returns str

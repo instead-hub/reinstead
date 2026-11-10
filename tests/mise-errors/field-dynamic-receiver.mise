@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+fn get() -> any
+  return 1
+
+fn f(s: obj)
+  local x = get
+  say x.scroed

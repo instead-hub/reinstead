@@ -570,8 +570,6 @@ class Emitter:
         return name if (name in self.ctx.lua_funcs and name not in self.ctx.fns) else f"fn_{name}"
 
     def _call(self, c: Call, as_stmt: bool = False) -> str:
-        if c.callee:
-            return f"{self._expr(c.callee)}({', '.join(self._expr(a) for a in c.args)})"
         if not c.receiver and c.func in ("say", "append", "line"):
             fn = {"say": "p", "append": "pr", "line": "pn"}[c.func]
             if not c.args:

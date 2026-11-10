@@ -916,7 +916,7 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             else:
                 _check_store(ctx, s.target, vt[0] if vt else "any", env, owner, s.line)
         elif isinstance(s, CallStmt):
-            if s.call.receiver is None and s.call.callee is None:
+            if s.call.receiver is None:
                 _check_value_use(ctx, s.call.func, s.line)
             _check_call(ctx, s.call, env, owner)
         elif isinstance(s, IfStmt):
@@ -1372,15 +1372,6 @@ def _check_value_use(ctx: Context, name: str, line: int):
 
 def _check_call(ctx: Context, c: Call, env: Dict[str, str], owner: Optional[str] = None) -> str:
     """Type a call: `f a b`, `f(a, b)`, `obj:m a` and a call of a fn value."""
-    if c.callee is not None:
-        ct = _check_expr(ctx, c.callee, env, owner)
-        if ct not in ("any", "fn") and not ct.startswith("fn("):
-            raise TypeCheckError(f"{_kind_name(c.callee)}: calling a non-function value ({ct})", c.line)
-        for a in c.args:
-            _check_expr(ctx, a, env, owner)
-        c.typ = "any"
-        return "any"
-
     is_method = c.receiver is not None
     all_args = ([c.receiver] + c.args) if is_method else list(c.args)
     label = f"{_kind_name(c.receiver)}:{c.func}" if is_method else c.func

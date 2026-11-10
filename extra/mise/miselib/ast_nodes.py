@@ -90,7 +90,6 @@ class Call(Expr):
     func: str = ""
     args: List[Expr] = field(default_factory=list)
     receiver: Optional[Expr] = None
-    callee: Optional[Expr] = None
 
 
 # --- Statements ---

@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+
+obj box "коробка"
+  before Ask(a, b, c, d, e, f) = "x"

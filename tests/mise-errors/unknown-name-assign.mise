@@ -3,6 +3,6 @@ lang ru
 include stdlib
 
 obj shiplog "журнал"
-  description
+  description =
     zzz = 1
     "Текст."
