@@ -338,6 +338,9 @@ def prescan(prog: Program) -> Context:
                 exp_p.extend(p for p in cdecl.props if p.value is not None)
                 exp_h.extend(cdecl.handlers)
                 kept_tr.extend(t for t in cdecl.traits if t not in kept_tr)
+                # keep the mixin itself: it declares the field *types*
+                if tr not in kept_tr:
+                    kept_tr.append(tr)
             else:
                 kept_tr.append(tr)
         ent.traits = kept_tr
@@ -417,8 +420,9 @@ def prescan(prog: Program) -> Context:
             ctx.field_names.add(p.name)
         fmap = ctx.fields.setdefault(ent.name, {}) if ent.name else {}
         base = ent.parent if ent.kind == "class" else ent.kind
-        if base in ctx.fields:
-            for k, v in ctx.fields[base].items():
+        # the kind's chain and every trait class (a mixin declares fields too)
+        for src in [base] + [tr for tr in ent.traits if tr in ctx.classes]:
+            for k, v in ctx.fields.get(src, {}).items():
                 fmap.setdefault(k, v)
         for p in ent.props:
             is_ref = bool(p.typ) and _is_ref_type(ctx, p.typ)
@@ -1058,6 +1062,19 @@ def _objectish(ctx: Context, t: str) -> bool:
     return False
 
 
+def _fields_of(ctx: Context, holder: str) -> Dict[str, Tuple[str, bool]]:
+    """Fields known for a holder: its own and inherited, plus (for a class) its instances."""
+    allowed = dict(ctx.fields.get(holder, {}))
+    if holder in ctx.classes:
+        for name, kind in ctx.objects.items():
+            if kind == holder or _inherits(ctx, kind, holder):
+                allowed.update(ctx.fields.get(name, {}))
+        for cname in ctx.classes:
+            if _inherits(ctx, cname, holder):
+                allowed.update(ctx.fields.get(cname, {}))
+    return allowed
+
+
 def _owner_of(ctx: Context, target: FieldAccess, env: Dict[str, str], owner: Optional[str]) -> Optional[str]:
     """The declaration whose fields `target.obj` exposes, when it is known."""
     base = target.obj
@@ -1099,6 +1116,10 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, str],
         if ft != "any":
             expect(ctx, f"{name}", _root(ctx) if (is_ref and vt == "obj") else vt, ft, line)
         return
+    if holder is not None and not name.startswith("__"):
+        if name not in _fields_of(ctx, holder):
+            raise Error(f"{holder}.{name}: no such field "
+                        f"(nothing declares it for {holder}; use __{name} for a dynamic value)", line)
     if name not in ctx.field_names and name not in ctx.ref_fields:
         raise Error(f"unknown field {name!r} (use __{name} for dynamic values)", line)
 
@@ -1294,6 +1315,11 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, str],
     if e.field in ctx.ref_fields:
         e.is_ref, e.typ = True, _root(ctx)
         return _root(ctx)
+    if holder is not None and not e.field.startswith("__"):
+        if e.field not in _fields_of(ctx, holder):
+            raise Error(f"{holder}.{e.field}: no such field "
+                        f"(nothing declares it for {holder}; use __{e.field} for a dynamic value)",
+                        e.line)
     if e.field in ctx.field_names:
         e.typ = "any"
         return "any"

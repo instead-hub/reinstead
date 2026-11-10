@@ -1,1 +1,1 @@
-mise: line 7: unknown field 'scroed' (use __scroed for dynamic values)
+mise: line 7: box.scroed: no such field (nothing declares it for box; use __scroed for a dynamic value)
