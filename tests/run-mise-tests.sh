@@ -145,8 +145,7 @@ if [ "$ENGINE" = 1 ]; then
 			strip_head "$WORK/$name.new" > "$WORK/$name.n"
 			;;
 		esac
-		# converted dirs carry a generated dict.mrd; drop it
-		rm -f "$dir/dict.mrd"
+		# `dict.mrd` is a cache the engine validates by a word sum, so it is kept
 		if diff -u "$WORK/$name.o" "$WORK/$name.n" > "$WORK/$name.diff"; then
 			pass "$name: transcript"
 		else
@@ -171,7 +170,6 @@ if [ "$ENGINE" = 1 ]; then
 			show_engine_err "$WORK/$name.new"
 			continue
 		fi
-		rm -f "$dir/dict.mrd"
 		tail -n +2 "$WORK/$name.new" > "$WORK/$name.n"
 		if diff -u "$dir/transcript.golden" "$WORK/$name.n" \
 				> "$WORK/$name.diff"; then
