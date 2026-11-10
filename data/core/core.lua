@@ -281,6 +281,9 @@ local function autoscript_pop(err)
 	AUTOSCRIPT[1]:close()
 	table.remove(AUTOSCRIPT, 1)
 	loading_settings = false
+	if #AUTOSCRIPT == 0 and conf.stop_on_err then
+		os.exit(0)
+	end
 	return true
 end
 
