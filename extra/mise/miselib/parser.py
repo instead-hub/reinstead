@@ -8,8 +8,8 @@ META_KEYS = frozenset({"game", "name", "version", "author", "info"})
 # Kind keywords are not known here: `obj`/`room`/`story` are classes declared in
 # core.mise, and a declaration is recognised by its shape (`Kind name`).
 STMT_KWS = frozenset({
-    "if", "elseif", "else", "when", "default", "match", "for", "in", "of",
-    "local", "return", "stop", "pass", "break", "and", "or", "not", "in", "then",
+    "if", "elseif", "else", "match", "for", "in", "of",
+    "local", "return", "stop", "pass", "break", "and", "or", "not",
 })
 _BIN_PREC = {
     "or": 1, "and": 2,
@@ -787,8 +787,8 @@ class Parser:
                 vals = self.parse_expr_list() if self.match("OP", "=") else []
                 self.eat_nl()
                 return LocalStmt(line=line, names=names, values=vals)
-            if kw in ("if", "when"):
-                return self._parse_if(kw)
+            if kw == "if":
+                return self._parse_if()
             if kw == "match":
                 return self._parse_match()
             if kw == "for":
@@ -812,19 +812,15 @@ class Parser:
             return CallStmt(line=line, call=Call(line=line, func=lhs.name, args=args))
         raise Error("expected statement", line, self.src)
 
-    def _parse_if(self, style: str) -> IfStmt:
+    def _parse_if(self) -> IfStmt:
         line = self.eat("IDENT").line
         cond = self.parse_expr()
-        self.match("IDENT", "then")
         branches = [(cond, self.parse_stmt_block(), line)]
-        cont_kw = "when" if style == "when" else "elseif"
-        else_kw = "default" if style == "when" else "else"
-        while self.at("IDENT", cont_kw):
+        while self.at("IDENT", "elseif"):
             el = self.eat("IDENT").line
             ec = self.parse_expr()
-            self.match("IDENT", "then")
             branches.append((ec, self.parse_stmt_block(), el))
-        else_body = self.parse_stmt_block() if self.match("IDENT", else_kw) else None
+        else_body = self.parse_stmt_block() if self.match("IDENT", "else") else None
         return IfStmt(line=line, branches=branches, else_body=else_body)
 
     def _parse_match(self) -> MatchStmt:

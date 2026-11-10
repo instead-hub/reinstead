@@ -37,14 +37,15 @@
   - Точка `.` и индекс `[]` связывают **сильнее** пробела, поэтому `move s.connect medtable` или `say items[1]` не требуют скобок!
 
 ### Идея 2: Приоритет аппликации выше `not` и операторов сравнения
-В классическом OCaml `not` — это обычная функция, поэтому приходится писать `not (has w light)`. В `mise2` `not` — это унарный оператор с приоритетом **ниже** вызова функции (как в Python/Lua).
-Благодаря этому таблица приоритетов (от сильного к слабому) выглядит так:
+В классическом OCaml `not` — это обычная функция, поэтому приходится писать `not (has w light)`. В `mise2` `not` — это унарный оператор с приоритетом **ниже** вызова функции, но **ниже** и сравнений (как в Python): `not x == y` $\equiv$ `not (x == y)`.
+Таблица приоритетов (от сильного к слабому):
 1. Постфиксные `.` и `[]`: `s.door`, `list[1]`
 2. **Аппликация (вызов через пробел) и `:`-метод:** `has w light`, `w:has light`, `where player`
-3. Унарные `not` и унарный `-`: `not has w light` $\equiv$ `not (has(w, light))`
+3. Унарный минус: `-1`
 4. Арифметика и конкатенация: `* / % //`, `+ - ..`
-5. Сравнения: `==`, `!=`, `<`, `<=`, `>`, `>=`
-6. Логические `and`, `or`
+5. Сравнения и принадлежность: `==`, `!=`, `<`, `<=`, `>`, `>=`, `in`, `not in`
+6. `not`  (`not has w light` $\equiv$ `not (has(w, light))`, `not w in a, b` $\equiv$ `not (w in a, b)`)
+7. Логические `and`, `or`
 
 **Следствие:** выражение
 ```mise2
@@ -220,7 +221,7 @@ before Any(s, ev, w)
 
 **optional-типы (`T?`)**
 - `T?` несовместим с `T`: методы, обращение к полю/индексу и запись требуют сужения;
-- сужение работает в `if`/`when`/`match` и внутри самого условия: `if x`, `if x != nil`, `if not x`, `if x == nil`, цепочки `and` (правый операнд видит `x`), `or` (короткое замыкание), ветка `else` получает обратное сужение;
+- сужение работает в `if`/`match` и внутри самого условия: `if x`, `if x != nil`, `if not x`, `if x == nil`, цепочки `and` (правый операнд видит `x`), `or` (короткое замыкание), ветка `else` получает обратное сужение;
 - `ev == Ask` и `event == Ask` сужают `w`/`wh` по сигнатуре события (в т.ч. в `before A, B`).
 
 **Обработчики**
@@ -647,7 +648,6 @@ stmt        ::= STRING [ "~" ]                       (* Печать: p(...) и�
               | "local" ident_list [ "=" expr_list ]
               | lvalue ("=" | "+=" | "-=") expr
               | if_stmt
-              | when_stmt
               | match_stmt
               | for_stmt
               | call_stmt
@@ -658,10 +658,6 @@ call_stmt   ::= postfix_expr [ ":" IDENT ] { arg_atom }
 if_stmt     ::= "if" expr stmt_block
                 { "elseif" expr stmt_block }
                 [ "else" stmt_block ]
-
-when_stmt   ::= "when" expr stmt_block
-                { "when" expr stmt_block }
-                [ "default" stmt_block ]
 
 match_stmt  ::= "match" expr INDENT { match_arm NEWLINE } DEDENT
 match_arm   ::= pattern_list [ "when" expr ] "->" ( stmt | stmt_block )
