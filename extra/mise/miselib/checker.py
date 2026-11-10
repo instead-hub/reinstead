@@ -22,7 +22,7 @@ class TypeCheckError(Error):
 class Context:
     lang: str = "ru"
     enums: Dict[str, Tuple[Set[str], bool]] = field(default_factory=dict)  # name -> (values, negate)
-    enum_owner: Dict[str, Set[str]] = field(default_factory=dict)
+    enum_owner: Dict[str, str] = field(default_factory=dict)   # value -> its type
     event_names: Set[str] = field(default_factory=set)
     event_args: Dict[str, List[str]] = field(default_factory=dict)
     event_acted: Set[str] = field(default_factory=set)   # the action takes an acted object
@@ -337,7 +337,11 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[s
             vals.update(item.values)
             ctx.enums[item.name] = (vals, neg or item.negate)
             for v in item.values:
-                ctx.enum_owner.setdefault(v, set()).add(item.name)
+                owner = ctx.enum_owner.get(v)
+                if owner is not None and owner != item.name:
+                    raise Error(f"type {item.name}: {v!r} is already a value of type "
+                                f"{owner!r} (an enum value belongs to one type)", item.line)
+                ctx.enum_owner[v] = item.name
         elif isinstance(item, FnDecl):
             if item.name in ctx.fns:
                 raise Error(f"duplicate fn {item.name!r}", item.line)
@@ -576,10 +580,10 @@ def _lit_type(ctx: Context, e: Expr) -> Tuple[str, bool]:
         if e.name in ctx.event_names:
             e.rk = "event"
             return "event", False
-        owners = ctx.enum_owner.get(e.name.lstrip("~"))
-        if owners:
+        enum = ctx.enum_owner.get(e.name.lstrip("~"))
+        if enum:
             e.rk = "enum"
-            return next(iter(owners)), False
+            return enum, False
     if isinstance(e, ListLit):
         return "tbl", False
     return "any", False
@@ -1422,9 +1426,9 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, str],
     if n in ctx.event_names:
         e.rk, e.typ = "event", "event"
         return "event"
-    owners = ctx.enum_owner.get(n.lstrip("~"))
-    if owners:
-        e.rk, e.typ = "enum", next(iter(owners))
+    enum = ctx.enum_owner.get(n.lstrip("~"))
+    if enum:
+        e.rk, e.typ = "enum", enum
         return e.typ
     if n in ctx.fns or n in ctx.lua_funcs:
         sig = ctx.fns.get(n)
