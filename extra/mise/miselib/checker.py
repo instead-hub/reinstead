@@ -233,8 +233,9 @@ def _verb_pat_sig(pat: str, obj_type: str = "obj") -> Optional[Tuple[str, List[s
 def prescan(prog: Program) -> Context:
     ctx = Context(lang=prog.lang)
     base_evs: Dict[str, List[str]] = {}
+    class_at: Dict[str, int] = {}      # position of every `class` declaration
 
-    for item in prog.items:
+    for idx, item in enumerate(prog.items):
         if isinstance(item, EventsDecl):
             for evs, ats in item.sigs:
                 for at in ats:
@@ -288,6 +289,7 @@ def prescan(prog: Program) -> Context:
             else:
                 ctx.classes.setdefault(item.name, item.parent or ctx.root_class or item.name)
             # Merge repeated `class obj`/`props obj` declarations
+            class_at.setdefault(item.name, idx)
             if item.name in ctx.class_decls:
                 ctx.class_decls[item.name].props.extend(item.props)
             else:
@@ -302,7 +304,21 @@ def prescan(prog: Program) -> Context:
                 if p.typ and _is_ref_type(ctx, p.typ):
                     ctx.ref_fields.add(p.name)
 
-    def register_entity(ent: EntityDecl):
+    def check_class_order(ent: EntityDecl, idx: int):
+        """A class must be declared above every use of it (the emitter keeps the source order)."""
+        if ent.kind == "class":
+            used = list(ent.traits) + ([ent.parent] if ent.parent else [])
+        elif ent.kind == "impl":
+            used = [ent.name] if ent.name else []
+        else:
+            used = [ent.kind] + list(ent.traits)
+        for name in used:
+            if name and class_at.get(name, -1) > idx:
+                raise Error(f"{ent.name or ent.kind}: class {name!r} is used before its declaration "
+                            f"(move `class {name}` above)", ent.line)
+
+    def register_entity(ent: EntityDecl, idx: int = 0):
+        check_class_order(ent, idx)
         _check_override(ctx, ent)      # before mixin traits are inlined into the entity
         if ent.kind == "impl" and ent.name == "mp":
             ctx.event_names.update(ent.traits)
@@ -340,11 +356,11 @@ def prescan(prog: Program) -> Context:
                 and ent.name not in ctx.lua_funcs:
             raise Error(f"impl {ent.name!r}: unknown target", ent.line)
         for ch in ent.children:
-            register_entity(ch)
+            register_entity(ch, idx)
 
-    for item in prog.items:
+    for idx, item in enumerate(prog.items):
         if isinstance(item, EntityDecl):
-            register_entity(item)
+            register_entity(item, idx)
         elif isinstance(item, TalkDecl):
             # a talk is an instance of the class `talk` (declared in core)
             ctx.objects[item.name] = "talk"

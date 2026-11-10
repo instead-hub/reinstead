@@ -1,8 +1,6 @@
 # MISE 2 engine core: kinds, engine fields, types and extern functions.
 # Included by `stdlib.mise`; an author includes `stdlib`, not this file.
 
-obj none
-
 type attr = [
   ~, animate, clothing, concealed, container, cutscene, door, edible,
   enterable, gameover, light, lockable, locked, luminous, moved, multi,
@@ -49,6 +47,8 @@ class obj = obj
   word: str | fn(obj) -> str
   raw_word: str | fn(obj) -> str
   disabled: bool
+
+obj none
 
 class room(obj) = room
   cant_go: str | bool | fn(obj, direction) -> str

@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+class B(A)
+  note = 1
+
+class A
+  dsc = "x"
