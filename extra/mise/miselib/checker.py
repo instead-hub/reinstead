@@ -90,6 +90,45 @@ def tbl_inner(t: str) -> Optional[str]:
     return t[4:-1] if (t.startswith("tbl[") and t.endswith("]")) else None
 
 
+def _ref_inner(t: str) -> Optional[str]:
+    """`ref[C]` -> C; bare `ref` is `ref[obj]`, so it returns None only for non-refs."""
+    return t[4:-1] if (t.startswith("ref[") and t.endswith("]")) else None
+
+
+def is_optional(t: str) -> bool:
+    return "nil" in split_union(t)
+
+
+def _split_types(t: str) -> List[str]:
+    """Split a type list at top-level commas (`fn(a, b)`, `tbl[a|b]`)."""
+    return [p for p in split_top(t, ",") if p]
+
+
+def _fn_parts(t: str) -> Optional[Tuple[List[str], List[str]]]:
+    """`fn(T1,T2) -> R` -> (["T1", "T2"], ["R"])."""
+    if not t.startswith("fn("):
+        return None
+    depth, close = 0, -1
+    for i, ch in enumerate(t):
+        depth += (1 if ch == "(" else -1 if ch == ")" else 0)
+        if depth == 0 and ch == ")":
+            close = i
+            break
+    if close < 0:
+        return None
+    params = _split_types(t[3:close])
+    rest = t[close + 1:]
+    rets = [r.rstrip("?") for r in _split_types(rest[2:])] if rest.startswith("->") else []
+    return params, rets
+
+
+def _fn_returns(declared: Optional[str]) -> List[str]:
+    """Return types of the `fn(...) -> T` alternatives of a declared type."""
+    if not declared:
+        return []
+    return [r for alt in split_union(declared) for r in (_fn_parts(alt) or ([], []))[1]]
+
+
 # --- Type compatibility -----------------------------------------------------
 
 # type names that are part of the type language; object types are classes
@@ -113,13 +152,7 @@ def _atom_fits(ctx: Context, actual: str, expected: str) -> bool:
             return True          # a name of an object (the engine resolves it)
         return _is_object_type(ctx, actual) and is_subtype(ctx, actual, want_ref or "obj")
     if expected in ctx.classes:
-        cur, seen = actual, set()
-        while cur in ctx.classes and cur not in seen:
-            if cur == expected:
-                return True
-            seen.add(cur)
-            cur = ctx.classes[cur]
-        return False
+        return _inherits(ctx, actual, expected)
     if expected == "str" and actual in ctx.enums:
         return True  # an enum value can be passed where a string is wanted
     if expected == "tbl":
@@ -576,13 +609,6 @@ def _is_ref_type(ctx: Context, typ: str) -> bool:
     return False
 
 
-def _ref_inner(t: str) -> Optional[str]:
-    """`ref[C]` -> C; bare `ref` is `ref[obj]`, so it returns None only for non-refs."""
-    if t.startswith("ref[") and t.endswith("]"):
-        return t[4:-1]
-    return None
-
-
 def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
     """A hint for a mistyped kind or a member written without '='."""
     import difflib
@@ -595,15 +621,23 @@ def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
     return f" (did you mean class {near[0]!r}?)" if near else ""
 
 
-def _decl_prop(ctx: Context, kind: str, name: str) -> Optional[Prop]:
-    """A field declaration looked up through the class chain of `kind`."""
+def _walk_class_chain(ctx: Context, kind: str) -> List[str]:
+    """The class `kind` and its ancestors in inheritance order."""
+    chain: List[str] = []
     cur, seen = kind, set()
     while cur and cur not in seen:
         seen.add(cur)
+        chain.append(cur)
+        cur = ctx.classes.get(cur)
+    return chain
+
+
+def _decl_prop(ctx: Context, kind: str, name: str) -> Optional[Prop]:
+    """A field declaration looked up through the class chain of `kind`."""
+    for cur in _walk_class_chain(ctx, kind):
         val = ctx.prop_decls.get(cur, {}).get(name)
         if val is not None:
             return val
-        cur = ctx.classes.get(cur)
     return None
 
 
@@ -649,16 +683,6 @@ def _decl_type(ctx: Context, kind: str, name: str) -> Optional[str]:
     """The declared type of a field, looked up through the class chain of `kind`."""
     decl = _decl_prop(ctx, kind, name)
     return decl.typ if decl else None
-
-
-def _fn_returns(declared: str) -> List[str]:
-    """Return types of the `fn(...) -> T` alternatives of a declared type."""
-    res = []
-    for alt in split_union(declared):
-        if alt.startswith("fn(") and "->" in alt:
-            rets = alt.split("->", 1)[1].rstrip("?")
-            res.extend(r.strip() for r in rets.split(",") if r.strip())
-    return res
 
 
 def _entity_kind(ctx: Context, ent: EntityDecl) -> str:
@@ -1031,29 +1055,6 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, str],
             _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl)
 
 
-def _split_types(t: str) -> List[str]:
-    """Split a type list at top-level commas (`fn(a, b)`, `tbl[a|b]`)."""
-    return [p for p in split_top(t, ",") if p]
-
-
-def _fn_parts(t: str):
-    """`fn(T1,T2) -> R` -> (["T1", "T2"], ["R"])."""
-    if not t.startswith("fn("):
-        return None
-    depth, close = 0, -1
-    for i, ch in enumerate(t):
-        depth += (1 if ch == "(" else -1 if ch == ")" else 0)
-        if depth == 0 and ch == ")":
-            close = i
-            break
-    if close < 0:
-        return None
-    params = _split_types(t[3:close])
-    rest = t[close + 1:]
-    rets = [r.rstrip("?") for r in _split_types(rest[2:])] if rest.startswith("->") else []
-    return params, rets
-
-
 def _sig_ok(ctx: Context, fn: FnDecl, expected: str) -> bool:
     """Can `fn` be passed where a callback of type `expected` is wanted?"""
     parts = _fn_parts(expected)
@@ -1109,13 +1110,7 @@ def _room_root(ctx: Context) -> str:
 
 def _inherits(ctx: Context, kind: str, root: str) -> bool:
     """Is `kind` the class `root` or one of its descendants?"""
-    cur, seen = kind, set()
-    while cur and cur not in seen:
-        if cur == root:
-            return True
-        seen.add(cur)
-        cur = ctx.classes.get(cur)
-    return False
+    return root in _walk_class_chain(ctx, kind)
 
 
 def _is_object_type(ctx: Context, t: str) -> bool:
@@ -1129,8 +1124,6 @@ def _objectish(ctx: Context, t: str) -> bool:
         alt = alt.rstrip("?").strip()
         if alt in ("any", "ref") or alt.startswith("tbl[") or _is_object_type(ctx, alt):
             return True          # dynamic values, references and collections
-        if _is_object_type(ctx, alt):
-            return True
     return False
 
 
@@ -1568,16 +1561,13 @@ def _value_types(ctx: Context, values: List[Expr], env: Dict[str, str],
 def _class_methods(ctx: Context, cls: str) -> Dict[str, Prop]:
     """Fields a class (and its ancestors) declare as functions."""
     methods: Dict[str, Prop] = {}
-    cur, seen = cls, set()
-    while cur and cur not in seen:
-        seen.add(cur)
+    for cur in _walk_class_chain(ctx, cls):
         cdecl = ctx.class_decls.get(cur)
         if cdecl is not None:
             for p in cdecl.props:
                 if isinstance(p.value, (list, FnRef)) \
                         or (isinstance(p.value, Lit) and p.value.kind == "lua"):
                     methods.setdefault(p.name, p)
-        cur = ctx.classes.get(cur)
     return methods
 
 
@@ -1609,17 +1599,10 @@ def _check_cond(ctx: Context, cond: Expr, env: Dict[str, str], owner: Optional[s
     """
     if isinstance(cond, UnaryOp) and cond.op == "not":
         return _check_cond(ctx, cond.operand, env, owner)
-    if isinstance(cond, BinOp) and cond.op == "and":
+    if isinstance(cond, BinOp) and cond.op in ("and", "or"):
         _check_cond(ctx, cond.left, env, owner)
-        return _check_cond(ctx, cond.right, _narrow(ctx, cond.left, env, True), owner)
-    if isinstance(cond, BinOp) and cond.op == "or":
-        _check_cond(ctx, cond.left, env, owner)
-        return _check_cond(ctx, cond.right, _narrow(ctx, cond.left, env, False), owner)
+        return _check_cond(ctx, cond.right, _narrow(ctx, cond.left, env, cond.op == "and"), owner)
     _check_expr(ctx, cond, env, owner)
-
-
-def is_optional(t: str) -> bool:
-    return "nil" in split_union(t)
 
 
 def _check_handler_events(ctx: Context, h: Handler, where: str):
