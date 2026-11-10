@@ -460,9 +460,18 @@ def prescan(prog: Program) -> Context:
             owner = item.params[0][1] if (item.params and item.params[0][0] == "s" and item.params[0][1] in ctx.classes) else None
             rets: List[str] = []
             _check_stmts(ctx, item.body, env, owner, rets)
+            falls_through = bool(item.body) and not _returns_all(item.body)
             if item.ret_types:
                 _check_returns(ctx, item, env, owner)
+                if falls_through and "nil" not in split_union("|".join(item.ret_types)):
+                    raise Error(f"fn {item.name}: {', '.join(item.ret_types)} is declared, but a "
+                                f"path leaves the body without `return` (add `return` or `pass`, "
+                                f"or declare `{strip_nil(item.ret_types[0])}?`)", item.line)
             else:
+                # a value on some paths only: the type is optional (`num?`); a body
+                # that never returns a value stays `any` (a printing callback)
+                if rets and falls_through:
+                    rets.append("nil")
                 item.ret_types = [canon_type("|".join(rets))] if rets else ["any"]
 
     for item in prog.items:
@@ -795,22 +804,35 @@ def _check_talk(ctx: Context, td: TalkDecl):
             chk_c(c)
 
 
-def _has_value_return(stmts: List[Stmt]) -> bool:
-    """Does this lambda body return a value anywhere?"""
-    for s in stmts:
-        if isinstance(s, ReturnStmt) and s.kind == "return" and s.values:
-            return True
-        if isinstance(s, IfStmt):
-            if any(_has_value_return(b) for _c, b, _l in s.branches):
-                return True
-            if s.else_body and _has_value_return(s.else_body):
-                return True
-        elif isinstance(s, MatchStmt):
-            if any(_has_value_return(b) for _p, _g, b, _l in s.arms):
-                return True
-        elif isinstance(s, (ForNumStmt, ForInStmt)) and _has_value_return(s.body):
-            return True
-    return False
+def _returns_all(stmts: List[Stmt]) -> bool:
+    """Does every path through this body end with a value?
+
+    `return <values>` and `pass` (= `return false`) count; `stop` (= `return`) does
+    not, a loop may not run and a `match` is complete only with a `_` arm.
+    """
+    def at(i: int) -> bool:
+        while i < len(stmts):
+            s = stmts[i]
+            if isinstance(s, ReturnStmt):
+                return s.kind == "pass" or (s.kind == "return" and bool(s.values))
+            if isinstance(s, IfStmt):
+                if s.else_body is not None and at_body(s.else_body) \
+                        and all(at_body(b) for _c, b, _l in s.branches):
+                    return True
+                return at(i + 1)          # no `else`: the path continues after the `if`
+            if isinstance(s, MatchStmt):
+                has_default = any(len(p) == 1 and isinstance(p[0], Sym) and p[0].name == "_" and not g
+                                  for p, g, _b, _l in s.arms)
+                if has_default and all(at_body(b) for _p, _g, b, _l in s.arms):
+                    return True
+                return at(i + 1)
+            i += 1
+        return False
+
+    def at_body(body: List[Stmt]) -> bool:
+        return _returns_all(body)
+
+    return at(0)
 
 
 def _nonnil(ctx: Context, e: Expr) -> bool:
@@ -1213,10 +1235,10 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
             ptypes.append(pt)
         if isinstance(e.body, list):
             _check_stmts(ctx, e.body, env2, owner, erets or None)
-            if erets and not _has_value_return(e.body):
+            if erets and "nil" not in split_union("|".join(erets)) and not _returns_all(e.body):
                 raise TypeCheckError(
-                    f"&(…): the callback returns {'|'.join(erets)}, but the body has no "
-                    f"`return` (write an expression body or add `return`)", e.line)
+                    f"&(…): the callback returns {'|'.join(erets)}, but some path leaves the body "
+                    f"without `return` (write an expression body or add `return`)", e.line)
         else:
             _check_expr(ctx, e.body, env2, owner, erets[0] if erets else None)
         e.typ = "fn(" + ",".join(ptypes) + ")" + (("->" + ",".join(erets)) if erets else "")

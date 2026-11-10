@@ -1,0 +1,12 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка" : open, openable
+
+fn pick(s: obj)
+  if s:has open
+    return 1
+
+fn use(s: obj)
+  say (pick s + 1)

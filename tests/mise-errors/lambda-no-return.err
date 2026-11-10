@@ -1,1 +1,1 @@
-mise: line 12: &(…): the callback returns bool, but the body has no `return` (write an expression body or add `return`)
+mise: line 12: &(…): the callback returns bool, but some path leaves the body without `return` (write an expression body or add `return`)

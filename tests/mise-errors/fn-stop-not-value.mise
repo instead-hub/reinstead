@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+
+fn check(s: obj) -> bool
+  if s:disabled
+    return true
+  stop
