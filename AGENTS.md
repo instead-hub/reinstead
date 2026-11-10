@@ -13,6 +13,21 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 
 ## Tests (headless)
 
+**Which suite to run.** The parser suite does not depend on the transpiler, and
+the transpiler suite does not depend on parser internals — pick by what you
+touch:
+
+| Touching | Run |
+|---|---|
+| `extra/mise/**` (compiler, `core.mise`, `stdlib*.mise`) | `run-mise-tests.sh --engine` + `run-mise-error-tests.sh` (~17 s) |
+| `data/stead3/parser/**`, `data/stead3/morph/**`, engine bootstrap (`data/core/core.lua`, `data/stead3/{stead,dlg,declare}.lua`) | `run-parser-tests.sh` (~40 s, of which `match-dump` is ~40 s) |
+| before a release / full check | all three |
+
+While working on mise the parser tests are not needed — they exercise the
+engine's own `mp:match`/`mp:compl`/morphology against their own fixtures
+(`tests/parser-tests`, `tests/match-dump`, `tests/noun-forms`), which the
+transpiler neither produces nor consumes.
+
 - `./tests/run-mise-tests.sh` and `./tests/run-mise-error-tests.sh` go through `tests/mise-check.py` (one Python process for all cases — importing the compiler costs more than the work). `--engine` also checks the `-stop` contract: a script that ends exits 0, a command error exits 1.
 - `./tests/run-parser-tests.sh` (needs a built `./reinstead`; override with `BIN=...`). Runs parser unit checks (`tests/parser-tests`) and golden diffs (`tests/match-dump/golden.txt` = `mp:match` snapshots, `golden-compl.txt` = `mp:compl`; `tests/noun-forms/golden.txt` = noun declension forms).
 - `./tests/run-mise-error-tests.sh` — negative transpiler tests: every `tests/mise-errors/*.mise` must fail with the exact stderr from the sibling `.err` (pins line numbers + messages). Regenerate a case's `.err` with `python3 extra/mise/mise.py <case>.mise`.
