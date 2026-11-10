@@ -564,9 +564,8 @@ class Parser:
         """`setup` is sugar: it expands into `impl game`/`impl pl`, `fn init`/`fn start`."""
         line = self.eat("IDENT", "setup").line
         game = EntityDecl(kind="impl", name="game", line=line)
-        hero = None
-        init_body: Optional[List[Stmt]] = None
-        start_body: Optional[List[Stmt]] = None
+        hero: Optional[EntityDecl] = None
+        fns: dict = {}
         self.eat_nl()
         self.eat("INDENT")
         while not self.at("DEDENT") and not self.at("EOF"):
@@ -582,41 +581,28 @@ class Parser:
                 self.eat_nl()
             elif kw in ("hero", "game"):
                 self.pos += 1
-                sub = EntityDecl(kind="impl", name="pl" if kw == "hero" else "game", line=t.line)
-                sub.words.extend(self._header_words())
+                target = EntityDecl(kind="impl", name="pl", line=t.line) if kw == "hero" else game
+                target.words.extend(self._header_words())
                 self.eat("OP", "=")
                 self.eat_nl()
                 self.eat("INDENT")
-                self._parse_members(sub)
+                self._parse_members(target)
                 self.eat("DEDENT")
                 if kw == "hero":
-                    hero = sub
-                else:
-                    game.props.extend(sub.props)
-                    game.handlers.extend(sub.handlers)
+                    hero = target
             elif kw in ("init", "start"):
                 self.pos += 1
                 self._opt_ident_parens()
                 self.eat("OP", "=")
-                body = self.parse_stmt_block()
-                if kw == "init":
-                    init_body = body
-                else:
-                    start_body = body
+                prms = [("load", "bool")] if kw == "start" else []
+                fns[kw] = FnDecl(name=kw, params=prms, body=self.parse_stmt_block(), line=line)
             elif kw in PHASES:
                 game.handlers.append(self._parse_handler())
             else:
                 hint = " (write `init =` and `take …` there)" if kw == "take" else ""
                 raise Error(f"unknown setup field {kw!r}{hint}", t.line, self.src)
         self.eat("DEDENT")
-        out: List[Any] = [game]
-        if hero is not None:
-            out.append(hero)
-        if init_body is not None:
-            out.append(FnDecl(name="init", params=[], body=init_body, line=line))
-        if start_body is not None:
-            out.append(FnDecl(name="start", params=[("load", "bool")], body=start_body, line=line))
-        return out
+        return [x for x in (game, hero, fns.get("init"), fns.get("start")) if x is not None]
 
     # --- Verbs & Talk (`*` / `+` Choice Syntax) ---
 

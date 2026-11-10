@@ -422,7 +422,7 @@ class Emitter:
             return f"local {ns} = {', '.join(self._expr(v) for v in s.values)}" if s.values else f"local {ns}"
         if isinstance(s, AssignStmt):
             lhs = f"{self._expr(s.target.obj)}.{s.target.field}" if isinstance(s.target, FieldAccess) else self._expr(s.target, as_lhs=True)
-            rhs = ", ".join(self._assign_rhs(s.target, v) for v in s.values)
+            rhs = ", ".join(self._expr(v) for v in s.values)
             return f"{lhs} = {rhs}" if s.op == "=" else f"{lhs} = {lhs} {s.op[0]} ({rhs})"
         if isinstance(s, CallStmt):
             return self._call(s.call, as_stmt=True)
@@ -473,14 +473,6 @@ class Emitter:
             args = [lua_str(p) if isinstance(p, str) else self._expr(p) for p in e.parts]
             return f"{fn}({', '.join(args)})"
         return f"{fn}({self._expr(e)})"
-
-    def _assign_rhs(self, target: Expr, val: Expr) -> str:
-        is_ref = (isinstance(target, FieldAccess) and target.field in self.ctx.ref_fields) or (
-            isinstance(target, Sym) and self.ctx.globals.get(target.name, ("", False))[1]
-        )
-        if is_ref and isinstance(val, Sym) and val.name in self.ctx.objects:
-            return f"_'{val.name}'"
-        return self._expr(val)
 
     def _expr(self, e: Expr, exp: Optional[str] = None, as_lhs: bool = False) -> str:
         if isinstance(e, Lit):

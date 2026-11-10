@@ -455,7 +455,6 @@ def _collect_fields_and_refs(ctx: Context, prog: Program):
             for p in item.props:
                 if p.typ:
                     _check_type(ctx, p.typ, f"{item.name or ''}.{p.name}".lstrip("."), p.line)
-            _check_refs(ctx, item)
         elif isinstance(item, VarDecl):
             for vn, ve, vl in item.items:
                 _check_var_ref(ctx, vn, ve, vl)
@@ -542,19 +541,16 @@ def _check_ref_value(ctx: Context, where: str, val: Any, line: int = 0):
             raise Error(f"{where}: expected object reference, got expression", line)
 
 
-def _check_refs(ctx: Context, ent: EntityDecl):
-    """Validate reference values of every declaration, including nested ones."""
-    for p in ent.props:
-        if p.name not in ctx.ref_fields or p.value is None or isinstance(p.value, (list, FnRef)):
-            continue
-        where = f"{ent.name}.{p.name}" if ent.name else p.name
-        if isinstance(p.value, Lit) and p.value.kind in ("raw", "lua", "num", "bool", "nil"):
-            continue
-        if isinstance(p.value, Lit) and p.value.kind == "str":
-            raise Error(f"{where}: object reference must be a bare name, not a quoted string ({p.value.val!r})", p.line)
-        _check_ref_value(ctx, where, p.value, p.line)
-    for ch in ent.children:
-        _check_refs(ctx, ch)
+def _check_ref_prop(ctx: Context, ent_name: Optional[str], p: Prop):
+    """Validate reference values on a reference field."""
+    if p.name not in ctx.ref_fields or p.value is None or isinstance(p.value, (list, FnRef)):
+        return
+    if isinstance(p.value, Lit) and p.value.kind in ("raw", "lua", "num", "bool", "nil"):
+        return
+    where = f"{ent_name}.{p.name}" if ent_name else p.name
+    if isinstance(p.value, Lit) and p.value.kind == "str":
+        raise Error(f"{where}: object reference must be a bare name, not a quoted string ({p.value.val!r})", p.line)
+    _check_ref_value(ctx, where, p.value, p.line)
 
 
 def _check_var_ref(ctx: Context, name: str, val: Expr, line: int):
@@ -678,6 +674,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
     owner = ent.name
     kind = _entity_kind(ctx, ent)
     for p in ent.props:
+        _check_ref_prop(ctx, owner, p)
         where = f"{owner}.{p.name}" if owner else p.name
         declared = _decl_type(ctx, kind, p.name) if kind else None
         if isinstance(p.value, FnRef):
@@ -782,6 +779,20 @@ def _handler_params(ctx: Context, owner: Optional[str], kind: str, h: Handler
 CHOICE_FIELDS = ("ask", "reply", "do", "onempty")
 
 
+def _check_talk_body(ctx: Context, part: Any, env: Dict[str, str], owner: str,
+                     want: Optional[str] = None, where: str = "", line: int = 0):
+    if isinstance(part, FnRef):
+        ctx.used_refs.add(part.name)
+    elif isinstance(part, list):
+        rets: List[str] = []
+        _check_stmts(ctx, part, dict(env), owner, rets)
+        returns = _fn_returns(want) if want else []
+        for t in rets if returns else []:
+            expect(ctx, where, t, "|".join(returns), line)
+    elif isinstance(part, Expr):
+        _check_expr(ctx, part, dict(env), owner, want)
+
+
 def _check_talk(ctx: Context, td: TalkDecl):
     env = {"s": "talk"}
     own = ctx.fields.setdefault(td.name, {})
@@ -801,48 +812,21 @@ def _check_talk(ctx: Context, td: TalkDecl):
         for sub in c.children:
             check_next(sub)
 
-    for c in td.choices:
-        check_next(c)
-    for _ln, _say, chs in td.labels:
-        for c in chs:
-            check_next(c)
-    if isinstance(td.intro, FnRef):
-        ctx.used_refs.add(td.intro.name)
-    elif isinstance(td.intro, list):
-        _check_stmts(ctx, td.intro, dict(env), td.name)
-    elif isinstance(td.intro, Expr):
-        _check_expr(ctx, td.intro, dict(env), td.name)
-
     def chk_c(c: TalkChoice):
-        # a condition is a truthiness test (like `if`); the rest is typed by the
-        # `choice` field it is written as
-        parts = [(c.cond, None, "when")]
-        for field in CHOICE_FIELDS:
-            parts.append((getattr(c, field), _decl_type(ctx, "choice", field), field))
+        check_next(c)
+        parts = [(c.cond, None, "when")] + [
+            (getattr(c, f), _decl_type(ctx, "choice", f), f) for f in CHOICE_FIELDS
+        ]
         for part, want, what in parts:
-            if isinstance(part, FnRef):
-                ctx.used_refs.add(part.name)
-            elif isinstance(part, list):
-                # a body is a function: its `return`s must be what the field's
-                # function alternative returns (`ask: str | fn(s) -> str` -> str)
-                rets: List[str] = []
-                _check_stmts(ctx, part, dict(env), td.name, rets)
-                returns = [r for alt in split_union(want or "") if alt.startswith("fn(")
-                           for r in (_fn_parts(alt)[1] if _fn_parts(alt) else [])]
-                for t in rets if returns else []:
-                    expect(ctx, f"talk {td.name}: {what}", t, "|".join(returns), c.line)
-            elif isinstance(part, Expr):
-                _check_expr(ctx, part, dict(env), td.name, want)
+            _check_talk_body(ctx, part, env, td.name, want, f"talk {td.name}: {what}", c.line)
         for sub in c.children:
             chk_c(sub)
 
+    _check_talk_body(ctx, td.intro, env, td.name)
     for c in td.choices:
         chk_c(c)
     for _ln, lsay, lcs in td.labels:
-        if isinstance(lsay, list):
-            _check_stmts(ctx, lsay, dict(env), td.name)
-        elif isinstance(lsay, Expr):
-            _check_expr(ctx, lsay, dict(env), td.name)
+        _check_talk_body(ctx, lsay, env, td.name)
         for c in lcs:
             chk_c(c)
 
