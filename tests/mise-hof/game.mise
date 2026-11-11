@@ -19,6 +19,14 @@ fn each(t: tbl, f: fn(w: obj))
 fn apply(cb: fn(x: obj) -> num, w: obj) -> num
   return cb w + 1
 
+# лямбда с телом-блоком: возвращаемое значение сверяется с ожидаемой подписью
+fn apply_text(cb: fn(x: obj) -> str) -> str
+  return cb box
+
+fn probe_lambda() -> str
+  return apply_text &(s: obj)
+    return "из лямбды"
+
 fn total(n: num) -> num
   local r = 0
   for i:num = 1, n

@@ -52,6 +52,16 @@ local function fn_apply(cb, w)
   return cb(w) + 1
 end
 
+local function fn_apply_text(cb)
+  return cb(_'box')
+end
+
+local function fn_probe_lambda()
+  return fn_apply_text(function(s)
+    return "из лямбды"
+  end)
+end
+
 local function fn_total(n)
   local r = 0
   for i = 1, n do

@@ -1457,7 +1457,12 @@ def _infer_lambda(ctx: Context, e: Lambda, env: Dict[str, Type],
         env2[pn] = pt
         ptypes.append(pt)
     if isinstance(e.body, list):
-        _check_stmts(ctx, e.body, env2, owner, erets or None)
+        rets: List[Type] = []
+        _check_stmts(ctx, e.body, env2, owner, rets)
+        for t in rets:                      # a lambda body may return anything
+            if erets and not any(is_subtype(ctx, t, w) for w in erets):
+                raise TypeCheckError(f"&(…): returns {t}, the callback declares "
+                                     f"{union(*erets)}", e.line)
         if erets and not types.is_optional(union(*erets)) and not _returns_all(e.body):
             raise TypeCheckError(
                 f"&(…): the callback returns {union(*erets)}, but some path leaves the body "
