@@ -750,6 +750,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         if isinstance(p.value, FnRef):
             _check_fn_target(ctx, p.value)
             ctx.used_refs.add(p.value.name)
+            _check_fnref(ctx, p.value, declared, where)
         elif isinstance(p.value, list):
             env = _prop_body_env(ctx, kind, p)
             env["load"] = "bool"
@@ -1533,21 +1534,14 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, str], owner: Optional[str]
     fn = None if shadowed else ctx.fns.get(c.func)
 
     if is_method:
-        rt = c.receiver.typ
+        rt = _check_expr(ctx, c.receiver, env, owner)
         if is_optional(rt):
             raise TypeCheckError(
                 f"{_kind_name(c.receiver)}: possible nil, narrow it first (`if {_kind_name(c.receiver)}:`)",
                 c.line)
 
     if fn is None:
-        # a method of the engine (`l:add(x)`), a Lua function or a fn value
-        if is_method or c.func in ctx.lua_funcs or env.get(c.func, "").startswith("fn"):
-            for a in all_args:
-                _check_expr(ctx, a, env, owner)
-            ftype = env.get(c.func, "")
-            c.typ = ftype.split("->", 1)[1].split(",")[0] if "->" in ftype else "any"
-            return c.typ
-        raise Error(f"unknown function {c.func!r}", c.line)
+        return _check_indirect_call(ctx, c, env, owner, is_method, all_args)
 
     params = fn.params
     required = sum(1 for _pn, pt in params if not (pt == "nil" or pt.endswith("?")))
@@ -1563,12 +1557,43 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, str], owner: Optional[str]
         raise Error(f"{label} expects {want} argument(s), got {given}", c.line)
 
     for i, a in enumerate(all_args):
+        if is_method and i == 0:
+            continue                       # the receiver is checked above
         exp = params[i][1] if i < len(params) else (fn.variadic if variadic else None)
         got = _check_expr(ctx, a, env, owner, exp)
         if exp:
             expect(ctx, f"argument {i + 1} of {label}", got, exp, a.line)
 
     c.typ = fn.ret_types[0] if fn.ret_types else "any"
+    return c.typ
+
+
+def _check_indirect_call(ctx: Context, c: Call, env: Dict[str, str], owner: Optional[str],
+                         is_method: bool, all_args: List[Expr]) -> str:
+    """`x:m …` / `f …` where `f` is not a declared function.
+
+    A method call is mise's "call this function with the receiver first" —
+    `l:add(w)` is `add(l, w)` — so it needs a real function or extern. An
+    engine object (`mp`, `std`, `game`, …) is typed `any`, and its surface is
+    Lua, not mise: those calls stay unchecked.
+    """
+    ftype = env.get(c.func, "")
+    known = c.func in ctx.lua_funcs or (not is_method and ftype.startswith("fn"))
+    if is_method and c.receiver.typ == "any":
+        known = True
+    if not known:
+        if is_method:
+            raise Error(f"unknown method {c.func!r} "
+                        f"(a method call needs a function or an extern)", c.line)
+        raise Error(f"unknown function {c.func!r}", c.line)
+    for i, a in enumerate(all_args):
+        if not (is_method and i == 0):      # the receiver is checked by the caller
+            _check_expr(ctx, a, env, owner)
+    if is_optional(ftype):
+        raise TypeCheckError(
+            f"{c.func}: a function value that may be nil — narrow it first (`if {c.func}:`)",
+            c.line)
+    c.typ = ftype.split("->", 1)[1].split(",")[0] if "->" in ftype else "any"
     return c.typ
 
 
