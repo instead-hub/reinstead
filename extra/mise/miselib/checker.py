@@ -140,13 +140,19 @@ def _kind_name(expr: Expr) -> str:
     return "expression"
 
 
+def need_value(t: Type, where: str, line: int) -> None:
+    """Fail unless a maybe-nil value was narrowed before use."""
+    if types.is_optional(t):
+        raise TypeCheckError(
+            f"{where}: possible nil, narrow it first (`if {where}:`)", line)
+
+
 def expect(ctx: Context, where: str, actual: Type, expected: Optional[Type], line: int = 0):
     """Report a type mismatch unless `actual` can be used as `expected`."""
     if expected is None or expected == ANY or is_subtype(ctx, actual, expected):
         return
     if types.is_optional(actual) and not types.is_optional(expected):
-        raise TypeCheckError(f"{where}: possible nil, narrow it first "
-                             f"(`if {where}:`)", line)
+        need_value(actual, where, line)
     raise TypeCheckError(f"{where}: expected {expected}, got {actual}", line)
 
 
@@ -548,40 +554,28 @@ def _lit_type(ctx: Context, e: Expr) -> Tuple[Type, bool]:
     return ANY, False
 
 
-def _ref_error(where: str, name: str, line: int):
-    raise Error(f"{where}: unknown object reference {name!r}", line)
-
-
-def _check_ref_name(ctx: Context, where: str, name: str, line: int):
-    """A bare object name in a reference position must be declared."""
-    if name not in ctx.objects:
-        _ref_error(where, name, line)
-
-
-def _check_ref_value(ctx: Context, where: str, val: Any, line: int = 0):
-    """Validate a reference field value: a bare name or a list of them."""
-    items = val.items if isinstance(val, ListLit) else [val]
-    for it in items:
-        if isinstance(it, Sym):
-            _check_ref_name(ctx, where, it.name, it.line or line)
-        elif isinstance(it, Lit) and it.kind == "str" and isinstance(val, ListLit):
-            _check_ref_name(ctx, where, it.val.strip(), it.line or line)
-        elif isinstance(it, Lit) or isinstance(it, ListLit) or isinstance(it, FnRef):
-            continue  # raw/nil/bool/number/tables and handlers are not references
-        else:
-            raise Error(f"{where}: expected object reference, got expression", line)
-
-
 def _check_ref_prop(ctx: Context, ent_name: Optional[str], p: Prop):
-    """Validate reference values on a reference field."""
+    """A reference field holds a bare object name (or a list of them)."""
     if not p.is_ref or p.value is None or isinstance(p.value, (list, FnRef)):
         return
-    if isinstance(p.value, Lit) and p.value.kind in ("raw", "lua", "num", "bool", "nil"):
-        return
     where = f"{ent_name}.{p.name}" if ent_name else p.name
-    if isinstance(p.value, Lit) and p.value.kind == "str":
-        raise Error(f"{where}: object reference must be a bare name, not a quoted string ({p.value.val!r})", p.line)
-    _check_ref_value(ctx, where, p.value, p.line)
+    val = p.value
+    if isinstance(val, Lit) and val.kind == "str":
+        raise Error(f"{where}: object reference must be a bare name, not a quoted string "
+                    f"({val.val!r})", p.line)
+    if isinstance(val, Lit) and val.kind in ("raw", "lua", "num", "bool", "nil"):
+        return
+    for it in (val.items if isinstance(val, ListLit) else [val]):
+        if isinstance(it, Lit) and it.kind == "str" and isinstance(val, ListLit):
+            name = it.val.strip()
+        elif isinstance(it, Sym):
+            name = it.name
+        elif isinstance(it, (Lit, ListLit, FnRef)):
+            continue                     # raw/nil/bool/number/tables and handlers
+        else:
+            raise Error(f"{where}: expected object reference, got expression", p.line)
+        if name not in ctx.objects:
+            raise Error(f"{where}: unknown object reference {name!r}", it.line or p.line)
 
 
 def _check_var_ref(ctx: Context, name: str, val: Expr, line: int):
@@ -640,12 +634,11 @@ def _decl_prop(ctx: Context, kind: str, name: str) -> Optional[Prop]:
 def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, Type]:
     """Parameters of a prop body, taken from the declared `fn(...)` of the field."""
     decl = _decl_prop(ctx, kind, p.name)
-    typ = (decl.typ if decl else None) or ""
-    names: List[str] = (decl.type_params if decl and decl.type_params else None) or []
+    names: List[str] = list(decl.type_params) if decl and decl.type_params else []
     if p.params is None and names:
         p.params = list(names)
     env: Dict[str, Type] = {}
-    one = types.fn_of(typ)
+    one = types.fn_of(decl.typ) if decl is not None and decl.typ is not None else None
     if one is not None:
         for i, t in enumerate(one.params):
             env[names[i] if i < len(names) and names[i] else f"_{i}"] = t
@@ -653,12 +646,6 @@ def _prop_body_env(ctx: Context, kind: str, p: Prop) -> Dict[str, Type]:
     for pn in p.params or []:
         env.setdefault(pn, ANY)
     return env
-
-
-def _decl_emit(ctx: Context, kind: str, name: str) -> Optional[Emit]:
-    """How the declared field reaches Lua (`= method attr(join)`)."""
-    decl = _decl_prop(ctx, kind, name)
-    return decl.emit if decl else None
 
 
 def _check_emit(where: str, emit: Emit, value: Any, line: int):
@@ -669,12 +656,6 @@ def _check_emit(where: str, emit: Emit, value: Any, line: int):
     elif emit.form == "table":
         if not (isinstance(value, Lit) and value.kind == "table"):
             raise TypeCheckError(f"{where}: `:{emit.method}{{...}}` takes a `{{ ... }}` table", line)
-
-
-def _decl_type(ctx: Context, kind: str, name: str) -> Optional[str]:
-    """The declared type of a field, looked up through the class chain of `kind`."""
-    decl = _decl_prop(ctx, kind, name)
-    return decl.typ if decl else None
 
 
 def _entity_kind(ctx: Context, ent: EntityDecl) -> str:
@@ -696,7 +677,8 @@ def _check_entity(ctx: Context, ent: EntityDecl):
     for p in ent.props:
         _check_ref_prop(ctx, owner, p)
         where = f"{owner}.{p.name}" if owner else p.name
-        declared = _decl_type(ctx, kind, p.name) if kind else None
+        decl = _decl_prop(ctx, kind, p.name) if kind else None
+        declared = decl.typ if decl else None
         if isinstance(p.value, FnRef):
             _check_fn_target(ctx, p.value)
             ctx.used_refs.add(p.value.name)
@@ -718,7 +700,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
             _prop_body_env(ctx, kind, p)  # populates p.params if declared on the class
         elif isinstance(p.value, Expr):
             _check_expr(ctx, p.value, {"s": _root(ctx)}, owner, declared)
-        emit = _decl_emit(ctx, kind, p.name) if kind else None
+        emit = decl.emit if decl else None
         if emit and p.value is not None:
             p.emit = emit
             _check_emit(where, emit, p.value, p.line)
@@ -818,6 +800,12 @@ def _check_talk_body(ctx: Context, part: Any, env: Dict[str, Type], owner: str,
         _check_expr(ctx, part, dict(env), owner, want)
 
 
+def _choice_type(ctx: Context, name: str) -> Optional[Type]:
+    """The declared type of a `choice` field (`class choice` in core.mise)."""
+    decl = _decl_prop(ctx, "choice", name)
+    return decl.typ if decl else None
+
+
 def _check_talk(ctx: Context, td: TalkDecl):
     env = {"s": "talk"}
     own = ctx.fields.setdefault(td.name, {})
@@ -840,7 +828,7 @@ def _check_talk(ctx: Context, td: TalkDecl):
     def chk_c(c: TalkChoice):
         check_next(c)
         members_ = [(c.cond, None, "when")] + [
-            (getattr(c, f), _decl_type(ctx, "choice", f), f) for f in CHOICE_FIELDS
+            (getattr(c, f), _choice_type(ctx, f), f) for f in CHOICE_FIELDS
         ]
         for part, want, what in members_:
             _check_talk_body(ctx, part, env, td.name, want, f"talk {td.name}: {what}", c.line)
@@ -1081,11 +1069,6 @@ def _sig_text(types: List[Type]) -> str:
     return ", ".join(str(t) for t in types) if types else "no arguments"
 
 
-def _sig_str(fn: FnDecl) -> str:
-    """`fn(obj) -> str` — a function's own signature, for a diagnostic."""
-    return str(Fn(tuple(pt for _pn, pt in fn.params), tuple(fn.ret_types)))
-
-
 def _check_fn_target(ctx: Context, ref: FnRef):
     """A `&name` must name a real function.
 
@@ -1114,7 +1097,8 @@ def _check_fnref(ctx: Context, ref: FnRef, expected: Optional[Type], where: str)
         return
     if any(_sig_ok(ctx, fn, a) for a in alts):
         return
-    raise TypeCheckError(f"{where}: {ref.name} is {_sig_str(fn)}, expected "
+    got = Fn(tuple(pt for _pn, pt in fn.params), tuple(fn.ret_types))
+    raise TypeCheckError(f"{where}: {ref.name} is {got}, expected "
                          f"{' | '.join(str(a) for a in alts)}", ref.line)
 
 
@@ -1197,11 +1181,7 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, Type],
     if not isinstance(target, FieldAccess):
         _check_expr(ctx, target, env, owner, is_lhs=True)
         return
-    base_t = _check_expr(ctx, target.obj, env, owner)
-    if types.is_optional(base_t):
-        raise TypeCheckError(
-            f"{_kind_name(target.obj)}: possible nil, narrow it first (`if {_kind_name(target.obj)}:`)",
-            line)
+    need_value(_check_expr(ctx, target.obj, env, owner), _kind_name(target.obj), line)
     name = target.field
     if name in READONLY_FIELDS:
         raise Error(f"{name}: an engine field cannot be assigned", line)
@@ -1411,9 +1391,7 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, Type],
     if is_lhs:
         e.typ = base_t
         return base_t
-    if types.is_optional(base_t):
-        raise TypeCheckError(
-            f"{_kind_name(e.obj)}: possible nil, narrow it first (`if {_kind_name(e.obj)}:`)", e.line)
+    need_value(base_t, _kind_name(e.obj), e.line)
     if not _objectish(ctx, base_t):
         raise TypeCheckError(f"{_kind_name(e.obj)}: {base_t} has no fields "
                              f"(`.{e.field}`)", e.line)
@@ -1439,15 +1417,21 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, Type],
     raise Error(f"unknown field {e.field!r} (use __{e.field} for dynamic values)", e.line)
 
 
-def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, Type], owner: Optional[str]) -> str:
+def _both_sides(ctx: Context, e: BinOp, env: Dict[str, Type], owner: Optional[str],
+                want: Type, label: str):
+    """Check both operands of a binary operation against one type."""
+    for side in (e.left, e.right):
+        expect(ctx, label, _check_expr(ctx, side, env, owner, want), want, side.line)
+
+
+def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, Type], owner: Optional[str]) -> Type:
     lt = _check_expr(ctx, e.left, env, owner)
     if e.op in ("==", "!="):
         _infer(ctx, e.right, env, owner, lt)  # resolves bare names, comparing is not a type error
         e.typ = BOOL
         return BOOL
     if e.op in ("<", "<=", ">", ">="):
-        for side in (e.left, e.right):
-            expect(ctx, "comparison", _check_expr(ctx, side, env, owner, NUM), NUM, side.line)
+        _both_sides(ctx, e, env, owner, NUM, "comparison")
         e.typ = BOOL
         return BOOL
     if e.op == "..":
@@ -1458,8 +1442,7 @@ def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, Type], owner: Optional[s
         e.typ = STR
         return STR
     if e.op in ("+", "-", "*", "/", "%", "//"):
-        for side in (e.left, e.right):
-            expect(ctx, "arithmetic", _check_expr(ctx, side, env, owner, NUM), NUM, side.line)
+        _both_sides(ctx, e, env, owner, NUM, "arithmetic")
         e.typ = NUM
         return NUM
     rt = _check_expr(ctx, e.right, env, owner)
@@ -1490,11 +1473,7 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, Type], owner: Optional[str
     fn = None if shadowed else ctx.fns.get(c.func)
 
     if is_method:
-        rt = _check_expr(ctx, c.receiver, env, owner)
-        if types.is_optional(rt):
-            raise TypeCheckError(
-                f"{_kind_name(c.receiver)}: possible nil, narrow it first (`if {_kind_name(c.receiver)}:`)",
-                c.line)
+        need_value(_check_expr(ctx, c.receiver, env, owner), _kind_name(c.receiver), c.line)
 
     if fn is None:
         return _check_indirect_call(ctx, c, env, owner, is_method, all_args)
