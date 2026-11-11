@@ -1,7 +1,9 @@
 """Minimalist recursive-descent parser for MISE 2."""
 from typing import Any, List, Optional, Tuple
+from . import types
 from .ast_nodes import *
 from .lexer import Token, tokenize
+from .types import ANY, Fn, Name, Ref, Tbl, Type, opt, union
 
 PHASES = frozenset({"on", "before", "after", "post", "life"})
 META_KEYS = frozenset({"game", "name", "version", "author", "info"})
@@ -145,19 +147,19 @@ class Parser:
 
     # --- Types, Vars, Fns ---
 
-    def _parse_type_str(self, single: bool = False, names: Optional[List[str]] = None) -> str:
+    def _parse_type_str(self, single: bool = False, names: Optional[List[str]] = None) -> Type:
         """`single` stops the `->` return list at a comma: inside a parameter list
         `fn(a) -> b, c` means "a callback returning b, then a parameter c"."""
         res = [self._parse_type_atom(names, single)]
         while self.match("OP", "|"):
             res.append(self._parse_type_atom(names, single))
-        return "|".join(res)
+        return union(*res)
 
-    def _parse_type_atom(self, names: Optional[List[str]], single: bool = False) -> str:
+    def _parse_type_atom(self, names: Optional[List[str]], single: bool = False) -> Type:
         t = self.cur()
         if t.val == "fn" and self.peek().val == "(":
             self.pos += 2
-            pts = []
+            pts: List[Type] = []
             if not self.at("OP", ")"):
                 while True:
                     pname = None
@@ -170,27 +172,31 @@ class Parser:
                     if not self.match("OP", ","):
                         break
             self.eat("OP", ")")
-            ret = ""
+            rts: List[Type] = []
             if self.match("OP", "->"):
-                rts = [self._parse_type_str(single)]
+                rts.append(self._parse_type_str(single))
                 while not single and self.match("OP", ","):
                     rts.append(self._parse_type_str())
-                ret = "->" + ",".join(rts)
-            return f"fn({','.join(pts)}){ret}{'?' if self.match('OP', '?') else ''}"
+            one: Type = Fn(tuple(pts), tuple(rts))
+            return opt(one) if self.match("OP", "?") else one
         if t.val == "tbl" and self.peek().val == "[":
             self.pos += 2
-            inner = self._parse_type_str(single)
+            inner = self._parse_type_str(single) if not self.at("OP", "]") else Name("")
             self.eat("OP", "]")
-            return f"tbl[{inner}]{'?' if self.match('OP', '?') else ''}"
+            one = Tbl(inner)
+            return opt(one) if self.match("OP", "?") else one
         if t.val == "ref" and self.peek().val == "[":
             # `ref[C]` — a reference to an object of class C (`ref` is `ref[obj]`)
             self.pos += 2
             inner = self._parse_type_str(single)
             self.eat("OP", "]")
-            return f"ref[{inner}]{'?' if self.match('OP', '?') else ''}"
-        return self.eat("IDENT").val + ("?" if self.match("OP", "?") else "")
+            one = Ref(str(inner))
+            return opt(one) if self.match("OP", "?") else one
+        word = self.eat("IDENT").val
+        one: Type = Tbl(None) if word == "tbl" else Ref("") if word == "ref" else Name(word)
+        return opt(one) if self.match("OP", "?") else one
 
-    def _parse_sig(self) -> List[str]:
+    def _parse_sig(self) -> List[Type]:
         """`[`: `type, type]` after a name — the arguments an event passes.
 
         A bare `event X:` (the colon with nothing after it) means "no arguments",
@@ -234,13 +240,13 @@ class Parser:
             return params, var
         while not self.at("OP", ")") and not self.at("EOF"):
             if default_s and self.match("OP", "..."):
-                var = self._parse_type_str(single=True) if self.match("OP", ":") else "any"
+                var = self._parse_type_str(single=True) if self.match("OP", ":") else ANY
                 break
             pn = self.eat("IDENT").val
             if self.match("OP", ":"):
                 pt: Any = self._parse_type_str(single=True)
             else:
-                pt = ("obj" if (default_s and pn == "s") else "any") if typed else None
+                pt = (Name("obj") if (default_s and pn == "s") else ANY) if typed else None
             params.append((pn, pt))
             if not self.match("OP", ","):
                 break

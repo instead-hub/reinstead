@@ -2,6 +2,8 @@
 from dataclasses import dataclass, field
 from typing import Any, List, Optional, Tuple
 
+from .types import Type
+
 
 class Error(Exception):
     def __init__(self, msg: str, line: int = 0, src: str = ""):
@@ -18,7 +20,7 @@ class Error(Exception):
 @dataclass
 class Expr:
     line: int = 0
-    typ: str = "any"
+    typ: Optional[Type] = None     # filled by the checker
 
 @dataclass
 class Lit(Expr):
@@ -69,7 +71,7 @@ class BinOp(Expr):
 @dataclass
 class Lambda(Expr):
     """`&(w) expr` / `&(w) <block>` — an anonymous function."""
-    params: List[Tuple[str, Optional[str]]] = field(default_factory=list)
+    params: List[Tuple[str, Optional[Type]]] = field(default_factory=list)
     body: Any = None                       # Expr or List[Stmt]
 
 @dataclass
@@ -77,7 +79,7 @@ class Bind(Expr):
     """`x := expr` / `a, b := expr` — a binding condition (`if`/`elseif`)."""
     names: List[str] = field(default_factory=list)
     value: Expr = field(default_factory=Expr)
-    vtyp: str = ""             # type of the value, filled by the checker
+    vtyp: Optional[Type] = None    # type of the value, filled by the checker
 
 @dataclass
 class InOp(Expr):
@@ -110,7 +112,7 @@ class ReturnStmt(Stmt):
 
 @dataclass
 class LocalStmt(Stmt):
-    names: List[Tuple[str, Optional[str]]] = field(default_factory=list)
+    names: List[Tuple[str, Optional[Type]]] = field(default_factory=list)
     values: List[Expr] = field(default_factory=list)
 
 @dataclass
@@ -136,7 +138,7 @@ class MatchStmt(Stmt):
 @dataclass
 class ForNumStmt(Stmt):
     var: str = ""
-    var_type: Optional[str] = None
+    var_type: Optional[Type] = None
     start: Expr = field(default_factory=Expr)
     stop: Expr = field(default_factory=Expr)
     step: Optional[Expr] = None
@@ -144,7 +146,7 @@ class ForNumStmt(Stmt):
 
 @dataclass
 class ForInStmt(Stmt):
-    vars: List[Tuple[str, Optional[str]]] = field(default_factory=list)
+    vars: List[Tuple[str, Optional[Type]]] = field(default_factory=list)
     iter_expr: Expr = field(default_factory=Expr)
     is_of: bool = False
     body: List[Stmt] = field(default_factory=list)
@@ -172,7 +174,7 @@ class Emit:
 class Prop:
     name: str
     value: Any = None          # Expr, List[Stmt], FnRef, None (type-only field in class)
-    typ: Optional[str] = None  # declared type in `class` (`n_to: room?`)
+    typ: Optional[Type] = None  # declared type in `class` (`n_to: room?`)
     params: Optional[List[str]] = None
     type_params: Optional[List[str]] = None   # names of `fn(s: obj, w: list)`
     emit: Optional[Emit] = None   # a method call instead of a plain field
@@ -198,9 +200,9 @@ class EntityDecl:
 @dataclass
 class FnDecl:
     name: str
-    params: List[Tuple[str, str]]
-    variadic: Optional[str] = None
-    ret_types: List[str] = field(default_factory=list)
+    params: List[Tuple[str, Type]]
+    variadic: Optional[Type] = None
+    ret_types: List[Type] = field(default_factory=list)
     body: Any = None           # List[Stmt] or str (template / raw lua)
     is_extern: bool = False
     is_value: bool = False          # `extern value` — an expression, not a callable
@@ -209,7 +211,7 @@ class FnDecl:
 @dataclass
 class EventsDecl:
     """`event A, B: obj, str` — names and the action arguments each one takes."""
-    sigs: List[Tuple[List[str], List[str]]] = field(default_factory=list)
+    sigs: List[Tuple[List[str], List[Type]]] = field(default_factory=list)
     extend: bool = False
     line: int = 0
 
@@ -218,7 +220,7 @@ class EventsDecl:
 class EntryDecl:
     """`entry init()` — a global the engine calls itself."""
     name: str
-    params: List[Tuple[str, str]] = field(default_factory=list)
+    params: List[Tuple[str, Type]] = field(default_factory=list)
     line: int = 0
 
 
@@ -226,7 +228,7 @@ class EntryDecl:
 class GlobalDecl:
     """`extern global mp: any = "mp"` — a Lua global reachable from expressions."""
     name: str
-    typ: str
+    typ: Type
     template: str
     line: int = 0
 

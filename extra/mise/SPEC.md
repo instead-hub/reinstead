@@ -728,6 +728,9 @@ extern_decl ::= "extern" "fn" IDENT "(" [ param_list ] ")" [ "->" type_list ] "=
               | "extern" "value" IDENT "(" [ param_list ] ")" [ "->" type_list ] "=" STRING
               | "extern" "global" IDENT ":" type "=" STRING
 
+(* `?` относится к атому слева от него, поэтому `fn(obj) -> str?` — функция,
+   возвращающая `str?`, а `ref[talk]?` — ссылка, которая может быть nil.
+   Внутри `fn(...) -> ...` список возвратов заканчивается на `?`/`,`/конце. *)
 type_list   ::= type { "," type }
 type        ::= base_type [ "?" ] { "|" base_type [ "?" ] }
 base_type   ::= "obj" | "str" | "num" | "bool" | "any" | "event" | "tbl" | "ref"

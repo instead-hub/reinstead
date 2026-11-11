@@ -3,6 +3,7 @@ MATCH_TMP = "__match"
 import re
 from typing import Any, List, Optional, Tuple
 from .ast_nodes import *
+from .types import EVENT, Type
 from .checker import Context, load_includes, prescan
 from .parser import parse_source
 
@@ -494,7 +495,9 @@ class Emitter:
                 return f"_'{n}'"
             if e.rk == "global_ref":
                 return f"_({n})"
-            if e.rk in ("event", "enum") or exp == "event" or (exp and exp in self.ctx.enums):
+            if e.rk in ("event", "enum") or exp == "event" \
+                    or (isinstance(exp, Type) and str(exp) in self.ctx.enums) \
+                    or (isinstance(exp, str) and exp and exp in self.ctx.enums):
                 return lua_str(n)
             if e.rk == "fn0":
                 return self._call(Call(line=e.line, func=n))
@@ -521,7 +524,7 @@ class Emitter:
         if isinstance(e, BinOp):
             op = "~=" if e.op == "!=" else e.op
             ls = self._expr(e.left)
-            rs = self._expr(e.right, "event" if e.left.typ == "event" else None)
+            rs = self._expr(e.right, "event" if e.left.typ == EVENT else None)
             if isinstance(e.left, BinOp) and _PREC[e.left.op] < _PREC[e.op]:
                 ls = f"({ls})"
             if isinstance(e.right, BinOp) and _PREC[e.right.op] < _PREC[e.op]:

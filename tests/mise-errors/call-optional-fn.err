@@ -1,1 +1,0 @@
-mise: line 15: f: a function value that may be nil — narrow it first (`if f:`)
