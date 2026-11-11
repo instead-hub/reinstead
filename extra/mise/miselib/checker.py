@@ -1367,12 +1367,12 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
     if isinstance(e, IndexAccess):
         ot = _check_expr(ctx, e.obj, env, owner)
         in_exp = tbl_inner(ot)
-        if not (_is_object_type(ctx, ot) or ot in ("tbl", "str") or in_exp is not None):
-            expect(ctx, "index", ot, "tbl|str", e.line)
-        _check_expr(ctx, e.index, env, owner, "num" if ot == "str" else None)
+        if not (_is_object_type(ctx, ot) or ot == "tbl" or in_exp is not None):
+            expect(ctx, "index", ot, "tbl", e.line)
+        _check_expr(ctx, e.index, env, owner, None)
         base = in_exp if in_exp is not None else (
-            _root(ctx) if _is_object_type(ctx, ot) else ("str" if ot == "str" else "any"))
-        e.typ = base if (ot == "str" or base in ("any", "nil") or base.endswith("?")) else base + "?"
+            _root(ctx) if _is_object_type(ctx, ot) else "any")
+        e.typ = base if base in ("any", "nil") or base.endswith("?") else base + "?"
         return e.typ
     if isinstance(e, UnaryOp):
         if e.op == "-" and isinstance(e.operand, Lit) and e.operand.kind == "str":
