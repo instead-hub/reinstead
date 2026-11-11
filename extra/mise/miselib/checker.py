@@ -1759,14 +1759,22 @@ def _check_indirect_call(ctx: Context, c: Call, env: Dict[str, Type], owner: Opt
             raise Error(f"unknown method {c.func!r} "
                         f"(a method call needs a function or an extern)", c.line)
         raise Error(f"unknown function {c.func!r}", c.line)
-    for i, a in enumerate(all_args):
-        if not (is_method and i == 0):      # the receiver is checked by the caller
-            _check_expr(ctx, a, env, owner)
     if types.is_optional(ftype):
         raise TypeCheckError(
             f"{c.func}: a function value that may be nil — narrow it first (`if {c.func}:`)",
             c.line)
     one = types.fn_of(ftype)
+    args = all_args[1:] if is_method else all_args
+    if one is not None:
+        required = sum(1 for t in one.params if not types.is_optional(t))
+        if len(args) < required:
+            raise TypeCheckError(f"{c.func}: expects {required} argument(s), "
+                                 f"got {len(args)}", c.line)
+    for i, a in enumerate(args):
+        want = one.params[i] if (one is not None and i < len(one.params)) else None
+        got = _check_expr(ctx, a, env, owner, want)
+        if want is not None:
+            expect(ctx, f"argument {i + 1} of {c.func}", got, want, a.line)
     c.typ = one.rets[0] if one is not None and one.rets else ANY
     return c.typ
 
