@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+fn myfn(n: num) -> num
+  return n
+
+fn f()
+  say (tostr myfn)

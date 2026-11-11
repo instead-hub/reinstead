@@ -1119,17 +1119,24 @@ def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type], owner:
 
 
 def _check_return_stmt(ctx: Context, s: ReturnStmt, env: Dict[str, Type], owner: Optional[str],
-                       rets: Optional[List[str]], fn_decl: Optional[FnDecl]):
-    for v in s.values:
-        t = _check_expr(ctx, v, env, owner)
+                       rets: Optional[List[Type]], fn_decl: Optional[FnDecl]):
+    vts = _value_types(ctx, s.values, env, owner)   # a trailing call expands its results
+    for t in vts:
         if rets is not None and t != NIL:
             rets.append(t)
-    if fn_decl is not None and s.kind == "return" and s.values:
-        expected = fn_decl.ret_types
-        if len(s.values) > len(expected):
-            raise Error(f"fn {fn_decl.name}: returns {len(s.values)} value(s), {len(expected)} declared", s.line)
-        for i, v in enumerate(s.values):
-            expect(ctx, f"return value {i + 1} of {fn_decl.name}", v.typ, expected[i], s.line)
+    if fn_decl is None or s.kind != "return" or not s.values:
+        return
+    expected = fn_decl.ret_types
+    explicit, expanded = len(s.values), len(vts)
+    if explicit == expanded:            # plain values: the count is written by the author
+        bad = expanded != len(expected)
+    else:                               # a trailing call expands: Lua may truncate it
+        bad = expanded < len(expected)
+    if bad:
+        raise Error(f"fn {fn_decl.name}: returns {expanded} value(s), "
+                    f"{len(expected)} declared", s.line)
+    for i, v in enumerate(s.values[:len(expected)]):
+        expect(ctx, f"return value {i + 1} of {fn_decl.name}", vts[i], expected[i], s.line)
 
 
 def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
@@ -1557,6 +1564,10 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, Type],
         return e.typ
     if n in ctx.fns or n in ctx.lua_funcs:
         sig = ctx.fns.get(n)
+        required = sum(1 for _pn, pt in (sig.params if sig is not None else [])
+                       if not types.is_optional(pt))
+        if required:
+            raise Error(f"{n}: needs {required} argument(s) — call it or take `&{n}`", e.line)
         e.rk = "value" if (sig and sig.is_value) else "fn0"
         e.typ = sig.ret_types[0] if (sig and sig.ret_types) else ANY
         return e.typ
