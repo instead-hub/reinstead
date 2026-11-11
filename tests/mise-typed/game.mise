@@ -6,6 +6,8 @@ include stdlib
 
 global
   chosen = crate
+  last_room: obj? = none       # аннотация: «комната или ничего»
+  flag: bool = false
 
 class obj
   target: ref
@@ -45,6 +47,9 @@ fn ev_text(ev: event) -> str
 # нормализует одиночную ссылку в список при загрузке — читать и обходить можно
 fn first_in(s: obj) -> ref?
   return s.found_in[1]
+
+fn remember_room(s: obj)
+  last_room = s:where
 
 fn scope_names(s: obj) -> num
   local n = 0

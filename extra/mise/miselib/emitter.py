@@ -53,7 +53,7 @@ class Emitter:
             elif isinstance(it, LuaDecl):
                 chunks.append(it.code)
             elif isinstance(it, VarDecl):
-                chunks.append("\n".join(f"{it.kind} '{vn}' ({self._prop_scalar(ve, ve.typ in self.ctx.objects or (isinstance(ve, Sym) and ve.name in self.ctx.objects))})" for vn, ve, _l in it.items))
+                chunks.append("\n".join(f"{it.kind} '{vn}' ({self._prop_scalar(ve, ve.typ in self.ctx.objects or (isinstance(ve, Sym) and ve.name in self.ctx.objects))})" for vn, _vt, ve, _l in it.items))
             elif isinstance(it, EntityDecl):
                 s = self._emit_entity(it)
                 if s:

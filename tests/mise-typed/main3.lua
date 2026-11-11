@@ -68,6 +68,10 @@ local function fn_first_in(s)
   return _(s.found_in)[1]
 end
 
+local function fn_remember_room(s)
+  last_room = where(s)
+end
+
 local function fn_scope_names(s)
   local n = 0
   for _, w in ipairs(_(s.scope)) do
@@ -155,6 +159,8 @@ Path = Class {
 --"мочь"
 
 global 'chosen' ('crate')
+global 'last_room' ('none')
+global 'flag' (false)
 
 Box = Class {
   weight = 0;

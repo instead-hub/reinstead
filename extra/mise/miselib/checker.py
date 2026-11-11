@@ -645,12 +645,13 @@ def _collect_entity_fields(ctx: Context, ent: EntityDecl):
 def _collect_fields_and_refs(ctx: Context, prog: Program):
     for item in prog.items:
         if isinstance(item, VarDecl):
-            for vn, ve, _l in item.items:
+            for vn, vt, ve, _l in item.items:
                 if vn in ctx.globals:
                     raise Error(f"global {vn}: declared twice", _l)
                 if vn in ctx.objects or vn in ctx.classes:
                     raise Error(f"global {vn}: an object or a class has this name", _l)
-                ctx.globals[vn] = _lit_type(ctx, ve)
+                ctx.globals[vn] = (vt, _is_ref_type(ctx, vt)) if vt is not None \
+                    else _lit_type(ctx, ve)
         elif isinstance(item, EntityDecl):
             _collect_entity_fields(ctx, item)
 
@@ -660,7 +661,10 @@ def _collect_fields_and_refs(ctx: Context, prog: Program):
                 if p.typ:
                     _check_type(ctx, p.typ, f"{item.name or ''}.{p.name}".lstrip("."), p.line)
         elif isinstance(item, VarDecl):
-            for vn, ve, vl in item.items:
+            for vn, vt, ve, vl in item.items:
+                if vt is not None:
+                    _check_type(ctx, vt, f"global {vn}", vl)
+                    expect(ctx, f"global {vn}", _lit_type(ctx, ve)[0], vt, vl)
                 _check_var_ref(ctx, vn, ve, vl)
 
 
@@ -1130,20 +1134,21 @@ def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type], owner:
             expect(ctx, f"'{s.op}'", t, NUM, s.line)
     if isinstance(s.target, Sym):
         name = s.target.name
-        if name in ctx.globals:
-            cur = env.get(name)
-        elif name in env:
+        local = name in env                    # a local shadows a global of that name
+        if local:
             cur = env[name]
+        elif name in ctx.globals:
+            cur = ctx.globals[name][0]         # a global keeps its declared type
         elif name.startswith("__"):
             cur = None
         else:
             raise Error(f"unknown name {name!r} (declare it with `local` or `global`)", s.line)
-        if cur is not None and s.op == "=" and vt:
+        if cur is not None and cur != ANY and s.op == "=" and vt:
             expect(ctx, f"assignment to {name}", vt[0], cur, s.line)
-        if cur is not None and s.op in ("+=", "-=") and cur != ANY:
+        if cur is not None and cur != ANY and s.op in ("+=", "-="):
             expect(ctx, f"{name} ({s.op})", cur, NUM, s.line)
-        if cur in (None, ANY) and vt and s.op == "=":
-            env[name] = vt[0]
+        if local and cur in (None, ANY) and vt and s.op == "=":
+            env[name] = vt[0]                  # a local takes the type of its first value
     else:
         _check_store(ctx, s.target, vt[0] if vt else ANY, env, owner, s.line, s.op)
 

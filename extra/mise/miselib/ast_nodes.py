@@ -278,7 +278,7 @@ class TalkDecl:
 @dataclass
 class VarDecl:
     kind: str                  # "global" or "const"
-    items: List[Tuple[str, Expr, int]] = field(default_factory=list)
+    items: List[Tuple[str, Optional[Type], Expr, int]] = field(default_factory=list)
 
 @dataclass
 class LuaDecl:

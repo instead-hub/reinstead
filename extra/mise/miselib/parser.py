@@ -291,14 +291,16 @@ class Parser:
             self.eat("INDENT")
             while not self.at("DEDENT") and not self.at("EOF"):
                 vn = self.eat("IDENT").val
+                vt = self._parse_type_str() if self.match("OP", ":") else None
                 self.eat("OP", "=")
-                items.append((vn, self.parse_expr(), self.cur().line))
+                items.append((vn, vt, self.parse_expr(), self.cur().line))
                 self.eat_nl()
             self.eat("DEDENT")
         else:
             vn = self.eat("IDENT").val
+            vt = self._parse_type_str() if self.match("OP", ":") else None
             self.eat("OP", "=")
-            items.append((vn, self.parse_expr(), self.cur().line))
+            items.append((vn, vt, self.parse_expr(), self.cur().line))
             self.eat_nl()
         return VarDecl(kind=kind, items=items)
 
