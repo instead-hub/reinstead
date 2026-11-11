@@ -215,7 +215,7 @@ class Emitter:
             return self._pure(e.left) and self._pure(e.right)
         return False
 
-    def _in_op(self, e: InOp, as_lhs: bool = False) -> str:
+    def _in_op(self, e: InOp) -> str:
         """`x in a, b` — compare once (a call subject is bound to a parameter)."""
         subj = self._expr(e.subject)
         chks = [f"{'c' if not self._pure(e.subject) else subj} == {self._expr(a)}"
@@ -520,7 +520,7 @@ class Emitter:
                 return f"function({prms})\n{b}\nend" if b.strip() else f"function({prms}) end"
             return f"function({prms}) return {self._expr(e.body)} end"
         if isinstance(e, InOp):
-            return self._in_op(e, as_lhs)
+            return self._in_op(e)
         if isinstance(e, BinOp):
             op = "~=" if e.op == "!=" else e.op
             ls = self._expr(e.left)

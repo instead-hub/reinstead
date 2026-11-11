@@ -839,10 +839,10 @@ def _check_talk(ctx: Context, td: TalkDecl):
 
     def chk_c(c: TalkChoice):
         check_next(c)
-        parts = [(c.cond, None, "when")] + [
+        members_ = [(c.cond, None, "when")] + [
             (getattr(c, f), _decl_type(ctx, "choice", f), f) for f in CHOICE_FIELDS
         ]
-        for part, want, what in parts:
+        for part, want, what in members_:
             _check_talk_body(ctx, part, env, td.name, want, f"talk {td.name}: {what}", c.line)
         for sub in c.children:
             chk_c(sub)
