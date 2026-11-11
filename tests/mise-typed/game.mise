@@ -13,6 +13,14 @@ class obj
 class Box : container
   weight = 0
 
+# одноимённое поле с другим типом: `target` у `class obj` — ссылка (`ref`),
+# а здесь — строка. Реф-ность поля решается по объявлению класса, не по имени.
+class Tag : obj
+  target: str
+
+Tag note "записка"
+  target = "просто текст"
+
 fn label(w: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str
   if n and nn
     return w:noun n nn

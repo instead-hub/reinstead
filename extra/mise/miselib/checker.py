@@ -37,7 +37,6 @@ class Context:
     field_names: Set[str] = field(default_factory=set)
     entries: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)  # engine entry points
     lua_globals: Dict[str, GlobalDecl] = field(default_factory=dict)     # `extern global`
-    ref_fields: Set[str] = field(default_factory=set)   # fields whose declared type says "reference"
 
     fns: Dict[str, FnDecl] = field(default_factory=dict)
     used_refs: Set[str] = field(default_factory=set)
@@ -308,8 +307,7 @@ def _register_class_decl(ctx: Context, item: EntityDecl, idx: int, class_at: Dic
             if prev_p is not None and p.emit is None and prev_p.emit is not None:
                 p.emit = prev_p.emit
             ctx.prop_decls[item.name][p.name] = p
-            if _is_ref_type(ctx, p.typ):
-                ctx.ref_fields.add(p.name)
+            p.is_ref = _is_ref_type(ctx, p.typ)
 
 
 def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[str]], Dict[str, int]]:
@@ -494,6 +492,15 @@ def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[s
                 ]
 
 
+def _declared_ref(ctx: Context, kind: str, traits: List[str], name: str) -> bool:
+    """Is this field declared with a reference type by the class chain or a trait?"""
+    for cur in [kind] + [tr for tr in traits if tr in ctx.classes]:
+        decl = _decl_prop(ctx, cur, name)
+        if decl is not None:
+            return bool(decl.typ and _is_ref_type(ctx, decl.typ))
+    return False
+
+
 def _collect_entity_fields(ctx: Context, ent: EntityDecl):
     for p in ent.props:
         ctx.field_names.add(p.name)
@@ -502,14 +509,17 @@ def _collect_entity_fields(ctx: Context, ent: EntityDecl):
     for src in [base] + [tr for tr in ent.traits if tr in ctx.classes]:
         for k, v in ctx.fields.get(src, {}).items():
             fmap.setdefault(k, v)
+    kind = ent.name if ent.kind == "class" else ent.kind
     for p in ent.props:
-        is_ref = bool(p.typ) and _is_ref_type(ctx, p.typ)
-        if is_ref:
-            ctx.ref_fields.add(p.name)
+        # `is_ref` is the declared contract: a field of the class chain (or a trait)
+        # whose type says "reference". It decides whether the value is validated as
+        # an object name and whether the emitter writes it bare or quoted.
+        p.is_ref = bool(p.typ and _is_ref_type(ctx, p.typ)) \
+            or _declared_ref(ctx, kind, ent.traits, p.name)
         if p.value is not None and ent.name:
             fmap[p.name] = _lit_type(ctx, p.value) if isinstance(p.value, Expr) else ("fn", False)
         elif p.typ and ent.name:
-            fmap[p.name] = (p.typ, is_ref)
+            fmap[p.name] = (p.typ, p.is_ref)
     for ch in ent.children:
         _collect_entity_fields(ctx, ch)
 
@@ -618,7 +628,7 @@ def _check_ref_value(ctx: Context, where: str, val: Any, line: int = 0):
 
 def _check_ref_prop(ctx: Context, ent_name: Optional[str], p: Prop):
     """Validate reference values on a reference field."""
-    if p.name not in ctx.ref_fields or p.value is None or isinstance(p.value, (list, FnRef)):
+    if not p.is_ref or p.value is None or isinstance(p.value, (list, FnRef)):
         return
     if isinstance(p.value, Lit) and p.value.kind in ("raw", "lua", "num", "bool", "nil"):
         return
@@ -1267,7 +1277,7 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, str],
     if holder is not None and not name.startswith("__"):
         raise Error(f"{holder}.{name}: no such field "
                     f"(nothing declares it for {holder}; use __{name} for a dynamic value)", line)
-    if name not in ctx.field_names and name not in ctx.ref_fields:
+    if name not in ctx.field_names:
         raise Error(f"unknown field {name!r} (use __{name} for dynamic values)", line)
 
 
@@ -1464,9 +1474,6 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, str],
         ft, is_r = ctx.fields[holder][e.field]
         e.is_ref, e.typ = is_r, ft
         return ft
-    if e.field in ctx.ref_fields:
-        e.is_ref, e.typ = True, _root(ctx)
-        return _root(ctx)
     if holder is not None and not e.field.startswith("__"):
         spec = _fields_of(ctx, holder).get(e.field)
         if spec is None:

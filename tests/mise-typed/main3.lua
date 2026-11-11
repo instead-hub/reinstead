@@ -142,6 +142,14 @@ Box = Class {
   weight = 0;
 }:attr 'container'
 
+Tag = Class {}
+
+Tag {
+  -"записка";
+  nam = "note";
+  target = "просто текст";
+}
+
 Box {
   -"ящик";
   nam = "crate";

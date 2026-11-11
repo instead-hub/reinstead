@@ -176,6 +176,7 @@ class Prop:
     params: Optional[List[str]] = None
     type_params: Optional[List[str]] = None   # names of `fn(s: obj, w: list)`
     emit: Optional[Emit] = None   # a method call instead of a plain field
+    is_ref: bool = False          # the declared type says "reference" (filled by the checker)
     line: int = 0
 
 @dataclass

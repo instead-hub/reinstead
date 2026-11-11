@@ -239,7 +239,7 @@ class Emitter:
             b = _ind(self._stmts(v), ind + 2)
             return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
         if isinstance(v, ListLit):
-            is_r = p.name in self.ctx.ref_fields
+            is_r = p.is_ref
             items = [f'"{it.name}"' if (is_r and isinstance(it, Sym)) else self._expr(it) for it in v.items]
             if is_r and len(items) == 1 and isinstance(v.items[0], Sym):
                 return f"'{v.items[0].name}'"
@@ -248,7 +248,7 @@ class Emitter:
                 return "{\n" + body + pad + "}"
             return "{ " + ", ".join(items) + " }"
         if isinstance(v, Expr):
-            return self._prop_scalar(v, p.name in self.ctx.ref_fields or (isinstance(v, Sym) and v.name in self.ctx.objects))
+            return self._prop_scalar(v, p.is_ref or (isinstance(v, Sym) and v.name in self.ctx.objects))
         return "nil"
 
     def _prop_prms(self, p: Prop) -> str:
