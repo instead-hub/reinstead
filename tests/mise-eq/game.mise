@@ -45,7 +45,7 @@ verb Probe
   patterns = ["{noun}/вн : Probe"]
   hint = [[Подсказка.]]
 
-event Probe
+event Probe: obj
 
 room hall "зал"
   dsc = "Большой зал."

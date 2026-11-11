@@ -541,7 +541,7 @@ def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[s
                         ctx.event_names.add(ps[0])
                         if ps[2]:
                             ctx.event_acted.add(ps[0])
-                        contribs.append((ps[0], ps[1]))
+                        contribs.append((ps[0], ps[1], item.line))
 
     ctx.event_args = {k: list(v) for k, v in base_evs.items()}
     for ev, sigs in base_evs.items():
@@ -551,8 +551,9 @@ def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[s
                      or str(without_nil(first)) in ctx.classes):
             ctx.event_acted.add(ev)
     for contribs in active_verbs.values():
-        for ev, slots in contribs:
+        for ev, slots, line in contribs:
             if ev in base_evs:
+                _check_pattern_fits(ctx, ev, slots, base_evs[ev], line)
                 continue
             cur = ctx.event_args.get(ev)
             if cur is None:
@@ -580,6 +581,19 @@ def _decl_of(ctx: Context, scopes: List[str], name: str) -> Optional[Prop]:
         if decl is not None:
             return decl
     return None
+
+
+def _check_pattern_fits(ctx: Context, ev: str, slots: List[Type], declared: List[Type],
+                        line: int):
+    """The engine passes what the pattern captured: an event declared with another
+    arity would hand the handler nil (or a value of the wrong type)."""
+    if len(slots) != len(declared):
+        raise Error(f"verb pattern for {ev}: {len(slots)} argument(s), "
+                    f"the event declares {len(declared)}", line)
+    for i, (got, want) in enumerate(zip(slots, declared)):
+        if not is_subtype(ctx, got, want):
+            raise Error(f"verb pattern for {ev}: argument {i + 1} is {got}, "
+                        f"the event declares {want}", line)
 
 
 def _declared_ref(ctx: Context, scopes: List[str], name: str) -> bool:
