@@ -117,11 +117,9 @@ class Parser:
         if kw == "entry":
             self.pos += 1
             tok = self.eat("IDENT")
-            line, name = tok.line, tok.val
-            params = self._opt_params()
+            params, _ = self._parse_param_list(default_s=False, typed=True)
             self.eat_nl()
-            prog.items.append(EntryDecl(name=name, params=params, line=line))
-            return
+            return prog.items.append(EntryDecl(name=tok.val, params=params, line=tok.line))
         if kw == "extern":
             return prog.items.append(self._parse_fn(is_extern=True))
         if kw == "event":
@@ -173,16 +171,14 @@ class Parser:
                 while not single and self.match("OP", ","):
                     rts.append(self._parse_type_str())
             one: Type = Fn(tuple(pts), tuple(rts))
-            return opt(one) if self.match("OP", "?") else one
-        if t.val in ("tbl", "ref") and self.peek().val == "[":
-            # `tbl[T]` — a table of T; `ref[C]` — a reference to an object of class C
+        elif t.val in ("tbl", "ref") and self.peek().val == "[":
             self.pos += 2
             inner = self._parse_type_str(single) if not self.at("OP", "]") else Name("")
             self.eat("OP", "]")
             one = Tbl(inner) if t.val == "tbl" else Ref(str(inner))
-            return opt(one) if self.match("OP", "?") else one
-        word = self.eat("IDENT").val
-        one: Type = Tbl(None) if word == "tbl" else Ref("") if word == "ref" else Name(word)
+        else:
+            word = self.eat("IDENT").val
+            one = Tbl(None) if word == "tbl" else Ref("") if word == "ref" else Name(word)
         return opt(one) if self.match("OP", "?") else one
 
     def _parse_sig(self) -> List[Type]:
@@ -283,6 +279,14 @@ class Parser:
             return code
         return self.parse_stmt_block()
 
+    def _parse_var_item(self) -> Tuple[str, Optional[Type], Expr, int]:
+        vn = self.eat("IDENT").val
+        vt = self._parse_type_str() if self.match("OP", ":") else None
+        self.eat("OP", "=")
+        item = (vn, vt, self.parse_expr(), self.cur().line)
+        self.eat_nl()
+        return item
+
     def _parse_vars(self) -> VarDecl:
         kind = self.eat("IDENT").val
         items = []
@@ -290,18 +294,10 @@ class Parser:
             self.skip_nl()
             self.eat("INDENT")
             while not self.at("DEDENT") and not self.at("EOF"):
-                vn = self.eat("IDENT").val
-                vt = self._parse_type_str() if self.match("OP", ":") else None
-                self.eat("OP", "=")
-                items.append((vn, vt, self.parse_expr(), self.cur().line))
-                self.eat_nl()
+                items.append(self._parse_var_item())
             self.eat("DEDENT")
         else:
-            vn = self.eat("IDENT").val
-            vt = self._parse_type_str() if self.match("OP", ":") else None
-            self.eat("OP", "=")
-            items.append((vn, vt, self.parse_expr(), self.cur().line))
-            self.eat_nl()
+            items.append(self._parse_var_item())
         return VarDecl(kind=kind, items=items)
 
     def _parse_lua(self) -> LuaDecl:
@@ -367,7 +363,7 @@ class Parser:
                     raise Error(f"bad field name {kw + ' ' + self.peek().val!r} "
                                 f"(did you mean {near[0] + ' ' + self.peek().val!r}?)",
                                 t.line, self.src)
-            if self._is_nested_entity():
+            if self.peek().kind in ("IDENT", "TAG"):
                 ent.children.append(self._parse_entity())
                 continue
             pname = self.eat("IDENT").val
@@ -389,11 +385,6 @@ class Parser:
             val = self._value_after_eq()
             ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
 
-    def _opt_params(self) -> List[Tuple[str, str]]:
-        """`(a, b: obj)` after a name."""
-        params, _ = self._parse_param_list(default_s=False, typed=True)
-        return params
-
     def _field_emit(self) -> Optional[Emit]:
         """`= method with(each)` — how a declared field's value reaches Lua."""
         if not self.match("OP", "="):
@@ -410,9 +401,7 @@ class Parser:
         if form not in ("each", "join", "list", "table", "none"):
             raise Error(f"unknown method form {form!r} (each, join, list, table, none)",
                         self.cur().line, self.src)
-        other = ""
-        if self.match("IDENT", "else"):        # `= method disable(none) else enable`
-            other = self.eat("IDENT").val
+        other = self.eat("IDENT").val if self.match("IDENT", "else") else ""
         return Emit(method=mname, form=form, other=other)
 
     def _header_words(self, allow_empty: bool = True) -> List[str]:
@@ -429,15 +418,6 @@ class Parser:
             self.eat("OP", "]")
             return res
         return []
-
-    def _str_or_list(self) -> List[str]:
-        res = self._header_words(allow_empty=False)
-        self.eat_nl()
-        return res
-
-    def _is_nested_entity(self) -> bool:
-        """`Kind name` starts a nested declaration; a member is always `key = ...`."""
-        return self.peek().kind in ("IDENT", "TAG")
 
     def _value_after_eq(self) -> Any:
         """After `=`: a value on the same line, or an indented body.
@@ -588,17 +568,15 @@ class Parser:
             self.eat("OP", "=")
             if k == "tag":
                 vd.tag = "" if self.match("IDENT", "false") else self.eat("TAG").val
-                self.eat_nl()
             elif k == "target":
                 vd.target = self.sym()
-                self.eat_nl()
             elif k == "prio":
                 vd.prio = int(self.eat("NUMBER").val)
-                self.eat_nl()
             elif k in ("words", "patterns"):
-                setattr(vd, k, self._str_or_list())
+                setattr(vd, k, self._header_words(allow_empty=False))
             else:
                 raise Error(f"unknown verb field {k!r}", ktok.line, self.src)
+            self.eat_nl()
         self.eat("DEDENT")
         return vd
 

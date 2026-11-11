@@ -3,7 +3,6 @@ MATCH_TMP = "__match"
 import re
 from typing import Any, List, Optional, Tuple
 from .ast_nodes import *
-from .types import EVENT, Type
 from .checker import Context, load_includes, prescan
 from .parser import parse_source
 
@@ -53,7 +52,7 @@ class Emitter:
             elif isinstance(it, LuaDecl):
                 chunks.append(it.code)
             elif isinstance(it, VarDecl):
-                chunks.append("\n".join(f"{it.kind} '{vn}' ({self._prop_scalar(ve, ve.typ in self.ctx.objects or (isinstance(ve, Sym) and ve.name in self.ctx.objects))})" for vn, _vt, ve, _l in it.items))
+                chunks.append("\n".join(f"{it.kind} '{vn}' ({self._prop_scalar(ve)})" for vn, _vt, ve, _l in it.items))
             elif isinstance(it, EntityDecl):
                 s = self._emit_entity(it)
                 if s:
@@ -249,7 +248,7 @@ class Emitter:
                 return "{\n" + body + pad + "}"
             return "{ " + ", ".join(items) + " }"
         if isinstance(v, Expr):
-            return self._prop_scalar(v, p.is_ref or (isinstance(v, Sym) and v.name in self.ctx.objects))
+            return self._prop_scalar(v, p.is_ref)
         return "nil"
 
     def _prop_prms(self, p: Prop) -> str:
@@ -475,7 +474,7 @@ class Emitter:
             return f"{fn}({', '.join(args)})"
         return f"{fn}({self._expr(e)})"
 
-    def _expr(self, e: Expr, exp: Optional[str] = None, as_lhs: bool = False) -> str:
+    def _expr(self, e: Expr, as_lhs: bool = False) -> str:
         if isinstance(e, Lit):
             return ("true" if e.val else "false") if e.kind == "bool" else ("nil" if e.kind == "nil" else (lua_str(e.val) if e.kind == "str" else str(e.val)))
         if isinstance(e, InterpStr):
@@ -495,9 +494,7 @@ class Emitter:
                 return f"_'{n}'"
             if e.rk == "global_ref":
                 return f"_({n})"
-            if e.rk in ("event", "enum") or exp == "event" \
-                    or (isinstance(exp, Type) and str(exp) in self.ctx.enums) \
-                    or (isinstance(exp, str) and exp and exp in self.ctx.enums):
+            if e.rk in ("event", "enum"):
                 return lua_str(n)
             if e.rk == "fn0":
                 return self._call(Call(line=e.line, func=n))
@@ -523,8 +520,7 @@ class Emitter:
             return self._in_op(e)
         if isinstance(e, BinOp):
             op = "~=" if e.op == "!=" else e.op
-            ls = self._expr(e.left)
-            rs = self._expr(e.right, "event" if e.left.typ == EVENT else None)
+            ls, rs = self._expr(e.left), self._expr(e.right)
             if isinstance(e.left, BinOp) and _PREC[e.left.op] < _PREC[e.op]:
                 ls = f"({ls})"
             if isinstance(e.right, BinOp) and _PREC[e.right.op] < _PREC[e.op]:
@@ -545,7 +541,7 @@ class Emitter:
             return self._p_call(c.args[0], fn) if len(c.args) == 1 else f"{fn}({', '.join(self._expr(a) for a in c.args)})"
         all_a = ([c.receiver] + c.args) if c.receiver else list(c.args)
         fn = self.ctx.fns.get(c.func)
-        args = [self._expr(a, fn.params[i][1] if (fn and i < len(fn.params)) else (fn.variadic if fn else None)) for i, a in enumerate(all_a)]
+        args = [self._expr(a) for a in all_a]
         if fn and isinstance(fn.body, str) and (fn.is_extern or (not fn.body.strip().startswith(("local ", "return ")) and "\n" not in fn.body)) and c.func not in self.ctx.used_refs:
             return self._expand(fn, args, as_stmt)
         if c.func in self.ctx.lua_funcs and c.func not in self.ctx.fns:
