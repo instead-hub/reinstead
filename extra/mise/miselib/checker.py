@@ -570,6 +570,8 @@ def _typecheck_program(ctx: Context, prog: Program):
 
 def _lit_type(ctx: Context, e: Expr) -> Tuple[str, bool]:
     if isinstance(e, Lit):
+        if e.kind == "table":            # `{ … }` — a Lua table
+            return "tbl", False
         return ("any" if e.kind == "raw" else e.kind), False
     if isinstance(e, InterpStr):
         return "str", False
@@ -585,7 +587,8 @@ def _lit_type(ctx: Context, e: Expr) -> Tuple[str, bool]:
             e.rk = "enum"
             return enum, False
     if isinstance(e, ListLit):
-        return "tbl", False
+        inner = canon_type("|".join(_lit_type(ctx, it)[0] for it in e.items)) if e.items else ""
+        return f"tbl[{inner}]", False
     return "any", False
 
 
@@ -1366,7 +1369,7 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, str], owner: Optional[str] = No
         in_exp = tbl_inner(ot)
         if not (_is_object_type(ctx, ot) or ot in ("tbl", "str") or in_exp is not None):
             expect(ctx, "index", ot, "tbl|str", e.line)
-        _check_expr(ctx, e.index, env, owner, "num")
+        _check_expr(ctx, e.index, env, owner, "num" if ot == "str" else None)
         base = in_exp if in_exp is not None else (
             _root(ctx) if _is_object_type(ctx, ot) else ("str" if ot == "str" else "any"))
         e.typ = base if (ot == "str" or base in ("any", "nil") or base.endswith("?")) else base + "?"
