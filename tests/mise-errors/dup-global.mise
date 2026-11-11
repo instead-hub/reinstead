@@ -1,0 +1,6 @@
+game "t"
+lang ru
+include stdlib
+
+global g = 1
+global g = "строка"

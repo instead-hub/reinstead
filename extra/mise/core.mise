@@ -47,7 +47,6 @@ class obj = obj
   gfx: str | fn(obj) -> str
   word: str | fn(obj) -> str
   raw_word: str | fn(obj) -> str
-  disabled: bool
 
 obj none
 

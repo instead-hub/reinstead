@@ -608,6 +608,8 @@ class Parser:
         while not self.at("DEDENT") and not self.at("EOF"):
             t = self.cur()
             if t.val == "intro":
+                if td.intro is not None:
+                    raise Error(f"talk {td.name}: `intro` declared twice", t.line, self.src)
                 self.pos += 1
                 td.intro = self._parse_handler_body()
             elif t.val == "label":

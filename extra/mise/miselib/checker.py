@@ -19,6 +19,8 @@ _SLOT_OBJ_RE = re.compile(r"\{(?:noun|noun_obj|compass\w*)\}")
 CURRENT_EVENT = frozenset({"ev", "event"})
 # engine fields the game must not assign (the engine owns them)
 READONLY_FIELDS = frozenset({"nam"})
+# objects the engine creates itself: `_'player'` resolves at load (`pl` is its global)
+ENGINE_OBJECTS = frozenset({"player"})
 
 
 class TypeCheckError(Error):
@@ -277,8 +279,18 @@ def _register_class_decl(ctx: Context, item: EntityDecl, idx: int, class_at: Dic
             prev_p = ctx.prop_decls.setdefault(item.name, {}).get(p.name)
             if prev_p is not None and p.emit is None and prev_p.emit is not None:
                 p.emit = prev_p.emit
+            _check_field_redeclared(item, p, prev_p)
             ctx.prop_decls[item.name][p.name] = p
             p.is_ref = _is_ref_type(ctx, p.typ)
+
+
+def _check_field_redeclared(item: EntityDecl, p: Prop, prev: Optional[Prop]):
+    """A class declaration of a field keeps its type: a game must not rewrite the
+    engine's contract (`class obj / nam: num`). A *subclass* may narrow a field
+    (`class talk / obj: tbl[choice]` is not a conflict with `class obj / obj`)."""
+    if prev is not None and prev.typ is not None and prev.typ != p.typ:
+        raise Error(f"class {item.name}: field {p.name!r} is already declared as "
+                    f"{prev.typ}, here as {p.typ}", p.line)
 
 
 def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[str]], Dict[str, int]]:
@@ -383,6 +395,15 @@ def _inline_mixin_traits(ctx: Context, ent: EntityDecl, instantiated_classes: Se
     ent.handlers = [h for h in exp_h if (h.phase, tuple(h.events)) not in own_h] + ent.handlers
 
 
+def _no_duplicates(names: Any, what: str, line: int):
+    """`fn f(a, a)`, `local a, a`, two parameters of one handler — a silent override."""
+    seen: Set[str] = set()
+    for n in names:
+        if n in seen:
+            raise Error(f"{what} {n!r}: declared twice", line)
+        seen.add(n)
+
+
 def _attr_values(ctx: Context) -> Set[str]:
     """The values of `type attr` — a trait may name a class, or one of them."""
     return ctx.enums.get("attr", (set(), False))[0]
@@ -414,8 +435,7 @@ def _register_entity(ctx: Context, ent: EntityDecl, idx: int,
             ctx.entity_of[ent.name] = ent
     if ent.kind == "impl" and ent.name and ent.name not in ("game", "pl", "mp") \
             and not ent.name.startswith("@") and ent.name not in ctx.objects \
-            and ent.name not in ctx.classes and ent.name not in ctx.fns \
-            and ent.name not in ctx.lua_funcs:
+            and ent.name not in ctx.classes and ent.name not in ENGINE_OBJECTS:
         raise Error(f"impl {ent.name!r}: unknown target", ent.line)
     for ch in ent.children:
         _register_entity(ctx, ch, idx, class_at, instantiated_classes)
@@ -552,6 +572,8 @@ def _collect_fields_and_refs(ctx: Context, prog: Program):
     for item in prog.items:
         if isinstance(item, VarDecl):
             for vn, ve, _l in item.items:
+                if vn in ctx.globals:
+                    raise Error(f"global {vn}: declared twice", _l)
                 ctx.globals[vn] = _lit_type(ctx, ve)
         elif isinstance(item, EntityDecl):
             _collect_entity_fields(ctx, item)
@@ -747,6 +769,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
                     f"(or put it into another object with `with`/`found_in`)",
                     ent.children[0].line)
     scopes = _decl_scope(ctx, ent)
+    _no_duplicates((p.name for p in ent.props), f"{owner or kind}: field", ent.line)
     for p in ent.props:
         _check_ref_prop(ctx, owner, p)
         where = f"{owner}.{p.name}" if owner else p.name
@@ -845,6 +868,7 @@ def _handler_params(ctx: Context, owner: Optional[str], kind: str, h: Handler
         params.append((name, st))
         arg_names[i] = name
     if h.params is not None:                      # the handler names its own
+        _no_duplicates(iter(h.params), f"{h.phase} {','.join(h.events)}: parameter", h.line)
         if len(h.params) > len(params):
             raise Error(f"{h.phase} {','.join(h.events)}: the engine passes "
                         f"{len(params)} parameter(s) here, the handler declares {len(h.params)}",
@@ -886,6 +910,7 @@ def _check_talk(ctx: Context, td: TalkDecl):
         own[p.name] = _lit_type(ctx, p.value) if isinstance(p.value, Expr) else (Name("fn"), False)
     for name, spec in ctx.fields.get("talk", {}).items():   # what `class talk` declares
         own.setdefault(name, spec)
+    _no_duplicates((p.name for p in td.props), f"talk {td.name}: field", td.line)
     labels = [ln for ln, _say, _ch in td.labels]
     for ln in labels:
         if labels.count(ln) > 1:
@@ -1067,6 +1092,7 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
         elif isinstance(s, ReturnStmt):
             _check_return_stmt(ctx, s, env, owner, rets, fn_decl)
         elif isinstance(s, LocalStmt):
+            _no_duplicates((vn for vn, _t in s.names), "local", s.line)
             vts = _value_types(ctx, s.values, env, owner)
             for i, (vn, dt) in enumerate(s.names):
                 got = vts[i] if i < len(vts) else None
@@ -1659,9 +1685,10 @@ def _check_type(ctx: Context, typ: Type, where: str, line: int, label: str = "ty
 
 
 def _check_signature(ctx: Context, fn: FnDecl):
-    """Unknown types or a required parameter after an optional one."""
+    """Unknown types, duplicate names, or a required parameter after an optional one."""
     if fn.is_extern:
         return
+    _no_duplicates((pn for pn, _t in fn.params), f"fn {fn.name}: parameter", fn.line)
     seen_optional = False
     for pname, ptype in fn.params:
         _check_type(ctx, ptype, f"fn {fn.name}({pname})", fn.line)
