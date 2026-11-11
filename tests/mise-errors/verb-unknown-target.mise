@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+verb Зап for Nope
+  words = "зап/ать"
+  patterns = ["{noun}/вн : Zap"]

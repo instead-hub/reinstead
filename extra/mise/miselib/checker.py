@@ -241,7 +241,8 @@ def prescan(prog: Program) -> Context:
     ctx = Context(lang=prog.lang)
     base_evs, class_at = _collect_declarations(ctx, prog)
     _register_entities(ctx, prog, class_at)
-    _resolve_verb_events(ctx, prog, base_evs)
+    _resolve_verb_events(ctx, prog, base_evs)   # events from patterns are known after this
+    _check_declared_refs(ctx, prog)
     _collect_fields_and_refs(ctx, prog)
     _typecheck_program(ctx, prog)
     return ctx
@@ -382,9 +383,21 @@ def _inline_mixin_traits(ctx: Context, ent: EntityDecl, instantiated_classes: Se
     ent.handlers = [h for h in exp_h if (h.phase, tuple(h.events)) not in own_h] + ent.handlers
 
 
+def _attr_values(ctx: Context) -> Set[str]:
+    """The values of `type attr` — a trait may name a class, or one of them."""
+    return ctx.enums.get("attr", (set(), False))[0]
+
+
+def _check_parent(ctx: Context, ent: EntityDecl):
+    """A class parent must name a declared class."""
+    if ent.kind == "class" and ent.parent and ent.parent not in ctx.classes:
+        raise Error(f"class {ent.name or ''}({ent.parent}): unknown parent class", ent.line)
+
+
 def _register_entity(ctx: Context, ent: EntityDecl, idx: int,
                      class_at: Dict[str, int], instantiated_classes: Set[str]):
     _check_class_order(ent, idx, class_at)
+    _check_parent(ctx, ent)
     _check_override(ctx, ent)      # before mixin traits are inlined into the entity
     if ent.kind == "impl" and ent.name == "mp":
         ctx.event_names.update(ent.traits)
@@ -416,6 +429,30 @@ def _register_entities(ctx: Context, prog: Program, class_at: Dict[str, int]):
         elif isinstance(item, TalkDecl):
             ctx.objects[item.name] = "talk"
             ctx.field_names.update(p.name for p in item.props)
+
+
+def _check_declared_refs(ctx: Context, prog: Program):
+    """Names that must exist: a verb's target object and an object's `@` location."""
+    for item in prog.items:
+        if isinstance(item, VerbDecl) and item.target \
+                and item.target not in ("game", "pl", "mp") \
+                and not item.target.startswith("@") \
+                and item.target not in ctx.objects and item.target not in ctx.classes:
+            raise Error(f"verb {item.name.split('#')[-1]}: unknown target {item.target!r}",
+                        item.line)
+        elif isinstance(item, EntityDecl):
+            for loc in item.locations:
+                if loc not in ctx.objects and loc not in ctx.classes:
+                    raise Error(f"{item.name or item.kind}: unknown location {loc!r} "
+                                f"(declare it above)", item.line)
+            for tr in item.traits:
+                base = tr.lstrip("~")       # `~light` — a negated attribute
+                if base in ctx.classes or base in _attr_values(ctx):
+                    continue
+                if item.kind == "impl" and base in ctx.event_names:
+                    continue                # `impl mp : Take` — the events it serves
+                raise Error(f"{item.name or item.kind}: unknown trait {tr!r} (a class, "
+                            f"a `type attr` value or, for `impl mp`, an event)", item.line)
 
 
 def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[str]]):
@@ -1077,6 +1114,8 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
             _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl)
         elif isinstance(s, ForInStmt):
             it = _check_expr(ctx, s.iter_expr, env, owner)
+            if s.is_of and it != ANY and not (types.is_tbl(it) or _is_object_type(ctx, it)):
+                raise TypeCheckError(f"for … of: expected tbl, got {it}", s.line)
             el = types.tbl_inner(it) or (Name(_root(ctx)) if _is_object_type(ctx, it) else ANY)
             benv = dict(env)
             for i, (vn, vt) in enumerate(s.vars):
@@ -1163,6 +1202,13 @@ def _inherits(ctx: Context, kind: str, root: str) -> bool:
     return root in _walk_class_chain(ctx, kind)
 
 
+def _is_list_type(ctx: Context, t: Type) -> bool:
+    """An engine list (`class list = std.list`): a table of objects, indexed by number."""
+    one = types.single(t)
+    return isinstance(one, Name) and any(ctx.ctors.get(cur) == "std.list"
+                                         for cur in _walk_class_chain(ctx, one.name))
+
+
 def _is_object_type(ctx: Context, t: Type) -> bool:
     """A declared class (or an instance of one) — the only things with fields."""
     one = types.single(t)
@@ -1222,7 +1268,12 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, Type],
                  owner: Optional[str], line: int = 0, op: str = "="):
     """Validate a write: field type stability and declared field names."""
     if isinstance(target, IndexAccess):
-        inner = types.tbl_inner(_check_expr(ctx, target.obj, env, owner))
+        ot = _check_expr(ctx, target.obj, env, owner)
+        need_value(ot, _kind_name(target.obj), line)
+        if ot != ANY and not (types.is_tbl(ot) or _is_list_type(ctx, ot)):
+            raise TypeCheckError(f"{_kind_name(target.obj)}: {ot} is not indexable "
+                                 f"(only a `tbl`, a list or `any`)", line)
+        inner = types.tbl_inner(ot)
         _check_expr(ctx, target.index, env, owner, None)
         if inner is not None:
             expect(ctx, _kind_name(target), vt, inner, line)
@@ -1355,10 +1406,13 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, Type], owner: Optional[str] = N
     if isinstance(e, IndexAccess):
         ot = _check_expr(ctx, e.obj, env, owner)
         in_exp = types.tbl_inner(ot)
-        if not (_is_object_type(ctx, ot) or types.is_tbl(ot) or in_exp is not None):
-            expect(ctx, "index", ot, TBL, e.line)
+        if ot != ANY and not (types.is_tbl(ot) or in_exp is not None
+                              or _is_list_type(ctx, ot)):
+            raise TypeCheckError(f"{_kind_name(e.obj)}: {ot} is not indexable "
+                                 f"(only a `tbl`, a list or `any`)", e.line)
         _check_expr(ctx, e.index, env, owner, None)
-        base = in_exp if in_exp is not None else Name(_root(ctx)) if _is_object_type(ctx, ot) else ANY
+        base = in_exp if in_exp is not None else (
+            Name(_root(ctx)) if _is_list_type(ctx, ot) else ANY)
         e.typ = base if base in (ANY, NIL) or types.is_optional(base) else opt(base)
         return e.typ
     if isinstance(e, UnaryOp):
