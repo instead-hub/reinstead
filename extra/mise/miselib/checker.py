@@ -306,6 +306,9 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[s
                     _check_type(ctx, at, f"event {evs[0]}", item.line, "argument type")
                 for ev in evs:
                     ctx.event_names.add(ev)
+                    if ev in ctx.fns:
+                        raise Error(f"event {ev}: a fn has the same name "
+                                    f"(a bare name would mean the event)", item.line)
                     if item.extend:
                         ext_evs[ev] = (list(ats), item.line)
                     else:
@@ -327,6 +330,9 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[s
         elif isinstance(item, FnDecl):
             if item.name in ctx.fns:
                 raise Error(f"duplicate fn {item.name!r}", item.line)
+            if item.name in ctx.event_names:
+                raise Error(f"fn {item.name}: an event has the same name "
+                            f"(a bare name would mean the event)", item.line)
             ctx.fns[item.name] = item
         elif isinstance(item, EntryDecl):
             ctx.entries[item.name] = list(item.params)
@@ -345,6 +351,15 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[s
     base_evs.update(_apply_event_extends(decl_evs, ext_evs))
     return base_evs, class_at
 
+
+def _declare_object(ctx: Context, name: str, kind: str, line: int):
+    """One name, one role: an object/talk name is not a class, a global or another kind."""
+    prev = ctx.objects.get(name)
+    if prev is not None and prev != kind:
+        raise Error(f"{name}: already declared as {prev}, here as {kind}", line)
+    if name in ctx.classes:
+        raise Error(f"{name}: an object cannot share the name of a class", line)
+    ctx.objects[name] = kind
 
 def _declare_event(decl_evs: Dict[str, List[str]], ev: str, ats: List[str], item: Any):
     """`event X: T` — a declaration; a different signature is a conflict."""
@@ -436,7 +451,7 @@ def _register_entity(ctx: Context, ent: EntityDecl, idx: int,
         if ent.name and not ent.name.startswith("#") and ent.name in ctx.objects:
             raise Error(f"duplicate declaration {ent.name!r}", ent.line)
         if ent.name:
-            ctx.objects[ent.name] = ent.kind
+            _declare_object(ctx, ent.name, ent.kind, ent.line)
             ctx.entity_of[ent.name] = ent
     if ent.kind == "impl" and ent.name and ent.name not in ("game", "pl", "mp") \
             and not ent.name.startswith("@") and ent.name not in ctx.objects \
@@ -452,7 +467,7 @@ def _register_entities(ctx: Context, prog: Program, class_at: Dict[str, int]):
         if isinstance(item, EntityDecl):
             _register_entity(ctx, item, idx, class_at, instantiated)
         elif isinstance(item, TalkDecl):
-            ctx.objects[item.name] = "talk"
+            _declare_object(ctx, item.name, "talk", item.line)
             ctx.field_names.update(p.name for p in item.props)
 
 
@@ -607,6 +622,8 @@ def _collect_fields_and_refs(ctx: Context, prog: Program):
             for vn, ve, _l in item.items:
                 if vn in ctx.globals:
                     raise Error(f"global {vn}: declared twice", _l)
+                if vn in ctx.objects or vn in ctx.classes:
+                    raise Error(f"global {vn}: an object or a class has this name", _l)
                 ctx.globals[vn] = _lit_type(ctx, ve)
         elif isinstance(item, EntityDecl):
             _collect_entity_fields(ctx, item)
