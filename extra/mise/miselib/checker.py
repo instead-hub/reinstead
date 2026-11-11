@@ -36,6 +36,7 @@ class Context:
 
     classes: Dict[str, str] = field(default_factory=dict)                  # class -> parent
     class_decls: Dict[str, EntityDecl] = field(default_factory=dict)
+    entity_of: Dict[str, EntityDecl] = field(default_factory=dict)   # an object by name
     objects: Dict[str, str] = field(default_factory=dict)                  # id -> kind/class
     fields: Dict[str, Dict[str, Tuple[Type, bool]]] = field(default_factory=dict)
     prop_decls: Dict[str, Dict[str, Prop]] = field(default_factory=dict)   # declared class fields
@@ -383,6 +384,7 @@ def _register_entity(ctx: Context, ent: EntityDecl, idx: int,
             raise Error(f"duplicate declaration {ent.name!r}", ent.line)
         if ent.name:
             ctx.objects[ent.name] = ent.kind
+            ctx.entity_of[ent.name] = ent
     if ent.kind == "impl" and ent.name and ent.name not in ("game", "pl", "mp") \
             and not ent.name.startswith("@") and ent.name not in ctx.objects \
             and ent.name not in ctx.classes and ent.name not in ctx.fns \
@@ -441,13 +443,30 @@ def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[s
                                       for a, b in zip_longest(cur, slots)]
 
 
-def _declared_ref(ctx: Context, kind: str, traits: List[str], name: str) -> bool:
-    """Is this field declared with a reference type by the class chain or a trait?"""
-    for cur in [kind] + [tr for tr in traits if tr in ctx.classes]:
-        decl = _decl_prop(ctx, cur, name)
+def _decl_scope(ctx: Context, ent: EntityDecl) -> List[str]:
+    """The declarations an entity sees: its kind, its traits, and (for `impl`) the
+    traits of the object it patches (`impl box` sees what `obj box : Box` declared)."""
+    scopes = ([ent.name or "", ent.parent] if ent.kind == "class"
+              else [_entity_kind(ctx, ent)]) + list(ent.traits)
+    target = ctx.entity_of.get(ent.name or "")
+    if ent.kind == "impl" and target is not None:
+        scopes += [target.kind] + list(target.traits)
+    return [s for s in scopes if s]
+
+
+def _decl_of(ctx: Context, scopes: List[str], name: str) -> Optional[Prop]:
+    """The declaration of a field among the scopes of an entity."""
+    for cur in scopes:
+        decl = _decl_prop(ctx, cur, name) if cur in ctx.classes else None
         if decl is not None:
-            return bool(decl.typ and _is_ref_type(ctx, decl.typ))
-    return False
+            return decl
+    return None
+
+
+def _declared_ref(ctx: Context, scopes: List[str], name: str) -> bool:
+    """Is this field declared with a reference type by the class chain or a trait?"""
+    decl = _decl_of(ctx, scopes, name)
+    return bool(decl is not None and decl.typ is not None and _is_ref_type(ctx, decl.typ))
 
 
 def _collect_entity_fields(ctx: Context, ent: EntityDecl):
@@ -458,15 +477,20 @@ def _collect_entity_fields(ctx: Context, ent: EntityDecl):
     for src in [base] + [tr for tr in ent.traits if tr in ctx.classes]:
         for k, v in ctx.fields.get(src, {}).items():
             fmap.setdefault(k, v)
-    kind = ent.name if ent.kind == "class" else ent.kind
+    scopes = _decl_scope(ctx, ent)
     for p in ent.props:
         # `is_ref` is the declared contract: a field of the class chain (or a trait)
         # whose type says "reference". It decides whether the value is validated as
         # an object name and whether the emitter writes it bare or quoted.
         p.is_ref = bool(p.typ and _is_ref_type(ctx, p.typ)) \
-            or _declared_ref(ctx, kind, ent.traits, p.name)
+            or _declared_ref(ctx, scopes, p.name)
         if p.value is not None and ent.name:
-            fmap[p.name] = _lit_type(ctx, p.value) if isinstance(p.value, Expr) else (Name("fn"), False)
+            vt, is_r = _lit_type(ctx, p.value) if isinstance(p.value, Expr) \
+                else (Name("fn"), False)
+            decl = _decl_of(ctx, scopes, p.name)
+            if decl is not None and decl.typ is not None and _is_empty_collection(vt):
+                vt, is_r = decl.typ, p.is_ref   # `items = []` keeps `items: tbl[T]`
+            fmap[p.name] = (vt, is_r)
         elif p.typ and ent.name:
             fmap[p.name] = (p.typ, p.is_ref)
     for ch in ent.children:
@@ -671,10 +695,11 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         raise Error(f"impl {owner}: cannot hold an object — declare it at the top level "
                     f"(or put it into another object with `with`/`found_in`)",
                     ent.children[0].line)
+    scopes = _decl_scope(ctx, ent)
     for p in ent.props:
         _check_ref_prop(ctx, owner, p)
         where = f"{owner}.{p.name}" if owner else p.name
-        decl = _decl_prop(ctx, kind, p.name) if kind else None
+        decl = _decl_of(ctx, scopes, p.name)
         declared = decl.typ if decl else None
         if isinstance(p.value, FnRef):
             _check_fn_target(ctx, p.value)
@@ -696,7 +721,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
         elif isinstance(p.value, Lit) and p.value.kind == "lua":
             _prop_body_env(ctx, kind, p)  # populates p.params if declared on the class
         elif isinstance(p.value, Expr):
-            _check_expr(ctx, p.value, {"s": _root(ctx)}, owner, declared)
+            _check_expr(ctx, p.value, {"s": Name(_root(ctx))}, owner, declared)
         emit = decl.emit if decl else None
         if emit and p.value is not None:
             p.emit = emit
@@ -804,7 +829,7 @@ def _choice_type(ctx: Context, name: str) -> Optional[Type]:
 
 
 def _check_talk(ctx: Context, td: TalkDecl):
-    env = {"s": "talk"}
+    env = {"s": Name("talk")}
     own = ctx.fields.setdefault(td.name, {})
     for p in td.props:                       # talk-level fields (a game may add its own)
         own[p.name] = _lit_type(ctx, p.value) if isinstance(p.value, Expr) else (Name("fn"), False)
@@ -993,7 +1018,14 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
         elif isinstance(s, LocalStmt):
             vts = _value_types(ctx, s.values, env, owner)
             for i, (vn, dt) in enumerate(s.names):
-                env[vn] = dt or (vts[i] if i < len(vts) else ANY)
+                got = vts[i] if i < len(vts) else None
+                if dt is None:
+                    env[vn] = got if got is not None else ANY
+                elif got is None:            # declared, not set yet: it is nil
+                    env[vn] = opt(dt)
+                else:
+                    expect(ctx, f"local {vn}", got, dt, s.line)
+                    env[vn] = dt
         elif isinstance(s, AssignStmt):
             _check_assign_stmt(ctx, s, env, owner)
         elif isinstance(s, CallStmt):
@@ -1034,7 +1066,10 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
             el = types.tbl_inner(it) or (Name(_root(ctx)) if _is_object_type(ctx, it) else ANY)
             benv = dict(env)
             for i, (vn, vt) in enumerate(s.vars):
-                benv[vn] = vt or (NUM if (s.is_of and len(s.vars) == 2 and i == 0) else el)
+                elem = NUM if (s.is_of and len(s.vars) == 2 and i == 0) else el
+                if vt is not None and elem != ANY:
+                    expect(ctx, f"for variable {vn}", elem, vt, s.line)
+                benv[vn] = vt or elem
             _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl)
 
 
@@ -1144,7 +1179,10 @@ def _fields_of(ctx: Context, holder: str) -> Dict[str, Tuple[Type, bool]]:
             if k not in allowed:
                 allowed[k] = v
             elif allowed[k][0] != v[0]:
-                allowed[k] = (ANY, False)
+                if _is_empty_collection(allowed[k][0]):
+                    allowed[k] = v              # `items = []` carries no element type
+                elif not _is_empty_collection(v[0]):
+                    allowed[k] = (ANY, False)   # two real types: dynamic (duck typing)
     return allowed
 
 
@@ -1169,6 +1207,12 @@ def _owner_of(ctx: Context, target: FieldAccess, env: Dict[str, Type], owner: Op
 def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, Type],
                  owner: Optional[str], line: int = 0, op: str = "="):
     """Validate a write: field type stability and declared field names."""
+    if isinstance(target, IndexAccess):
+        inner = types.tbl_inner(_check_expr(ctx, target.obj, env, owner))
+        _check_expr(ctx, target.index, env, owner, None)
+        if inner is not None:
+            expect(ctx, _kind_name(target), vt, inner, line)
+        return
     if not isinstance(target, FieldAccess):
         _check_expr(ctx, target, env, owner, is_lhs=True)
         return
@@ -1483,9 +1527,11 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, Type], owner: Optional[str
         raise Error(f"{label} expects {want} argument(s), got {given}", c.line)
 
     for i, a in enumerate(all_args):
-        if is_method and i == 0:
-            continue                       # the receiver is checked above
         exp = params[i][1] if i < len(params) else (fn.variadic if variadic else None)
+        if is_method and i == 0:           # `x:m …` passes `x` as the first argument
+            if exp:
+                expect(ctx, f"receiver of {label}", _check_expr(ctx, a, env, owner), exp, a.line)
+            continue
         got = _check_expr(ctx, a, env, owner, exp)
         if exp:
             expect(ctx, f"argument {i + 1} of {label}", got, exp, a.line)
@@ -1557,6 +1603,12 @@ def _check_signature(ctx: Context, fn: FnDecl):
         seen_optional = seen_optional or optional
     for rt in fn.ret_types:
         _check_type(ctx, rt, f"fn {fn.name}", fn.line, "return type")
+
+
+def _is_empty_collection(t: Type) -> bool:
+    """`[]` — a table literal with no element type of its own."""
+    inner = types.tbl_inner(t)
+    return isinstance(inner, Name) and inner.name == ""
 
 
 def _value_types(ctx: Context, values: List[Expr], env: Dict[str, Type],

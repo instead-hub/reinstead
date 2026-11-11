@@ -192,6 +192,16 @@ end;
       cond = fn_знакомы;
     };
     {
+      "s как аргумент функции";
+      function(s)
+        p "-- Да."
+      end;
+      hidden = true;
+      cond = function(s)
+        fn_знакомы(s)
+      end;
+    };
+    {
       "Проверка s";
       "-- s на месте.";
       cond = function(s) return not s:has("open") end;
