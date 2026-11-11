@@ -1,0 +1,1 @@
+mise: line 8: s.attr: 'attr' is write-only (declared as `= method attr(…)`); read it through the method

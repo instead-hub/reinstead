@@ -574,6 +574,15 @@ def _decl_scope(ctx: Context, ent: EntityDecl) -> List[str]:
     return [s for s in scopes if s]
 
 
+def _decl_of_holder(ctx: Context, holder: str, name: str) -> Optional[Prop]:
+    """The declaration of a field seen through a holder: a class chain or an object."""
+    if holder not in ctx.objects:
+        return _decl_prop(ctx, holder, name)
+    ent = ctx.entity_of.get(holder)
+    scopes = _decl_scope(ctx, ent) if ent is not None else [ctx.objects[holder]]
+    return _decl_of(ctx, scopes, name)
+
+
 def _decl_of(ctx: Context, scopes: List[str], name: str) -> Optional[Prop]:
     """The declaration of a field among the scopes of an entity."""
     for cur in scopes:
@@ -1390,6 +1399,10 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, Type],
         return
     holder = _owner_of(ctx, target, env, owner)
     spec = _fields_of(ctx, holder).get(name) if holder else None
+    decl = _decl_of_holder(ctx, holder, name) if holder else None
+    if decl is not None and decl.emit is not None:
+        raise Error(f"{holder}.{name}: an emitted field is set by its declaration "
+                    f"(`= method {decl.emit.method}(…)`), not by code", line)
     if spec is not None:
         ft, is_ref = spec
         if op in ("+=", "-="):                                # `+=`/`-=` are arithmetic
@@ -1604,6 +1617,14 @@ def _infer_field(ctx: Context, e: FieldAccess, env: Dict[str, Type],
         raise TypeCheckError(f"{_kind_name(e.obj)}: {base_t} has no fields "
                              f"(`.{e.field}`)", e.line)
     holder = _owner_of(ctx, e, env, owner)
+    decl = _decl_of_holder(ctx, holder, e.field) if holder else None
+    if decl is not None and decl.emit is not None:
+        # `attr: … = method attr(join)` is not a field at all: the engine turns the
+        # declaration into `:attr(…)`, so a read returns the method, not the value
+        raise TypeCheckError(
+            f"{_kind_name(e)}: {e.field!r} is write-only "
+            f"(declared as `= method {decl.emit.method}(…)`); read it through the method",
+            e.line)
     if holder and e.field in ctx.fields.get(holder, {}):
         ft, is_r = ctx.fields[holder][e.field]
         e.is_ref, e.typ = is_r, ft
