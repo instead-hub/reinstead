@@ -157,7 +157,6 @@ extern fn setmetatable(t: tbl, m: tbl) -> tbl = "setmetatable($1, $2)"
 extern fn getmetatable(t: tbl) -> any = "getmetatable($1)"
 extern fn print(...: any) = "print($*)"
 extern fn pcall(...: any) -> bool = "pcall($*)"
-extern fn xcally(...: any) -> bool = "xcally($*)"
 
 # Engine extern functions
 extern fn here() -> room = "here()"
