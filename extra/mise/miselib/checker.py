@@ -61,8 +61,10 @@ class Context:
 # type names that are part of the type language; object types are classes
 PRIMITIVES = frozenset({"str", "num", "bool", "any", "event", "tbl", "nil", "ref"})
 _KINDS = {"str": STR, "num": NUM, "bool": BOOL, "nil": NIL, "raw": ANY, "table": Tbl(None)}
-# what `..` and interpolation accept
+# what interpolation accepts: the engine prints any value with `tostr`
 _PRINTABLE = union(STR, NUM, BOOL, Name("obj"), EVENT)
+# what Lua's `..` accepts: an object is a table, the engine defines no `__concat`
+_CONCAT = union(STR, NUM)
 # what a handler may hold as a value: a text, a boolean or a function
 _HANDLER_VALUE = union(STR, BOOL, Name("fn"))
 
@@ -90,16 +92,28 @@ def _atom_fits(ctx: Context, actual: Type, expected: Type) -> bool:
     if expected == STR and isinstance(actual, Name) and actual.name in ctx.enums:
         return True                        # an enum value can be passed where a string is wanted
     if types.is_tbl(expected):
+        ie = types.tbl_inner(expected)
         if types.is_tbl(actual):
-            ia, ie = types.tbl_inner(actual), types.tbl_inner(expected)
+            ia = types.tbl_inner(actual)
             if ia is None or ie is None:
                 return True
             if isinstance(ia, Name) and ia.name == "":
                 return True                # `[]` fits any table
             return is_subtype(ctx, ia, ie)
-        return _is_object_type(ctx, actual)  # an instance of a class is a Lua table too
+        # a class instance is a Lua table, but `list` holds objects, not `tbl[str]`
+        return ie is None and _is_object_type(ctx, actual)
     if isinstance(expected, Fn):
-        return isinstance(actual, Fn) or str(actual) == "fn"    # a Lua fn is opaque
+        if not isinstance(actual, Fn):
+            return str(actual) == "fn"        # a value of a `lua` block: nothing is known
+        if len(actual.params) > len(expected.params):
+            return False                      # a callback may ignore extra arguments
+        if not all(is_subtype(ctx, ep, ap)    # params are contravariant
+                   for ep, ap in zip(expected.params, actual.params)):
+            return False
+        if not actual.rets or not expected.rets:
+            return True
+        return all(is_subtype(ctx, ar, er)    # returns are covariant, extras ignored
+                   for er, ar in zip(expected.rets, actual.rets))
     return False
 
 
@@ -145,8 +159,8 @@ def _kind_name(expr: Expr) -> str:
 def need_value(t: Type, where: str, line: int) -> None:
     """Fail unless a maybe-nil value was narrowed before use."""
     if types.is_optional(t):
-        raise TypeCheckError(
-            f"{where}: possible nil, narrow it first (`if {where}:`)", line)
+        hint = f" (`if {where}:`)" if where.isidentifier() else ""
+        raise TypeCheckError(f"{where}: possible nil, narrow it first{hint}", line)
 
 
 def expect(ctx: Context, where: str, actual: Type, expected: Optional[Type], line: int = 0):
@@ -1472,7 +1486,7 @@ def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, Type], owner: Optional[s
     if e.op == "..":
         for side in (e.left, e.right):
             t = _check_expr(ctx, side, env, owner)
-            if not is_subtype(ctx, t, _PRINTABLE) and t != ANY:
+            if not is_subtype(ctx, t, _CONCAT) and t != ANY:
                 raise TypeCheckError(f"concatenation: expected str, got {t}", side.line)
         e.typ = STR
         return STR
@@ -1482,7 +1496,7 @@ def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, Type], owner: Optional[s
         return NUM
     rt = _check_expr(ctx, e.right, env, owner)
     if e.op == "and":
-        e.typ = rt
+        e.typ = union(lt, rt)          # `a and b` is `a` itself when `a` is falsy
     elif e.op == "or":
         e.typ = union(without_nil(lt), rt)
     else:
