@@ -41,6 +41,18 @@ fn spot(s: obj) -> obj
 fn ev_text(ev: event) -> str
   return "событие: " .. ev
 
+# `scope`/`found_in` объявлены как union (запись: объект или список), но движок
+# нормализует одиночную ссылку в список при загрузке — читать и обходить можно
+fn first_in(s: obj) -> ref?
+  return s.found_in[1]
+
+fn scope_names(s: obj) -> num
+  local n = 0
+  for w of s.scope
+    if w
+      n += 1
+  return n
+
 fn on_take(s: Box)
   if s.weight + 1 > 0
     [[тяжёлый]]

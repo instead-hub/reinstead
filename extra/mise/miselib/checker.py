@@ -1231,9 +1231,11 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
             _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl, in_loop=True)
         elif isinstance(s, ForInStmt):
             it = _check_expr(ctx, s.iter_expr, env, owner)
-            if s.is_of and it != ANY and not (types.is_tbl(it) or _is_object_type(ctx, it)):
+            base = _index_result(ctx, it)
+            if s.is_of and base is None and not _is_object_type(ctx, it):
                 raise TypeCheckError(f"for … of: expected tbl, got {it}", s.line)
-            el = types.tbl_inner(it) or (Name(_root(ctx)) if _is_object_type(ctx, it) else ANY)
+            el = base if base is not None else (
+                Name(_root(ctx)) if _is_object_type(ctx, it) else ANY)
             benv = dict(env)
             for i, (vn, vt) in enumerate(s.vars):
                 elem = NUM if (s.is_of and len(s.vars) == 2 and i == 0) else el
@@ -1319,6 +1321,27 @@ def _inherits(ctx: Context, kind: str, root: str) -> bool:
     return root in _walk_class_chain(ctx, kind)
 
 
+def _index_result(ctx: Context, t: Type) -> Optional[Type]:
+    """The element type of an indexable value: `tbl[T]`, a list, or a union with one.
+
+    `scope: ref | tbl[ref] | fn(…)` is a *write* type: the engine normalizes a
+    single reference into a list at load (`mplib.lua: std.obj.__ini`), so reading
+    the field and indexing it is safe even though one alternative is not a table.
+    """
+    res: List[Type] = []
+    for alt in parts(t):
+        if alt == NIL:
+            continue
+        if alt == ANY:
+            return ANY
+        if types.is_tbl(alt):
+            inner = types.tbl_inner(alt)
+            res.append(inner if inner is not None else ANY)
+        elif _is_list_type(ctx, alt):
+            res.append(Name(_root(ctx)))
+    return union(*res) if res else None
+
+
 def _is_list_type(ctx: Context, t: Type) -> bool:
     """An engine list (`class list = std.list`): a table of objects, indexed by number."""
     one = types.single(t)
@@ -1387,10 +1410,10 @@ def _check_store(ctx: Context, target: Expr, vt: str, env: Dict[str, Type],
     if isinstance(target, IndexAccess):
         ot = _check_expr(ctx, target.obj, env, owner)
         need_value(ot, _kind_name(target.obj), line)
-        if ot != ANY and not (types.is_tbl(ot) or _is_list_type(ctx, ot)):
+        inner = _index_result(ctx, ot)
+        if inner is None:
             raise TypeCheckError(f"{_kind_name(target.obj)}: {ot} is not indexable "
                                  f"(only a `tbl`, a list or `any`)", line)
-        inner = types.tbl_inner(ot)
         _check_expr(ctx, target.index, env, owner, None)
         if inner is not None:
             expect(ctx, _kind_name(target), vt, inner, line)
@@ -1531,14 +1554,11 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, Type], owner: Optional[str] = N
         return _infer_field(ctx, e, env, owner, is_lhs)
     if isinstance(e, IndexAccess):
         ot = _check_expr(ctx, e.obj, env, owner)
-        in_exp = types.tbl_inner(ot)
-        if ot != ANY and not (types.is_tbl(ot) or in_exp is not None
-                              or _is_list_type(ctx, ot)):
+        base = _index_result(ctx, ot)
+        if base is None:
             raise TypeCheckError(f"{_kind_name(e.obj)}: {ot} is not indexable "
                                  f"(only a `tbl`, a list or `any`)", e.line)
         _check_expr(ctx, e.index, env, owner, None)
-        base = in_exp if in_exp is not None else (
-            Name(_root(ctx)) if _is_list_type(ctx, ot) else ANY)
         e.typ = base if base in (ANY, NIL) or types.is_optional(base) else opt(base)
         return e.typ
     if isinstance(e, UnaryOp):

@@ -64,6 +64,20 @@ local function fn_ev_text(ev)
   return "событие: " .. ev
 end
 
+local function fn_first_in(s)
+  return _(s.found_in)[1]
+end
+
+local function fn_scope_names(s)
+  local n = 0
+  for _, w in ipairs(_(s.scope)) do
+    if w then
+      n = n + (1)
+    end
+  end
+  return n
+end
+
 local function fn_on_take(s)
   if s.weight + 1 > 0 then
     p "тяжёлый"
