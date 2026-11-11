@@ -1,0 +1,11 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+
+impl box
+  before Take =
+    pass
+  before Take =
+    pass

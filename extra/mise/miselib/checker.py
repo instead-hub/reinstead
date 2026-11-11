@@ -843,6 +843,8 @@ def _check_entity(ctx: Context, ent: EntityDecl):
                     ent.children[0].line)
     scopes = _decl_scope(ctx, ent)
     _no_duplicates((p.name for p in ent.props), f"{owner or kind}: field", ent.line)
+    _no_duplicates((f"{h.phase} {','.join(h.events)}" for h in ent.handlers),
+                   f"{owner or kind}: handler", ent.line)
     for p in ent.props:
         _check_ref_prop(ctx, owner, p)
         where = f"{owner}.{p.name}" if owner else p.name
@@ -956,15 +958,17 @@ CHOICE_FIELDS = ("ask", "reply", "do", "onempty")
 
 
 def _check_talk_body(ctx: Context, part: Any, env: Dict[str, Type], owner: str,
-                     want: Optional[str] = None, where: str = "", line: int = 0):
+                     want: Optional[Type] = None, where: str = "", line: int = 0):
+    """A `talk` field is a value, a block or a `&fn` — checked against its type."""
     if isinstance(part, FnRef):
         _check_fn_target(ctx, part)
         ctx.used_refs.add(part.name)
+        _check_fnref(ctx, part, want, where)
     elif isinstance(part, list):
-        rets: List[str] = []
+        rets: List[Type] = []
         _check_stmts(ctx, part, dict(env), owner, rets)
-        returns = types.fn_returns(want) if want else []
-        for t in rets if returns else []:
+        returns = types.fn_returns(want) if want is not None else ()
+        for t in rets if returns else ():
             expect(ctx, where, t, union(*returns), line)
     elif isinstance(part, Expr):
         _check_expr(ctx, part, dict(env), owner, want)
