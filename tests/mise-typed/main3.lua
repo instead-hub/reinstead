@@ -60,6 +60,10 @@ local function fn_spot(s)
   return where(s) and where(s) or _'none'
 end
 
+local function fn_ev_text(ev)
+  return "событие: " .. ev
+end
+
 local function fn_on_take(s)
   if s.weight + 1 > 0 then
     p "тяжёлый"

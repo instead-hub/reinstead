@@ -37,6 +37,10 @@ fn first_str(t: tbl[str]) -> str?
 fn spot(s: obj) -> obj
   return s:where and s:where or none
 
+# событие в движке — строка (`mp.event` = 'Take'), поэтому оно складывается с текстом
+fn ev_text(ev: event) -> str
+  return "событие: " .. ev
+
 fn on_take(s: Box)
   if s.weight + 1 > 0
     [[тяжёлый]]

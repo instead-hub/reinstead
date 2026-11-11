@@ -92,8 +92,9 @@ def _atom_fits(ctx: Context, actual: Type, expected: Type) -> bool:
         return _obj_fits(ctx, got_ref, getattr(expected, "name", str(expected)))
     if isinstance(expected, Name) and expected.name in ctx.classes:
         return isinstance(actual, Name) and _inherits(ctx, actual.name, expected.name)
-    if expected == STR and isinstance(actual, Name) and actual.name in ctx.enums:
-        return True                        # an enum value can be passed where a string is wanted
+    if expected == STR and isinstance(actual, Name) \
+            and (actual.name in ctx.enums or actual.name == "event"):
+        return True    # an enum value or an event is a string in the engine
     if types.is_tbl(expected):
         ie = types.tbl_inner(expected)
         if types.is_tbl(actual):
@@ -122,8 +123,10 @@ def _atom_fits(ctx: Context, actual: Type, expected: Type) -> bool:
 
 def _obj_fits(ctx: Context, actual_name: str, expected_name: str) -> bool:
     """`actual` is an object class/name that must fit `expected` (`A|B`, a class)."""
-    if not expected_name or not actual_name:
+    if not expected_name or expected_name == "obj":
         return True
+    if not actual_name:                    # a bare `ref`: some object, but which one?
+        return False
     actual_name = str(without_nil(types.parse(actual_name) if isinstance(actual_name, str)
                                  else actual_name))
     return any(a in ("obj", "") or a == actual_name or _inherits(ctx, actual_name, a)
