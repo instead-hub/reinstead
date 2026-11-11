@@ -1,13 +1,14 @@
 """Minimalist symbol collector and type checker for MISE 2."""
 import os
 import re
+from itertools import zip_longest
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
 from . import types
 from .ast_nodes import *
 from .parser import PHASES, parse_source
 from .types import ANY, NIL, Fn, Name, Ref, Tbl, Type, \
-    fn_of, opt, parts, ref_inner, union, without_nil
+    opt, parts, ref_inner, union, without_nil
 
 STR, NUM, BOOL, EVENT = Name("str"), Name("num"), Name("bool"), Name("event")
 TBL = Tbl(None)          # a bare table: no element type
@@ -435,13 +436,9 @@ def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[s
             cur = ctx.event_args.get(ev)
             if cur is None:
                 ctx.event_args[ev] = list(slots)
-            else:
-                ml = max(len(cur), len(slots))
-                ctx.event_args[ev] = [
-                    union(cur[i] if i < len(cur) else NIL,
-                          slots[i] if i < len(slots) else NIL)
-                    for i in range(ml)
-                ]
+            else:                       # a slot only some patterns provide is `?`
+                ctx.event_args[ev] = [union(a or NIL, b or NIL)
+                                      for a, b in zip_longest(cur, slots)]
 
 
 def _declared_ref(ctx: Context, kind: str, traits: List[str], name: str) -> bool:
@@ -856,21 +853,18 @@ def _returns_all(stmts: List[Stmt]) -> bool:
             if isinstance(s, ReturnStmt):
                 return s.kind == "pass" or (s.kind == "return" and bool(s.values))
             if isinstance(s, IfStmt):
-                if s.else_body is not None and at_body(s.else_body) \
-                        and all(at_body(b) for _c, b, _l in s.branches):
+                if s.else_body is not None and _returns_all(s.else_body) \
+                        and all(_returns_all(b) for _c, b, _l in s.branches):
                     return True
                 return at(i + 1)          # no `else`: the path continues after the `if`
             if isinstance(s, MatchStmt):
                 has_default = any(len(p) == 1 and isinstance(p[0], Sym) and p[0].name == "_" and not g
                                   for p, g, _b, _l in s.arms)
-                if has_default and all(at_body(b) for _p, _g, b, _l in s.arms):
+                if has_default and all(_returns_all(b) for _p, _g, b, _l in s.arms):
                     return True
                 return at(i + 1)
             i += 1
         return False
-
-    def at_body(body: List[Stmt]) -> bool:
-        return _returns_all(body)
 
     return at(0)
 
@@ -1141,19 +1135,16 @@ def _fields_of(ctx: Context, holder: str) -> Dict[str, Tuple[Type, bool]]:
     allowed = dict(ctx.fields.get(holder, {}))
     if holder not in ctx.classes:
         return allowed
-    others = []
-    for name, kind in ctx.objects.items():
-        if kind == holder or _inherits(ctx, kind, holder):
-            others.append(ctx.fields.get(name, {}))
-    for cname in ctx.classes:
-        if _inherits(ctx, cname, holder):
-            others.append(ctx.fields.get(cname, {}))
-    for fmap in others:
-        for k, v in fmap.items():
+    # the class also sees its instances/descendants: two declarations of one name
+    # with different types mean "dynamic" (`any`), which is the duck-typing case
+    for name, kind in list(ctx.objects.items()) + list(ctx.classes.items()):
+        if not _inherits(ctx, kind if kind else name, holder):
+            continue
+        for k, v in ctx.fields.get(name, {}).items():
             if k not in allowed:
                 allowed[k] = v
             elif allowed[k][0] != v[0]:
-                allowed[k] = (ANY, False)       # seen with different types: dynamic
+                allowed[k] = (ANY, False)
     return allowed
 
 

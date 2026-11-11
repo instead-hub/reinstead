@@ -89,15 +89,13 @@ class Parser:
             self.match("OP", "=")
             prog.meta.append(("name" if kw == "game" else kw, self.eat(self.cur().kind).val))
             return self.eat_nl()
-        if kw == "lang":
+        if kw in ("lang", "include", "require", "fmt"):
             self.pos += 1
             self.match("OP", "=")
-            prog.lang = self.eat("IDENT").val
-            return self.eat_nl()
-        if kw in ("include", "require", "fmt"):
-            self.pos += 1
-            self.match("OP", "=")
-            getattr(prog, kw + ("s" if kw != "fmt" else "")).extend(self.sym_list())
+            if kw == "lang":
+                prog.lang = self.eat("IDENT").val
+            else:
+                getattr(prog, kw + ("s" if kw != "fmt" else "")).extend(self.sym_list())
             return self.eat_nl()
         if kw == "extend":
             self.pos += 1
@@ -116,10 +114,6 @@ class Parser:
         if kw == "type":
             self.pos += 1
             return prog.items.append(self._parse_type(extend=False))
-        if kw == "event":
-            self.pos += 1
-            prog.items.extend(self._parse_event(False, t.line))
-            return
         if kw == "entry":
             self.pos += 1
             tok = self.eat("IDENT")
@@ -130,6 +124,9 @@ class Parser:
             return
         if kw == "extern":
             return prog.items.append(self._parse_fn(is_extern=True))
+        if kw == "event":
+            self.pos += 1
+            return prog.items.extend(self._parse_event(False, t.line))
         if kw in ("global", "const"):
             return prog.items.append(self._parse_vars())
         if kw == "fn":
@@ -137,8 +134,6 @@ class Parser:
         if kw == "verb":
             self.pos += 1
             return prog.items.append(self._parse_verb("verb", t.line))
-        if kw == "event":
-            return prog.items.append(self._parse_event(prog))
         if kw == "talk":
             return prog.items.append(self._parse_talk())
         if kw == "lua":
@@ -179,18 +174,12 @@ class Parser:
                     rts.append(self._parse_type_str())
             one: Type = Fn(tuple(pts), tuple(rts))
             return opt(one) if self.match("OP", "?") else one
-        if t.val == "tbl" and self.peek().val == "[":
+        if t.val in ("tbl", "ref") and self.peek().val == "[":
+            # `tbl[T]` — a table of T; `ref[C]` — a reference to an object of class C
             self.pos += 2
             inner = self._parse_type_str(single) if not self.at("OP", "]") else Name("")
             self.eat("OP", "]")
-            one = Tbl(inner)
-            return opt(one) if self.match("OP", "?") else one
-        if t.val == "ref" and self.peek().val == "[":
-            # `ref[C]` — a reference to an object of class C (`ref` is `ref[obj]`)
-            self.pos += 2
-            inner = self._parse_type_str(single)
-            self.eat("OP", "]")
-            one = Ref(str(inner))
+            one = Tbl(inner) if t.val == "tbl" else Ref(str(inner))
             return opt(one) if self.match("OP", "?") else one
         word = self.eat("IDENT").val
         one: Type = Tbl(None) if word == "tbl" else Ref("") if word == "ref" else Name(word)
