@@ -49,6 +49,7 @@ class Context:
     lua_globals: Dict[str, GlobalDecl] = field(default_factory=dict)     # `extern global`
 
     fns: Dict[str, FnDecl] = field(default_factory=dict)
+    verb_tags: Set[str] = field(default_factory=set)     # tags of `verb`/`extend verb`
     used_refs: Set[str] = field(default_factory=set)
     lua_funcs: Set[str] = field(default_factory=set)
     globals: Dict[str, Tuple[Type, bool]] = field(default_factory=dict)
@@ -331,6 +332,10 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[s
             ctx.entries[item.name] = list(item.params)
         elif isinstance(item, GlobalDecl):
             ctx.lua_globals[item.name] = item
+        elif isinstance(item, VerbDecl):
+            if item.mode == "verb":            # `extend` needs one of these to exist
+                ctx.verb_tags.add(item.tag or (item.name if item.name.startswith("#")
+                                               else f"#{item.name}"))
         elif isinstance(item, LuaDecl):
             for m in re.finditer(r"\bfunction\s+([A-Za-z_]\w*)", item.code):
                 ctx.lua_funcs.add(m.group(1))
@@ -451,9 +456,37 @@ def _register_entities(ctx: Context, prog: Program, class_at: Dict[str, int]):
             ctx.field_names.update(p.name for p in item.props)
 
 
+def _check_verb(ctx: Context, item: VerbDecl):
+    """A verb's `hint` is a handler-like value; `extend verb` needs an existing verb."""
+    if item.mode == "extend":
+        tag = item.tag or (item.name if item.name.startswith("#") else f"#{item.name}")
+        base = tag.lstrip("#")
+        if base not in ctx.event_names and tag not in ctx.verb_tags:
+            raise Error(f"extend verb {tag}: unknown verb "
+                        f"(declare it with `verb {base}` first)", item.line)
+    hint = item.hint
+    if hint is None:
+        return
+    where = f"verb {item.name.split('#')[-1]}: hint"
+    fnsig = Fn((Name(_root(ctx)),), (STR,))
+    if isinstance(hint, FnRef):
+        _check_fn_target(ctx, hint)
+        _check_fnref(ctx, hint, fnsig, where)
+    elif isinstance(hint, list):
+        rets: List[Type] = []
+        _check_stmts(ctx, hint, {"s": Name(_root(ctx))}, None, rets)
+        if rets and not any(is_subtype(ctx, t, STR) for t in rets):
+            raise TypeCheckError(f"{where}: returns {'|'.join(str(t) for t in rets)}, "
+                                 f"expected str", item.line)
+    elif isinstance(hint, Expr):
+        _check_expr(ctx, hint, {"s": Name(_root(ctx))}, None, _HANDLER_VALUE)
+
+
 def _check_declared_refs(ctx: Context, prog: Program):
     """Names that must exist: a verb's target object and an object's `@` location."""
     for item in prog.items:
+        if isinstance(item, VerbDecl):
+            _check_verb(ctx, item)
         if isinstance(item, VerbDecl) and item.target \
                 and item.target not in ("game", "pl", "mp") \
                 and not item.target.startswith("@") \
@@ -472,7 +505,7 @@ def _check_declared_refs(ctx: Context, prog: Program):
                 if item.kind == "impl" and base in ctx.event_names:
                     continue                # `impl mp : Take` — the events it serves
                 raise Error(f"{item.name or item.kind}: unknown trait {tr!r} (a class, "
-                            f"a `type attr` value or, for `impl mp`, an event)", item.line)
+                            f"a `type attr` value or, for `impl`, an event)", item.line)
 
 
 def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[str]]):
@@ -1083,13 +1116,15 @@ def _check_return_stmt(ctx: Context, s: ReturnStmt, env: Dict[str, Type], owner:
 
 
 def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
-                 owner: Optional[str] = None, rets: Optional[List[str]] = None,
+                 owner: Optional[str] = None, rets: Optional[List[Type]] = None,
                  arg_names: Optional[Dict[int, str]] = None,
-                 fn_decl: Optional[FnDecl] = None):
+                 fn_decl: Optional[FnDecl] = None, in_loop: bool = False):
     for s in stmts:
         if isinstance(s, SayStmt):
             expect(ctx, "text to print", _check_expr(ctx, s.expr, env, owner, STR), STR, s.line)
         elif isinstance(s, ReturnStmt):
+            if s.kind == "break" and not in_loop:
+                raise Error("break: not inside a loop", s.line)
             _check_return_stmt(ctx, s, env, owner, rets, fn_decl)
         elif isinstance(s, LocalStmt):
             _no_duplicates((vn for vn, _t in s.names), "local", s.line)
@@ -1113,10 +1148,12 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
             cenv = dict(env)
             for cond, body, _l in s.branches:
                 _check_cond(ctx, cond, cenv, owner)
-                _check_stmts(ctx, body, _narrow(ctx, cond, cenv, True, arg_names), owner, rets, arg_names, fn_decl)
+                _check_stmts(ctx, body, _narrow(ctx, cond, cenv, True, arg_names),
+                             owner, rets, arg_names, fn_decl, in_loop=in_loop)
                 cenv = _narrow(ctx, cond, cenv, False, arg_names)
             if s.else_body is not None:
-                _check_stmts(ctx, s.else_body, cenv, owner, rets, arg_names, fn_decl)
+                _check_stmts(ctx, s.else_body, cenv, owner, rets, arg_names, fn_decl,
+                             in_loop=in_loop)
         elif isinstance(s, MatchStmt):
             st = _check_expr(ctx, s.subject, env, owner)
             for pats, guard, body, _l in s.arms:
@@ -1137,7 +1174,7 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
             benv[s.var] = s.var_type or NUM
             if s.var_type:
                 expect(ctx, f"for variable {s.var}", NUM, s.var_type, s.line)
-            _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl)
+            _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl, in_loop=True)
         elif isinstance(s, ForInStmt):
             it = _check_expr(ctx, s.iter_expr, env, owner)
             if s.is_of and it != ANY and not (types.is_tbl(it) or _is_object_type(ctx, it)):
@@ -1149,7 +1186,7 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
                 if vt is not None and elem != ANY:
                     expect(ctx, f"for variable {vn}", elem, vt, s.line)
                 benv[vn] = vt or elem
-            _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl)
+            _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl, in_loop=True)
 
 
 def _sig_ok(ctx: Context, fn: FnDecl, expected: Type) -> bool:
