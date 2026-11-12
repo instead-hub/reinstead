@@ -12,10 +12,10 @@ room hall "зал"
 fn describe(s: obj) -> str
   return 'Ящик.'
 
-lua
-  function lua_probe(s, w, wh)
+# обработчик может быть цельной Lua-функцией — через `fn` с `lua`-телом
+fn lua_probe(s: obj, w: obj) -> bool
+  lua
     return false
-  end
 
 obj box "ящик" : container, open
   description = &describe

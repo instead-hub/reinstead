@@ -48,7 +48,6 @@ class Context:
     fns: Dict[str, FnDecl] = field(default_factory=dict)
     verb_tags: Set[str] = field(default_factory=set)     # tags of `verb`/`extend verb`
     used_refs: Set[str] = field(default_factory=set)
-    lua_funcs: Set[str] = field(default_factory=set)
     globals: Dict[str, Type] = field(default_factory=dict)
     consts: Set[str] = field(default_factory=set)
     _checked_fns: Set[str] = field(default_factory=set)
@@ -317,8 +316,6 @@ def _collect_declarations(ctx: Context, prog: Program) -> Dict[str, List[Type]]:
             ctx.entries[item.name] = list(item.params)
         elif isinstance(item, VerbDecl) and item.mode == "verb":
             ctx.verb_tags.add(_verb_tag(item) or f"#{item.name}")
-        elif isinstance(item, LuaDecl):
-            ctx.lua_funcs.update(re.findall(r"\bfunction\s+([A-Za-z_]\w*)", item.code))
         elif isinstance(item, EntityDecl) and item.kind == "class" and item.name:
             _register_class_decl(ctx, item)
     for ev, (ats, line) in ext_evs.items():
@@ -680,8 +677,7 @@ def _check_ref_prop(ctx: Context, where: str, p: Prop):
                 raise Error(f"{where}: unknown object reference {name!r}", it.line or p.line)
         elif isinstance(it, Sym):
             name = it.name
-            if (name not in ctx.objects and name not in ctx.globals
-                    and name not in ctx.fns and name not in ctx.lua_funcs):
+            if name not in ctx.objects and name not in ctx.globals and name not in ctx.fns:
                 raise Error(f"{where}: unknown object reference {name!r}", it.line or p.line)
         elif isinstance(it, (UnaryOp, BinOp)) and getattr(it, "op", "") not in ("and", "or"):
             raise Error(f"{where}: expected object reference, got expression", p.line)
@@ -1100,11 +1096,7 @@ def _check_fnref(ctx: Context, ref: FnRef, expected: Optional[Type], where: str)
     """Validate a `&name` function reference and check it against `expected`."""
     fn = ctx.fns.get(ref.name)
     if fn is None:
-        if ref.name not in ctx.lua_funcs:
-            raise Error(f"&{ref.name}: unknown function "
-                        f"(declare it with `fn` or in a `lua` block)", ref.line)
-        ctx.used_refs.add(ref.name)
-        return Name("fn")
+        raise Error(f"&{ref.name}: unknown function (declare it with `fn`)", ref.line)
     if fn.is_extern:
         raise Error(f"&{ref.name}: an extern is a macro, it has no function value "
                     f"(call it directly, or write a `fn` wrapper)", ref.line)
@@ -1397,7 +1389,7 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, Type],
     if enum:
         e.rk = "enum"
         return Name(enum)
-    if n in ctx.fns or n in ctx.lua_funcs:
+    if n in ctx.fns:
         sig = ctx.fns.get(n)
         required = sum(1 for _pn, pt in (sig.params if sig is not None else [])
                        if not types.is_optional(pt))
@@ -1466,8 +1458,7 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, Type], owner: Optional[str
 
     body = without_nil(ftype) if ftype is not None else None
     one = body if isinstance(body, Fn) else None
-    if not (c.func in ctx.lua_funcs or (not is_method and one is not None)
-            or (is_method and rt == ANY)):
+    if not ((not is_method and one is not None) or (is_method and rt == ANY)):
         if is_method:
             raise Error(f"unknown method {c.func!r} "
                         f"(a method call needs a function or an extern)", c.line)

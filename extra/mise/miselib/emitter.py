@@ -648,7 +648,7 @@ class Emitter:
         return "nil"
 
     def _fnref(self, name: str) -> str:
-        return name if (name in self.ctx.lua_funcs and name not in self.ctx.fns) else f"fn_{name}"
+        return f"fn_{name}"
 
     def _call(self, c: Call, as_stmt: bool = False) -> str:
         if not c.receiver and c.func in ("say", "append", "line"):
@@ -661,8 +661,6 @@ class Emitter:
         args = [self._expr(a) for a in all_a]
         if fn and isinstance(fn.body, str) and (fn.is_extern or (not fn.body.strip().startswith(("local ", "return ")) and "\n" not in fn.body)) and c.func not in self.ctx.used_refs:
             return self._expand(fn, args, as_stmt)
-        if c.func in self.ctx.lua_funcs and c.func not in self.ctx.fns:
-            return f"{c.func}({', '.join(args)})"
         return f"fn_{c.func}({', '.join(args)})" if c.func in self.ctx.fns else f"{c.func}({', '.join(args)})"
 
     def _expand(self, fn: FnDecl, args: List[str], as_stmt: bool) -> str:

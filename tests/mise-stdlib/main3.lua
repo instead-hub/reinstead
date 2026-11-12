@@ -42,6 +42,10 @@ local function fn_describe(s)
   return "Ящик."
 end
 
+local function fn_lua_probe(s, w)
+  return false
+end
+
 local function fn_probe(w, t, ev)
   time()
   time(5)
@@ -185,15 +189,11 @@ room {
   end;
 }
 
-function lua_probe(s, w, wh)
-  return false
-end
-
 obj {
   -"ящик";
   nam = "box";
   description = fn_describe;
-  before_Take = lua_probe;
+  before_Take = fn_lua_probe;
 }:attr 'container,open'
 
 obj {
