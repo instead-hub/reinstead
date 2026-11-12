@@ -4,22 +4,24 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_where_list(w)
+local fn = {}
+
+fn.where_list = function(w)
   local list = {}
   where(w, list)
   return std.list(list)
 end
 
-local function fn_plurals(s)
+fn.plurals = function(s)
   return std.list(mp.multi[s] or { s })
 end
 
-local function fn_is_room(s)
+fn.is_room = function(s)
   return not not std.is_obj(s or false, 'room')
 end
 
-local function fn_door_next(s, w)
-  local l = fn_where_list(s)
+fn.door_next = function(s, w)
+  local l = fn.where_list(s)
   local _, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
@@ -27,30 +29,30 @@ local function fn_door_next(s, w)
   return false
 end
 
-local function fn_where_prep(w)
+fn.where_prep = function(w)
   if w:has("supporter") then
     return "на"
   end
   return "в"
 end
 
-local function fn_path_dsc(w)
-  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
+fn.path_dsc = function(w)
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_знакомы(s)
+fn.знакомы = function(s)
   return met
 end
 
-local function fn_ask_text(s)
+fn.ask_text = function(s)
   return "Вопрос от fn?"
 end
 
-local function fn_reply_text(s)
+fn.reply_text = function(s)
   return "-- Ответ от fn."
 end
 
-local function fn_act_say(s)
+fn.act_say = function(s)
   p "-- Что-то произошло."
 end
 
@@ -61,7 +63,7 @@ end
 Door = Class({
   walk_to = 'none';
   door_to = function(s)
-    local n = fn_door_next(s, here())
+    local n = fn.door_next(s, here())
     if n then
       return n
     end
@@ -84,7 +86,7 @@ Path = Class {
       p(d)
       return
     end
-    p(fn_path_dsc(_(s.walk_to)))
+    p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -189,7 +191,7 @@ end;
       function(s)
         p "-- Похоже, да."
       end;
-      cond = fn_знакомы;
+      cond = fn.знакомы;
     };
     {
       "s как аргумент функции";
@@ -198,7 +200,7 @@ end;
       end;
       hidden = true;
       cond = function(s)
-        fn_знакомы(s)
+        fn.знакомы(s)
       end;
     };
     {
@@ -224,14 +226,14 @@ end;
       end;
     };
     {
-      fn_ask_text;
-      fn_reply_text;
+      fn.ask_text;
+      fn.reply_text;
     };
     {
       "С действием?";
       function(s)
-        p(fn_reply_text(s))
-        fn_act_say(s)
+        p(fn.reply_text(s))
+        fn.act_say(s)
       end;
     };
   };

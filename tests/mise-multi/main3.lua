@@ -4,22 +4,24 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_where_list(w)
+local fn = {}
+
+fn.where_list = function(w)
   local list = {}
   where(w, list)
   return std.list(list)
 end
 
-local function fn_plurals(s)
+fn.plurals = function(s)
   return std.list(mp.multi[s] or { s })
 end
 
-local function fn_is_room(s)
+fn.is_room = function(s)
   return not not std.is_obj(s or false, 'room')
 end
 
-local function fn_door_next(s, w)
-  local l = fn_where_list(s)
+fn.door_next = function(s, w)
+  local l = fn.where_list(s)
   local _, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
@@ -27,18 +29,18 @@ local function fn_door_next(s, w)
   return false
 end
 
-local function fn_where_prep(w)
+fn.where_prep = function(w)
   if w:has("supporter") then
     return "на"
   end
   return "в"
 end
 
-local function fn_path_dsc(w)
-  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
+fn.path_dsc = function(w)
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_minmax(a, b)
+fn.minmax = function(a, b)
   if a < b then
     return a, b
   else
@@ -46,33 +48,33 @@ local function fn_minmax(a, b)
   end
 end
 
-local function fn_swap(x)
+fn.swap = function(x)
   return x, x
 end
 
-local function fn_fwd()
-  return fn_minmax(1, 2)
+fn.fwd = function()
+  return fn.minmax(1, 2)
 end
 
-local function fn_single()
-  return fn_minmax(1, 2)
+fn.single = function()
+  return fn.minmax(1, 2)
 end
 
-local function fn_cb(f)
+fn.cb = function(f)
   f(1)
 end
 
-local function fn_caller()
-  fn_cb(fn_fwd)
+fn.caller = function()
+  fn.cb(fn.fwd)
 end
 
-local function fn_demo()
-  local lo, hi = fn_minmax(3, 4)
-  local a, b = fn_minmax(1, 2), 9
-  local c = fn_minmax(5, 6)
-  local p, q = fn_swap(_'box')
-  local o, i = fn_where_list(_'box'):lookup(_'box')
-  p(fn_minmax(7, 8))
+fn.demo = function()
+  local lo, hi = fn.minmax(3, 4)
+  local a, b = fn.minmax(1, 2), 9
+  local c = fn.minmax(5, 6)
+  local p, q = fn.swap(_'box')
+  local o, i = fn.where_list(_'box'):lookup(_'box')
+  p(fn.minmax(7, 8))
 end
 
 function start(load)
@@ -82,7 +84,7 @@ end
 Door = Class({
   walk_to = 'none';
   door_to = function(s)
-    local n = fn_door_next(s, here())
+    local n = fn.door_next(s, here())
     if n then
       return n
     end
@@ -105,7 +107,7 @@ Path = Class {
       p(d)
       return
     end
-    p(fn_path_dsc(_(s.walk_to)))
+    p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 

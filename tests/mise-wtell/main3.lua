@@ -4,22 +4,24 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_where_list(w)
+local fn = {}
+
+fn.where_list = function(w)
   local list = {}
   where(w, list)
   return std.list(list)
 end
 
-local function fn_plurals(s)
+fn.plurals = function(s)
   return std.list(mp.multi[s] or { s })
 end
 
-local function fn_is_room(s)
+fn.is_room = function(s)
   return not not std.is_obj(s or false, 'room')
 end
 
-local function fn_door_next(s, w)
-  local l = fn_where_list(s)
+fn.door_next = function(s, w)
+  local l = fn.where_list(s)
   local _, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
@@ -27,18 +29,18 @@ local function fn_door_next(s, w)
   return false
 end
 
-local function fn_where_prep(w)
+fn.where_prep = function(w)
   if w:has("supporter") then
     return "на"
   end
   return "в"
 end
 
-local function fn_path_dsc(w)
-  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
+fn.path_dsc = function(w)
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_BowOrArrow(o)
+fn.BowOrArrow = function(o)
   if not o or o == _'bow' or o.arrow then
     return true
   end
@@ -56,7 +58,7 @@ end
 Door = Class({
   walk_to = 'none';
   door_to = function(s)
-    local n = fn_door_next(s, here())
+    local n = fn.door_next(s, here())
     if n then
       return n
     end
@@ -79,7 +81,7 @@ Path = Class {
       p(d)
       return
     end
-    p(fn_path_dsc(_(s.walk_to)))
+    p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -396,7 +398,7 @@ mp.FireAt = function(s, w, wh)
     p "Ты не хочешь просто стрелять куда зря."
     return
   end
-  if fn_BowOrArrow(wh) then
+  if fn.BowOrArrow(wh) then
     p "Немыслимо!"
   end
   return false
@@ -484,7 +486,7 @@ _'mid_square'.before_Walk = function(s, w)
 end;
 
 _'tree'.before_FireAt = function(s, w)
-  if fn_BowOrArrow(w) then
+  if fn.BowOrArrow(w) then
     p "Твоя рука слегка дрожит, и стрела входит в ствол на несколько дюймов выше головы Уолтера."
     walk(_'theend')
   end
@@ -501,7 +503,7 @@ _'governor'.init_dsc = function(s)
   end
 end;
 _'governor'.before_FireAt = function(s, w)
-  if fn_BowOrArrow(w) then
+  if fn.BowOrArrow(w) then
     p([[Прежде, чем солдаты успевают среагировать, ты разворачиваешься, и выпускаешь стрелу в Гесслера.
 Она пронзает его сердце, и герцог оседает на землю. На мгновение толпа замирает в недоумении, но тут же
 разражается криками ликования.]])
@@ -531,7 +533,7 @@ _'son'.life_Talk = function(s)
 end;
 _'son'.before_FireAt = function(s, w)
   if here() == _'marketplace' then
-    if fn_BowOrArrow(w) then
+    if fn.BowOrArrow(w) then
       p "Упс! Наверняка вы имели в виду не это?"
       walk(_'theend')
     end
@@ -567,7 +569,7 @@ _'apple'.before_Default = function(s, ev, w, wh)
 end;
 _'apple'.before_FireAt = function(s, w)
   if here() == _'marketplace' then
-    if fn_BowOrArrow(w) then
+    if fn.BowOrArrow(w) then
       mp.score = mp.score + 1
       p([[Мягко и спокойно ты кладёшь стрелу на тетиву, оттягивая её, и, предельно
 сконцентрировавшись, берёшь прицел. Задержав дыхание, не мигая, ты в ужасе

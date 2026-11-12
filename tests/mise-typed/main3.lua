@@ -4,22 +4,24 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_where_list(w)
+local fn = {}
+
+fn.where_list = function(w)
   local list = {}
   where(w, list)
   return std.list(list)
 end
 
-local function fn_plurals(s)
+fn.plurals = function(s)
   return std.list(mp.multi[s] or { s })
 end
 
-local function fn_is_room(s)
+fn.is_room = function(s)
   return not not std.is_obj(s or false, 'room')
 end
 
-local function fn_door_next(s, w)
-  local l = fn_where_list(s)
+fn.door_next = function(s, w)
+  local l = fn.where_list(s)
   local _, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
@@ -27,18 +29,18 @@ local function fn_door_next(s, w)
   return false
 end
 
-local function fn_where_prep(w)
+fn.where_prep = function(w)
   if w:has("supporter") then
     return "на"
   end
   return "в"
 end
 
-local function fn_path_dsc(w)
-  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
+fn.path_dsc = function(w)
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_label(w, n, nn)
+fn.label = function(w, n, nn)
   if n and nn then
     return w:noun_hint(n, nn)
   end
@@ -48,31 +50,31 @@ local function fn_label(w, n, nn)
   return w:noun_hint()
 end
 
-local function fn_label2(w, n)
+fn.label2 = function(w, n)
   return w:noun_hint(n)
 end
 
-local function fn_first_str(t)
+fn.first_str = function(t)
   return t[1]
 end
 
-local function fn_spot(s)
+fn.spot = function(s)
   return where(s) and where(s) or _'none'
 end
 
-local function fn_ev_text(ev)
+fn.ev_text = function(ev)
   return "событие: " .. ev
 end
 
-local function fn_first_in(s)
+fn.first_in = function(s)
   return _(s.found_in)[1]
 end
 
-local function fn_remember_room(s)
+fn.remember_room = function(s)
   last_room = where(s)
 end
 
-local function fn_scope_names(s)
+fn.scope_names = function(s)
   local n = 0
   for _, w in ipairs(_(s.scope)) do
     if w then
@@ -82,29 +84,29 @@ local function fn_scope_names(s)
   return n
 end
 
-local function fn_room_text()
+fn.room_text = function()
   return "Тестовая комната."
 end
 
-local function fn_probe_str(s, f)
+fn.probe_str = function(s, f)
   local v = s[f]
   if type(v) == 'function' then v = v(s) end
   if type(v) == 'string' then return v end
   return nil
 end
 
-local function fn_probe_num(s, f)
+fn.probe_num = function(s, f)
   local v = s[f]
   if type(v) == 'function' then v = v(s) end
   if type(v) == 'number' then return v end
   return nil
 end
 
-local function fn_field_probe(s)
-  local w = fn_probe_str(s, "word") or "?"
-  local d = fn_probe_str(s, "dsc") or "-"
+fn.field_probe = function(s)
+  local w = fn.probe_str(s, "word") or "?"
+  local d = fn.probe_str(s, "dsc") or "-"
   do
-    local p = fn_probe_num(s, "pri")
+    local p = fn.probe_num(s, "pri")
     if p then
       return (tostring(w) .. ":" .. tostring(p + 1) .. ":" .. tostring(d))
     end
@@ -112,13 +114,13 @@ local function fn_field_probe(s)
   return (tostring(w) .. ":-:" .. tostring(d))
 end
 
-local function fn_on_take(s)
+fn.on_take = function(s)
   if s.weight + 1 > 0 then
     p "тяжёлый"
   end
-  p(fn_label(s))
-  p(fn_label(s, "им"))
-  p(fn_label(s, "вн"))
+  p(fn.label(s))
+  p(fn.label(s, "им"))
+  p(fn.label(s, "вн"))
   p(s:noun_hint("вн"))
   p(s:noun_hint("зв"))
   p(s:noun_hint({ "рд", 2 }))
@@ -129,13 +131,13 @@ local function fn_on_take(s)
   p(s:noun_hint({ "тв", 2 }))
   p(s:noun_hint({}))
   p(s:Noun_hint({ "рд", 2 }, 1))
-  p(fn_first_str({ "a", "b" }))
+  p(fn.first_str({ "a", "b" }))
   local h = { "вн", "мн" }
   p(s:noun_hint(h))
   p(_(chosen):noun_hint("вн"))
-  p(fn_spot(s):noun_hint("вн"))
+  p(fn.spot(s):noun_hint("вн"))
   do
-    local o, i = fn_where_list(_'crate'):lookup(_'crate')
+    local o, i = fn.where_list(_'crate'):lookup(_'crate')
     if o and i then
       p(o:noun_hint("вн"))
     end
@@ -148,8 +150,8 @@ local function fn_on_take(s)
       p "пусто"
     end
   end
-  p(fn_label2(s, 2))
-  fn_label(s, 1, 2)
+  p(fn.label2(s, 2))
+  fn.label(s, 1, 2)
 end
 
 function start(load)
@@ -159,7 +161,7 @@ end
 Door = Class({
   walk_to = 'none';
   door_to = function(s)
-    local n = fn_door_next(s, here())
+    local n = fn.door_next(s, here())
     if n then
       return n
     end
@@ -182,7 +184,7 @@ Path = Class {
       p(d)
       return
     end
-    p(fn_path_dsc(_(s.walk_to)))
+    p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -229,14 +231,14 @@ obj {
 room {
   -"тестовая комната";
   nam = "test_room";
-  dsc = fn_room_text();
+  dsc = fn.room_text();
   n_to = chosen;
   s_to = function(r) return _'test_room' end;
 }
 
 _'lamp'.target = 'orb';
 
-_'crate'.before_Take = fn_on_take;
+_'crate'.before_Take = fn.on_take;
 
 _'crate'.found_in = 'test_room';
 

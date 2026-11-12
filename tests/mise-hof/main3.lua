@@ -4,24 +4,24 @@
 require "fmt"
 require "parser/mp-ru"
 
-local fn_is_odd
+local fn = {}
 
-local function fn_where_list(w)
+fn.where_list = function(w)
   local list = {}
   where(w, list)
   return std.list(list)
 end
 
-local function fn_plurals(s)
+fn.plurals = function(s)
   return std.list(mp.multi[s] or { s })
 end
 
-local function fn_is_room(s)
+fn.is_room = function(s)
   return not not std.is_obj(s or false, 'room')
 end
 
-local function fn_door_next(s, w)
-  local l = fn_where_list(s)
+fn.door_next = function(s, w)
+  local l = fn.where_list(s)
   local _, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
@@ -29,56 +29,56 @@ local function fn_door_next(s, w)
   return false
 end
 
-local function fn_where_prep(w)
+fn.where_prep = function(w)
   if w:has("supporter") then
     return "на"
   end
   return "в"
 end
 
-local function fn_path_dsc(w)
-  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
+fn.path_dsc = function(w)
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_run(f)
+fn.run = function(f)
   return f(_'box')
 end
 
-local function fn_each(t, f)
+fn.each = function(t, f)
   for _, w in ipairs(t) do
     f(w)
   end
 end
 
-local function fn_apply(cb, w)
+fn.apply = function(cb, w)
   return cb(w) + 1
 end
 
-local function fn_apply_text(cb)
+fn.apply_text = function(cb)
   return cb(_'box')
 end
 
-local function fn_probe_lambda()
-  return fn_apply_text(function(s)
+fn.probe_lambda = function()
+  return fn.apply_text(function(s)
     return "из лямбды"
   end)
 end
 
-local function fn_is_even(n)
+fn.is_even = function(n)
   if n == 0 then
     return true
   end
-  return fn_is_odd(n - 1)
+  return fn.is_odd(n - 1)
 end
 
-fn_is_odd = function(n)
+fn.is_odd = function(n)
   if n == 0 then
     return false
   end
-  return fn_is_even(n - 1)
+  return fn.is_even(n - 1)
 end
 
-local function fn_sum_args(...)
+fn.sum_args = function(...)
   local acc = 0
   for _, v in ipairs({ ... }) do
     if v then
@@ -88,12 +88,12 @@ local function fn_sum_args(...)
   return acc
 end
 
-local function fn_head_arg(...)
+fn.head_arg = function(...)
   local a = ...
   return a
 end
 
-local function fn_total(n)
+fn.total = function(n)
   local r = 0
   for i = 1, n do
     r = r + (i)
@@ -101,10 +101,10 @@ local function fn_total(n)
   return r
 end
 
-local function fn_closure(s)
+fn.closure = function(s)
   local n = 0
   for _, w in ipairs({ _'box' }) do
-    fn_each(inv(), function(x)
+    fn.each(inv(), function(x)
       n = n + (1)
     end)
   end
@@ -118,7 +118,7 @@ end
 Door = Class({
   walk_to = 'none';
   door_to = function(s)
-    local n = fn_door_next(s, here())
+    local n = fn.door_next(s, here())
     if n then
       return n
     end
@@ -141,7 +141,7 @@ Path = Class {
       p(d)
       return
     end
-    p(fn_path_dsc(_(s.walk_to)))
+    p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -157,22 +157,22 @@ obj {
   -"коробка";
   nam = "box";
   Take = function(s, w)
-    if fn_run(function(w) return w:has("light") end) then
+    if fn.run(function(w) return w:has("light") end) then
       p "светло"
     end
-    p("apply: ", fn_apply(function(x) return 41 end, _'box'))
-    if fn_is_even(4) and not fn_is_odd(4) then
-      p("even: ", fn_sum_args(10, 20, 12))
+    p("apply: ", fn.apply(function(x) return 41 end, _'box'))
+    if fn.is_even(4) and not fn.is_odd(4) then
+      p("even: ", fn.sum_args(10, 20, 12))
     end
     do
-      local h = fn_head_arg("раз", "два")
+      local h = fn.head_arg("раз", "два")
       if h then
         p("head: ", h)
       end
     end
     s:for_plural(function(w) return w:attr("seen") end)
-    fn_each(inv(), function(w) return w:attr("seen") end)
-    if fn_total(3) > 0 then
+    fn.each(inv(), function(w) return w:attr("seen") end)
+    if fn.total(3) > 0 then
       return false
     end
   end;

@@ -130,15 +130,13 @@ class Emitter:
                     continue
                 rendered.append((it, *self._fn_parts(it)))
 
-        fwd = [fn.name for i, (fn, _p, _b) in enumerate(rendered)
-               if any(re.search(rf"\bfn_{re.escape(fn.name)}\b", rendered[j][2])
-                      for j in range(i))]
-        if fwd:
-            chunks.append("local " + ", ".join(f"fn_{n}" for n in fwd))
-        fwd_set = set(fwd)
+        # One local table, not one local per function: a chunk may hold only 200
+        # locals, and a function of the table is visible before it is assigned,
+        # so mutual recursion needs no forward declarations either.
+        if rendered:
+            chunks.append("local fn = {}")
         for fn, prms, body in rendered:
-            head = f"fn_{fn.name} = function({prms})" if fn.name in fwd_set \
-                else f"local function fn_{fn.name}({prms})"
+            head = f"fn.{fn.name} = function({prms})"
             chunks.append(f"{head}\n{body}\nend" if body.strip() else f"{head}\nend")
 
         for it in self._emission_order():
@@ -656,7 +654,7 @@ class Emitter:
         return "nil"
 
     def _fnref(self, name: str) -> str:
-        return f"fn_{name}"
+        return f"fn.{name}"
 
     def _call(self, c: Call, as_stmt: bool = False) -> str:
         if not c.receiver and c.func in ("say", "append", "line"):
@@ -669,7 +667,7 @@ class Emitter:
         args = [self._expr(a) for a in all_a]
         if fn and isinstance(fn.body, str) and (fn.is_extern or (not fn.body.strip().startswith(("local ", "return ")) and "\n" not in fn.body)) and c.func not in self.ctx.used_refs:
             return self._expand(fn, args, as_stmt)
-        return f"fn_{c.func}({', '.join(args)})" if c.func in self.ctx.fns else f"{c.func}({', '.join(args)})"
+        return f"fn.{c.func}({', '.join(args)})" if c.func in self.ctx.fns else f"{c.func}({', '.join(args)})"
 
     def _expand(self, fn: FnDecl, args: List[str], as_stmt: bool) -> str:
         t = fn.body

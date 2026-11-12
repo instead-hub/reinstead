@@ -4,22 +4,24 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_where_list(w)
+local fn = {}
+
+fn.where_list = function(w)
   local list = {}
   where(w, list)
   return std.list(list)
 end
 
-local function fn_plurals(s)
+fn.plurals = function(s)
   return std.list(mp.multi[s] or { s })
 end
 
-local function fn_is_room(s)
+fn.is_room = function(s)
   return not not std.is_obj(s or false, 'room')
 end
 
-local function fn_door_next(s, w)
-  local l = fn_where_list(s)
+fn.door_next = function(s, w)
+  local l = fn.where_list(s)
   local _, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
@@ -27,22 +29,22 @@ local function fn_door_next(s, w)
   return false
 end
 
-local function fn_where_prep(w)
+fn.where_prep = function(w)
   if w:has("supporter") then
     return "на"
   end
   return "в"
 end
 
-local function fn_path_dsc(w)
-  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
+fn.path_dsc = function(w)
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_text_of(t)
+fn.text_of = function(t)
   return t
 end
 
-local function fn_reply_text(s, text)
+fn.reply_text = function(s, text)
   return text
 end
 
@@ -53,7 +55,7 @@ end
 Door = Class({
   walk_to = 'none';
   door_to = function(s)
-    local n = fn_door_next(s, here())
+    local n = fn.door_next(s, here())
     if n then
       return n
     end
@@ -76,7 +78,7 @@ Path = Class {
       p(d)
       return
     end
-    p(fn_path_dsc(_(s.walk_to)))
+    p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -90,7 +92,7 @@ room {
   -"комната";
   nam = "r";
   before_Consult = function(s, w, wh)
-    p(fn_text_of(wh))
+    p(fn.text_of(wh))
   end;
 }:with{ 'x', 'npc', 'y', 'z' }
 
@@ -98,7 +100,7 @@ obj {
   -"вещь";
   nam = "x";
   before_AskFor = function(s, w)
-    p(fn_text_of(w))
+    p(fn.text_of(w))
   end;
   before_Cut = function(s, w)
     if w then
@@ -119,7 +121,7 @@ obj {
   end;
   ["before_Take,AskFor"] = function(s, w)
     if (mp.event or nil) == "AskFor" then
-      p(fn_text_of(w))
+      p(fn.text_of(w))
     else
       return false
     end
@@ -128,7 +130,7 @@ obj {
     do
       local __match = ev
       if __match == "Ask" then
-        p(fn_text_of(w))
+        p(fn.text_of(w))
       elseif __match == "Cut" then
         if w then
           w:has("scenery")
@@ -143,12 +145,12 @@ obj {
 obj {
   -"штуковина";
   nam = "z";
-  before_AskFor = fn_reply_text;
+  before_AskFor = fn.reply_text;
   before_Consult = function(s, text)
-    p(fn_text_of(text))
+    p(fn.text_of(text))
   end;
   before_Whisper = function(s, w)
-    p(fn_text_of(w))
+    p(fn.text_of(w))
   end;
 }
 
@@ -156,7 +158,7 @@ obj {
   -"сторож";
   nam = "npc";
   life_Ask = function(s, w)
-    p(fn_text_of(w))
+    p(fn.text_of(w))
   end;
 }:attr 'animate'
 
@@ -175,7 +177,7 @@ pl["before_Take,Drop"] = "Тебе нельзя.";
 _'game'["before_Open,Close"] = "Не сейчас.";
 
 _'game'.before_Tell = function(s, w, wh)
-  p(fn_text_of(wh))
+  p(fn.text_of(wh))
 end;
 _'game'.before_Zap = function(s, w)
   if w then
@@ -184,7 +186,7 @@ _'game'.before_Zap = function(s, w)
 end;
 
 mp.Ask = function(s, w, wh)
-  p(fn_text_of(wh))
+  p(fn.text_of(wh))
 end;
 
 _'x'.found_in = 'test_room';

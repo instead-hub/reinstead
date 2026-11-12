@@ -5,7 +5,7 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 ## Build
 
 - `make` — default (LuaJIT + SDL2 via pkg-config). SDL3: `make SDLVER=sdl3` (pkg-config `sdl3`).
-- `./make-default.sh` — bundled Lua (`src/lua`), no LuaJIT; `SDLVER=sdl3 ./make-default.sh` for SDL3. Also `./make-tcc.sh`, `make WITH_FREETYPE=1`, `make WITH_SCHRIFT=1`.
+- `./make-default.sh` — bundled Lua (`src/lua`), no LuaJIT; `SDLVER=sdl3 ./make-default.sh` for SDL3. Also `./make-tcc.sh`, `make WITH_FREETYPE=1`, `make WITH_SCHRIFT=1`. The bundled Lua is built with `-DLUA_UCID`: without it `lctype.c` treats every byte ≥ 0x80 as non-alphabetic, and generated Lua with Cyrillic identifiers (mise allows them) does not parse.
 - Platform: `src/platform_sdl.c` holds the SDL-shared part and includes `src/sdl2/platform.c` or `src/sdl3/platform.c` (`-DUSE_SDL3` selects SDL3). `src/platform.h` is the only platform header. Plan9 (`src/plan9/platform.c`) is standalone.
 - `./clean.sh` or `make clean`; binary is `./reinstead`.
 - Build artifacts (`*.o`, `reinstead`, `data/settings`) are untracked — never commit them.

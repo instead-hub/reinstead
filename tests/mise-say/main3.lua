@@ -4,22 +4,24 @@
 require "fmt"
 require "parser/mp-ru"
 
-local function fn_where_list(w)
+local fn = {}
+
+fn.where_list = function(w)
   local list = {}
   where(w, list)
   return std.list(list)
 end
 
-local function fn_plurals(s)
+fn.plurals = function(s)
   return std.list(mp.multi[s] or { s })
 end
 
-local function fn_is_room(s)
+fn.is_room = function(s)
   return not not std.is_obj(s or false, 'room')
 end
 
-local function fn_door_next(s, w)
-  local l = fn_where_list(s)
+fn.door_next = function(s, w)
+  local l = fn.where_list(s)
   local _, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
@@ -27,32 +29,32 @@ local function fn_door_next(s, w)
   return false
 end
 
-local function fn_where_prep(w)
+fn.where_prep = function(w)
   if w:has("supporter") then
     return "на"
   end
   return "в"
 end
 
-local function fn_path_dsc(w)
-  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
+fn.path_dsc = function(w)
+  return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-local function fn_raw_ml()
+fn.raw_ml = function()
   return [[m
 n]]
 end
 
-local function fn_slen(t)
+fn.slen = function(t)
   return #t
 end
 
-local function fn_esc_ml()
+fn.esc_ml = function()
   return [[a
 b]]
 end
 
-local function fn_tri_ml()
+fn.tri_ml = function()
   return [[c
 d]]
 end
@@ -64,7 +66,7 @@ end
 Door = Class({
   walk_to = 'none';
   door_to = function(s)
-    local n = fn_door_next(s, here())
+    local n = fn.door_next(s, here())
     if n then
       return n
     end
@@ -87,7 +89,7 @@ Path = Class {
       p(d)
       return
     end
-    p(fn_path_dsc(_(s.walk_to)))
+    p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -117,7 +119,7 @@ _'game'.before_Inv = function(s)
   pr "append text"
   p("raw words")
   p(_'x':noun_hint())
-  p("ml=", fn_slen(fn_esc_ml()), ",", fn_slen(fn_tri_ml()), ",", fn_slen(fn_raw_ml()))
+  p("ml=", fn.slen(fn.esc_ml()), ",", fn.slen(fn.tri_ml()), ",", fn.slen(fn.raw_ml()))
   p("n=" .. _'x'.pri + 1)
   p(_'x'.pri + 1 .. "!")
   p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2))
