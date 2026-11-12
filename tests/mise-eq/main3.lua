@@ -43,9 +43,13 @@ local function fn_on_take(s)
   p "взято"
 end
 
-obj {
-  nam = "none";
-}
+function init()
+  take(_'box')
+end
+
+function start(load)
+  move(me(), _'hall')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -77,13 +81,11 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
-
-_'game'.dsc = "Заставка.";
-
-function init()
-  take(_'box')
-end
 
 obj {
   -"коробка";
@@ -114,8 +116,6 @@ obj {
   end;
 }:attr 'scenery':enable():dict { ["коробка/вн"] = "коробку" }
 
-Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 7, hint = "Подсказка." }
-
 room {
   -"зал";
   nam = "hall";
@@ -123,10 +123,6 @@ room {
   n_to = 'hall';
   before_Walk = "Стоит на месте.";
 }
-
-function start(load)
-  move(me(), _'hall')
-end
 
 dlg {
   nam = 'chat';
@@ -145,3 +141,7 @@ dlg {
     };
   };
 }
+
+Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 7, hint = "Подсказка." }
+
+_'game'.dsc = "Заставка.";

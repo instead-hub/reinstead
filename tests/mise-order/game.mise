@@ -1,0 +1,50 @@
+game "order"
+
+lang ru
+
+include stdlib
+
+# Всё ниже нарочно стоит в «неправильном» порядке: компилятор сам решает, что
+# за чем эмиттить — класс-родитель раньше ребёнка, объект раньше `impl`,
+# глагол раньше `extend verb` и раньше `verb … for объект` (если цель глагола
+# не готова к загрузке, игра падает и транскрипт не пишется вовсе).
+
+extend verb #Exam
+  words = "смотри"
+
+verb Peg for sphere
+  words = "покрут/ить"
+  patterns = ["{noun}/вн : Peg"]
+
+impl sphere
+  found_in = test_room
+
+class Kid(Base) : Talkative
+  x: num
+
+class Base
+  hp: num
+
+obj sphere "сфера"
+  dsc = "Гладкая сфера."
+  before Peg = "покрутили"
+
+Kid kid "детёныш"
+  hp = 10
+  x = 2
+
+mixin Talkative
+  before Talk = "поговорили"
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl kid
+  found_in = test_room
+
+fn start(load)
+  player:move test_room
+
+impl game
+  before Inv =
+    say "kid: hp={kid.hp} x={kid.x}"

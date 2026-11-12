@@ -75,9 +75,9 @@ local function fn_demo()
   p(fn_minmax(7, 8))
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -109,6 +109,10 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 obj {
@@ -123,7 +127,3 @@ room {
 }
 
 _'box'.found_in = 'test_room';
-
-function start(load)
-  move(me(), _'test_room')
-end

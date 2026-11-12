@@ -1,0 +1,1 @@
+mise: line 5: class 'A': inheritance cycle (A -> B -> A)

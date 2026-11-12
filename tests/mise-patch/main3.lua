@@ -42,9 +42,9 @@ local function fn_helper()
   p "helper"
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -76,6 +76,10 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 obj {
@@ -83,6 +87,12 @@ obj {
   nam = "box";
   title = "Коробка";
   score_value = 0;
+}
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
 }
 
 _'box'.before_Take = function(s, w)
@@ -98,14 +108,4 @@ _'box'.after_Any = "use &helper";
 _'box'.Any = "use &helper";
 _'box'.Default = "use &helper";
 
-room {
-  -"тестовая комната";
-  nam = "test_room";
-  dsc = "Тестовая комната.";
-}
-
 _'box'.found_in = 'test_room';
-
-function start(load)
-  move(me(), _'test_room')
-end

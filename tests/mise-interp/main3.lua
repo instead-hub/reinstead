@@ -42,9 +42,9 @@ local function fn_tag(t)
   return t
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'hall')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -76,6 +76,10 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 global 'nums' ({ 10, 20 })
@@ -85,17 +89,13 @@ obj {
   nam = "key";
 }
 
-_'key'.found_in = 'hall';
-
 room {
   -"зал";
   nam = "hall";
   dsc = "Зал.";
 }
 
-function start(load)
-  move(me(), _'hall')
-end
+_'key'.found_in = 'hall';
 
 _'game'.before_Inv = function(s)
   p("просто ", tostring(nums[1]), " и ", tostring(nums[2]))

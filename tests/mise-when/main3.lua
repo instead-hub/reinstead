@@ -48,9 +48,15 @@ local function fn_pick(s)
   end
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+  if true then
+    p "one"
+  end
+  if false then
+    p "two"
+  end
+end
 
 Door = Class({
   walk_to = 'none';
@@ -82,9 +88,13 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
---"мочь"
-
 Tree = Class {}:attr 'scenery'
+
+obj {
+  nam = "none";
+}
+
+--"мочь"
 
 obj {
   -"коробка";
@@ -102,6 +112,12 @@ obj {
   end;
 }
 
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
 _'box'.Gaze = function(s)
   p "смотрят"
   local style = "light"
@@ -113,21 +129,5 @@ _'box'.Gaze = function(s)
     p "одежда"
   end
 end;
-
-function start(load)
-  move(me(), _'test_room')
-  if true then
-    p "one"
-  end
-  if false then
-    p "two"
-  end
-end
-
-room {
-  -"тестовая комната";
-  nam = "test_room";
-  dsc = "Тестовая комната.";
-}
 
 _'box'.found_in = 'test_room';

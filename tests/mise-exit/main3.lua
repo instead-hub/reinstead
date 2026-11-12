@@ -47,9 +47,9 @@ local function fn_exit(s, d)
   return nil
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'r')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -81,6 +81,10 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 room {
@@ -101,7 +105,3 @@ room {
   -"зал";
   nam = "q";
 }
-
-function start(load)
-  move(me(), _'r')
-end

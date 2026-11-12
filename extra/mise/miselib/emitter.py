@@ -1,7 +1,8 @@
 """Compact Lua (`main3.lua`) emitter for MISE 2."""
 MATCH_TMP = "__match"
 import re
-from typing import Any, List, Optional, Tuple
+from dataclasses import replace
+from typing import Any, Dict, List, Optional, Set, Tuple
 from .ast_nodes import *
 from .checker import Context, load_includes, prescan
 from .lexer import lua_lines
@@ -18,6 +19,79 @@ def lua_str(s: str) -> str:
         lead = "\n" if s.startswith("\n") else ""
         return f"[{eq}[{lead}{s}]{eq}]"
     return f"'{s}'" if '"' in s else f'"{s}"'
+
+
+_VERB_ORDER = {"verb": 0, "extend": 1, "remove": 2}
+
+
+def _class_has_body(ent: EntityDecl) -> bool:
+    """Does the class carry anything the engine has to run or store?"""
+    return bool(ent.words or ent.traits or ent.handlers
+                or any(p.value is not None for p in ent.props))
+
+
+def _merged_classes(items: List[Any], ctx: Context) -> Dict[str, EntityDecl]:
+    """One declaration per class: a class may be written in pieces.
+
+    The field declarations are already merged by the checker (they live on the
+    first piece); the parent, words, traits and handlers are collected here.
+    """
+    merged: Dict[str, EntityDecl] = {}
+    for ent in items:
+        if not isinstance(ent, EntityDecl) or ent.kind != "class" or not ent.name:
+            continue
+        decl = merged.get(ent.name)
+        if decl is None:
+            first = ctx.class_decls.get(ent.name, ent)
+            merged[ent.name] = replace(first, words=list(ent.words), traits=list(ent.traits),
+                                       handlers=list(ent.handlers), props=list(first.props))
+            continue
+        decl.parent = decl.parent or ent.parent
+        decl.ctor = decl.ctor or ent.ctor
+        decl.words = decl.words or list(ent.words)
+        decl.traits += [t for t in ent.traits if t not in decl.traits]
+        decl.handlers += [h for h in ent.handlers if h not in decl.handlers]
+    return merged
+
+
+def _class_names_in_use(items: List[Any]) -> Set[str]:
+    """Names an emitted `Class` global is needed for: a parent, an instance."""
+    used: Set[str] = set()
+    for ent in items:
+        if not isinstance(ent, EntityDecl):
+            continue
+        if ent.kind == "class":
+            used.update([ent.parent] if ent.parent else [])
+        elif ent.kind != "impl" and ent.name is not None:
+            used.add(ent.kind)
+    return used
+
+
+def _class_plan(items: List[Any], ctx: Context) -> List[EntityDecl]:
+    """The `Class` chunks to emit, a parent before its child.
+
+    A class is skipped when the engine owns it (`class story(room) = cutscene`)
+    or when it only spells out field types and nothing refers to it — such a
+    declaration exists for the checker, there is nothing to build.
+    """
+    merged = _merged_classes(items, ctx)
+    in_use = _class_names_in_use(items)
+    order: List[EntityDecl] = []
+    placed: Set[str] = set()
+
+    def place(start: EntityDecl):
+        chain = [start]
+        while chain[-1].parent in merged and merged[chain[-1].parent] not in chain:
+            chain.append(merged[chain[-1].parent])
+        for c in reversed(chain):
+            if c.name not in placed and c.name not in ctx.ctors \
+                    and (_class_has_body(c) or c.name in in_use):
+                placed.add(c.name)
+                order.append(c)
+
+    for decl in merged.values():
+        place(decl)
+    return order
 
 
 def _ind(text: str, n: int = 2) -> str:
@@ -58,7 +132,7 @@ class Emitter:
                 else f"local function fn_{fn.name}({prms})"
             chunks.append(f"{head}\n{body}\nend" if body.strip() else f"{head}\nend")
 
-        for it in self.prog.items:
+        for it in self._emission_order():
             if isinstance(it, FnDecl) and not it.is_extern and it.name in self.ctx.entries:
                 prms = ", ".join(pn for pn, _pt in it.params)
                 body = _ind(self._stmts(it.body), 2) if isinstance(it.body, list) else _ind(it.body, 2)
@@ -78,6 +152,26 @@ class Emitter:
 
         return "\n\n".join(c for c in chunks if c.strip()) + "\n"
 
+    def _emission_order(self) -> List[Any]:
+        """The chunks that run at load time, in an order that does not depend on
+        the source order of the declarations.
+
+        The engine executes the file top to bottom, so a parent class has to be
+        built before its child, an object before an `impl` that writes into it,
+        and a verb before `extend`/`remove` of that verb. Functions are emitted
+        before all of this (see `emit`), and object fields hold names, not
+        references, so the rest keeps the source order.
+        """
+        items = self.prog.items
+        entries = [it for it in items if isinstance(it, FnDecl) and it.name in self.ctx.entries]
+        values = [it for it in items
+                  if isinstance(it, (LuaDecl, VarDecl, TalkDecl))
+                  or (isinstance(it, EntityDecl) and it.kind not in ("class", "impl"))]
+        verbs = sorted((it for it in items if isinstance(it, VerbDecl)),
+                       key=lambda v: _VERB_ORDER[v.mode])
+        impls = [it for it in items if isinstance(it, EntityDecl) and it.kind == "impl"]
+        return entries + _class_plan(items, self.ctx) + values + verbs + impls
+
     def _fn_parts(self, fn: FnDecl) -> Tuple[str, str]:
         prms = ", ".join([pn for pn, _pt in fn.params] + (["..."] if fn.variadic else []))
         if isinstance(fn.body, str):
@@ -91,10 +185,8 @@ class Emitter:
 
     def _emit_entity(self, ent: EntityDecl, ind: int = 0) -> str:
         if ent.kind == "class":
-            # A class that only declares field types emits nothing
-            if not ent.words and not ent.traits and not ent.handlers \
-                    and all(p.value is None for p in ent.props):
-                return ""
+            if ent.name in self.ctx.ctors:
+                return ""               # `class story(room) = cutscene`: the engine owns it
             lines, tails = self._obj_parts(ent, is_class=True, ind=0)
             inner = "\n".join(lines)
             if ent.parent and ent.parent != self.ctx.root_class:
@@ -160,7 +252,7 @@ class Emitter:
             parts = [it.name if isinstance(it, Sym) else self._expr(it).strip("'\"") for it in items]
             return f":{mname} '{','.join(parts)}'"
         if form == "list":                  # `:with{ 'a', 'b' }` — names, resolved by the engine
-            parts = [self._prop_scalar(it, True) for it in items]
+            parts = [self._prop_scalar(it) for it in items]
             return f":{mname}{{ {', '.join(parts)} }}" if parts else ""
         args = [self._expr(it) for it in items]
         return f":{mname}({', '.join(args)})" if args else ""
@@ -218,7 +310,7 @@ class Emitter:
         if isinstance(e, Sym):
             return e.rk not in ("fn0",)          # a bare fn name is a call
         if isinstance(e, FieldAccess):
-            return not e.eval_kind and self._pure(e.obj)
+            return self._pure(e.obj)
         if isinstance(e, IndexAccess):
             return self._pure(e.obj) and self._pure(e.index)
         if isinstance(e, InterpStr):
@@ -260,7 +352,7 @@ class Emitter:
         if isinstance(v, ListLit):
             is_r = p.is_ref
             items = [f'"{it.name}"' if (is_r and isinstance(it, Sym) and it.name in self.ctx.objects)
-                     else (self._prop_scalar(it, True) if is_r else self._expr(it))
+                     else (self._prop_scalar(it) if is_r else self._expr(it))
                      for it in v.items]
             if is_r and len(items) == 1 and isinstance(v.items[0], Sym) and v.items[0].name in self.ctx.objects:
                 return f"'{v.items[0].name}'"
@@ -269,14 +361,14 @@ class Emitter:
                 return "{\n" + body + pad + "}"
             return "{ " + ", ".join(items) + " }"
         if isinstance(v, Expr):
-            return self._prop_scalar(v, p.is_ref)
+            return self._prop_scalar(v)
         return "nil"
 
     def _prop_prms(self, p: Prop) -> str:
         """Parameters of a prop body, resolved by the checker."""
         return ", ".join(p.params) if p.params else "s"
 
-    def _prop_scalar(self, e: Expr, is_ref: bool = False) -> str:
+    def _prop_scalar(self, e: Expr) -> str:
         if isinstance(e, Sym):
             if e.name in self.ctx.objects:
                 return f"'{e.name}'"
@@ -284,8 +376,6 @@ class Emitter:
                 return lua_str(e.name)
             if e.rk == "global_ref":
                 return e.name
-        if is_ref and isinstance(e, FieldAccess) and not e.eval_kind:
-            return f"{self._expr(e.obj)}.{e.field}"
         return self._expr(e)
 
     def _handler_pair(self, h: Handler, ind: int = 0) -> Tuple[str, str]:
@@ -529,10 +619,6 @@ class Emitter:
                 return self._expand(fn, [], False) if fn and isinstance(fn.body, str) else n
             return n
         if isinstance(e, FieldAccess):
-            if e.eval_kind and not as_lhs:
-                fn = "std.call" if e.eval_kind == "call" else "mp:runorval"
-                c = f"{fn}({self._expr(e.obj)}, {lua_str(e.field)})"
-                return f"_({c})" if e.is_ref else f"({c})"
             c = f"{self._expr(e.obj)}.{e.field}"
             return f"_({c})" if (e.is_ref and not as_lhs) else c
         if isinstance(e, IndexAccess):

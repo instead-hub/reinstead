@@ -136,9 +136,9 @@ local function fn_probe(w, t, ev)
   p((#daemons))
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -169,6 +169,10 @@ Path = Class {
     p(fn_path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
+
+obj {
+  nam = "none";
+}
 
 --"мочь"
 
@@ -220,7 +224,3 @@ _'game'.before_Inv = function(s)
   p((#"abc"))
   return false
 end;
-
-function start(load)
-  move(me(), _'test_room')
-end

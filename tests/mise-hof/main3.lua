@@ -111,9 +111,9 @@ local function fn_closure(s)
   return n
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -145,9 +145,13 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
---"мочь"
-
 Tree = Class {}:attr 'scenery'
+
+obj {
+  nam = "none";
+}
+
+--"мочь"
 
 obj {
   -"коробка";
@@ -181,7 +185,3 @@ room {
 }
 
 _'box'.found_in = 'test_room';
-
-function start(load)
-  move(me(), _'test_room')
-end

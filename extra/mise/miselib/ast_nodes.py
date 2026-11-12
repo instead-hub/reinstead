@@ -51,7 +51,6 @@ class FieldAccess(Expr):
     obj: Expr = field(default_factory=Expr)
     field: str = ""
     is_ref: bool = False
-    eval_kind: str = ""            # "" | "call" (std.call) | "val" (mp:runorval)
 
 @dataclass
 class IndexAccess(Expr):

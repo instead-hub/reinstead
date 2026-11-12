@@ -38,9 +38,9 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'before_cottage')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -72,24 +72,11 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
-
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
-
-_'game'.dsc = [[^Пример простой игры на Inform.
-^Авторы: Роджер Фирт (Roger Firth) и Соня Кессерих (Sonja Kesserich).
-^Перевод Юрия Салтыкова a.k.a. G.A. Garinson^
-^Перевод на МЕТАПАРСЕР 3 выполнил Петр Косых.
-^
-]];
-
-pl.word = -"ты/жр,2л";
-pl.description = "Здесь нет зеркала.";
-pl.capacity = 1;
-
-function start(load)
-  move(me(), _'before_cottage')
-end
 
 room {
   -"перед домом";
@@ -188,3 +175,16 @@ gameover {
   title = "Конец";
   dsc = "Поздравляем! Вы прошли игру.";
 }
+
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
+
+_'game'.dsc = [[^Пример простой игры на Inform.
+^Авторы: Роджер Фирт (Roger Firth) и Соня Кессерих (Sonja Kesserich).
+^Перевод Юрия Салтыкова a.k.a. G.A. Garinson^
+^Перевод на МЕТАПАРСЕР 3 выполнил Петр Косых.
+^
+]];
+
+pl.word = -"ты/жр,2л";
+pl.description = "Здесь нет зеркала.";
+pl.capacity = 1;

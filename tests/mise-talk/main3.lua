@@ -54,9 +54,9 @@ local function fn_act_say(s)
   p "-- Что-то произошло."
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'hall')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -88,14 +88,14 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 global 'met' (false)
 global 'q1' (0)
-
-function start(load)
-  move(me(), _'hall')
-end
 
 room {
   -"зал";

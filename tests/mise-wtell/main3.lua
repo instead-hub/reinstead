@@ -46,9 +46,12 @@ local function fn_BowOrArrow(o)
   return false
 end
 
-obj {
-  nam = "none";
-}
+function init()
+  move(me(), _'street')
+  move(_'bow', me())
+  move(_'quiver', me())
+  _'quiver':attr("worn")
+end
 
 Door = Class({
   walk_to = 'none';
@@ -80,17 +83,6 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
---"мочь"
-
-mp.undo = 5
-mp.score = 0
-mp.detailed_inv = true
-instead.notitle = false
-
-const 'MAX_SCORE' (3)
-
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" };
-
 Prop = Class {
   before_Exam = function(s) return false end;
   before_Default = function(s, ev, w, wh)
@@ -115,28 +107,18 @@ NPC = Class {
   end;
 }:attr 'animate'
 
-_'game'.dsc = [[^Пример простой игры на Inform
-^Авторы: Роджер Фирт (Roger Firth) и Соня Кессерих (Sonja Kesserich).
-^Перевод Александра Мосьпана a.k.a. Ugo^
-^Перенос на МЕТАПАРСЕР 3 выполнил Пётр Косых^^
-Место: Альтдорф, кантон Ури, Швейцария. Год 1307. Швейцария под командованием Императора Альбрехта Габсбурга.
-Его наместник -- фогт -- жестокий Герман Гесслер, повесил свою шляпу на вершине столба, установленного посередине
-городской площади. Каждый проходящий мимо должен был кланяться этому ненавистному символу Императорского могущества.
-^^
-Ты, вместе с сыном, спустился от своего домика, расположенного высоко в горах, чтобы купить провизии. Ты -- гордый и
-независимый мужчина, охотник и проводник, известный мастерством владения луком, и неумением скрывать своё презрение
-к фогту, что, конечно, неумно, учитывая, сколько вокруг его солдат.
-^^
-Сегодня базарный день -- город забит людьми с окрестных деревень и селений.^]];
+obj {
+  nam = "none";
+}
 
-pl.description = "Ты одет в традиционную одежду швейцарского горца.";
+--"мочь"
 
-function init()
-  move(me(), _'street')
-  move(_'bow', me())
-  move(_'quiver', me())
-  _'quiver':attr("worn")
-end
+mp.undo = 5
+mp.score = 0
+mp.detailed_inv = true
+instead.notitle = false
+
+const 'MAX_SCORE' (3)
 
 room {
   -"улица";
@@ -365,6 +347,50 @@ obj {
   before_Eat = "Хельга дала его для Уолтера...";
 }
 
+gameover {
+  nam = "theend";
+  title = "Конец";
+  dsc = function(s)
+    pn "Вы испортили любимую народную легенду."
+    p("Ваш счет: ", mp.score, " из ", MAX_SCORE)
+  end;
+}
+
+gameover {
+  nam = "happyend";
+  title = "Конец";
+  dsc = function(s)
+    pn "Поздравляю, вы прошли игру!"
+    p("Ваш счет: ", mp.score, " из ", MAX_SCORE)
+  end;
+}
+
+Verb { "#FireAt", "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить", "в {noun}/вн,scene : FireAt", "~ {noun}/вн,scene : FireAt", "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt", "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse", "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse" }
+
+Verb { "#Salute", "поклони/ться,честь", "{noun}/дт,scene : Salute" }
+
+Verb { "#Salute2", "мах/ать,помах/ать,помаш/и,маш/и", "{noun}/дт,scene : Salute" }
+
+Verb { "#Untie", "развяз/ать,отвяз/ать,освобод/ить", "{noun}/вн,scene : Untie" }
+
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" };
+
+_'game'.dsc = [[^Пример простой игры на Inform
+^Авторы: Роджер Фирт (Roger Firth) и Соня Кессерих (Sonja Kesserich).
+^Перевод Александра Мосьпана a.k.a. Ugo^
+^Перенос на МЕТАПАРСЕР 3 выполнил Пётр Косых^^
+Место: Альтдорф, кантон Ури, Швейцария. Год 1307. Швейцария под командованием Императора Альбрехта Габсбурга.
+Его наместник -- фогт -- жестокий Герман Гесслер, повесил свою шляпу на вершине столба, установленного посередине
+городской площади. Каждый проходящий мимо должен был кланяться этому ненавистному символу Императорского могущества.
+^^
+Ты, вместе с сыном, спустился от своего домика, расположенного высоко в горах, чтобы купить провизии. Ты -- гордый и
+независимый мужчина, охотник и проводник, известный мастерством владения луком, и неумением скрывать своё презрение
+к фогту, что, конечно, неумно, учитывая, сколько вокруг его солдат.
+^^
+Сегодня базарный день -- город забит людьми с окрестных деревень и селений.^]];
+
+pl.description = "Ты одет в традиционную одежду швейцарского горца.";
+
 mp.FireAt = function(s, w, wh)
   if not w then
     p "Ты не хочешь просто стрелять куда зря."
@@ -375,8 +401,6 @@ mp.FireAt = function(s, w, wh)
   end
   return false
 end;
-
-Verb { "#FireAt", "стреля/ть,стрельн/уть,целить/ся,застрели/ть,выстрел/ить", "в {noun}/вн,scene : FireAt", "~ {noun}/вн,scene : FireAt", "~ ?в {noun}/вн,scene из {noun}/рд,held : FireAt", "~ из {noun}/рд,held в {noun}/вн,scene : FireAt reverse", "~ {noun}/тв,held в {noun}/вн,scene : FireAt reverse" }
 
 mp.Salute = function(s, w)
   if w:has("animate") then
@@ -394,15 +418,9 @@ mp.Salute = function(s, w)
   end
 end;
 
-Verb { "#Salute", "поклони/ться,честь", "{noun}/дт,scene : Salute" }
-
-Verb { "#Salute2", "мах/ать,помах/ать,помаш/и,маш/и", "{noun}/дт,scene : Salute" }
-
 mp.Untie = function(s, w)
   p "Ты не можешь развязать это."
 end;
-
-Verb { "#Untie", "развяз/ать,отвяз/ать,освобод/ить", "{noun}/вн,scene : Untie" }
 
 _'street'.dsc = function(s)
   pn([[Узкая улочка тянется на север, к городской площади. Местные жители стекаются в город через ворота на юге.
@@ -561,21 +579,3 @@ _'apple'.before_FireAt = function(s, w)
   end
   return false
 end;
-
-gameover {
-  nam = "theend";
-  title = "Конец";
-  dsc = function(s)
-    pn "Вы испортили любимую народную легенду."
-    p("Ваш счет: ", mp.score, " из ", MAX_SCORE)
-  end;
-}
-
-gameover {
-  nam = "happyend";
-  title = "Конец";
-  dsc = function(s)
-    pn "Поздравляю, вы прошли игру!"
-    p("Ваш счет: ", mp.score, " из ", MAX_SCORE)
-  end;
-}

@@ -38,9 +38,11 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'foyer')
+  move(_'cloak', me())
+  _'cloak':attr("worn")
+end
 
 Door = Class({
   walk_to = 'none';
@@ -72,25 +74,13 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 global 'score' (0)
-
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
-
-VerbExtendWord { "#Drop", "повес/ить", "{noun}/вн,held на {noun}/вн,supporter : PutOn", "~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse" }
-
-_'game'.dsc = [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация.
-^^Торопливо пробираясь сквозь дождливую и холодную ноябрьскую ночь,
-Вы радостно заметили неподалеку ярко горящие огни Оперного театра.^
-Конечно, очень странно, что рядом не заметно ни одной живой души...
-но стоит ли ждать слишком много от простенькой демонстрационной игры?..^]];
-
-function start(load)
-  move(me(), _'foyer')
-  move(_'cloak', me())
-  _'cloak':attr("worn")
-end
 
 room {
   -"фойе";
@@ -225,3 +215,13 @@ gameover {
     p("Ваш счет: ", score)
   end;
 }
+
+VerbExtendWord { "#Drop", "повес/ить", "{noun}/вн,held на {noun}/вн,supporter : PutOn", "~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse" }
+
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
+
+_'game'.dsc = [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация.
+^^Торопливо пробираясь сквозь дождливую и холодную ноябрьскую ночь,
+Вы радостно заметили неподалеку ярко горящие огни Оперного театра.^
+Конечно, очень странно, что рядом не заметно ни одной живой души...
+но стоит ли ждать слишком много от простенькой демонстрационной игры?..^]];

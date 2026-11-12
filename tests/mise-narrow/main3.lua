@@ -42,9 +42,9 @@ local function fn_show(w)
   return w:noun_hint("вн")
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'hall')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -76,12 +76,22 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 obj {
   -"коробка";
   nam = "box";
   found_in = 'hall';
+}
+
+room {
+  -"зал";
+  nam = "hall";
+  dsc = "Зал.";
 }
 
 _'game'.before_Inv = function(s)
@@ -112,13 +122,3 @@ _'game'.before_Inv = function(s)
     p "точно есть"
   end
 end;
-
-room {
-  -"зал";
-  nam = "hall";
-  dsc = "Зал.";
-}
-
-function start(load)
-  move(me(), _'hall')
-end

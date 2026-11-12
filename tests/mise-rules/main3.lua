@@ -73,9 +73,9 @@ local function fn_only_wild(n)
   end
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -107,7 +107,17 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
 
 mp.before_Any = function(s, ev, w, wh)
   do
@@ -142,13 +152,3 @@ _'game'.before_Inv = function(s)
 end;
 
 mp.Default = "нет обработчика";
-
-room {
-  -"тестовая комната";
-  nam = "test_room";
-  dsc = "Тестовая комната.";
-}
-
-function start(load)
-  move(me(), _'test_room')
-end

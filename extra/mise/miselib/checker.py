@@ -221,15 +221,15 @@ def _verb_pat_sig(pat: str, obj_type: Type = Name("obj")) -> Optional[Tuple[str,
 
 def prescan(prog: Program) -> Context:
     ctx = Context(lang=prog.lang)
-    base_evs, class_at = _collect_declarations(ctx, prog)
-    _register_entities(ctx, prog, class_at)
+    base_evs = _collect_declarations(ctx, prog)
+    _register_entities(ctx, prog)
     _resolve_verb_events(ctx, prog, base_evs)   # events from patterns are known after this
     _collect_fields_and_refs(ctx, prog)
     _typecheck_program(ctx, prog)
     return ctx
 
 
-def _register_class_decl(ctx: Context, item: EntityDecl, idx: int, class_at: Dict[str, int]):
+def _register_class_decl(ctx: Context, item: EntityDecl):
     assert item.name is not None
     if item.ctor:
         ctx.ctors[item.name] = item.ctor
@@ -242,7 +242,6 @@ def _register_class_decl(ctx: Context, item: EntityDecl, idx: int, class_at: Dic
     if item.parent is None and ctx.root_class is None and not external:
         ctx.root_class = item.name
     ctx.classes.setdefault(item.name, item.name if external else (item.parent or ctx.root_class or item.name))
-    class_at.setdefault(item.name, idx)
     if item.name in ctx.class_decls:
         ctx.class_decls[item.name].props.extend(item.props)
     else:
@@ -265,11 +264,10 @@ def _fn_clashes_enum(fn: FnDecl) -> bool:
     return not fn.is_extern or all(types.is_optional(pt) for _pn, pt in fn.params)
 
 
-def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[Type]], Dict[str, int]]:
-    class_at: Dict[str, int] = {}
+def _collect_declarations(ctx: Context, prog: Program) -> Dict[str, List[Type]]:
     decl_evs: Dict[str, List[Type]] = {}
     ext_evs: Dict[str, Tuple[List[Type], int]] = {}
-    for idx, item in enumerate(prog.items):
+    for item in prog.items:
         if isinstance(item, EventsDecl):
             for evs, ats in item.sigs:
                 for at in ats:
@@ -322,12 +320,12 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[T
         elif isinstance(item, LuaDecl):
             ctx.lua_funcs.update(re.findall(r"\bfunction\s+([A-Za-z_]\w*)", item.code))
         elif isinstance(item, EntityDecl) and item.kind == "class" and item.name:
-            _register_class_decl(ctx, item, idx, class_at)
+            _register_class_decl(ctx, item)
     for ev, (ats, line) in ext_evs.items():
         if ev not in decl_evs:
             raise Error(f"extend event {ev}: unknown event (declare it with `event {ev}`)", line)
         decl_evs[ev] = ats
-    return decl_evs, class_at
+    return decl_evs
 
 
 def _declare_object(ctx: Context, name: str, kind: str, line: int):
@@ -339,17 +337,18 @@ def _declare_object(ctx: Context, name: str, kind: str, line: int):
     ctx.objects[name] = kind
 
 
-def _check_class_order(ent: EntityDecl, idx: int, class_at: Dict[str, int]):
-    if ent.kind == "class":
-        used = list(ent.traits) + ([ent.parent] if ent.parent else [])
-    elif ent.kind == "impl":
-        used = [ent.name] if ent.name else []
-    else:
-        used = [ent.kind] + list(ent.traits)
-    for cname in used:
-        if cname and class_at.get(cname, -1) > idx:
-            raise Error(f"{ent.name or ent.kind}: class {cname!r} is used before its declaration "
-                        f"(move `class {cname}` above)", ent.line)
+def _check_class_cycles(ctx: Context):
+    """`class A(B)` / `class B(A)` has no order the emitter could pick."""
+    for name in ctx.class_decls:
+        seen: List[str] = []
+        cur = name
+        while cur in ctx.class_decls:
+            if cur in seen:
+                raise Error(f"class {name!r}: inheritance cycle "
+                            f"({' -> '.join(seen[seen.index(cur):] + [cur])})",
+                            ctx.class_decls[name].line)
+            seen.append(cur)
+            cur = ctx.class_decls[cur].parent or ""
 
 
 def _inline_mixin_traits(ctx: Context, ent: EntityDecl, instantiated_classes: Set[str]):
@@ -383,9 +382,7 @@ def _known_target(ctx: Context, name: str, allow_engine: bool = False) -> bool:
             or (allow_engine and name in ENGINE_OBJECTS))
 
 
-def _register_entity(ctx: Context, ent: EntityDecl, idx: int,
-                     class_at: Dict[str, int], instantiated_classes: Set[str]):
-    _check_class_order(ent, idx, class_at)
+def _register_entity(ctx: Context, ent: EntityDecl, instantiated_classes: Set[str]):
     if ent.kind == "class" and ent.parent and ent.parent not in ctx.classes:
         raise Error(f"class {ent.name or ''}({ent.parent}): unknown parent class", ent.line)
     _check_override(ctx, ent)      # before mixin traits are inlined into the entity
@@ -403,17 +400,24 @@ def _register_entity(ctx: Context, ent: EntityDecl, idx: int,
     if ent.kind == "impl" and ent.name and not _known_target(ctx, ent.name, allow_engine=True):
         raise Error(f"impl {ent.name!r}: unknown target", ent.line)
     for ch in ent.children:
-        _register_entity(ctx, ch, idx, class_at, instantiated_classes)
+        _register_entity(ctx, ch, instantiated_classes)
 
 
-def _register_entities(ctx: Context, prog: Program, class_at: Dict[str, int]):
+def _register_entities(ctx: Context, prog: Program):
     instantiated = {it.kind for it in prog.items if isinstance(it, EntityDecl)}
-    for idx, item in enumerate(prog.items):
-        if isinstance(item, EntityDecl):
-            _register_entity(ctx, item, idx, class_at, instantiated)
-        elif isinstance(item, TalkDecl):
+    ents = [it for it in prog.items if isinstance(it, EntityDecl)]
+    # an `impl` may stand above its target: declare every object first
+    for ent in ents:
+        if ent.kind != "impl":
+            _register_entity(ctx, ent, instantiated)
+    for ent in ents:
+        if ent.kind == "impl":
+            _register_entity(ctx, ent, instantiated)
+    for item in prog.items:
+        if isinstance(item, TalkDecl):
             _declare_object(ctx, item.name, "talk", item.line)
             ctx.field_names.update(p.name for p in item.props)
+    _check_class_cycles(ctx)
 
 
 def _check_callable_part(ctx: Context, part: Any, env: Dict[str, Type], owner: Optional[str],
@@ -947,8 +951,8 @@ def _narrow(ctx: Context, cond: Expr, env: Dict[str, Type], truthy: bool,
 def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type], owner: Optional[str]):
     vt = _value_types(ctx, s.values, env, owner)
     if s.op in ("+=", "-="):
-        for v, t in zip(s.values, vt):
-            expect(ctx, f"'{s.op}'", _eval_field_for(ctx, v, t, NUM), NUM, s.line)
+        for t in vt:
+            expect(ctx, f"'{s.op}'", t, NUM, s.line)
     if isinstance(s.target, Sym):
         name = s.target.name
         if name == "...":
@@ -965,15 +969,13 @@ def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type], owner:
         else:
             raise Error(f"unknown name {name!r} (declare it with `local` or `global`)", s.line)
         if cur is not None and cur != ANY and s.op == "=" and vt:
-            vt[0] = _eval_field_for(ctx, s.values[0], vt[0], cur)
             expect(ctx, f"assignment to {name}", vt[0], cur, s.line)
         if cur is not None and cur != ANY and s.op in ("+=", "-="):
             expect(ctx, f"{name} ({s.op})", cur, NUM, s.line)
         if local and cur in (None, ANY) and vt and s.op == "=":
             env[name] = vt[0]                  # a local takes the type of its first value
     else:
-        _check_store(ctx, s.target, vt[0] if vt else ANY, env, owner, s.line, s.op,
-                     s.values[0] if s.values else None)
+        _check_store(ctx, s.target, vt[0] if vt else ANY, env, owner, s.line, s.op)
 
 
 def _check_return_stmt(ctx: Context, s: ReturnStmt, env: Dict[str, Type], owner: Optional[str],
@@ -1044,9 +1046,7 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
                 aenv = dict(env)
                 for p in pats:
                     if not (isinstance(p, Sym) and p.name == "_"):
-                        pt = _check_expr(ctx, p, env, owner, st)
-                        if pt != ANY:
-                            st = _eval_field_for(ctx, s.subject, st, pt)
+                        _check_expr(ctx, p, env, owner, st)
                         aenv = _narrow(ctx, BinOp(line=p.line, op="==", left=s.subject, right=p),
                                        aenv, True, arg_names)
                 if guard:
@@ -1237,43 +1237,11 @@ def _resolve_field(ctx: Context, e: FieldAccess, env: Dict[str, Type],
     return ANY
 
 
-def _callable_field_ret(ctx: Context, ft: Type) -> Optional[Type]:
-    """For a `T | fn(obj) -> T` field union, the result type `T` of reading it."""
-    alts = [a for a in parts(ft) if a != NIL]
-    fns = [a for a in alts if isinstance(a, Fn)]
-    vals = [a for a in alts if not isinstance(a, Fn)]
-    if not (vals and fns and all(len(f.params) <= 1 and len(f.rets) == 1 for f in fns)):
-        return None
-    v_union = union(*vals)
-    rets = [f.rets[0] for f in fns]
-    if not all(is_subtype(ctx, r, v_union)
-               or (_is_scalar_ref(ctx, r) and _is_scalar_ref(ctx, v_union)) for r in rets):
-        return None
-    res = union(*rets)
-    return opt(res) if types.is_optional(ft) else res
-
-
-def _eval_field_for(ctx: Context, e: Optional[Expr], ft: Type,
-                    expected: Optional[Type]) -> Type:
-    if not isinstance(e, FieldAccess) or expected is None or expected == ANY \
-            or is_subtype(ctx, ft, expected):
-        return ft
-    ret = _callable_field_ret(ctx, ft)
-    if ret is None or not is_subtype(ctx, ret, expected):
-        return ft
-    e.eval_kind = "call" if without_nil(ret) == STR else "val"
-    e.is_ref = _is_scalar_ref(ctx, ret)
-    e.typ = ret
-    return ret
-
-
 def _check_store(ctx: Context, target: Expr, vt: Type, env: Dict[str, Type],
-                 owner: Optional[str], line: int = 0, op: str = "=",
-                 rhs: Optional[Expr] = None):
+                 owner: Optional[str], line: int = 0, op: str = "="):
     if isinstance(target, IndexAccess):
         ot, inner = _resolve_index(ctx, target, env, owner, line)
         need_value(ot, _kind_name(target.obj), line)
-        vt = _eval_field_for(ctx, rhs, vt, inner)
         expect(ctx, _kind_name(target), vt, inner, line)
         return
     if not isinstance(target, FieldAccess):
@@ -1283,7 +1251,6 @@ def _check_store(ctx: Context, target: Expr, vt: Type, env: Dict[str, Type],
     if op in ("+=", "-=") and ft not in (ANY, NUM):
         raise Error(f"{target.field}: '{op}' needs a number field (it is {ft})", line)
     elif op not in ("+=", "-=") and ft != ANY:
-        vt = _eval_field_for(ctx, rhs, vt, ft)
         expect(ctx, target.field, vt, ft, line)
 
 
@@ -1346,7 +1313,7 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, Type], owner: Optional[str] = N
     if isinstance(e, InterpStr):
         for p in e.parts:
             if isinstance(p, Expr):
-                t = _eval_field_for(ctx, p, _check_expr(ctx, p, env, owner), _PRINTABLE)
+                t = _check_expr(ctx, p, env, owner)
                 if not is_subtype(ctx, t, _PRINTABLE) and t != ANY:
                     raise TypeCheckError(f"interpolation: expected str, got {t}", p.line)
         return STR
@@ -1362,9 +1329,7 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, Type], owner: Optional[str] = N
     if isinstance(e, InOp):
         st = _check_expr(ctx, e.subject, env, owner)
         for a in e.alts:
-            at = _check_expr(ctx, a, env, owner, st)
-            if at != ANY:
-                st = _eval_field_for(ctx, e.subject, st, at)
+            _check_expr(ctx, a, env, owner, st)
         return BOOL
     if isinstance(e, FnRef):
         return _check_fnref(ctx, e, expected, _kind_name(e))
@@ -1377,7 +1342,6 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, Type], owner: Optional[str] = N
         return _infer_sym(ctx, e, env, expected)
     if isinstance(e, FieldAccess):
         ft = _resolve_field(ctx, e, env, owner, writing=False, line=e.line)
-        ft = _eval_field_for(ctx, e, ft, expected)
         e.is_ref = _is_scalar_ref(ctx, ft)
         return ft
     if isinstance(e, IndexAccess):
@@ -1454,15 +1418,13 @@ def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, Type], owner: Optional[s
         return BOOL if e.op in ("<", "<=", ">", ">=") else NUM
     if e.op == "..":
         for side in (e.left, e.right):
-            t = _eval_field_for(ctx, side, _check_expr(ctx, side, env, owner), _CONCAT)
+            t = _check_expr(ctx, side, env, owner)
             if not is_subtype(ctx, t, _CONCAT) and t != ANY:
                 raise TypeCheckError(f"concatenation: expected str, got {t}", side.line)
         return STR
     lt = _check_expr(ctx, e.left, env, owner)
     if e.op in ("==", "!="):
-        rt = _infer(ctx, e.right, env, owner, lt)  # resolves bare names, comparing is not a type error
-        if rt != ANY:
-            _eval_field_for(ctx, e.left, lt, rt)
+        _infer(ctx, e.right, env, owner, lt)       # resolves bare names, comparing is not a type error
         return BOOL
     rt = _check_expr(ctx, e.right, env, owner)
     return union(lt, rt) if e.op == "and" else (union(without_nil(lt), rt) if e.op == "or" else rt)
@@ -1498,9 +1460,7 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, Type], owner: Optional[str
             if is_method and i == 0:
                 expect(ctx, f"receiver of {label}", rt, exp, a.line)
             else:
-                at = _check_expr(ctx, a, env, owner, exp)
-                if not is_method and c.func in ("say", "append", "line"):
-                    _eval_field_for(ctx, a, at, _PRINTABLE)
+                _check_expr(ctx, a, env, owner, exp)
         _ensure_fn_checked(ctx, fn)
         return fn.ret_types[0] if fn.ret_types else ANY
 

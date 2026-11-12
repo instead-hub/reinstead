@@ -38,9 +38,9 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'computer')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -72,6 +72,10 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 room {
@@ -84,7 +88,3 @@ Verb({ "#Assist", "ассист/ировать", ": Assist" }, _'computer')
 VerbExtendWord({ "#Assist", "ассистировать" }, _'computer')
 
 _'computer'.Assist = "Помощь.";
-
-function start(load)
-  move(me(), _'computer')
-end

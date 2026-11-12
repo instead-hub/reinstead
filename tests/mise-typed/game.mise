@@ -58,14 +58,32 @@ fn scope_names(s: obj) -> num
       n += 1
   return n
 
-# 0-арная fn в значении поля объекта (`dsc = room_text`) и чтение `T | fn(obj) -> T`
+# 0-арная fn в значении поля объекта (`dsc = room_text`).
+# Поле `T | fn(obj) -> T` читается как union — компилятор не подставляет вызов,
+# значение достаётся своей обёрткой (`std.call` в `lua`-блоке).
 fn room_text() -> str
   return "Тестовая комната."
 
+fn probe_str(s: obj, f: str) -> str?
+  lua
+    local v = s[f]
+    if type(v) == 'function' then v = v(s) end
+    if type(v) == 'string' then return v end
+    return nil
+
+fn probe_num(s: obj, f: str) -> num?
+  lua
+    local v = s[f]
+    if type(v) == 'function' then v = v(s) end
+    if type(v) == 'number' then return v end
+    return nil
+
 fn field_probe(s: obj) -> str
-  local p = s.pri + 1
-  local w: str = s.word
-  return "{w}:{s.pri}:{p}:{s.dsc}"
+  local w = probe_str s 'word' or "?"
+  local d = probe_str s 'dsc' or "-"
+  if p := probe_num s 'pri'
+    return "{w}:{p + 1}:{d}"
+  return "{w}:-:{d}"
 
 fn on_take(s: Box)
   if s.weight + 1 > 0

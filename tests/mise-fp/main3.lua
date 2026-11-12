@@ -38,9 +38,9 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -72,13 +72,23 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
---"мочь"
-
 Tree = Class {}:attr 'scenery'
+
+obj {
+  nam = "none";
+}
+
+--"мочь"
 
 Tree {
   -"дерево";
   nam = "tree";
+}
+
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
 }
 
 _'tree'.before_Take = function(s, w)
@@ -89,14 +99,4 @@ _'tree'.before_Take = function(s, w)
   end
 end;
 
-room {
-  -"тестовая комната";
-  nam = "test_room";
-  dsc = "Тестовая комната.";
-}
-
 _'tree'.found_in = 'test_room';
-
-function start(load)
-  move(me(), _'test_room')
-end

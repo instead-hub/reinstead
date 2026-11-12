@@ -46,9 +46,9 @@ local function fn_reply_text(s, text)
   return text
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -80,15 +80,11 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
-
-Verb { "#Zap", "зажиг/ать", "{noun}/вн : Zap", "частота|канал : Zap" }
-
-Verb { "#Whisper", "шеп/тать,нашёптыв/ать", "{noun}/дт * : Whisper" }
-
-pl["before_Take,Drop"] = "Тебе нельзя.";
-
-_'game'["before_Open,Close"] = "Не сейчас.";
 
 room {
   -"комната";
@@ -164,6 +160,20 @@ obj {
   end;
 }:attr 'animate'
 
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
+Verb { "#Zap", "зажиг/ать", "{noun}/вн : Zap", "частота|канал : Zap" }
+
+Verb { "#Whisper", "шеп/тать,нашёптыв/ать", "{noun}/дт * : Whisper" }
+
+pl["before_Take,Drop"] = "Тебе нельзя.";
+
+_'game'["before_Open,Close"] = "Не сейчас.";
+
 _'game'.before_Tell = function(s, w, wh)
   p(fn_text_of(wh))
 end;
@@ -177,12 +187,6 @@ mp.Ask = function(s, w, wh)
   p(fn_text_of(wh))
 end;
 
-room {
-  -"тестовая комната";
-  nam = "test_room";
-  dsc = "Тестовая комната.";
-}
-
 _'x'.found_in = 'test_room';
 
 _'y'.found_in = 'test_room';
@@ -190,7 +194,3 @@ _'y'.found_in = 'test_room';
 _'z'.found_in = 'test_room';
 
 _'npc'.found_in = 'test_room';
-
-function start(load)
-  move(me(), _'test_room')
-end

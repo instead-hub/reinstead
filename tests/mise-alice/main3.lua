@@ -38,9 +38,11 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-obj {
-  nam = "none";
-}
+function init()
+  move(me(), _'Drawing_Room')
+  DaemonStart(_'white_kitten')
+  DaemonStart(_'black_kitten')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -72,59 +74,31 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+Kitten = Class {
+  other_kitten = 'none';
+  life_Kiss = function(s)
+    p("Алиса чмокнула ", s:noun_hint("вн", 1), [[ в носик,
+и тот взглянул на нее сконфуженно, но довольно.]])
+  end;
+  life_Attack = "Разве можно напасть на такое крохотное и беззащитное создание!";
+  Show = function(s, w)
+    p(s:Noun_hint(1), ", протянув лапку, опасливо дотронулся до ", w:noun_hint("рд"), ".")
+  end;
+  ["before_Touch,Rub"] = function(s)
+    p(s:Noun_hint(1), " в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.")
+  end;
+}:attr 'animate'
+
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 const 'HELD_STATE' (0)
 const 'QUEEN_STATE' (1)
 const 'WOOL_STATE' (2)
 const 'CHAIR_STATE' (3)
-
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Push", "#Take", "#Drop", "#Search", "#Give", "#Touch" };
-
-_'game'.dsc = [[^Маленькая интерактивная Информ-обучалка^
-   (написанная Гаретом Ризом и переведенная Денисом Гаевым)^
-Перенесена на МЕТАПАРСЕР3 Петром Косых
-^^Хотя за окном стоит холодный зимний день,
-за зеркалом над каминной полкой почему-то еще продолжается лето!^
-Так хочется оказаться там!^
-Ну неужели не существует никакого способа попасть ЗА зеркало?]];
-
-pl.word = -"ты/жр,2л";
-
-function init()
-  move(me(), _'Drawing_Room')
-  DaemonStart(_'white_kitten')
-  DaemonStart(_'black_kitten')
-end
-
-mp.Reflect = function(s, w, wh)
-  if wh ~= _'mirror' then
-    p "Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!"
-    return
-  end
-  if (w == _'hearth' or w == _'mirror') or not (function(c) return c == _'mantelpiece' or c == _'armchair' end)(where(me())) then
-    p "Но Алисе вряд ли удастся поднести это к зеркалу!"
-    return
-  end
-  p "Отражение "
-  if w == me() then
-    p "Алисы"
-  else
-    p(w:noun_hint("рд"))
-  end
-  p " в зеркале выглядит "
-  if where(me()) == _'mantelpiece' then
-    p "слишком уж расплывчатым и размытым."
-    return
-  end
-  p "точь-в-точь как {#word/настоящий,#first}"
-  if w == me() then
-    p "Алиса"
-  else
-    p(w:noun_hint())
-  end
-  p "-- только левая и правая сторона поменялись местами!"
-end;
 
 room {
   -"гостиная|снег|снежинки";
@@ -224,21 +198,6 @@ obj {
   end;
 }:attr 'scenery'
 
-Kitten = Class {
-  other_kitten = 'none';
-  life_Kiss = function(s)
-    p("Алиса чмокнула ", s:noun_hint("вн", 1), [[ в носик,
-и тот взглянул на нее сконфуженно, но довольно.]])
-  end;
-  life_Attack = "Разве можно напасть на такое крохотное и беззащитное создание!";
-  Show = function(s, w)
-    p(s:Noun_hint(1), ", протянув лапку, опасливо дотронулся до ", w:noun_hint("рд"), ".")
-  end;
-  ["before_Touch,Rub"] = function(s)
-    p(s:Noun_hint(1), " в ответ потерся головой об Алисину руку и что-то тихонько промурлыкал.")
-  end;
-}:attr 'animate'
-
 Kitten {
   -"белый котенок,котенок,белый";
   nam = "white_kitten";
@@ -259,15 +218,62 @@ Kitten {
   other_kitten = 'white_kitten';
 }
 
-VerbExtend { "#Exam", "{noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse" }
-
-mp.Untangle = function(s, w)
-  p "Что, распутать ЭТО?!"
-end;
+gameover {
+  nam = "theend";
+  title = "Конец";
+  dsc = false;
+}
 
 Verb { "#Untangle", "размот/ать,распут/ать", "{noun}/вн : Untangle" }
 
 Verb { "#Touch2", "ласк/ать,чеса/ть,почес/ать,почеш/и,чеши/", "{noun}/вн : Touch" }
+
+VerbExtend { "#Exam", "{noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse" }
+
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Push", "#Take", "#Drop", "#Search", "#Give", "#Touch" };
+
+_'game'.dsc = [[^Маленькая интерактивная Информ-обучалка^
+   (написанная Гаретом Ризом и переведенная Денисом Гаевым)^
+Перенесена на МЕТАПАРСЕР3 Петром Косых
+^^Хотя за окном стоит холодный зимний день,
+за зеркалом над каминной полкой почему-то еще продолжается лето!^
+Так хочется оказаться там!^
+Ну неужели не существует никакого способа попасть ЗА зеркало?]];
+
+pl.word = -"ты/жр,2л";
+
+mp.Reflect = function(s, w, wh)
+  if wh ~= _'mirror' then
+    p "Сюрреализму этой идеи позавидовал бы и сам Льюис Кэрролл!"
+    return
+  end
+  if (w == _'hearth' or w == _'mirror') or not (function(c) return c == _'mantelpiece' or c == _'armchair' end)(where(me())) then
+    p "Но Алисе вряд ли удастся поднести это к зеркалу!"
+    return
+  end
+  p "Отражение "
+  if w == me() then
+    p "Алисы"
+  else
+    p(w:noun_hint("рд"))
+  end
+  p " в зеркале выглядит "
+  if where(me()) == _'mantelpiece' then
+    p "слишком уж расплывчатым и размытым."
+    return
+  end
+  p "точь-в-точь как {#word/настоящий,#first}"
+  if w == me() then
+    p "Алиса"
+  else
+    p(w:noun_hint())
+  end
+  p "-- только левая и правая сторона поменялись местами!"
+end;
+
+mp.Untangle = function(s, w)
+  p "Что, распутать ЭТО?!"
+end;
 
 _'Drawing_Room'["before_Exit,Walk"] = function(s, w)
   if where(me()) ~= _'mantelpiece' then
@@ -669,9 +675,3 @@ Kitten["after_Transfer,PutOn,Insert"] = function(s, w)
   p ", ловко приземлился на полу и убежал прочь."
 end;
 std.fn_aliases(Kitten, "after_Transfer,PutOn,Insert")
-
-gameover {
-  nam = "theend";
-  title = "Конец";
-  dsc = false;
-}

@@ -38,9 +38,9 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -72,11 +72,15 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
---"мочь"
-
 path = Class {}:attr 'scenery,enterable'
 
 darkroom = Class({}, room):attr '~light'
+
+obj {
+  nam = "none";
+}
+
+--"мочь"
 
 room {
   -"зал";
@@ -102,7 +106,3 @@ room {
   nam = "test_room";
   dsc = "Тестовая комната.";
 }
-
-function start(load)
-  move(me(), _'test_room')
-end

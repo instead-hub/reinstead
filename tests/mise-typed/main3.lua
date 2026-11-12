@@ -86,10 +86,30 @@ local function fn_room_text()
   return "Тестовая комната."
 end
 
+local function fn_probe_str(s, f)
+  local v = s[f]
+  if type(v) == 'function' then v = v(s) end
+  if type(v) == 'string' then return v end
+  return nil
+end
+
+local function fn_probe_num(s, f)
+  local v = s[f]
+  if type(v) == 'function' then v = v(s) end
+  if type(v) == 'number' then return v end
+  return nil
+end
+
 local function fn_field_probe(s)
-  local p = (mp:runorval(s, "pri")) + 1
-  local w = (std.call(s, "word"))
-  return (tostring(w) .. ":" .. tostring((mp:runorval(s, "pri"))) .. ":" .. tostring(p) .. ":" .. tostring((std.call(s, "dsc"))))
+  local w = fn_probe_str(s, "word") or "?"
+  local d = fn_probe_str(s, "dsc") or "-"
+  do
+    local p = fn_probe_num(s, "pri")
+    if p then
+      return (tostring(w) .. ":" .. tostring(p + 1) .. ":" .. tostring(d))
+    end
+  end
+  return (tostring(w) .. ":-:" .. tostring(d))
 end
 
 local function fn_on_take(s)
@@ -132,9 +152,9 @@ local function fn_on_take(s)
   fn_label(s, 1, 2)
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -166,17 +186,21 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
---"мочь"
-
-global 'chosen' ('crate')
-global 'last_room' ('none')
-global 'flag' (false)
-
 Box = Class {
   weight = 0;
 }:attr 'container'
 
 Tag = Class {}
+
+obj {
+  nam = "none";
+}
+
+--"мочь"
+
+global 'chosen' ('crate')
+global 'last_room' ('none')
+global 'flag' (false)
 
 Tag {
   -"записка";
@@ -202,10 +226,6 @@ obj {
   end;
 }
 
-_'lamp'.target = 'orb';
-
-_'crate'.before_Take = fn_on_take;
-
 room {
   -"тестовая комната";
   nam = "test_room";
@@ -214,12 +234,12 @@ room {
   s_to = function(r) return _'test_room' end;
 }
 
+_'lamp'.target = 'orb';
+
+_'crate'.before_Take = fn_on_take;
+
 _'crate'.found_in = 'test_room';
 
 _'orb'.found_in = 'test_room';
 
 _'lamp'.found_in = 'test_room';
-
-function start(load)
-  move(me(), _'test_room')
-end

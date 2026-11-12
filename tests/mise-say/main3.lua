@@ -57,9 +57,9 @@ local function fn_tri_ml()
 d]]
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'test_room')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -91,6 +91,10 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 --"мочь"
 
 obj {
@@ -98,9 +102,11 @@ obj {
   nam = "x";
 }
 
-function start(load)
-  move(me(), _'test_room')
-end
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
 
 _'game'.before_Inv = function(s)
   p "x"
@@ -112,11 +118,5 @@ _'game'.before_Inv = function(s)
   p(_'x':noun_hint())
   p("ml=", fn_slen(fn_esc_ml()), ",", fn_slen(fn_tri_ml()), ",", fn_slen(fn_raw_ml()))
 end;
-
-room {
-  -"тестовая комната";
-  nam = "test_room";
-  dsc = "Тестовая комната.";
-}
 
 _'x'.found_in = 'test_room';

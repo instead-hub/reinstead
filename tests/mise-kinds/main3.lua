@@ -43,9 +43,13 @@ local function fn_tick(s)
   return false
 end
 
-obj {
-  nam = "none";
-}
+function init()
+  take(_'statue')
+end
+
+function start(load)
+  move(me(), _'hall')
+end
 
 Door = Class({
   walk_to = 'none';
@@ -77,19 +81,15 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+Ghost = Class {
+  word = -"призрак";
+}:disable()
+
+obj {
+  nam = "none";
+}
+
 --"мочь"
-
-function init()
-  take(_'statue')
-end
-
-_'game'.hint_verbs = { "#Look" };
-
-pl.word = -"ты";
-
-function start(load)
-  move(me(), _'hall')
-end
 
 cutscene {
   nam = "intro";
@@ -255,10 +255,6 @@ obj {
   };
 }:enable()
 
-Ghost = Class {
-  word = -"призрак";
-}:disable()
-
 obj {
   -"шкатулка";
   nam = "casket";
@@ -266,7 +262,17 @@ obj {
   capacity = 2;
 }:attr 'lockable,locked'
 
+room {
+  -"тестовая комната";
+  nam = "test_room";
+  dsc = "Тестовая комната.";
+}
+
 Verb { "#Probe", "пробовать", "{noun}/вн : Probe", prio = 10, hint = "Подсказка." }
+
+_'game'.hint_verbs = { "#Look" };
+
+pl.word = -"ты";
 
 Ghost:enable()
 
@@ -277,9 +283,3 @@ _'key':enable()
 _'game':dict { ["зал/вн"] = "зал" }
 _'game'.game_time = 0;
 _'game'.game_look = 2;
-
-room {
-  -"тестовая комната";
-  nam = "test_room";
-  dsc = "Тестовая комната.";
-}

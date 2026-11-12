@@ -31,9 +31,11 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " can go to ") .. w:noun_hint() .. "."
 end
 
-obj {
-  nam = "none";
-}
+function start(load)
+  move(me(), _'foyer')
+  move(_'cloak', me())
+  _'cloak':attr("worn")
+end
 
 Door = Class({
   walk_to = 'none';
@@ -65,22 +67,11 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
+obj {
+  nam = "none";
+}
+
 global 'score' (0)
-
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
-
-VerbExtendWord { "#Drop", "hang", "{noun}/held on {noun}/supporter : PutOn" }
-
-_'game'.dsc = [[^{$fmt b|Cloak of Darkness}^^Cloak of Darkness -- a simple demonstration of Interactive Fiction.
-^^Hurrying through the rainswept November night, you're glad to see the
-bright lights of the Opera House. It's surprising that there aren't more
-people about but, hey, what do you expect in a cheap demo game...?^]];
-
-function start(load)
-  move(me(), _'foyer')
-  move(_'cloak', me())
-  _'cloak':attr("worn")
-end
 
 room {
   -"foyer";
@@ -203,3 +194,12 @@ gameover {
     p("Score: ", score)
   end;
 }
+
+VerbExtendWord { "#Drop", "hang", "{noun}/held on {noun}/supporter : PutOn" }
+
+_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
+
+_'game'.dsc = [[^{$fmt b|Cloak of Darkness}^^Cloak of Darkness -- a simple demonstration of Interactive Fiction.
+^^Hurrying through the rainswept November night, you're glad to see the
+bright lights of the Opera House. It's surprising that there aren't more
+people about but, hey, what do you expect in a cheap demo game...?^]];
