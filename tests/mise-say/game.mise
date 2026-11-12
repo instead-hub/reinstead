@@ -26,6 +26,7 @@ c
 d"""
 
 obj x "вещь"
+  pri = 3
 
 fn start(load)
   player:move test_room
@@ -40,6 +41,9 @@ impl game
     note "raw words"
     note (x:noun)
     say "ml={slen esc_ml},{slen tri_ml},{slen raw_ml}"
+    # `..` слабее `+`, как в Lua: склеиваем уже сумму
+    say ("n=" .. x.pri + 1)
+    say (x.pri + 1 .. "!")
 
 room test_room "тестовая комната"
   dsc = "Тестовая комната."

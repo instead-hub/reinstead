@@ -8,7 +8,8 @@ from .checker import Context, load_includes, prescan
 from .lexer import lua_lines
 from .parser import parse_source
 
-_PREC = {"or": 1, "and": 2, "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3, "..": 4, "+": 4, "-": 4, "*": 5, "/": 5, "%": 5, "//": 5}
+_PREC = {"or": 1, "and": 2, "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3,
+         "..": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6, "//": 6}
 
 
 def lua_str(s: str) -> str:

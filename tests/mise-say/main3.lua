@@ -100,6 +100,7 @@ obj {
 obj {
   -"вещь";
   nam = "x";
+  pri = 3;
 }
 
 room {
@@ -117,6 +118,8 @@ _'game'.before_Inv = function(s)
   p("raw words")
   p(_'x':noun_hint())
   p("ml=", fn_slen(fn_esc_ml()), ",", fn_slen(fn_tri_ml()), ",", fn_slen(fn_raw_ml()))
+  p("n=" .. _'x'.pri + 1)
+  p(_'x'.pri + 1 .. "!")
 end;
 
 _'x'.found_in = 'test_room';
