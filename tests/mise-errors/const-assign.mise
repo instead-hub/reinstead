@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+const K = 3
+
+fn f()
+  K = 4

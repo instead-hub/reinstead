@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+fn f()
+  for x in [1, 2]
+    say (tostr x)
