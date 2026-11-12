@@ -134,6 +134,7 @@ impl game
     local xs = [7, 8]
     local a, b = unpack xs
     say "unpack {tostr a} {tostr b} next {tostr (next xs)}"
+    say (len "abc")
     pass
 
 fn start(load)

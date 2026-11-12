@@ -217,6 +217,7 @@ _'game'.before_Inv = function(s)
   local xs = { 7, 8 }
   local a, b = std.unpack(xs)
   p("unpack ", tostring(a), " ", tostring(b), " next ", tostring(next(xs)))
+  p((#"abc"))
   return false
 end;
 
