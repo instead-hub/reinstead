@@ -244,15 +244,11 @@ class Parser:
         if is_extern:
             kind = self.eat("IDENT")
             if kind.val == "global":
-                name = self.eat("IDENT").val
-                self.eat("OP", ":")
-                typ = self._parse_type_str()
-                self.eat("OP", "=")
-                tmpl = self.eat(self.cur().kind).val
-                self.eat_nl()
-                return GlobalDecl(name=name, typ=typ, template=tmpl, line=kind.line)
+                raise Error("`extern global` is gone: a read-only alias of a Lua global is "
+                            "`extern value name -> type = \"template\"`, a Lua function is "
+                            "`extern fn name(...) = \"template\"`", kind.line, self.src)
             if kind.val not in ("fn", "value"):
-                raise Error(f"extern {kind.val}: expected `fn`, `value` or `global`", kind.line, self.src)
+                raise Error(f"extern {kind.val}: expected `fn` or `value`", kind.line, self.src)
             is_value = kind.val == "value"
         name = self.eat("IDENT").val
         params, var = self._parse_param_list(default_s=True, typed=True)

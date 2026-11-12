@@ -44,7 +44,6 @@ class Context:
     root_class: Optional[str] = None                                     # the first class with no parent
     field_names: Set[str] = field(default_factory=set)
     entries: Dict[str, List[Tuple[str, str]]] = field(default_factory=dict)  # engine entry points
-    lua_globals: Dict[str, GlobalDecl] = field(default_factory=dict)     # `extern global`
 
     fns: Dict[str, FnDecl] = field(default_factory=dict)
     verb_tags: Set[str] = field(default_factory=set)     # tags of `verb`/`extend verb`
@@ -318,8 +317,6 @@ def _collect_declarations(ctx: Context, prog: Program) -> Tuple[Dict[str, List[T
             ctx.fns[item.name] = item
         elif isinstance(item, EntryDecl):
             ctx.entries[item.name] = list(item.params)
-        elif isinstance(item, GlobalDecl):
-            ctx.lua_globals[item.name] = item
         elif isinstance(item, VerbDecl) and item.mode == "verb":
             ctx.verb_tags.add(_verb_tag(item) or f"#{item.name}")
         elif isinstance(item, LuaDecl):
@@ -1445,9 +1442,6 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, Type],
         _ensure_fn_checked(ctx, sig)
         e.rk = "value" if (sig and sig.is_value) else "fn0"
         return sig.ret_types[0] if (sig and sig.ret_types) else ANY
-    if n in ctx.lua_globals:
-        e.rk = "lua_global"
-        return ctx.lua_globals[n].typ
     if n.startswith("#"):
         raise Error(f"unknown tag {n!r}", e.line)
     raise Error(f"unknown name {n!r}{_enum_hint(ctx, n)}", e.line)

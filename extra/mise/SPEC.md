@@ -120,8 +120,9 @@ extern fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str = "$1:noun_
 текстовая, поэтому аргумент, упомянутый в теле дважды, вычисляется дважды:
 если это важно, пишите блок (функцию) или явную лямбду в шаблоне.
 
-`extern value` объявляет выражение (его нельзя вызвать как инструкцию),
-`extern global` — глобал движка.
+`extern value` объявляет выражение (его нельзя вызвать как инструкцию). Так же
+читается и глобал движка: `extern value mp -> any = "mp"` (скобки у `extern
+value` необязательны).
 
 ### Идея 8: Унификация сущностей
 - **Настройка игры и игрока — обычные `impl game` / `impl pl`**, глобальные
@@ -470,8 +471,8 @@ entry start(load: bool)
 
 **Слои stdlib**
 - `core.mise` — контракт движка: виды и их конструкторы (`class story(room) = cutscene`),
-  типы движка (`attr`, `direction`, `event`, `phase`), движковые глобалы
-  (`extern global mp: any = "mp"`) и extern-функции движка. Игра его не включает.
+  типы движка (`attr`, `direction`, `event`, `phase`) и extern-функции движка.
+  Игра его не включает.
 - `stdlib.mise` — игровой API (`include core`): `Door`, `Path`, хелперы.
 - `stdlib-ru.mise` / `stdlib-en.mise` — язык: морфология (`case`/`gram` и функции
   `noun`/`It`/`This`/`gram`), сообщения.
@@ -727,8 +728,7 @@ event_decl  ::= [ "extend" ] "event" ident_list [ ":" [ type_list ] ]
 entry_decl  ::= "entry" IDENT "(" [ param_list ] ")"
 
 extern_decl ::= "extern" "fn" IDENT "(" [ param_list ] ")" [ "->" type_list ] "=" STRING
-              | "extern" "value" IDENT "(" [ param_list ] ")" [ "->" type_list ] "=" STRING
-              | "extern" "global" IDENT ":" type "=" STRING
+              | "extern" "value" IDENT [ "(" [ param_list ] ")" ] [ "->" type_list ] "=" STRING
 
 (* `?` относится к атому слева от него, поэтому `fn(obj) -> str?` — функция,
    возвращающая `str?`, а `ref[talk]?` — ссылка, которая может быть nil.
@@ -965,7 +965,7 @@ app_expr ::= postfix_expr [ ":" IDENT { arg_atom } | arg_atom { arg_atom } ]
 | **Строки vs имена** | `"…"` — всегда строка, без кавычек — всегда символ; неоднозначности нет                                              |
 | **Парсер**          | рекурсивный спуск с приоритетами (~1010 строк на весь язык, включая все объявления); правило аппликации — `app_expr` |
 | **Вывод текста**    | строка в позиции инструкции → `p(...)`, интерполяция `"Счёт: {score}"` → `p("Счёт: ", score)`                        |
-| **API движка**      | `extern fn` / `extern value` / `extern global` с шаблонами `$1`, `$2`                                                |
+| **API движка**      | `extern fn` / `extern value` с шаблонами `$1`, `$2`                                                                  |
 | **Диалоги**         | компактные `* [cond] "Вопрос"` / `+ "Вопрос"`; поля ветки объявлены как `class choice`, эмиттер переводит их в `phr` |
 
 Текущие размеры: `lexer.py` 184, `ast_nodes.py` 292, `parser.py` 1009,

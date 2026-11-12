@@ -125,21 +125,8 @@ event ThrownAt, Wait, WaveHands, Yes:
 
 type phase = after, before, life, post
 
-# Lua globals reachable from expressions (`mp.event`, `math.floor`, ...)
-extern global mp: any = "mp"
-extern global std: any = "std"
-extern global game: any = "game"
-extern global pl: any = "pl"
-extern global instead: any = "instead"
-extern global snd: any = "snd"
-extern global theme: any = "theme"
-extern global io: any = "io"
-extern global os: any = "os"
-extern global math: any = "math"
-extern global table: any = "table"
-extern global string: any = "string"
-
-# Lua functions callable from expressions
+# Lua functions callable from expressions. A Lua global of your own is read
+# through `extern value name -> type = "template"`.
 extern fn p(...: any) = "p($*)"
 extern fn pr(...: any) = "pr($*)"
 extern fn pn(...: any) = "pn($*)"
@@ -194,7 +181,7 @@ extern fn take(w: obj) = "take($1)"
 extern fn drop(w: obj) = "drop($1)"
 extern fn content(w: obj) = "mp:content($1)"
 extern fn inv() -> list = "inv()"
-extern value len(v: tbl) -> num = "(#$1)"
+extern value len(v: tbl|str) -> num = "(#$1)"
 extern fn pairs(t: tbl) -> fn() -> any, any = "pairs($1)"
 extern fn ipairs(t: tbl) -> fn() -> num, any = "ipairs($1)"
 extern fn walkout() = "walkout()"

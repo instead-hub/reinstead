@@ -1,0 +1,1 @@
+mise: extern-global.mise:5: `extern global` is gone: a read-only alias of a Lua global is `extern value name -> type = "template"`, a Lua function is `extern fn name(...) = "template"`

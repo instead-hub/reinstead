@@ -35,7 +35,7 @@ class InterpStr(Expr):
 class Sym(Expr):
     name: str = ""
     # how the name is emitted; filled by the checker:
-    #   "var" | "obj" | "enum" | "event" | "global" | "global_ref" | "lua_global" | "fn0" (call) | "value"
+    #   "var" | "obj" | "enum" | "event" | "global" | "global_ref" | "fn0" (call) | "value"
     rk: str = ""
 
 @dataclass
@@ -222,15 +222,6 @@ class EntryDecl:
     """`entry init()` — a global the engine calls itself."""
     name: str
     params: List[Tuple[str, Type]] = field(default_factory=list)
-    line: int = 0
-
-
-@dataclass
-class GlobalDecl:
-    """`extern global mp: any = "mp"` — a Lua global reachable from expressions."""
-    name: str
-    typ: Type
-    template: str
     line: int = 0
 
 

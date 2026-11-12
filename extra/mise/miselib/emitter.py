@@ -516,9 +516,6 @@ class Emitter:
             n = e.name
             if as_lhs or e.rk == "var":
                 return n
-            if e.rk == "lua_global":
-                g = self.ctx.lua_globals.get(n)
-                return g.template if g else n
             if e.rk == "obj":
                 return f"_'{n}'"
             if e.rk == "global_ref":

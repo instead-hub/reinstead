@@ -1,1 +1,1 @@
-mise: extern-bad-kind.mise:6: extern prop: expected `fn`, `value` or `global`
+mise: extern-bad-kind.mise:6: extern prop: expected `fn` or `value`
