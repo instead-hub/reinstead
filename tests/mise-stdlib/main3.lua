@@ -222,5 +222,6 @@ _'game'.before_Inv = function(s)
   local a, b = std.unpack(xs)
   p("unpack ", tostring(a), " ", tostring(b), " next ", tostring(next(xs)))
   p((#"abc"))
+  p(("a") .. ("b$1c"))
   return false
 end;

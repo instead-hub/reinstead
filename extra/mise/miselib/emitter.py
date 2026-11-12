@@ -9,7 +9,15 @@ from .lexer import lua_lines
 from .parser import parse_source
 
 _PREC = {"or": 1, "and": 2, "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3,
-         "..": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6, "//": 6}
+         "..": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6}
+
+
+def _parens_on_right(op: str, right: str) -> bool:
+    """A right operand needs its own parentheses: Lua is left-associative, so an
+    equal precedence there would be regrouped (`a - (b - c)` is not `a - b - c`).
+    `..` is the exception — Lua groups it to the right, and the value is the same."""
+    parent, child = _PREC[op], _PREC[right]
+    return child < parent or (child == parent and op != "..")
 
 
 def lua_str(s: str) -> str:
@@ -640,7 +648,7 @@ class Emitter:
             ls, rs = self._expr(e.left), self._expr(e.right)
             if isinstance(e.left, BinOp) and _PREC[e.left.op] < _PREC[e.op]:
                 ls = f"({ls})"
-            if isinstance(e.right, BinOp) and _PREC[e.right.op] < _PREC[e.op]:
+            if isinstance(e.right, BinOp) and _parens_on_right(e.op, e.right.op):
                 rs = f"({rs})"
             return f"{ls} {op} {rs}"
         if isinstance(e, Call):
@@ -666,16 +674,59 @@ class Emitter:
     def _expand(self, fn: FnDecl, args: List[str], as_stmt: bool) -> str:
         t = fn.body
         if "$" in t:
-            t = t.replace("($2...)", f"({', '.join(args[1:])})").replace("$2...", ", ".join(args[1:])).replace("$*", ", ".join(args))
-            for i in range(len(fn.params), 0, -1):
-                t = t.replace(f"${i}", args[i - 1] if i - 1 < len(args) else "")
-            return re.sub(r",\s*\)", ")", re.sub(r"\(\s*,\s*", "(", t))
+            return _fill_slots(t, args)
         for (pn, _pt), av in zip(fn.params, args):
             # a lambda keeps `\1`/`\g<…>` in the argument from being read as a group
             t = re.sub(rf"\b{re.escape(pn)}\b", lambda _m, av=av: av, t)
         if as_stmt or t.startswith("(") or _SIMPLE_EXPR.match(t.strip()):
             return t
         return f"({t})"
+
+
+def _fill_slots(text: str, args: List[str]) -> str:
+    """Fill the `$1`, `$*` and `$2...` slots of an extern template in one pass.
+
+    The slots are found from the right, so an inserted argument is never scanned
+    again: a game string that happens to contain `$1` reaches the output as it
+    is. An empty argument takes the comma that connected it (`g($1, $2...)` with
+    one argument is `g(a)`, not `g(a, )`).
+    """
+    end = len(text)
+    while True:
+        at = text.rfind("$", 0, end)
+        if at < 0:
+            return text
+        stop, value = _slot_at(text, at, args)
+        if stop < 0:                       # a lone `$`: keep it, look further left
+            end = at
+            continue
+        head, tail = text[:at], text[stop:]
+        if not value:
+            head = head.rstrip()
+            head = head[:-1] if head.endswith(",") else head
+            tail = tail.lstrip()
+            tail = tail[1:] if tail.startswith(",") else tail
+        text = head + value + tail
+        end = at
+
+
+def _slot_at(text: str, at: int, args: List[str]) -> Tuple[int, str]:
+    """The value of the `$…` slot at `at` and the offset just past it.
+
+    `-1` as the offset means "not a slot" (a bare `$`).
+    """
+    i = at + 1
+    if text[i:i + 1] == "*":
+        return i + 1, ", ".join(args)
+    j = i
+    while j < len(text) and text[j].isdigit():
+        j += 1
+    if j == i:
+        return -1, ""
+    idx = int(text[i:j]) - 1
+    if text.startswith("...", j):
+        return j + 3, (", ".join(args[idx:]) if idx >= 0 else "")
+    return j, (args[idx] if 0 <= idx < len(args) else "")
 
 
 _SIMPLE_EXPR = re.compile(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*(?:\([^()]*\))?")

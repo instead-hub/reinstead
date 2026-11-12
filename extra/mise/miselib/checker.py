@@ -1404,7 +1404,7 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, Type],
 
 
 def _infer_binop(ctx: Context, e: BinOp, env: Dict[str, Type], owner: Optional[str]) -> Type:
-    if e.op in ("<", "<=", ">", ">=", "+", "-", "*", "/", "%", "//"):
+    if e.op in ("<", "<=", ">", ">=", "+", "-", "*", "/", "%"):
         for side in (e.left, e.right):
             _check_expr(ctx, side, env, owner, NUM)
         return BOOL if e.op in ("<", "<=", ">", ">=") else NUM

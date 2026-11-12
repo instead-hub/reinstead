@@ -120,6 +120,7 @@ _'game'.before_Inv = function(s)
   p("ml=", fn_slen(fn_esc_ml()), ",", fn_slen(fn_tri_ml()), ",", fn_slen(fn_raw_ml()))
   p("n=" .. _'x'.pri + 1)
   p(_'x'.pri + 1 .. "!")
+  p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2))
 end;
 
 _'x'.found_in = 'test_room';

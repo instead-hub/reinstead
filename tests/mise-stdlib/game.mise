@@ -17,6 +17,9 @@ fn lua_probe(s: obj, w: obj) -> bool
   lua
     return false
 
+# аргумент шаблона не подставляется повторно (`$1` внутри текста остаётся)
+extern fn join2(a: str, b: str) -> str = "($1) .. ($2)"
+
 obj box "ящик" : container, open
   description = &describe
   before Take = &lua_probe
@@ -135,6 +138,7 @@ impl game
     local a, b = unpack xs
     say "unpack {tostr a} {tostr b} next {tostr (next xs)}"
     say (len "abc")
+    say (join2 "a" "b$1c")
     pass
 
 fn start(load)

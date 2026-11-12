@@ -47,7 +47,7 @@
 1. Постфиксные `.` и `[]`: `s.door`, `list[1]`
 2. **Аппликация (вызов через пробел) и `:`-метод:** `has w light`, `w:has light`, `where player`
 3. Унарный минус: `-1`
-4. Арифметика и конкатенация: `* / % //`, `+ - ..`
+4. Арифметика и конкатенация: `* / %`, `+ - ..`
 5. Сравнения и принадлежность: `==`, `!=`, `<`, `<=`, `>`, `>=`, `in`, `not in`
 6. `not`  (`not has w light` $\equiv$ `not (has(w, light))`, `not w in a, b` $\equiv$ `not (w in a, b)`)
 7. Логические `and`, `or`
@@ -889,7 +889,7 @@ for_stmt    ::= "for" IDENT [ ":" type ] "=" expr "," expr [ "," expr ] stmt_blo
      4. not
      5. ..                 (* как в Lua: слабее `+`/`-`, крепче сравнений *)
      6. +  -
-     7. *  /  %  //
+     7. *  /  %
      8. унарный -
      9. ML-аппликация (f a b, obj:meth a b)
     10. Постфиксные .field, [idx]
@@ -906,7 +906,7 @@ cmp_expr    ::= add_expr [ ("==" | "!=" | "<" | "<=" | ">=" | ">")
                            add_expr
                          | ("in" | "not" "in") add_expr { "," add_expr } ]
 add_expr    ::= mul_expr { ("+" | "-" | "..") mul_expr }
-mul_expr    ::= unary_expr { ("*" | "/" | "%" | "//") unary_expr }
+mul_expr    ::= unary_expr { ("*" | "/" | "%") unary_expr }
 unary_expr  ::= "-" unary_expr | app_expr
 
 (* ML-аппликация — единственная форма вызова:
