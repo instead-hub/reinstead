@@ -16,8 +16,35 @@ class Token:
 _IDENT_RE = re.compile(r"@?[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*")
 _NUM_RE = re.compile(r"\d+(?:\.\d+)?")
 _LONG_RE = re.compile(r"\[(=*)\[")
+_LUA_SPAN_RE = re.compile(
+    r"--\[(=*)\[[\s\S]*?\]\1\]|--[^\n]*|\[(=*)\[[\s\S]*?\]\2\]"
+    r'|"(?:\\[\s\S]|[^"\\\n])*"|\'(?:\\[\s\S]|[^\'\\\n])*\''
+)
 _MULTI_OPS = ("...", "->", ":=", "+=", "-=", "==", "!=", "~=", "<=", ">=", "..", "//")
 _SINGLE_OPS = set("()[]{}:,.;=+-*/%<>@&*+?~|")
+
+
+def lua_lines(text: str) -> List[str]:
+    """Split Lua code on newlines outside string literals and long comments."""
+    if text.endswith("\n"):
+        text = text[:-1]
+    if not text:
+        return []
+    out: List[str] = []
+    cur, pos = "", 0
+    for m in _LUA_SPAN_RE.finditer(text):
+        head, *rest = text[pos:m.start()].split("\n")
+        cur += head
+        if rest:
+            out.append(cur)
+            out.extend(rest[:-1])
+            cur = rest[-1]
+        cur += m.group(0)
+        pos = m.end()
+    head, *rest = text[pos:].split("\n")
+    out.append(cur + head)
+    out.extend(rest)
+    return out
 
 
 def _scan_str(src: str, pos: int, line: int, src_name: str):
@@ -119,9 +146,10 @@ def tokenize(src: str, src_name: str = "") -> List[Token]:
             end = src.find(close, start)
             if end == -1:
                 raise Error("unterminated [[...]] string", line, src_name)
-            val = src[start:end]
+            raw = src[start:end]
+            val = raw[1:] if raw.startswith("\n") else raw
             tokens.append(Token("STRING", val, line, spaced))
-            line += val.count("\n")
+            line += raw.count("\n")
             pos = end + len(close)
             continue
 

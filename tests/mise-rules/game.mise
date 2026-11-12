@@ -32,6 +32,10 @@ fn by_word(t: str, loud: bool) -> str
     "нет" -> return "нет"
     _ -> return "?"
 
+fn only_wild(n: num) -> str
+  match n
+    _ -> return "любое"
+
 impl game
   before Inv =
     say (by_number 3)
@@ -39,6 +43,7 @@ impl game
     say (by_word "да" false)
     say (by_word "нет" true)
     say (by_word "иное" false)
+    say (only_wild 7)
 
 impl mp : Default
   on Default = [[нет обработчика]]

@@ -8,6 +8,23 @@ fn note(t: str)
   lua
     p(t)
 
+fn raw_ml() -> str
+  lua
+    return [[m
+n]]
+
+fn slen(t: str) -> num
+  lua
+    return #t
+
+fn esc_ml() -> str
+  return "a\nb"
+
+fn tri_ml() -> str
+  return """
+c
+d"""
+
 obj x "вещь"
 
 fn start(load)
@@ -22,6 +39,7 @@ impl game
     "append text"~
     note "raw words"
     note (x:noun)
+    say "ml={slen esc_ml},{slen tri_ml},{slen raw_ml}"
 
 room test_room "тестовая комната"
   dsc = "Тестовая комната."

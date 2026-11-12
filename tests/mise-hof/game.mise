@@ -27,6 +27,29 @@ fn probe_lambda() -> str
   return apply_text &(s: obj)
     return "из лямбды"
 
+# взаимная рекурсия и вызов fn, объявленной ниже (forward-декларация)
+fn is_even(n: num) -> bool
+  if n == 0
+    return true
+  return is_odd (n - 1)
+
+fn is_odd(n: num) -> bool
+  if n == 0
+    return false
+  return is_even (n - 1)
+
+# вариадик `...`: упаковка в `[...]` и чтение первого аргумента
+fn sum_args(...: num) -> num
+  local acc = 0
+  for v of [...]
+    if v
+      acc += v
+  return acc
+
+fn head_arg(...: str) -> str?
+  local a = ...
+  return a
+
 fn total(n: num) -> num
   local r = 0
   for i:num = 1, n
@@ -38,6 +61,10 @@ obj box "коробка"
     if run &(w) w:has light
       [[светло]]
     say "apply: " (apply &(x) 41 box)
+    if is_even 4 and not is_odd 4
+      say "even: " (sum_args 10 20 12)
+    if h := head_arg "раз" "два"
+      say "head: " h
     for_plural s &(w) w:attr seen
     each (inv) &(w) w:attr seen
     if total 3 > 0

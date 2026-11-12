@@ -4,6 +4,7 @@ import re
 from typing import Any, List, Optional, Tuple
 from .ast_nodes import *
 from .checker import Context, load_includes, prescan
+from .lexer import lua_lines
 from .parser import parse_source
 
 _PREC = {"or": 1, "and": 2, "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3, "..": 4, "+": 4, "-": 4, "*": 5, "/": 5, "%": 5, "//": 5}
@@ -14,13 +15,14 @@ def lua_str(s: str) -> str:
         eq = ""
         while f"]{eq}]" in s or s.endswith("]"):
             eq += "="
-        return f"[{eq}[{s}]{eq}]"
+        lead = "\n" if s.startswith("\n") else ""
+        return f"[{eq}[{lead}{s}]{eq}]"
     return f"'{s}'" if '"' in s else f'"{s}"'
 
 
 def _ind(text: str, n: int = 2) -> str:
     pad = " " * n
-    return "\n".join(pad + l if l.strip() else "" for l in text.splitlines())
+    return "\n".join(pad + l if l.strip() else "" for l in lua_lines(text))
 
 
 class Emitter:
@@ -36,13 +38,25 @@ class Emitter:
         hdr.append(f'require "parser/mp-{self.prog.lang}"')
         chunks.append("\n".join(hdr))
 
+        rendered: List[Tuple[FnDecl, str, str]] = []
         for it in self.prog.items:
             if isinstance(it, FnDecl) and not it.is_extern:
                 if it.name in self.ctx.entries:
                     continue
                 if isinstance(it.body, str) and not it.body.strip().startswith(("local ", "return ")) and "\n" not in it.body and it.name not in self.ctx.used_refs:
                     continue
-                chunks.append(self._emit_fn(it))
+                rendered.append((it, *self._fn_parts(it)))
+
+        fwd = [fn.name for i, (fn, _p, _b) in enumerate(rendered)
+               if any(re.search(rf"\bfn_{re.escape(fn.name)}\b", rendered[j][2])
+                      for j in range(i))]
+        if fwd:
+            chunks.append("local " + ", ".join(f"fn_{n}" for n in fwd))
+        fwd_set = set(fwd)
+        for fn, prms, body in rendered:
+            head = f"fn_{fn.name} = function({prms})" if fn.name in fwd_set \
+                else f"local function fn_{fn.name}({prms})"
+            chunks.append(f"{head}\n{body}\nend" if body.strip() else f"{head}\nend")
 
         for it in self.prog.items:
             if isinstance(it, FnDecl) and not it.is_extern and it.name in self.ctx.entries:
@@ -64,7 +78,7 @@ class Emitter:
 
         return "\n\n".join(c for c in chunks if c.strip()) + "\n"
 
-    def _emit_fn(self, fn: FnDecl) -> str:
+    def _fn_parts(self, fn: FnDecl) -> Tuple[str, str]:
         prms = ", ".join([pn for pn, _pt in fn.params] + (["..."] if fn.variadic else []))
         if isinstance(fn.body, str):
             code = fn.body.strip()
@@ -73,7 +87,7 @@ class Emitter:
             body = _ind(code, 2)
         else:
             body = _ind(self._stmts(fn.body), 2)
-        return f"local function fn_{fn.name}({prms})\n{body}\nend"
+        return prms, body
 
     def _emit_entity(self, ent: EntityDecl, ind: int = 0) -> str:
         if ent.kind == "class":
@@ -146,8 +160,7 @@ class Emitter:
             parts = [it.name if isinstance(it, Sym) else self._expr(it).strip("'\"") for it in items]
             return f":{mname} '{','.join(parts)}'"
         if form == "list":                  # `:with{ 'a', 'b' }` — names, resolved by the engine
-            parts = [f"'{it.name}'" if (isinstance(it, Sym) and it.name in self.ctx.objects)
-                     else self._expr(it) for it in items]
+            parts = [self._prop_scalar(it, True) for it in items]
             return f":{mname}{{ {', '.join(parts)} }}" if parts else ""
         args = [self._expr(it) for it in items]
         return f":{mname}({', '.join(args)})" if args else ""
@@ -204,8 +217,10 @@ class Emitter:
             return True
         if isinstance(e, Sym):
             return e.rk not in ("fn0",)          # a bare fn name is a call
-        if isinstance(e, (FieldAccess, IndexAccess)):
-            return self._pure(e.obj) and (not isinstance(e, IndexAccess) or self._pure(e.index))
+        if isinstance(e, FieldAccess):
+            return not e.eval_kind and self._pure(e.obj)
+        if isinstance(e, IndexAccess):
+            return self._pure(e.obj) and self._pure(e.index)
         if isinstance(e, InterpStr):
             return all(self._pure(x) if isinstance(x, Expr) else True for x in e.parts)
         if isinstance(e, UnaryOp):
@@ -238,10 +253,16 @@ class Emitter:
             prms = self._prop_prms(p)
             b = _ind(self._stmts(v), ind + 2)
             return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
+        if isinstance(v, Lambda) and isinstance(v.body, list):
+            prms = ", ".join(pn for pn, _t in v.params)
+            b = _ind(self._stmts(v.body), ind + 2)
+            return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
         if isinstance(v, ListLit):
             is_r = p.is_ref
-            items = [f'"{it.name}"' if (is_r and isinstance(it, Sym)) else self._expr(it) for it in v.items]
-            if is_r and len(items) == 1 and isinstance(v.items[0], Sym):
+            items = [f'"{it.name}"' if (is_r and isinstance(it, Sym) and it.name in self.ctx.objects)
+                     else (self._prop_scalar(it, True) if is_r else self._expr(it))
+                     for it in v.items]
+            if is_r and len(items) == 1 and isinstance(v.items[0], Sym) and v.items[0].name in self.ctx.objects:
                 return f"'{v.items[0].name}'"
             if len(items) > 1:                      # a field list: one item per line
                 body = "".join(f"{pad}  {it},\n" for it in items)
@@ -257,11 +278,14 @@ class Emitter:
 
     def _prop_scalar(self, e: Expr, is_ref: bool = False) -> str:
         if isinstance(e, Sym):
-            if is_ref or e.name in self.ctx.objects:
+            if e.name in self.ctx.objects:
                 return f"'{e.name}'"
             if e.name in self.ctx.event_names or e.rk in ("enum", "event"):
                 return lua_str(e.name)
-            return e.name
+            if e.rk == "global_ref":
+                return e.name
+        if is_ref and isinstance(e, FieldAccess) and not e.eval_kind:
+            return f"{self._expr(e.obj)}.{e.field}"
         return self._expr(e)
 
     def _handler_pair(self, h: Handler, ind: int = 0) -> Tuple[str, str]:
@@ -438,11 +462,16 @@ class Emitter:
                     break
                 chks = [f"{MATCH_TMP} == {self._expr(p)}" for p in pats
                         if not (isinstance(p, Sym) and p.name == "_")]
-                cstr = " or ".join(chks) if chks else "true"
+                cstr = " or ".join(chks)
                 if guard:
-                    cstr = f"({cstr}) and {self._expr(guard)}" if len(chks) > 1 \
-                        else f"{cstr} and {self._expr(guard)}"
-                arms.append((cstr, body))
+                    gstr = self._expr(guard)
+                    cstr = f"({cstr}) and {gstr}" if len(chks) > 1 \
+                        else (f"{cstr} and {gstr}" if cstr else gstr)
+                arms.append((cstr or "true", body))
+            if not arms:
+                eb = self._stmts(else_b) if else_b else ""
+                inner = f"local {MATCH_TMP} = {subj}" + (f"\n{eb}" if eb.strip() else "")
+                return "do\n" + _ind(inner, 2) + "\nend"
             parts = []
             for i, (cstr, body) in enumerate(arms):
                 kw = "if" if i == 0 else "elseif"
@@ -503,6 +532,10 @@ class Emitter:
                 return self._expand(fn, [], False) if fn and isinstance(fn.body, str) else n
             return n
         if isinstance(e, FieldAccess):
+            if e.eval_kind and not as_lhs:
+                fn = "std.call" if e.eval_kind == "call" else "mp:runorval"
+                c = f"{fn}({self._expr(e.obj)}, {lua_str(e.field)})"
+                return f"_({c})" if e.is_ref else f"({c})"
             c = f"{self._expr(e.obj)}.{e.field}"
             return f"_({c})" if (e.is_ref and not as_lhs) else c
         if isinstance(e, IndexAccess):

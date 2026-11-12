@@ -82,6 +82,16 @@ local function fn_scope_names(s)
   return n
 end
 
+local function fn_room_text()
+  return "Тестовая комната."
+end
+
+local function fn_field_probe(s)
+  local p = (mp:runorval(s, "pri")) + 1
+  local w = (std.call(s, "word"))
+  return (tostring(w) .. ":" .. tostring((mp:runorval(s, "pri"))) .. ":" .. tostring(p) .. ":" .. tostring((std.call(s, "dsc"))))
+end
+
 local function fn_on_take(s)
   if s.weight + 1 > 0 then
     p "тяжёлый"
@@ -199,7 +209,9 @@ _'crate'.before_Take = fn_on_take;
 room {
   -"тестовая комната";
   nam = "test_room";
-  dsc = "Тестовая комната.";
+  dsc = fn_room_text();
+  n_to = chosen;
+  s_to = function(r) return _'test_room' end;
 }
 
 _'crate'.found_in = 'test_room';

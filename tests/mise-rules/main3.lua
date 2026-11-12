@@ -66,6 +66,13 @@ local function fn_by_word(t, loud)
   end
 end
 
+local function fn_only_wild(n)
+  do
+    local __match = n
+    return "любое"
+  end
+end
+
 obj {
   nam = "none";
 }
@@ -131,6 +138,7 @@ _'game'.before_Inv = function(s)
   p(fn_by_word("да", false))
   p(fn_by_word("нет", true))
   p(fn_by_word("иное", false))
+  p(fn_only_wild(7))
 end;
 
 mp.Default = "нет обработчика";

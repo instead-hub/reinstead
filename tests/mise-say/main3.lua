@@ -38,6 +38,25 @@ local function fn_path_dsc(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn_where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
+local function fn_raw_ml()
+  return [[m
+n]]
+end
+
+local function fn_slen(t)
+  return #t
+end
+
+local function fn_esc_ml()
+  return [[a
+b]]
+end
+
+local function fn_tri_ml()
+  return [[c
+d]]
+end
+
 obj {
   nam = "none";
 }
@@ -91,6 +110,7 @@ _'game'.before_Inv = function(s)
   pr "append text"
   p("raw words")
   p(_'x':noun_hint())
+  p("ml=", fn_slen(fn_esc_ml()), ",", fn_slen(fn_tri_ml()), ",", fn_slen(fn_raw_ml()))
 end;
 
 room {

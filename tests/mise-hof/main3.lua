@@ -4,6 +4,8 @@
 require "fmt"
 require "parser/mp-ru"
 
+local fn_is_odd
+
 local function fn_where_list(w)
   local list = {}
   where(w, list)
@@ -60,6 +62,35 @@ local function fn_probe_lambda()
   return fn_apply_text(function(s)
     return "из лямбды"
   end)
+end
+
+local function fn_is_even(n)
+  if n == 0 then
+    return true
+  end
+  return fn_is_odd(n - 1)
+end
+
+fn_is_odd = function(n)
+  if n == 0 then
+    return false
+  end
+  return fn_is_even(n - 1)
+end
+
+local function fn_sum_args(...)
+  local acc = 0
+  for _, v in ipairs({ ... }) do
+    if v then
+      acc = acc + (v)
+    end
+  end
+  return acc
+end
+
+local function fn_head_arg(...)
+  local a = ...
+  return a
 end
 
 local function fn_total(n)
@@ -126,6 +157,15 @@ obj {
       p "светло"
     end
     p("apply: ", fn_apply(function(x) return 41 end, _'box'))
+    if fn_is_even(4) and not fn_is_odd(4) then
+      p("even: ", fn_sum_args(10, 20, 12))
+    end
+    do
+      local h = fn_head_arg("раз", "два")
+      if h then
+        p("head: ", h)
+      end
+    end
     s:for_plural(function(w) return w:attr("seen") end)
     fn_each(inv(), function(w) return w:attr("seen") end)
     if fn_total(3) > 0 then

@@ -2,7 +2,7 @@
 from typing import Any, List, Optional, Tuple
 from . import types
 from .ast_nodes import *
-from .lexer import Token, tokenize
+from .lexer import Token, lua_lines, tokenize
 from .types import ANY, Fn, Name, Ref, Tbl, Type, opt, union
 
 PHASES = frozenset({"on", "before", "after", "post", "life"})
@@ -312,9 +312,14 @@ class Parser:
             self.pos += 1
         end_line = self.cur().line if not self.at("EOF") else len(self.raw_lines) + 1
         self.match("DEDENT")
-        lines = self.raw_lines[start_line - 1:end_line - 1]
-        ind = min((len(l) - len(l.lstrip(" \t")) for l in lines if l.strip()), default=0)
-        return LuaDecl(code="\n".join(l[ind:] for l in lines).rstrip(), line=line)
+        raw_slice = self.raw_lines[start_line - 1:end_line - 1]
+        block_ind = len(raw_slice[0]) - len(raw_slice[0].lstrip(" \t")) if raw_slice else 0
+        llines = lua_lines("\n".join(raw_slice))
+        while llines and (not llines[-1].strip()
+                          or len(llines[-1]) - len(llines[-1].lstrip(" \t")) < block_ind):
+            llines.pop()
+        ind = min((len(l) - len(l.lstrip(" \t")) for l in llines if l.strip()), default=0)
+        return LuaDecl(code="\n".join(l[ind:] if l.strip() else "" for l in llines), line=line)
 
     # --- Unified Entity (`class`, `obj`, `room`, `impl`, ...) ---
 
@@ -427,7 +432,10 @@ class Parser:
         """
         if not self.at("NEWLINE"):
             val = self._parse_prop_val()
-            self.eat_nl()
+            if isinstance(val, Lambda) and isinstance(val.body, list):
+                self.skip_nl()
+            else:
+                self.eat_nl()
             return val
         self.eat_nl()
         self.eat("INDENT")
@@ -456,8 +464,6 @@ class Parser:
     def _parse_prop_val(self) -> Any:
         if self.at("OP", "{"):
             return self._raw_braces()
-        if self.match("OP", "&"):
-            return FnRef(line=self.cur().line, name=self.eat("IDENT").val)
         first = self.parse_expr()
         if self.at("OP", ","):
             items = [first]
@@ -716,7 +722,7 @@ class Parser:
             args = self._app_args()
             self.skip_nl()          # a block-bodied lambda already consumed it
             return CallStmt(line=line, call=Call(line=line, func=m, receiver=lhs, args=args))
-        if isinstance(lhs, Sym):
+        if isinstance(lhs, Sym) and lhs.name != "...":
             args = self._app_args()
             self.skip_nl()
             return CallStmt(line=line, call=Call(line=line, func=lhs.name, args=args))
@@ -838,7 +844,7 @@ class Parser:
             m = self.eat("IDENT").val
             base = Call(line=base.line, func=m, receiver=base, args=self._app_args())
             base = self._postfix_tail(base)
-        if isinstance(base, Sym) and self._can_start_arg():
+        if isinstance(base, Sym) and base.name != "..." and self._can_start_arg():
             return Call(line=base.line, func=base.name, args=self._app_args())
         return base
 
@@ -858,7 +864,7 @@ class Parser:
             return True
         if t.kind == "IDENT":
             return t.val not in STMT_KWS
-        return t.kind == "OP" and t.val in ("(", "[", "{", "&")
+        return t.kind == "OP" and t.val in ("(", "[", "{", "&", "...")
 
     def parse_postfix(self) -> Expr:
         return self._postfix_tail(self.parse_primary())
@@ -902,6 +908,8 @@ class Parser:
         if t.kind in ("TAG", "TILDE_ID"):
             self.pos += 1
             return Sym(line=t.line, name=t.val)
+        if self.match("OP", "..."):
+            return Sym(line=t.line, name="...")
         if self.at("OP", "&") and self.peek().val == "(":
             return self._parse_lambda()
         if self.match("OP", "&"):

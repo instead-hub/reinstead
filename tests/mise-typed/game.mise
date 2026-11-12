@@ -58,6 +58,15 @@ fn scope_names(s: obj) -> num
       n += 1
   return n
 
+# 0-арная fn в значении поля объекта (`dsc = room_text`) и чтение `T | fn(obj) -> T`
+fn room_text() -> str
+  return "Тестовая комната."
+
+fn field_probe(s: obj) -> str
+  local p = s.pri + 1
+  local w: str = s.word
+  return "{w}:{s.pri}:{p}:{s.dsc}"
+
 fn on_take(s: Box)
   if s.weight + 1 > 0
     [[тяжёлый]]
@@ -105,7 +114,9 @@ impl crate
 # --- тестовая комната: транскрипт должен что-то видеть ---
 
 room test_room "тестовая комната"
-  dsc = "Тестовая комната."
+  dsc = room_text
+  n_to = chosen
+  s_to = &(r) test_room
 
 impl crate
   found_in = test_room
