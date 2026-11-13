@@ -50,7 +50,7 @@ fn.pick = function(s)
   end
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'test_room')
   if true then
     p "one"
@@ -58,6 +58,10 @@ function start(load)
   if false then
     p "two"
   end
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({

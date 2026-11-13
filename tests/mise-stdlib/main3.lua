@@ -80,7 +80,7 @@ fn.probe = function(w, t, ev)
   p((mp.event or nil))
   p((#t))
   p((instead.tiny))
-  p((w.desc))
+  p((s.desc))
   p((mp:compass_dir(w) or nil))
   p(((mp.args[1] or {}).word or ''))
   p((((function(o) local m = getmetatable(w) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G["list"]))))
@@ -142,8 +142,13 @@ fn.probe = function(w, t, ev)
   p((#daemons))
 end
 
-function start(load)
+fn.start = function(load)
+  starts = starts + (1)
   move(me(), _'test_room')
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({
@@ -215,6 +220,8 @@ room {
   dsc = "Тестовая комната.";
 }
 
+global 'starts' (0)
+
 _'box'.found_in = 'test_room';
 
 _'note'.found_in = 'test_room';
@@ -225,5 +232,9 @@ _'game'.before_Inv = function(s)
   p("unpack ", tostring(a), " ", tostring(b), " next ", tostring(next(xs)))
   p((#"abc"))
   p(("a") .. ("b$1c"))
+  if starts == 1 then
+    fn.start(false)
+  end
+  p("starts=", starts)
   return false
 end;

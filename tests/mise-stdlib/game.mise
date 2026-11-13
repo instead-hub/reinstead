@@ -139,7 +139,13 @@ impl game
     say "unpack {tostr a} {tostr b} next {tostr (next xs)}"
     say (len "abc")
     say (join2 "a" "b$1c")
+    if starts == 1
+      start false               # точка входа — обычная функция `fn.start`
+    say "starts={starts}"
     pass
 
+global starts = 0
+
 fn start(load)
+  starts += 1
   player:move test_room

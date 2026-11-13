@@ -33,10 +33,14 @@ fn.path_dsc = function(w)
   return ("{#Me}" .. " can go to ") .. w:noun_hint() .. "."
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'foyer')
   move(_'cloak', me())
   _'cloak':attr("worn")
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({

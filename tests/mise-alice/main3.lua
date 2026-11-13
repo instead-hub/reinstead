@@ -40,10 +40,14 @@ fn.path_dsc = function(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-function init()
+fn.init = function()
   move(me(), _'Drawing_Room')
   DaemonStart(_'white_kitten')
   DaemonStart(_'black_kitten')
+end
+
+function init()
+  return fn.init()
 end
 
 Door = Class({

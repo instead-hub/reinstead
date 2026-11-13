@@ -258,12 +258,19 @@ class Parser:
             rets.append(self._parse_type_str())
             while self.match("OP", ","):
                 rets.append(self._parse_type_str())
-        if is_extern or self.match("OP", "=") or self.at("RAW"):
+        if is_extern:
             self.match("OP", "=")
             raw = self.eat(self.cur().kind).val
             self.eat_nl()
             return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=raw,
-                          is_extern=is_extern, is_value=is_value, line=line)
+                          is_extern=True, is_value=is_value, line=line)
+        if self.match("OP", "=") or self.at("RAW"):
+            self.match("OP", "=")
+            # `fn f(x) = expr` is just a short `fn f(x)` with `return expr`
+            values = [self.parse_expr()]
+            self.eat_nl()
+            return FnDecl(name=name, params=params, variadic=var, ret_types=rets,
+                          body=[ReturnStmt(line=line, kind="return", values=values)], line=line)
         body = self._opt_lua_or_stmts()
         return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=body, line=line)
 

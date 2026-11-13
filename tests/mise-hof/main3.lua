@@ -101,6 +101,10 @@ fn.total = function(n)
   return r
 end
 
+fn.start = function(load)
+  move(me(), _'test_room')
+end
+
 fn.closure = function(s)
   local n = 0
   for _, w in ipairs({ _'box' }) do
@@ -112,7 +116,7 @@ fn.closure = function(s)
 end
 
 function start(load)
-  move(me(), _'test_room')
+  return fn.start(load)
 end
 
 Door = Class({

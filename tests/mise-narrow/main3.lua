@@ -44,8 +44,12 @@ fn.show = function(w)
   return w:noun_hint("вн")
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'hall')
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({

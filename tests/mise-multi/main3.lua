@@ -77,8 +77,12 @@ fn.demo = function()
   p(fn.minmax(7, 8))
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'test_room')
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({

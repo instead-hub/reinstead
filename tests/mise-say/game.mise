@@ -25,6 +25,9 @@ fn commented() -> str
     -- комментарий в начале тела сохраняется
     return "comment"
 
+# `= выражение` — та же функция, что и блок с `return` (не макрос)
+fn show(x: num) -> str = `"x=" .. x`
+
 fn tri_ml() -> str
   return """
 c
@@ -50,6 +53,7 @@ impl game
     say ("n=" .. x.pri + 1)
     say (x.pri + 1 .. "!")
     say (commented)
+    say (show 42)
     # скобки справа при равном приоритете не теряются
     say "parens={10 - (5 - 2)},{100 / (10 / 2)},{10 - (5 + 2)}"
 

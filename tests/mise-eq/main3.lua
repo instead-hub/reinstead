@@ -45,12 +45,20 @@ fn.on_take = function(s)
   p "взято"
 end
 
-function init()
+fn.init = function()
   take(_'box')
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'hall')
+end
+
+function init()
+  return fn.init()
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({

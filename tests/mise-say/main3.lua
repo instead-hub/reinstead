@@ -40,6 +40,10 @@ fn.path_dsc = function(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
+fn.note = function(t)
+  p(t)
+end
+
 fn.raw_ml = function()
   return [[m
 n]]
@@ -59,13 +63,21 @@ fn.commented = function()
   return "comment"
 end
 
+fn.show = function(x)
+  return "x=" .. x
+end
+
 fn.tri_ml = function()
   return [[c
 d]]
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'test_room')
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({
@@ -122,12 +134,13 @@ _'game'.before_Inv = function(s)
   p(_'x':noun_hint())
   pn "line text"
   pr "append text"
-  p("raw words")
-  p(_'x':noun_hint())
+  fn.note("raw words")
+  fn.note(_'x':noun_hint())
   p("ml=", fn.slen(fn.esc_ml()), ",", fn.slen(fn.tri_ml()), ",", fn.slen(fn.raw_ml()))
   p("n=" .. _'x'.pri + 1)
   p(_'x'.pri + 1 .. "!")
   p(fn.commented())
+  p(fn.show(42))
   p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2))
 end;
 

@@ -40,10 +40,14 @@ fn.path_dsc = function(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'foyer')
   move(_'cloak', me())
   _'cloak':attr("worn")
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({

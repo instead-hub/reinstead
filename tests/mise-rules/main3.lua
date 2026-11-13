@@ -75,8 +75,12 @@ fn.only_wild = function(n)
   end
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'test_room')
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({

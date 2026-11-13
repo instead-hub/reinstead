@@ -49,8 +49,12 @@ fn.exit = function(s, d)
   return nil
 end
 
-function start(load)
+fn.start = function(load)
   move(me(), _'r')
+end
+
+function start(load)
+  return fn.start(load)
 end
 
 Door = Class({

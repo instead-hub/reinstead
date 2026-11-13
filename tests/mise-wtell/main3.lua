@@ -40,6 +40,14 @@ fn.path_dsc = function(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
+fn.score_up = function()
+  mp.score = mp.score + 1
+end
+
+fn.cur_score = function()
+  return mp.score
+end
+
 fn.BowOrArrow = function(o)
   if not o or o == _'bow' or o.arrow then
     return true
@@ -48,11 +56,15 @@ fn.BowOrArrow = function(o)
   return false
 end
 
-function init()
+fn.init = function()
   move(me(), _'street')
   move(_'bow', me())
   move(_'quiver', me())
   _'quiver':attr("worn")
+end
+
+function init()
+  return fn.init()
 end
 
 Door = Class({
@@ -354,7 +366,7 @@ gameover {
   title = "Конец";
   dsc = function(s)
     pn "Вы испортили любимую народную легенду."
-    p("Ваш счет: ", mp.score, " из ", MAX_SCORE)
+    p("Ваш счет: ", fn.cur_score(), " из ", MAX_SCORE)
   end;
 }
 
@@ -363,7 +375,7 @@ gameover {
   title = "Конец";
   dsc = function(s)
     pn "Поздравляю, вы прошли игру!"
-    p("Ваш счет: ", mp.score, " из ", MAX_SCORE)
+    p("Ваш счет: ", fn.cur_score(), " из ", MAX_SCORE)
   end;
 }
 
@@ -444,7 +456,7 @@ end;
 _'stallholder'.life_Talk = function(s)
   s.times_spoken_to = s.times_spoken_to + (1)
   if s.times_spoken_to == 1 then
-    mp.score = mp.score + 1
+    fn.score_up()
     p "Ты тепло благодаришь Хельгу за яблоко."
   elseif s.times_spoken_to == 2 then
     p "Ещё увидимся!"
@@ -520,7 +532,7 @@ _'son'.description = function(s)
   p "Тихий светлый мальчик восьми лет, он быстро учится сельской работе."
 end;
 _'son'.life_Give = function(s, w)
-  mp.score = mp.score + 1
+  fn.score_up()
   move(w, s)
   p '"Спасибо, пап".'
 end;
@@ -570,7 +582,7 @@ end;
 _'apple'.before_FireAt = function(s, w)
   if here() == _'marketplace' then
     if fn.BowOrArrow(w) then
-      mp.score = mp.score + 1
+      fn.score_up()
       p([[Мягко и спокойно ты кладёшь стрелу на тетиву, оттягивая её, и, предельно
 сконцентрировавшись, берёшь прицел. Задержав дыхание, не мигая, ты в ужасе
 отправляешь стрелу в цель. Она летит через площадь к твоему сыну, и, пронзая яблоко, впивается

@@ -121,14 +121,8 @@ class Emitter:
         hdr.append(f'require "parser/mp-{self.prog.lang}"')
         chunks.append("\n".join(hdr))
 
-        rendered: List[Tuple[FnDecl, str, str]] = []
-        for it in self.prog.items:
-            if isinstance(it, FnDecl) and not it.is_extern:
-                if it.name in self.ctx.entries:
-                    continue
-                if isinstance(it.body, str) and not it.body.strip().startswith(("local ", "return ")) and "\n" not in it.body and it.name not in self.ctx.used_refs:
-                    continue
-                rendered.append((it, *self._fn_parts(it)))
+        rendered = [(it, *self._fn_parts(it)) for it in self.prog.items
+                    if isinstance(it, FnDecl) and not it.is_extern]
 
         # One local table, not one local per function: a chunk may hold only 200
         # locals, and a function of the table is visible before it is assigned,
@@ -139,12 +133,14 @@ class Emitter:
             head = f"fn.{fn.name} = function({prms})"
             chunks.append(f"{head}\n{body}\nend" if body.strip() else f"{head}\nend")
 
+        # the engine calls these globals itself; mise code calls `fn.init`/`fn.start`
+        for fn, _prms, _body in rendered:
+            if fn.name in self.ctx.entries:
+                args = ", ".join(pn for pn, _t in fn.params)
+                chunks.append(f"function {fn.name}({args})\n  return fn.{fn.name}({args})\nend")
+
         for it in self._emission_order():
-            if isinstance(it, FnDecl) and not it.is_extern and it.name in self.ctx.entries:
-                prms = ", ".join(pn for pn, _pt in it.params)
-                body = _ind(self._stmts(it.body), 2) if isinstance(it.body, list) else _ind(it.body, 2)
-                chunks.append(f"function {it.name}({prms})\n{body}\nend" if body.strip() else f"function {it.name}({prms})\nend")
-            elif isinstance(it, LuaDecl):
+            if isinstance(it, LuaDecl):
                 chunks.append(it.code)
             elif isinstance(it, VarDecl):
                 chunks.append("\n".join(f"{it.kind} '{vn}' ({self._prop_scalar(ve)})" for vn, _vt, ve, _l in it.items))
@@ -170,22 +166,18 @@ class Emitter:
         references, so the rest keeps the source order.
         """
         items = self.prog.items
-        entries = [it for it in items if isinstance(it, FnDecl) and it.name in self.ctx.entries]
         values = [it for it in items
                   if isinstance(it, (LuaDecl, VarDecl, TalkDecl))
                   or (isinstance(it, EntityDecl) and it.kind not in ("class", "impl"))]
         verbs = sorted((it for it in items if isinstance(it, VerbDecl)),
                        key=lambda v: _VERB_ORDER[v.mode])
         impls = [it for it in items if isinstance(it, EntityDecl) and it.kind == "impl"]
-        return entries + _class_plan(items, self.ctx) + values + verbs + impls
+        return _class_plan(items, self.ctx) + values + verbs + impls
 
     def _fn_parts(self, fn: FnDecl) -> Tuple[str, str]:
         prms = ", ".join([pn for pn, _pt in fn.params] + (["..."] if fn.variadic else []))
-        if isinstance(fn.body, str):
-            code = fn.body.strip()
-            if not code.startswith(("return ", "local ")) and "\n" not in code:
-                code = "return " + code
-            body = _ind(code, 2)
+        if isinstance(fn.body, str):        # a `lua` block: statements, verbatim
+            body = _ind(fn.body.strip(), 2)
         else:
             body = _ind(self._stmts(fn.body), 2)
         return prms, body
@@ -660,7 +652,7 @@ class Emitter:
         all_a = ([c.receiver] + c.args) if c.receiver else list(c.args)
         fn = self.ctx.fns.get(c.func)
         args = [self._expr(a) for a in all_a]
-        if fn and isinstance(fn.body, str) and (fn.is_extern or (not fn.body.strip().startswith(("local ", "return ")) and "\n" not in fn.body)) and c.func not in self.ctx.used_refs:
+        if fn and fn.is_extern:
             return self._expand(fn, args, as_stmt)
         return f"fn.{c.func}({', '.join(args)})" if c.func in self.ctx.fns else f"{c.func}({', '.join(args)})"
 
@@ -668,9 +660,6 @@ class Emitter:
         t = fn.body
         if "$" in t:
             return _fill_slots(t, args)
-        for (pn, _pt), av in zip(fn.params, args):
-            # a lambda keeps `\1`/`\g<…>` in the argument from being read as a group
-            t = re.sub(rf"\b{re.escape(pn)}\b", lambda _m, av=av: av, t)
         if as_stmt or t.startswith("(") or _SIMPLE_EXPR.match(t.strip()):
             return t
         return f"({t})"

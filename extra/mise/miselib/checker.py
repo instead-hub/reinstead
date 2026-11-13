@@ -47,7 +47,6 @@ class Context:
 
     fns: Dict[str, FnDecl] = field(default_factory=dict)
     verb_tags: Set[str] = field(default_factory=set)     # tags of `verb`/`extend verb`
-    used_refs: Set[str] = field(default_factory=set)
     globals: Dict[str, Type] = field(default_factory=dict)
     consts: Set[str] = field(default_factory=set)
     _checked_fns: Set[str] = field(default_factory=set)
@@ -1099,7 +1098,6 @@ def _check_fnref(ctx: Context, ref: FnRef, expected: Optional[Type], where: str)
         raise Error(f"&{ref.name}: an extern is a macro, it has no function value "
                     f"(call it directly, or write a `fn` wrapper)", ref.line)
     _ensure_fn_checked(ctx, fn)
-    ctx.used_refs.add(ref.name)
     got = Fn(tuple(pt for _pn, pt in fn.params), tuple(fn.ret_types))
     if expected is not None:
         alts = [a for a in parts(expected) if isinstance(a, Fn)]
@@ -1299,6 +1297,8 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, Type], owner: Optional[str] = N
                 if isinstance(alt, Name) and alt.name in ctx.enums \
                         and str(e.val) in ctx.enums[alt.name][0]:
                     return alt
+        if e.kind == "raw" and expected is not None and expected != ANY:
+            return expected        # a `` `lua` `` expression asserts the type of its context
         return _KINDS.get(e.kind, ANY)
     if isinstance(e, InterpStr):
         for p in e.parts:
