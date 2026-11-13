@@ -8,7 +8,7 @@ global
   score = 0
 
 impl game
-  hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" }
+  hint_verbs = [#Exam, #Walk, #Take, #Drop]
 
 extend verb #Drop
   words = "hang"

@@ -19,12 +19,12 @@ fn BowOrArrow(o: obj?) -> bool
   pass
 
 impl game
-  hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" }
+  hint_verbs = [#Exam, #Walk, #Take, #Drop, #FireAt, #Salute, #Talk]
 
 class Prop : scenery
   before Exam = pass
   before Default =
-    say 'Вам нет нужды беспокоиться о ' (s:noun {пр}) '.'
+    say 'Вам нет нужды беспокоиться о ' (s:noun [пр]) '.'
 
 class Furniture : static, supporter
   before Take, Pull, Push, PushDir = "Слишком тяжело."
@@ -36,7 +36,7 @@ class Arrow "стрела,стрел*"
 
 class NPC : animate
   life Answer,Ask,AskTo,AskFor,Tell =
-    say 'Введите просто "говорить с ' (s:noun {тв}) '".'
+    say 'Введите просто "говорить с ' (s:noun [тв]) '".'
 
 impl game
   dsc = [[^Пример простой игры на Inform

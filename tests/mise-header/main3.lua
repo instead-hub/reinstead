@@ -108,7 +108,10 @@ room {
 }
 
 _'game'.dsc = "Заставка.";
-_'game'.hint_verbs = { "#Exam", "#Take" };
+_'game'.hint_verbs = {
+  "#Exam",
+  "#Take",
+};
 _'game'.before_Exam = function(s, w)
   std.p "Нечего осматривать."
 end;

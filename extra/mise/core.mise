@@ -8,6 +8,15 @@ type attr = [
   visited, worn,
 ]
 type direction = n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to
+type verb = [
+  #Answer, #Ask, #AskFor, #Attack, #Blow, #Burn, #Buy, #Climb, #Close,
+  #Consult, #Cut, #Dig, #Disrobe, #Drink, #Drop, #Eat, #Exam, #Exit,
+  #Fill, #GetOff, #Give, #Insert, #Inv, #Jump, #Kiss, #Listen, #Lock,
+  #Look, #Next, #No, #Open, #Pull, #Push, #Rub, #Search, #Show, #Sing,
+  #Sleep, #Smell, #Swim, #SwitchOff, #SwitchOn, #Take, #Talk, #Taste,
+  #Tear, #Tell, #Think, #ThrowAt, #Tie, #Touch, #Turn, #Unlock, #Wait,
+  #Wake, #Walk, #Wave, #Wear, #Yes,
+]
 
 
 class obj = obj
@@ -22,6 +31,8 @@ class obj = obj
   obj: tbl[obj]
   way: ref
   lifes: tbl[obj]
+  hint_verbs: tbl[verb]
+  hint_verbs_only: tbl[verb]
   daemon: fn(obj)
   description: str | bool | fn(obj) -> str
   dsc: str | bool | fn(obj) -> str

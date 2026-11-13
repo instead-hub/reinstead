@@ -203,7 +203,12 @@ gameover {
 
 VerbExtendWord { "#Drop", "hang", "{noun}/held on {noun}/supporter : PutOn" }
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
+_'game'.hint_verbs = {
+  "#Exam",
+  "#Walk",
+  "#Take",
+  "#Drop",
+};
 
 _'game'.dsc = [[^{$fmt b|Cloak of Darkness}^^Cloak of Darkness -- a simple demonstration of Interactive Fiction.
 ^^Hurrying through the rainswept November night, you're glad to see the

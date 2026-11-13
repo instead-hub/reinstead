@@ -3,11 +3,11 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from . import types
 from .ast_nodes import (
-    AssignStmt, Bind, BinOp, Call, CallStmt, Emit, EntityDecl, Error, Expr,
-    ExternDecl, FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler,
-    IfStmt, InOp, IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt,
-    MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym, TalkChoice,
-    TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
+    AssignStmt, Bind, BinOp, Call, CallStmt, DictLit, Emit, EntityDecl, Error,
+    Expr, ExternDecl, FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt,
+    Handler, IfStmt, InOp, IndexAccess, InterpStr, Lambda, ListLit, Lit,
+    LocalStmt, MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym,
+    TalkChoice, TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
 )
 from .narrow import narrow, returns_all
 from .symbols import (
@@ -240,7 +240,7 @@ def _infer_sym(ctx: Context, e: Sym, env: Dict[str, Type],
         e.rk = "value" if (isinstance(decl, ExternDecl) and decl.kind in ("value", "lvalue")) else "fn0"
         return decl.ret_types[0] if decl.ret_types else ANY
     if n.startswith("#"):
-        raise Error(f"unknown tag {n!r}", e.line)
+        raise Error(f"unknown tag {n!r}{enum_hint(ctx, n)}", e.line)
     raise Error(f"unknown name {n!r}{enum_hint(ctx, n)}", e.line)
 
 
@@ -309,6 +309,22 @@ def _check_call(ctx: Context, c: Call, env: Dict[str, Type], owner: Optional[str
     return one.rets[0] if (one is not None and one.rets) else ANY
 
 
+def _expected_tbl_inner(expected: Optional[Type]) -> Optional[Type]:
+    return next((types.tbl_inner(alt) for alt in (parts(expected) if expected else [])
+                 if types.tbl_inner(alt) is not None), None)
+
+
+def _infer_dict(ctx: Context, e: DictLit, env: Dict[str, Type],
+                owner: Optional[str], expected: Optional[Type]) -> Type:
+    in_exp = _expected_tbl_inner(expected)
+    vts = []
+    for k, v in e.pairs:
+        if isinstance(k, Expr):
+            _check_expr(ctx, k, env, owner)
+        vts.append(_check_expr(ctx, v, env, owner, in_exp))
+    return Tbl(union(*vts) if vts else None)
+
+
 def _infer(ctx: Context, e: Expr, env: Dict[str, Type], owner: Optional[str] = None,
            expected: Optional[Type] = None) -> Type:
     match e:
@@ -345,10 +361,11 @@ def _infer(ctx: Context, e: Expr, env: Dict[str, Type], owner: Optional[str] = N
         case FnRef():
             return _check_fnref(ctx, e, expected, _kind_name(e))
         case ListLit():
-            in_exp = next((types.tbl_inner(alt) for alt in (parts(expected) if expected else [])
-                           if types.tbl_inner(alt) is not None), None)
+            in_exp = _expected_tbl_inner(expected)
             its = [_check_expr(ctx, it, env, owner, in_exp) for it in e.items]
             return Tbl(union(*its) if its else Name(""))
+        case DictLit():
+            return _infer_dict(ctx, e, env, owner, expected)
         case Sym():
             return _infer_sym(ctx, e, env, expected)
         case FieldAccess():
@@ -739,7 +756,7 @@ def _check_emit(where: str, emit: Emit, value: Any, line: int):
         if not (isinstance(value, Lit) and value.kind == "bool"):
             raise TypeCheckError(f"{where}: `:{emit.method}()` takes a `true`/`false` value", line)
     elif emit.form == "table":
-        if not (isinstance(value, Lit) and value.kind == "table"):
+        if not isinstance(value, DictLit):
             raise TypeCheckError(f"{where}: `:{emit.method}{{...}}` takes a `{{ ... }}` table", line)
 
 

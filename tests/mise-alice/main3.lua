@@ -236,7 +236,16 @@ Verb { "#Touch2", "ласк/ать,чеса/ть,почес/ать,почеш/и
 
 VerbExtend { "#Exam", "{noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ на {noun}/вн,scene в {noun}/пр,2,scene : Reflect", "~ в {noun}/пр,2,scene на {noun}/вн : Reflect reverse" }
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Push", "#Take", "#Drop", "#Search", "#Give", "#Touch" };
+_'game'.hint_verbs = {
+  "#Exam",
+  "#Walk",
+  "#Push",
+  "#Take",
+  "#Drop",
+  "#Search",
+  "#Give",
+  "#Touch",
+};
 
 _'game'.dsc = [[^Маленькая интерактивная Информ-обучалка^
    (написанная Гаретом Ризом и переведенная Денисом Гаевым)^

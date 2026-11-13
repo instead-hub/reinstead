@@ -224,7 +224,12 @@ gameover {
 
 VerbExtendWord { "#Drop", "повес/ить", "{noun}/вн,held на {noun}/вн,supporter : PutOn", "~ на {noun}/вн,supporter {noun}/вн,held : PutOn reverse" }
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
+_'game'.hint_verbs = {
+  "#Exam",
+  "#Walk",
+  "#Take",
+  "#Drop",
+};
 
 _'game'.dsc = [[^{$fmt b|ПЛАЩ ТЬМЫ}^^Тривиальная Информ-демонстрация.
 ^^Торопливо пробираясь сквозь дождливую и холодную ноябрьскую ночь,

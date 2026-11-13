@@ -27,7 +27,7 @@ fn init()
   take statue
 
 impl game
-  hint_verbs = { "#Look" }
+  hint_verbs = [#Look]
 
 impl pl
   word = -"ты"

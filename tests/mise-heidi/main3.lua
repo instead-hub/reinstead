@@ -182,7 +182,12 @@ gameover {
   dsc = "Поздравляем! Вы прошли игру.";
 }
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" };
+_'game'.hint_verbs = {
+  "#Exam",
+  "#Walk",
+  "#Take",
+  "#Drop",
+};
 
 _'game'.dsc = [[^Пример простой игры на Inform.
 ^Авторы: Роджер Фирт (Roger Firth) и Соня Кессерих (Sonja Kesserich).

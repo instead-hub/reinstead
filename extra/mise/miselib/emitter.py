@@ -2,11 +2,11 @@
 from typing import Any, List, NamedTuple, Optional, Sequence, Set, Tuple
 
 from .ast_nodes import (
-    AssignStmt, Bind, BinOp, Call, CallStmt, EntityDecl, Expr, ExternDecl,
-    FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler, IfStmt, InOp,
-    IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt, LuaDecl,
-    MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym, TalkChoice,
-    TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
+    AssignStmt, Bind, BinOp, Call, CallStmt, DictLit, EntityDecl, Expr,
+    ExternDecl, FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler,
+    IfStmt, InOp, IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt,
+    LuaDecl, MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym,
+    TalkChoice, TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
 )
 from .lexer import lua_lines
 from .symbols import Context
@@ -197,7 +197,7 @@ class Emitter:
                 return ""
             return f":{mname}()" if v.val else (f":{other}()" if other else "")
         if form == "table":
-            return f":{mname} {v.val}" if isinstance(v, Lit) and v.kind == "table" else ""
+            return f":{mname} {self._dict_lit(v)}" if isinstance(v, DictLit) else ""
         items = v.items if isinstance(v, ListLit) else [v]
         if form == "join":
             parts = [it.name if isinstance(it, Sym) else self._expr(it).strip("'\"") for it in items]
@@ -286,8 +286,10 @@ class Emitter:
         v, pad = p.value, " " * ind
         if isinstance(v, FnRef):
             return self._fnref(v.name)
-        if isinstance(v, Lit) and v.kind in ("table", "raw"):
+        if isinstance(v, Lit) and v.kind == "raw":
             return v.val
+        if isinstance(v, DictLit):
+            return self._dict_lit(v)
         if isinstance(v, list):
             prms = self._prop_prms(p)
             b = _ind(self._stmts(v), ind + 2)
@@ -609,6 +611,8 @@ class Emitter:
             case ListLit():
                 code = ("{ " + ", ".join(self._expr(it) for it in e.items) + " }") if e.items else "{}"
                 return LuaExpr(code, PREC_LIT)
+            case DictLit():
+                return LuaExpr(self._dict_lit(e), PREC_LIT)
             case Sym():
                 return self._le_sym(e, as_lhs)
             case FieldAccess():
@@ -641,6 +645,14 @@ class Emitter:
 
     def _fnref(self, name: str) -> str:
         return f"fn.{name}"
+
+    def _dict_lit(self, e: DictLit) -> str:
+        if not e.pairs:
+            return "{}"
+        items = [f"{k} = {self._expr(v)}" if isinstance(k, str)
+                 else f"[{self._expr(k)}] = {self._expr(v)}"
+                 for k, v in e.pairs]
+        return "{ " + ", ".join(items) + " }"
 
     def _call(self, c: Call) -> LuaExpr:
         if not c.receiver and c.func in ("say", "append", "line"):

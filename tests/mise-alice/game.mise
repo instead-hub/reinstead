@@ -11,7 +11,7 @@ const
   CHAIR_STATE = 3
 
 impl game
-  hint_verbs = { "#Exam", "#Walk", "#Push", "#Take", "#Drop", "#Search", "#Give", "#Touch" }
+  hint_verbs = [#Exam, #Walk, #Push, #Take, #Drop, #Search, #Give, #Touch]
 
 impl game
   dsc = [[^Маленькая интерактивная Информ-обучалка^

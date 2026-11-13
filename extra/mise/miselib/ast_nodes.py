@@ -24,7 +24,7 @@ class Expr:
 
 @dataclass
 class Lit(Expr):
-    kind: str = "nil"          # "num", "bool", "str", "nil", "raw" (backtick), "table" ({...})
+    kind: str = "nil"          # "num", "bool", "str", "nil", "raw" (backtick)
     val: Any = None
 
 @dataclass
@@ -45,6 +45,10 @@ class FnRef(Expr):
 @dataclass
 class ListLit(Expr):
     items: List[Expr] = field(default_factory=list)
+
+@dataclass
+class DictLit(Expr):
+    pairs: List[Tuple[Any, Expr]] = field(default_factory=list)
 
 @dataclass
 class FieldAccess(Expr):

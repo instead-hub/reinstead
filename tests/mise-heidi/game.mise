@@ -5,7 +5,7 @@ lang ru
 include stdlib
 
 impl game
-  hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop" }
+  hint_verbs = [#Exam, #Walk, #Take, #Drop]
 
 impl game
   dsc = [[^Пример простой игры на Inform.

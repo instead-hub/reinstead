@@ -8,7 +8,7 @@ fmt = dash
 
 impl game
   dsc = "Заставка."
-  hint_verbs = { "#Exam", "#Take" }
+  hint_verbs = [#Exam, #Take]
   before Exam =
     "Нечего осматривать."
 

@@ -3,6 +3,7 @@
 # English morphology: no cases, grammar hints instead
 type gram = [live, nonlive, male, female, plural, proper, surname,
              first, second, third]
+extend type verb = [#Enter, #Lie, #Put, #Remove, #Sit, #Transfer]
 extern fn noun(s: obj, n: tbl[gram]|gram|num?, nn: num?) -> str = "$1:noun_hint($2...)"
 extern fn Noun(s: obj, n: tbl[gram]|gram|num?, nn: num?) -> str = "$1:Noun_hint($2...)"
 extern fn It(s: obj, n: tbl[gram]|gram|num?) -> str = "$1:It($2)"

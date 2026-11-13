@@ -225,7 +225,7 @@ class Parser:
         while not self.at("EOF") and not (self.at("OP", "]") if in_brackets else self.at("NEWLINE")):
             if self.match("OP", "~"):
                 neg = True
-            elif not in_brackets or self.cur().kind in ("IDENT", "NUMBER", "TILDE_ID"):
+            elif not in_brackets or self.cur().kind in ("IDENT", "NUMBER", "TILDE_ID", "TAG"):
                 vals.append(self.cur().val)
                 self.pos += 1
             else:
@@ -481,8 +481,6 @@ class Parser:
         return prms
 
     def _parse_prop_val(self) -> Any:
-        if self.at("OP", "{"):
-            return self._raw_braces()
         first = self.parse_expr()
         if self.at("OP", ","):
             items = [first]
@@ -490,23 +488,6 @@ class Parser:
                 items.append(self.parse_expr())
             return ListLit(line=first.line, items=items)
         return first
-
-    def _raw_braces(self) -> Lit:
-        line = self.eat("OP", "{").line
-        depth, parts, pline = 1, ["{"], line
-        while depth > 0 and not self.at("EOF"):
-            t = self.cur()
-            self.pos += 1
-            parts.append("\n" if t.line > pline else (" " if t.spaced else ""))
-            pline = t.line
-            if t.kind == "OP" and t.val in "{}":
-                depth += (1 if t.val == "{" else -1)
-                parts.append(t.val)
-            elif t.kind in ("STRING", "ISTRING"):
-                parts.append('"' + t.val.replace("\\", "\\\\").replace('"', '\\"') + '"')
-            else:
-                parts.append("~=" if (t.kind == "OP" and t.val == "!=") else t.val)
-        return Lit(line=line, kind="table", val="".join(parts))
 
     def _parse_handler(self) -> Handler:
         tok = self.eat("IDENT")
@@ -964,16 +945,37 @@ class Parser:
                             self.cur().line, self.src)
             self.eat("OP", ")")
             return e
-        if self.match("OP", "[") or self.match("OP", "{"):
-            close = "]" if t.val == "[" else "}"
+        if self.match("OP", "["):
             items = []
-            while not self.at("OP", close) and not self.at("EOF"):
+            while not self.at("OP", "]") and not self.at("EOF"):
                 items.append(self.parse_expr())
                 if not self.match("OP", ","):
                     break
-            self.eat("OP", close)
+            self.eat("OP", "]")
             return ListLit(line=t.line, items=items)
+        if self.match("OP", "{"):
+            return self._parse_dict_lit(t.line)
         raise Error(f"unexpected token {t.val!r}", t.line, self.src)
+
+    def _parse_dict_lit(self, line: int) -> DictLit:
+        pairs: List[Tuple[Any, Expr]] = []
+        while not self.at("OP", "}") and not self.at("EOF"):
+            if self.match("OP", "["):
+                k: Any = self.parse_expr()
+                self.eat("OP", "]")
+            elif self.cur().kind == "IDENT" and self.peek().val == "=":
+                k = self.eat_name().val
+            else:
+                raise Error("use `[...]` for a list; `{...}` is for key-value tables "
+                            "(`{ k = v }` or `{ [k] = v }`)", self.cur().line, self.src)
+            if not self.match("OP", "="):
+                raise Error("use `[...]` for a list; `{...}` is for key-value tables "
+                            "(`{ k = v }` or `{ [k] = v }`)", self.cur().line, self.src)
+            pairs.append((k, self.parse_expr()))
+            if not self.match("OP", ","):
+                break
+        self.eat("OP", "}")
+        return DictLit(line=line, pairs=pairs)
 
     def _parse_str_tok(self) -> Expr:
         t = self.eat(self.cur().kind)

@@ -23,6 +23,6 @@ fn start(load)
 impl game
   before Inv =
     say "просто {tostr nums[1]} и {tostr nums[2]}"
-    say "вложенные {tag(tostring(len({1, 2})))} скобки"
+    say "вложенные {tag(tostring(len([1, 2])))} скобки"
     say "кавычка {tag '}'} внутри"
     say "движок {$fmt b|жирный} и {tag 'x'}"

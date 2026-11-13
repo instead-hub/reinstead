@@ -386,7 +386,15 @@ Verb { "#Salute2", "мах/ать,помах/ать,помаш/и,маш/и", "{
 
 Verb { "#Untie", "развяз/ать,отвяз/ать,освобод/ить", "{noun}/вн,scene : Untie" }
 
-_'game'.hint_verbs = { "#Exam", "#Walk", "#Take", "#Drop", "#FireAt", "#Salute", "#Talk" };
+_'game'.hint_verbs = {
+  "#Exam",
+  "#Walk",
+  "#Take",
+  "#Drop",
+  "#FireAt",
+  "#Salute",
+  "#Talk",
+};
 
 _'game'.dsc = [[^Пример простой игры на Inform
 ^Авторы: Роджер Фирт (Roger Firth) и Соня Кессерих (Sonja Kesserich).

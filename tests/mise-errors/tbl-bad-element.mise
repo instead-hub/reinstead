@@ -5,4 +5,4 @@ include stdlib
 obj box "коробка"
 
 fn f(s: obj)
-  say (s:noun {box})
+  say (s:noun [box])

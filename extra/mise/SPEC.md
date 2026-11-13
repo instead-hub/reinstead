@@ -582,7 +582,7 @@ global
   score = 0
 
 impl game
-  hint_verbs = ["#Exam", "#Walk", "#Take", "#Drop"]
+  hint_verbs = [#Exam, #Walk, #Take, #Drop]
 
 extend verb #Drop
   words = "повес/ить"
@@ -782,7 +782,7 @@ ident_list  ::= IDENT { "," IDENT }
 type_decl   ::= [ "extend" ] "type" IDENT "=" [ "[" ] [ "~" ] enum_item
                 { "," enum_item } [ "," ] [ "]" ]
 
-enum_item   ::= IDENT | NUMBER | "~"              (* `~` — отрицающее значение *)
+enum_item   ::= IDENT | NUMBER | TAG | "~"        (* `~` — отрицающее значение *)
 
 (* Событие: имена, необязательная сигнатура (`: типы` — то, что получает
    обработчик) и необязательный блок фаз (только для одного имени).
@@ -985,9 +985,11 @@ primary     ::= NUMBER | BOOL | "nil" | "..." | STRING | "`" <lua expr> "`"
               | "&" IDENT                            (* ссылка на функцию *)
               | "&" "(" [ param_list ] ")" ( expr | stmt_block )   (* лямбда *)
               | SYMBOL                               (* имя, #тег, ~значение *)
-              | "[" [ expr { "," expr } [ "," ] ] "]"   (* список/таблица *)
-              | "{" [ expr { "," expr } [ "," ] ] "}"   (* сырая Lua-таблица *)
+              | "[" [ expr { "," expr } [ "," ] ] "]"   (* список *)
+              | "{" [ dict_entry { "," dict_entry } [ "," ] ] "}" (* таблица ключ=значение *)
               | "(" expr ")"
+
+dict_entry  ::= (IDENT | "[" expr "]") "=" expr
 
 lvalue      ::= IDENT | postfix_expr "." IDENT | postfix_expr "[" expr "]"
 raw_lua     ::= "`" <lua expr> "`"
