@@ -7,7 +7,7 @@ from .ast_nodes import (
     ExternDecl, FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler,
     IfStmt, InOp, IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt,
     MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym, TalkChoice,
-    TalkDecl, UnaryOp, VarDecl, VerbDecl,
+    TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
 )
 from .narrow import narrow, returns_all
 from .symbols import (
@@ -402,7 +402,8 @@ def _check_cond(ctx: Context, cond: Expr, env: Dict[str, Type], owner: Optional[
 
 # --- Statements -------------------------------------------------------------
 
-def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type], owner: Optional[str]):
+def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type],
+                       decl_env: Dict[str, Type], owner: Optional[str]):
     vt = _value_types(ctx, s.values, env, owner)
     if s.op in ("+=", "-="):
         for t in vt:
@@ -417,7 +418,7 @@ def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type], owner:
     ext = ctx.externs.get(name)
     if local:
         s.target.rk = "var"
-        cur: Optional[Type] = env[name]
+        cur: Optional[Type] = decl_env.get(name, env[name])
     elif name in ctx.consts:
         raise Error(f"{name}: a constant cannot be assigned", s.line)
     elif name in ctx.globals:
@@ -434,8 +435,10 @@ def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type], owner:
     if cur is not None and cur != ANY and s.op == "=" and vt:
         expect(ctx, f"assignment to {name}", vt[0], cur, s.line)
     if cur is not None and cur != ANY and s.op in ("+=", "-="):
-        expect(ctx, f"{name} ({s.op})", cur, NUM, s.line)
-    if local and cur in (None, ANY) and vt and s.op == "=":
+        expect(ctx, f"{name} ({s.op})", env[name] if local else cur, NUM, s.line)
+    if local and vt and s.op == "=":
+        if cur in (None, ANY):
+            decl_env[name] = vt[0]
         env[name] = vt[0]
 
 
@@ -456,7 +459,8 @@ def _check_return_stmt(ctx: Context, s: ReturnStmt, env: Dict[str, Type], owner:
         rets.extend(t for t in vts if t != NIL)
 
 
-def _check_local_stmt(ctx: Context, s: LocalStmt, env: Dict[str, Type], owner: Optional[str]):
+def _check_local_stmt(ctx: Context, s: LocalStmt, env: Dict[str, Type],
+                      decl_env: Dict[str, Type], owner: Optional[str]):
     no_duplicates((vn for vn, _t in s.names if vn != "_"), "local", s.line)
     vts = _value_types(ctx, s.values, env, owner, len(s.names), [dt for _vn, dt in s.names])
     for i, (vn, dt) in enumerate(s.names):
@@ -464,26 +468,46 @@ def _check_local_stmt(ctx: Context, s: LocalStmt, env: Dict[str, Type], owner: O
         if dt is not None and got is not None:
             expect(ctx, f"local {vn}", got, dt, s.line)
         if vn != "_":
+            decl_env[vn] = dt if dt is not None else (got if got is not None else ANY)
             env[vn] = (got if got is not None else ANY) if dt is None \
                 else (opt(dt) if got is None else dt)
 
 
-def _check_if_stmt(ctx: Context, s: IfStmt, env: Dict[str, Type], owner: Optional[str],
-                   rets: Optional[List[Type]], arg_names: Optional[Dict[int, str]],
-                   fn_decl: Optional[FnDecl], in_loop: bool):
+def _check_if_stmt(ctx: Context, s: IfStmt, env: Dict[str, Type], decl_env: Dict[str, Type],
+                   owner: Optional[str], rets: Optional[List[Type]],
+                   arg_names: Optional[Dict[int, str]], fn_decl: Optional[FnDecl], in_loop: bool):
     cenv = dict(env)
     for cond, body, _l in s.branches:
         _check_cond(ctx, cond, cenv, owner)
-        _check_stmts(ctx, body, narrow(ctx, cond, cenv, True, arg_names),
-                     owner, rets, arg_names, fn_decl, in_loop)
+        benv = narrow(ctx, cond, cenv, True, arg_names)
+        bdecl = dict(decl_env)
+        if isinstance(cond, Bind):
+            for n in cond.names:
+                if n != "_":
+                    bdecl[n] = benv[n]
+        _check_stmts(ctx, body, benv, owner, rets, arg_names, fn_decl, in_loop, bdecl)
         cenv = narrow(ctx, cond, cenv, False, arg_names)
     if s.else_body is not None:
-        _check_stmts(ctx, s.else_body, cenv, owner, rets, arg_names, fn_decl, in_loop)
+        _check_stmts(ctx, s.else_body, cenv, owner, rets, arg_names, fn_decl, in_loop, dict(decl_env))
 
 
-def _check_match_stmt(ctx: Context, s: MatchStmt, env: Dict[str, Type], owner: Optional[str],
-                      rets: Optional[List[Type]], arg_names: Optional[Dict[int, str]],
-                      fn_decl: Optional[FnDecl], in_loop: bool):
+def _check_while_stmt(ctx: Context, s: WhileStmt, env: Dict[str, Type], decl_env: Dict[str, Type],
+                      owner: Optional[str], rets: Optional[List[Type]],
+                      arg_names: Optional[Dict[int, str]], fn_decl: Optional[FnDecl]):
+    wenv = dict(env)
+    _check_cond(ctx, s.cond, wenv, owner)
+    benv = narrow(ctx, s.cond, wenv, True, arg_names)
+    bdecl = dict(decl_env)
+    if isinstance(s.cond, Bind):
+        for n in s.cond.names:
+            if n != "_":
+                bdecl[n] = benv[n]
+    _check_stmts(ctx, s.body, benv, owner, rets, arg_names, fn_decl, True, bdecl)
+
+
+def _check_match_stmt(ctx: Context, s: MatchStmt, env: Dict[str, Type], decl_env: Dict[str, Type],
+                      owner: Optional[str], rets: Optional[List[Type]],
+                      arg_names: Optional[Dict[int, str]], fn_decl: Optional[FnDecl], in_loop: bool):
     st = _check_expr(ctx, s.subject, env, owner)
     for idx, (pats, guard, body, arm_line) in enumerate(s.arms):
         has_wild = any(isinstance(p, Sym) and p.name == "_" for p in pats)
@@ -499,11 +523,11 @@ def _check_match_stmt(ctx: Context, s: MatchStmt, env: Dict[str, Type], owner: O
                               aenv, True, arg_names)
         if guard:
             _check_cond(ctx, guard, aenv, owner)
-        _check_stmts(ctx, body, aenv, owner, rets, arg_names, fn_decl, in_loop)
+        _check_stmts(ctx, body, aenv, owner, rets, arg_names, fn_decl, in_loop, dict(decl_env))
 
 
-def _check_for_in_stmt(ctx: Context, s: ForInStmt, env: Dict[str, Type], owner: Optional[str],
-                       rets: Optional[List[Type]], fn_decl: Optional[FnDecl]):
+def _check_for_in_stmt(ctx: Context, s: ForInStmt, env: Dict[str, Type], decl_env: Dict[str, Type],
+                       owner: Optional[str], rets: Optional[List[Type]], fn_decl: Optional[FnDecl]):
     it = _check_expr(ctx, s.iter_expr, env, owner)
     if s.is_of:
         base = index_result(ctx, it)
@@ -519,6 +543,7 @@ def _check_for_in_stmt(ctx: Context, s: ForInStmt, env: Dict[str, Type], owner: 
                                  s.line)
         el = ANY
     benv = dict(env)
+    bdecl = dict(decl_env)
     for i, (vn, vt) in enumerate(s.vars):
         if s.is_of:
             elem = NUM if (len(s.vars) == 2 and i == 0) else el
@@ -529,14 +554,16 @@ def _check_for_in_stmt(ctx: Context, s: ForInStmt, env: Dict[str, Type], owner: 
         if vt is not None and elem != ANY:
             expect(ctx, f"for variable {vn}", elem, vt, s.line)
         if vn != "_":
-            benv[vn] = vt or elem
-    _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl, in_loop=True)
+            benv[vn] = bdecl[vn] = vt or elem
+    _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl, in_loop=True, decl_env=bdecl)
 
 
 def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
                  owner: Optional[str] = None, rets: Optional[List[Type]] = None,
                  arg_names: Optional[Dict[int, str]] = None,
-                 fn_decl: Optional[FnDecl] = None, in_loop: bool = False):
+                 fn_decl: Optional[FnDecl] = None, in_loop: bool = False,
+                 decl_env: Optional[Dict[str, Type]] = None):
+    denv = dict(env) if decl_env is None else decl_env
     for s in stmts:
         match s:
             case SayStmt():
@@ -546,9 +573,9 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
                     raise Error("break: not inside a loop", s.line)
                 _check_return_stmt(ctx, s, env, owner, rets, fn_decl)
             case LocalStmt():
-                _check_local_stmt(ctx, s, env, owner)
+                _check_local_stmt(ctx, s, env, denv, owner)
             case AssignStmt():
-                _check_assign_stmt(ctx, s, env, owner)
+                _check_assign_stmt(ctx, s, env, denv, owner)
             case CallStmt():
                 if s.call.receiver is None:
                     ext = ctx.externs.get(s.call.func)
@@ -557,21 +584,25 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
                                     s.line)
                 _check_call(ctx, s.call, env, owner)
             case IfStmt():
-                _check_if_stmt(ctx, s, env, owner, rets, arg_names, fn_decl, in_loop)
+                _check_if_stmt(ctx, s, env, denv, owner, rets, arg_names, fn_decl, in_loop)
+            case WhileStmt():
+                _check_while_stmt(ctx, s, env, denv, owner, rets, arg_names, fn_decl)
             case MatchStmt():
-                _check_match_stmt(ctx, s, env, owner, rets, arg_names, fn_decl, in_loop)
+                _check_match_stmt(ctx, s, env, denv, owner, rets, arg_names, fn_decl, in_loop)
             case ForNumStmt():
                 for bound in (s.start, s.stop, s.step):
                     if bound is not None:
                         _check_expr(ctx, bound, env, owner, NUM)
                 benv = dict(env)
+                bdecl = dict(denv)
                 if s.var != "_":
-                    benv[s.var] = s.var_type or NUM
+                    benv[s.var] = bdecl[s.var] = s.var_type or NUM
                 if s.var_type:
                     expect(ctx, f"for variable {s.var}", NUM, s.var_type, s.line)
-                _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl, in_loop=True)
+                _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl,
+                             in_loop=True, decl_env=bdecl)
             case ForInStmt():
-                _check_for_in_stmt(ctx, s, env, owner, rets, fn_decl)
+                _check_for_in_stmt(ctx, s, env, denv, owner, rets, fn_decl)
 
 
 # --- Functions, Entities, Verbs & Dialogues ---------------------------------

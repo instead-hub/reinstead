@@ -136,6 +136,11 @@ class MatchStmt(Stmt):
     arms: List[Tuple[List[Expr], Optional[Expr], List[Stmt], int]] = field(default_factory=list)
 
 @dataclass
+class WhileStmt(Stmt):
+    cond: Expr = field(default_factory=Expr)
+    body: List[Stmt] = field(default_factory=list)
+
+@dataclass
 class ForNumStmt(Stmt):
     var: str = ""
     var_type: Optional[Type] = None

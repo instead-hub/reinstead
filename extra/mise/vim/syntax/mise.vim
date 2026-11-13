@@ -55,7 +55,7 @@ syn match misePhaseEvt /\%(^\s*\%(on\|life\|before\|after\|post\)\s\+\)\@<=\u\w*
 syn match miseEventHandler /\%(^\s*\%(on\|before\|after\|post\|life\)\s\+\%([A-Z]\w*\s*,\s*\)*[A-Z]\w*\%(([^)]*)\)\?\s*=\)\@<==/
 
 " --- логика ---
-syn match miseLogicKw /^\s*\zs\%(if\|elseif\|else\|match\|for\|local\|return\|break\|stop\|pass\|entry\|event\|extern\|value\|global\|method\|else\)\ze\%(\s\|$\|:\)/
+syn match miseLogicKw /^\s*\zs\%(if\|elseif\|else\|while\|match\|for\|local\|return\|break\|stop\|pass\|entry\|event\|extern\|value\|lvalue\|global\|method\)\ze\%(\s\|$\|:\)/
 syn keyword miseLogicOp and or not in of
 syn match miseFnRef /&\%((\)\@!\w\+/
 syn match miseLambda /&\ze(/

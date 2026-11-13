@@ -16,8 +16,8 @@ local decl = {
 
 -- the keywords of the logic blocks
 local logic = {
-  ['if'] = true, ['elseif'] = true, ['else'] = true, when = true,
-  ['default'] = true, ['for'] = true, ['local'] = true,
+  ['if'] = true, ['elseif'] = true, ['else'] = true, ['while'] = true,
+  match = true, when = true, ['default'] = true, ['for'] = true, ['local'] = true,
   ['return'] = true, ['break'] = true, stop = true, pass = true,
 }
 

@@ -11,12 +11,12 @@ LUA_KEYWORDS = frozenset({
     "function", "goto", "if", "in", "local", "nil", "not", "or",
     "repeat", "return", "then", "true", "until", "while",
 })
-_LUA_ONLY_KEYWORDS = frozenset({"do", "end", "function", "goto", "repeat", "then", "until", "while"})
+_LUA_ONLY_KEYWORDS = frozenset({"do", "end", "function", "goto", "repeat", "then", "until"})
 _RESERVED_VARS = frozenset({"fn", "std"})
 # Kind keywords are not known here: `obj`/`room`/`story` are classes declared in
 # core.mise, and a declaration is recognised by its shape (`Kind name`).
 STMT_KWS = frozenset({
-    "if", "elseif", "else", "match", "for", "in", "of",
+    "if", "elseif", "else", "match", "while", "for", "in", "of",
     "local", "return", "stop", "pass", "break", "and", "or", "not",
 })
 _BIN_PREC = {
@@ -734,6 +734,8 @@ class Parser:
                 return LocalStmt(line=line, names=names, values=vals)
             if kw == "if":
                 return self._parse_if()
+            if kw == "while":
+                return self._parse_while()
             if kw == "match":
                 return self._parse_match()
             if kw == "for":
@@ -788,6 +790,11 @@ class Parser:
             branches.append((ec, self.parse_stmt_block(), el))
         else_body = self.parse_stmt_block() if self.match("IDENT", "else") else None
         return IfStmt(line=line, branches=branches, else_body=else_body)
+
+    def _parse_while(self) -> WhileStmt:
+        line = self.eat("IDENT", "while").line
+        cond = self._parse_cond()
+        return WhileStmt(line=line, cond=cond, body=self.parse_stmt_block())
 
     def _parse_match(self) -> MatchStmt:
         line = self.eat("IDENT", "match").line

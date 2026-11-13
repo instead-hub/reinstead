@@ -37,7 +37,7 @@
   "The section declarations of the mise language.")
 
 (defconst mise--logic
-  (mise--words '("if" "elseif" "else" "when" "default" "for" "local"
+  (mise--words '("if" "elseif" "else" "while" "match" "when" "default" "for" "local"
                  "return" "break" "stop" "pass"))
   "The keywords of the mise logic blocks.")
 

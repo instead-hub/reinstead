@@ -918,14 +918,15 @@ stmt        ::= STRING [ "~" ]                       (* печать: p(...) и�
               | choice_decl                          (* вложенная реплика в talk *)
               | "local" ident_list [ "=" expr_list ]
               | lvalue ("=" | "+=" | "-=") expr      (* `+=`/`-=` — только для num *)
-              | if_stmt | match_stmt | for_stmt | call_stmt
+              | if_stmt | while_stmt | match_stmt | for_stmt | call_stmt
 
 (* Вызов в позиции инструкции: `walkout`, `move cloak player`, `bar:attr light` *)
 call_stmt   ::= postfix_expr [ ":" IDENT ] { arg_atom }
 
 (* `cond` — выражение или связывание: `x := expr` / `a, b := expr`
-   (истина, когда все значения не nil; имена видны только в своей ветке) *)
+   (истина, когда все значения не nil; имена видны только в теле ветки/цикла) *)
 if_stmt     ::= "if" cond stmt_block { "elseif" cond stmt_block } [ "else" stmt_block ]
+while_stmt  ::= "while" cond stmt_block
 cond        ::= expr | ident_list ":=" expr
 
 match_stmt  ::= "match" expr INDENT { match_arm NEWLINE } DEDENT
@@ -1042,10 +1043,10 @@ app_expr ::= postfix_expr [ ":" IDENT { arg_atom } | arg_atom { arg_atom } ]
 
 ## 8. Инструменты и проверки
 
-- `tests/run-mise-tests.sh [--engine]` — 33 игры: сверка `main3.lua` байт-в-байт
+- `tests/run-mise-tests.sh [--engine]` — 34 игры: сверка `main3.lua` байт-в-байт
   и прогон в движке (с записанным транскриптом или против оригинала
   metaparser); `dict.mrd` рядом с игрой — кэш слов, его валидирует сам движок;
-- `tests/run-mise-error-tests.sh` — 204 негативных случая с точными сообщениями
+- `tests/run-mise-error-tests.sh` — 207 негативных случаев с точными сообщениями
   и номерами строк;
 - `tests/run-parser-tests.sh` — 46 проверок `mp:match`/`mp:compl`/падежей самого
   движка.

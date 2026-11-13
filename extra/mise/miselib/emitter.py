@@ -6,7 +6,7 @@ from .ast_nodes import (
     FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler, IfStmt, InOp,
     IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt, LuaDecl,
     MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym, TalkChoice,
-    TalkDecl, UnaryOp, VarDecl, VerbDecl,
+    TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
 )
 from .lexer import lua_lines
 from .symbols import Context
@@ -494,6 +494,20 @@ class Emitter:
         parts.append("end")
         return "do\n" + _ind(f"local {MATCH_TMP} = {subj}\n" + "\n".join(parts), 2) + "\nend"
 
+    def _emit_while(self, s: WhileStmt) -> str:
+        if isinstance(s.cond, Bind):
+            bound = ", ".join(_bind(n) for n in s.cond.names)
+            checks = [f"not {n}" for n in s.cond.names if n != "_"]
+            guard = f"if {' or '.join(checks)} then break end" if checks else ""
+            b = self._stmts(s.body)
+            inner = "\n".join(
+                p for p in (f"local {bound} = {self._expr(s.cond.value)}", guard, b) if p.strip()
+            )
+            return "while true do\n" + _ind(inner, 2) + "\nend"
+        b = _ind(self._stmts(s.body), 2)
+        hdr = f"while {self._expr(s.cond)} do"
+        return f"{hdr}\n{b}\nend" if b.strip() else f"{hdr}\nend"
+
     def _stmt(self, s: Stmt) -> str:
         match s:
             case SayStmt():
@@ -518,6 +532,8 @@ class Emitter:
                 return self._call(s.call).code
             case IfStmt():
                 return self._if_chain(s.branches, s.else_body)
+            case WhileStmt():
+                return self._emit_while(s)
             case MatchStmt():
                 return self._emit_match(s)
             case ForNumStmt():
