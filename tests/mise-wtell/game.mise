@@ -4,20 +4,13 @@ lang ru
 
 include stdlib
 
-lua
-  mp.undo = 5
-  mp.score = 0
-  mp.detailed_inv = true
-  instead.notitle = false
-
 const
   MAX_SCORE = 3
 
 fn score_up()
-  lua
-    mp.score = mp.score + 1
+  score += 1
 
-fn cur_score() -> num = `mp.score`
+fn cur_score() -> num = score
 
 fn BowOrArrow(o: obj?) -> bool
   if not o or o == bow or o.arrow
@@ -64,6 +57,10 @@ impl pl
   description = "Ты одет в традиционную одежду швейцарского горца."
 
 fn init()
+  undo = 5
+  score = 0
+  detailed_inv = true
+  notitle = false
   player:move street
   bow:move player
   quiver:move player

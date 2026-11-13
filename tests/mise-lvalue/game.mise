@@ -5,7 +5,7 @@ lang ru
 include stdlib
 
 # `extern lvalue` — место, куда можно писать: чтение и запись одним шаблоном
-extern lvalue score: num = "mp.score"
+# (`score` уже объявлен в `stdlib` как `extern lvalue score: num = "mp.score"`)
 extern lvalue mm -> tbl[any] = "mp.multi"
 
 room hall "зал"

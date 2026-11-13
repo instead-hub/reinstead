@@ -8,11 +8,6 @@ local fn = {}
 
 --"мочь"
 
-mp.undo = 5
-mp.score = 0
-mp.detailed_inv = true
-instead.notitle = false
-
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -48,7 +43,7 @@ fn.path_dsc = function(w)
 end
 
 fn.score_up = function()
-  mp.score = mp.score + 1
+  mp.score = mp.score + (1)
 end
 
 fn.cur_score = function()
@@ -64,6 +59,10 @@ fn.BowOrArrow = function(o)
 end
 
 fn.init = function()
+  mp.undo = 5
+  mp.score = 0
+  mp.detailed_inv = true
+  instead.notitle = false
   move(me(), _'street')
   move(_'bow', me())
   move(_'quiver', me())

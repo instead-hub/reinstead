@@ -229,4 +229,8 @@ extern value tiny() -> bool = "(instead.tiny)"
 extern fn music(name: str, ...: any) = "snd.music($*)"
 extern fn tostr(s: any) -> str = "tostring($1)"
 extern value desc(s: obj) -> str? = "($1.desc)"
+extern lvalue score: num = "mp.score"
+extern lvalue undo: num = "mp.undo"
+extern lvalue detailed_inv: bool = "mp.detailed_inv"
+extern lvalue notitle: bool = "instead.notitle"
 
