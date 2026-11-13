@@ -241,16 +241,19 @@ class Parser:
 
     def _parse_fn(self, is_extern: bool) -> Any:
         line = self.eat("IDENT").line
-        is_value = False
+        is_value = is_lvalue = False
         if is_extern:
             kind = self.eat("IDENT")
             if kind.val == "global":
-                raise Error("`extern global` is gone: a read-only alias of a Lua global is "
-                            "`extern value name -> type = \"template\"`, a Lua function is "
-                            "`extern fn name(...) = \"template\"`", kind.line, self.src)
-            if kind.val not in ("fn", "value"):
-                raise Error(f"extern {kind.val}: expected `fn` or `value`", kind.line, self.src)
-            is_value = kind.val == "value"
+                raise Error("`extern global` is gone: an alias of a Lua global is "
+                            "`extern value` (read) or `extern lvalue` (read and write), "
+                            "a Lua function is `extern fn name(...) = \"template\"`",
+                            kind.line, self.src)
+            if kind.val not in ("fn", "value", "lvalue"):
+                raise Error(f"extern {kind.val}: expected `fn`, `value` or `lvalue`",
+                            kind.line, self.src)
+            is_value = kind.val in ("value", "lvalue")
+            is_lvalue = kind.val == "lvalue"
         name = self.eat("IDENT").val
         params, var = self._parse_param_list(default_s=True, typed=True)
         rets = []
@@ -259,11 +262,13 @@ class Parser:
             while self.match("OP", ","):
                 rets.append(self._parse_type_str())
         if is_extern:
-            self.match("OP", "=")
+            if not self.match("OP", "="):
+                raise Error(f"extern {name}: expected a template "
+                            f"(`= \"…\"`)", self.cur().line, self.src)
             raw = self.eat(self.cur().kind).val
             self.eat_nl()
             return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=raw,
-                          is_extern=True, is_value=is_value, line=line)
+                          is_extern=True, is_value=is_value, is_lvalue=is_lvalue, line=line)
         if self.match("OP", "=") or self.at("RAW"):
             self.match("OP", "=")
             # `fn f(x) = expr` is just a short `fn f(x)` with `return expr`

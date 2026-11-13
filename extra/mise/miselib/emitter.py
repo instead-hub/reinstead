@@ -599,6 +599,9 @@ class Emitter:
         if isinstance(e, Sym):
             n = e.name
             if as_lhs or e.rk == "var":
+                fn = self.ctx.fns.get(n)
+                if fn is not None and fn.is_lvalue:
+                    return self._expand(fn, [], as_stmt=True)   # the place itself
                 return n
             if e.rk == "obj":
                 return f"_'{n}'"

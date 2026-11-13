@@ -47,6 +47,7 @@ class Context:
 
     fns: Dict[str, FnDecl] = field(default_factory=dict)
     verb_tags: Set[str] = field(default_factory=set)     # tags of `verb`/`extend verb`
+    lvalues: Dict[str, Type] = field(default_factory=dict)  # `extern lvalue`: assignable
     globals: Dict[str, Type] = field(default_factory=dict)
     consts: Set[str] = field(default_factory=set)
     _checked_fns: Set[str] = field(default_factory=set)
@@ -311,6 +312,14 @@ def _collect_declarations(ctx: Context, prog: Program) -> Dict[str, List[Type]]:
                 raise Error(f"fn {item.name}: a value of type {ctx.enum_owner[item.name]!r} "
                             f"has the same name (a bare name would mean the enum value)", item.line)
             ctx.fns[item.name] = item
+            if item.is_lvalue:
+                if item.params or item.variadic:
+                    raise Error(f"extern lvalue {item.name}: no parameters (it is a place, "
+                                f"not a call)", item.line)
+                if not item.ret_types:
+                    raise Error(f"extern lvalue {item.name}: declare the type "
+                                f"(`extern lvalue {item.name} -> num = \"...\"`)", item.line)
+                ctx.lvalues[item.name] = item.ret_types[0]
         elif isinstance(item, EntryDecl):
             ctx.entries[item.name] = list(item.params)
         elif isinstance(item, VerbDecl) and item.mode == "verb":
@@ -957,6 +966,8 @@ def _check_assign_stmt(ctx: Context, s: AssignStmt, env: Dict[str, Type], owner:
             raise Error(f"{name}: a constant cannot be assigned", s.line)
         elif name in ctx.globals:
             cur = ctx.globals[name]            # a global keeps its declared type
+        elif name in ctx.lvalues:
+            cur = ctx.lvalues[name]            # an assignable extern macro is a place
         elif name.startswith("__"):
             cur = None
         else:

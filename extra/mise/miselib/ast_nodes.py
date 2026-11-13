@@ -206,6 +206,7 @@ class FnDecl:
     body: Any = None           # List[Stmt] or str (template / raw lua)
     is_extern: bool = False
     is_value: bool = False          # `extern value` — an expression, not a callable
+    is_lvalue: bool = False         # `extern lvalue` — also a place one may assign to
     line: int = 0
 
 @dataclass
