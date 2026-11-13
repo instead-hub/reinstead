@@ -84,10 +84,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -105,7 +105,7 @@ cutscene {
   nam = "intro";
   dsc = "Пролог.";
   after_Enter = function(s, w)
-    p "История началась."
+    std.p "История началась."
   end;
 }
 
@@ -176,22 +176,22 @@ room {
   end;
   s_to = 'garden';
   Enter = function(s, w)
-    p "Вы вошли."
+    std.p "Вы вошли."
   end;
   Walk = function(s, w)
-    p "Вы идёте."
+    std.p "Вы идёте."
   end;
   Look = function(s)
-    p "Вы осматриваетесь."
+    std.p "Вы осматриваетесь."
   end;
   post_Look = function(s)
-    p "Уже осмотрелись."
+    std.p "Уже осмотрелись."
   end;
   ["life_Give,Show"] = function(s, w, wh)
-    p "Жизнь кипит."
+    std.p "Жизнь кипит."
   end;
   after_Turn = function(s, w)
-    p "Повернулись."
+    std.p "Повернулись."
   end;
 }:dict { ["зал/вн"] = "зал" }:with{ 'sky' }
 
@@ -242,10 +242,10 @@ obj {
     return "реликвия"
   end;
   Use = function(s)
-    p "Применили."
+    std.p "Применили."
   end;
   AskTo = function(s, w)
-    p "Попросили."
+    std.p "Попросили."
   end;
 }:disable()
 

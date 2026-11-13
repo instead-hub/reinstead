@@ -113,10 +113,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -139,20 +139,20 @@ room {
 }
 
 _'game'.before_Inv = function(s)
-  p "x"
-  p "x:noun()"
-  p(_'x':noun_hint())
-  pn "line text"
-  pr "append text"
+  std.p "x"
+  std.p "x:noun()"
+  std.p(_'x':noun_hint())
+  std.pn "line text"
+  std.pr "append text"
   fn.note("raw words")
   fn.note(_'x':noun_hint())
-  p("ml=", fn.slen(fn.esc_ml()), ",", fn.slen(fn.tri_ml()), ",", fn.slen(fn.raw_ml()))
-  p("n=" .. _'x'.pri + 1)
-  p(_'x'.pri + 1 .. "!")
-  p(fn.commented())
-  p(fn.show(42))
-  p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2))
-  p("br=", fn.slen(fn.esc_br()), ",", fn.slen(fn.esc_br2()))
+  std.p("ml=", fn.slen(fn.esc_ml()), ",", fn.slen(fn.tri_ml()), ",", fn.slen(fn.raw_ml()))
+  std.p("n=" .. _'x'.pri + 1)
+  std.p(_'x'.pri + 1 .. "!")
+  std.p(fn.commented())
+  std.p(fn.show(42))
+  std.p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2))
+  std.p("br=", fn.slen(fn.esc_br()), ",", fn.slen(fn.esc_br2()))
   fn.note(fn.esc_br())
   fn.note(fn.esc_br2())
 end;

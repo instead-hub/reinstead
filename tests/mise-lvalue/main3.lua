@@ -79,10 +79,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -101,8 +101,8 @@ room {
 _'game'.before_Inv = function(s)
   mp.score = 10
   fn.bump(5)
-  p("score=", mp.score)
+  std.p("score=", mp.score)
   mp.multi["s"] = "мульти"
   local m = mp.multi["s"]
-  p("mm=", m, " cur=", fn.cur_score())
+  std.p("mm=", m, " cur=", fn.cur_score())
 end;

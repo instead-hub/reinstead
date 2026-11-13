@@ -142,10 +142,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -162,16 +162,16 @@ obj {
   nam = "box";
   Take = function(s, w)
     if fn.run(function(w) return w:has("light") end) then
-      p "светло"
+      std.p "светло"
     end
-    p("apply: ", fn.apply(function(x) return 41 end, _'box'))
+    std.p("apply: ", fn.apply(function(x) return 41 end, _'box'))
     if fn.is_even(4) and not fn.is_odd(4) then
-      p("even: ", fn.sum_args(10, 20, 12))
+      std.p("even: ", fn.sum_args(10, 20, 12))
     end
     do
       local h = fn.head_arg("раз", "два")
       if h then
-        p("head: ", h)
+        std.p("head: ", h)
       end
     end
     s:for_plural(function(w) return w:attr("seen") end)

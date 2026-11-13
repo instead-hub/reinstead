@@ -66,10 +66,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -89,7 +89,7 @@ the street is to the north, and there are doorways south and west.]];
   s_to = 'bar';
   w_to = 'cloakroom';
   n_to = function(s)
-    p "You've only just arrived, and besides, the weather outside seems to be getting worse."
+    std.p "You've only just arrived, and besides, the weather outside seems to be getting worse."
   end;
 }
 
@@ -105,11 +105,11 @@ though now only one remains. The exit is a door to the east.]];
       -"small brass hook,hook|peg";
       nam = "hook";
       description = function(s)
-        p "It's just a small brass hook, "
+        std.p "It's just a small brass hook, "
         if where(_'cloak') == s then
-          p "with a cloak hanging on it."
+          std.p "with a cloak hanging on it."
         else
-          p "screwed to the wall."
+          std.p "screwed to the wall."
         end
       end;
     }:attr 'scenery,supporter';
@@ -127,7 +127,7 @@ be some sort of message scrawled in the sawdust on the floor.]];
   before_Walk = function(s, w)
     if (mp:compass_dir(w) or nil) ~= "n_to" and not w:has("light") then
       _'message'.number = _'message'.number + (2)
-      p "Blundering around in the dark isn't a good idea!"
+      std.p "Blundering around in the dark isn't a good idea!"
       return
     end
     return false
@@ -138,7 +138,7 @@ be some sort of message scrawled in the sawdust on the floor.]];
     end
     if not s:has("light") then
       _'message'.number = _'message'.number + (1)
-      p "In the dark? You could easily disturb something!"
+      std.p "In the dark? You could easily disturb something!"
       return
     end
     return false
@@ -150,10 +150,10 @@ be some sort of message scrawled in the sawdust on the floor.]];
       number = 0;
       description = function(s)
         if s.number < 2 then
-          p "The message, neatly marked in the sawdust, reads..."
+          std.p "The message, neatly marked in the sawdust, reads..."
           walk(_'goodend')
         else
-          p "The message has been carelessly trampled, making it difficult to read. You can just distinguish the words..."
+          std.p "The message has been carelessly trampled, making it difficult to read. You can just distinguish the words..."
           walk(_'badend')
         end
       end;
@@ -177,7 +177,7 @@ almost seems to suck light from the room.]];
       end
       return false
     else
-      p "This isn't the best place to leave a smart cloak lying around."
+      std.p "This isn't the best place to leave a smart cloak lying around."
       return
     end
   end;
@@ -197,7 +197,7 @@ gameover {
   nam = "goodend";
   title = "You win";
   dsc = function(s)
-    p("Score: ", score)
+    std.p("Score: ", score)
   end;
 }
 

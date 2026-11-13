@@ -71,10 +71,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -82,19 +82,19 @@ Talkative = Class {
   heard = false;
   before_Talk = function(s)
     s.heard = true
-    p "поговорили"
+    std.p "поговорили"
   end;
 }
 
 Flying = Class {
   before_Climb = function(s)
-    p "взлетел"
+    std.p "взлетел"
   end;
 }
 
 Bird = Class {
   before_Climb = function(s)
-    p "взлетел"
+    std.p "взлетел"
   end;
 }:attr 'animate'
 
@@ -115,7 +115,7 @@ obj {
   heard = false;
   before_Talk = function(s)
     s.heard = true
-    p "поговорили"
+    std.p "поговорили"
   end;
 }
 

@@ -71,10 +71,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -101,7 +101,7 @@ _'tree'.before_Take = function(s, w)
   s:for_plural(function(w) return w:attr("seen") end)
   mp:trace(s, function(w) return w:attr("seen") end)
   if (((function(o) local m = getmetatable(s) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G["Tree"]))) then
-    p "дерево"
+    std.p "дерево"
   end
 end;
 

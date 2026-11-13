@@ -79,10 +79,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -96,7 +96,7 @@ room {
   -"комната";
   nam = "r";
   before_Consult = function(s, w, wh)
-    p(fn.text_of(wh))
+    std.p(fn.text_of(wh))
   end;
 }:with{ 'x', 'npc', 'y', 'z' }
 
@@ -104,13 +104,13 @@ obj {
   -"вещь";
   nam = "x";
   before_AskFor = function(s, w)
-    p(fn.text_of(w))
+    std.p(fn.text_of(w))
   end;
   before_Cut = function(s, w)
     if w then
       w:has("scenery")
     end
-    p "Режешь."
+    std.p "Режешь."
   end;
 }
 
@@ -121,11 +121,11 @@ obj {
     if w then
       w:has("scenery")
     end
-    p "Режешь."
+    std.p "Режешь."
   end;
   ["before_Take,AskFor"] = function(s, w)
     if (mp.event or nil) == "AskFor" then
-      p(fn.text_of(w))
+      std.p(fn.text_of(w))
     else
       return false
     end
@@ -134,7 +134,7 @@ obj {
     do
       local __match = ev
       if __match == "Ask" then
-        p(fn.text_of(w))
+        std.p(fn.text_of(w))
       elseif __match == "Cut" then
         if w then
           w:has("scenery")
@@ -151,10 +151,10 @@ obj {
   nam = "z";
   before_AskFor = fn.reply_text;
   before_Consult = function(s, text)
-    p(fn.text_of(text))
+    std.p(fn.text_of(text))
   end;
   before_Whisper = function(s, w)
-    p(fn.text_of(w))
+    std.p(fn.text_of(w))
   end;
 }
 
@@ -162,7 +162,7 @@ obj {
   -"сторож";
   nam = "npc";
   life_Ask = function(s, w)
-    p(fn.text_of(w))
+    std.p(fn.text_of(w))
   end;
 }:attr 'animate'
 
@@ -181,7 +181,7 @@ pl["before_Take,Drop"] = "Тебе нельзя.";
 _'game'["before_Open,Close"] = "Не сейчас.";
 
 _'game'.before_Tell = function(s, w, wh)
-  p(fn.text_of(wh))
+  std.p(fn.text_of(wh))
 end;
 _'game'.before_Zap = function(s, w)
   if w then
@@ -190,7 +190,7 @@ _'game'.before_Zap = function(s, w)
 end;
 
 mp.Ask = function(s, w, wh)
-  p(fn.text_of(wh))
+  std.p(fn.text_of(wh))
 end;
 
 _'x'.found_in = 'test_room';

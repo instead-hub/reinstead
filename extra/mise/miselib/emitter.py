@@ -33,6 +33,7 @@ def lua_str(s: str) -> str:
 
 
 _VERB_ORDER = {"verb": 0, "extend": 1, "remove": 2}
+_PRINT = {"p": "std.p", "pr": "std.pr", "pn": "std.pn"}   # engine print helpers
 
 
 def _class_has_body(ent: EntityDecl) -> bool:
@@ -485,7 +486,7 @@ class Emitter:
                 if isinstance(c.reply, (Lit, InterpStr)):
                     act.append(self._p_call(c.reply, "p"))
                 elif isinstance(c.reply, FnRef):
-                    act.append(f"p({self._fnref(c.reply.name)}(s))")
+                    act.append(f"std.p({self._fnref(c.reply.name)}(s))")
                 elif isinstance(c.reply, list):
                     act.append(self._stmts(c.reply))
                 if isinstance(c.act, FnRef):
@@ -581,6 +582,8 @@ class Emitter:
         return ""
 
     def _p_call(self, e: Expr, fn: str = "p") -> str:
+        # `std.p` and not `p`: a local named `p` must not break every `say`
+        fn = _PRINT.get(fn, fn)
         if isinstance(e, Lit) and e.kind == "str":
             lit = lua_str(e.val)
             return f"{fn}({lit})" if lit.startswith("[") else f"{fn} {lit}"
@@ -651,6 +654,7 @@ class Emitter:
     def _call(self, c: Call, as_stmt: bool = False) -> str:
         if not c.receiver and c.func in ("say", "append", "line"):
             fn = {"say": "p", "append": "pr", "line": "pn"}[c.func]
+            fn = _PRINT[fn]
             if not c.args:
                 return f"{fn}()"
             return self._p_call(c.args[0], fn) if len(c.args) == 1 else f"{fn}({', '.join(self._expr(a) for a in c.args)})"

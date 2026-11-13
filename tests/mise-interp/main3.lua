@@ -75,10 +75,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -104,8 +104,8 @@ room {
 _'key'.found_in = 'hall';
 
 _'game'.before_Inv = function(s)
-  p("просто ", tostring(nums[1]), " и ", tostring(nums[2]))
-  p("вложенные ", fn.tag(tostring((#{ 1, 2 }))), " скобки")
-  p("кавычка ", fn.tag("}"), " внутри")
-  p("движок {$fmt b|жирный}", " и ", fn.tag("x"))
+  std.p("просто ", tostring(nums[1]), " и ", tostring(nums[2]))
+  std.p("вложенные ", fn.tag(tostring((#{ 1, 2 }))), " скобки")
+  std.p("кавычка ", fn.tag("}"), " внутри")
+  std.p("движок {$fmt b|жирный}", " и ", fn.tag("x"))
 end;

@@ -51,7 +51,7 @@ end
 fn.probe = function(w, t, ev)
   time()
   time(5)
-  p(time())
+  std.p(time())
   w:hasnt("open")
   w:once("tag")
   w:once()
@@ -76,14 +76,14 @@ fn.probe = function(w, t, ev)
   std.unpack(t)
   walkout()
   visits(w)
-  p((mp.xevent or nil))
-  p((mp.event or nil))
-  p((#t))
-  p((instead.tiny))
-  p((s.desc))
-  p((mp:compass_dir(w) or nil))
-  p(((mp.args[1] or {}).word or ''))
-  p((((function(o) local m = getmetatable(w) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G["list"]))))
+  std.p((mp.xevent or nil))
+  std.p((mp.event or nil))
+  std.p((#t))
+  std.p((instead.tiny))
+  std.p((s.desc))
+  std.p((mp:compass_dir(w) or nil))
+  std.p(((mp.args[1] or {}).word or ''))
+  std.p((((function(o) local m = getmetatable(w) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G["list"]))))
   visited(w)
   w:access()
   mp:offerslight(w)
@@ -99,11 +99,11 @@ fn.probe = function(w, t, ev)
   inv():add(w)
   inv():del(w)
   inv():add(w)
-  p(0)
-  pr(0)
-  p(_'box')
-  p("x", 1, w)
-  pn(1, 2)
+  std.p(0)
+  std.pr(0)
+  std.p(_'box')
+  std.p("x", 1, w)
+  std.pn(1, 2)
   push(w)
   push(w, w)
   pop()
@@ -113,7 +113,7 @@ fn.probe = function(w, t, ev)
   empty(w)
   empty()
   if empty() then
-    p(0)
+    std.p(0)
   end
   mp:check_held(w)
   mp:check_live(w)
@@ -131,15 +131,15 @@ fn.probe = function(w, t, ev)
   theme.name()
   std.pclr()
   std.ref("box")
-  p(((mp.args[1] or {}).word or ''))
-  p((instead.tiny))
+  std.p(((mp.args[1] or {}).word or ''))
+  std.p((instead.tiny))
   snd.music("x")
   rnd(1)
   local xs = inv()
   local n = (#xs)
-  p(n)
+  std.p(n)
   local daemons = getDaemons()
-  p((#daemons))
+  std.p((#daemons))
 end
 
 fn.start = function(load)
@@ -174,10 +174,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -192,7 +192,7 @@ room {
   nam = "hall";
   dsc = "Зал.";
   OnError = function(s, err)
-    p(err)
+    std.p(err)
   end;
 }
 
@@ -229,12 +229,12 @@ _'note'.found_in = 'test_room';
 _'game'.before_Inv = function(s)
   local xs = { 7, 8 }
   local a, b = std.unpack(xs)
-  p("unpack ", tostring(a), " ", tostring(b), " next ", tostring(next(xs)))
-  p((#"abc"))
-  p((("a") .. ("b$1c")))
+  std.p("unpack ", tostring(a), " ", tostring(b), " next ", tostring(next(xs)))
+  std.p((#"abc"))
+  std.p((("a") .. ("b$1c")))
   if starts == 1 then
     fn.start(false)
   end
-  p("starts=", starts)
+  std.p("starts=", starts)
   return false
 end;

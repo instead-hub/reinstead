@@ -53,10 +53,10 @@ end
 fn.start = function(load)
   move(me(), _'test_room')
   if true then
-    p "one"
+    std.p "one"
   end
   if false then
-    p "two"
+    std.p "two"
   end
 end
 
@@ -87,10 +87,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -110,9 +110,9 @@ obj {
       local o = seen("box")
       if o then
         o:attr("seen")
-        p(fn.pick(s))
+        std.p(fn.pick(s))
       else
-        p "не видно"
+        std.p "не видно"
       end
     end
   end;
@@ -125,14 +125,14 @@ room {
 }
 
 _'box'.Gaze = function(s)
-  p "смотрят"
+  std.p "смотрят"
   local style = "light"
   if style == "light" then
     return false
   end
   local e = "Exam"
   if e == "Wear" then
-    p "одежда"
+    std.p "одежда"
   end
 end;
 

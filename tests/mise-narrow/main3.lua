@@ -75,10 +75,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -105,26 +105,26 @@ _'game'.before_Inv = function(s)
   do
     local x = t[1]
     if x then
-      p("взято: ", fn.show(x))
+      std.p("взято: ", fn.show(x))
     else
-      p "пусто"
+      std.p "пусто"
     end
   end
   local first = t[1]
   if first then
-    p("первый: ", fn.show(first))
+    std.p("первый: ", fn.show(first))
   else
-    p "первого нет"
+    std.p "первого нет"
   end
   if first and first:hasnt("light") then
-    p "и не светится"
+    std.p "и не светится"
   else
-    p "иначе"
+    std.p "иначе"
   end
   if not first or first:hasnt("light") then
-    p "пусто или не светится"
+    std.p "пусто или не светится"
   end
   if first ~= nil then
-    p "точно есть"
+    std.p "точно есть"
   end
 end;

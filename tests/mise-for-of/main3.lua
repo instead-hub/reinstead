@@ -71,10 +71,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -109,13 +109,13 @@ room {
 
 _'game'.before_Inv = function(s)
   for _, w in ipairs({ _'box', _'rock' }) do
-    p(w:noun_hint())
+    std.p(w:noun_hint())
   end
   for i, w in ipairs({ _'box', _'rock' }) do
-    p(i)
+    std.p(i)
   end
   for _, w in ipairs(fn.plurals(_'box')) do
-    p(w:noun_hint())
+    std.p(w:noun_hint())
   end
 end;
 

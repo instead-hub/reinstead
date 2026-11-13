@@ -71,10 +71,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -96,13 +96,13 @@ room {
   -"комната";
   nam = "r";
   dsc = function(s)
-    p "Комната."
-    pr(_(picked):noun_hint("вн"))
-    p "."
+    std.p "Комната."
+    std.pr(_(picked):noun_hint("вн"))
+    std.p "."
     if _(target) ~= _'none' then
-      p "Цель есть."
+      std.p "Цель есть."
     else
-      p "Цели нет."
+      std.p "Цели нет."
     end
   end;
 }
@@ -114,9 +114,9 @@ obj {
   before_Pull = function(s)
     if _(target) == _'none' then
       target = _'box'
-      p "Взял."
+      std.p "Взял."
       return
     end
-    p "Уже."
+    std.p "Уже."
   end;
 }

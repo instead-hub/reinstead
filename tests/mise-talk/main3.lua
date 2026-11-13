@@ -53,7 +53,7 @@ fn.reply_text = function(s)
 end
 
 fn.act_say = function(s)
-  p "-- Что-то произошло."
+  std.p "-- Что-то произошло."
 end
 
 fn.start = function(load)
@@ -87,10 +87,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -127,14 +127,14 @@ dlg {
       {
         "Кто виноват?";
         function(s)
-          p "-- Никто."
+          std.p "-- Никто."
           q1 = q1 + (1)
         end;
       };
       {
         "Секретный вариант";
         function(s)
-          p "-- Тс-с-с."
+          std.p "-- Тс-с-с."
           q1 = q1 + (10)
         end;
         hidden = true;
@@ -166,7 +166,7 @@ dlg {
         "-- Тяжело.";
       };
       onempty = function(s)
-  p "-- Гид угрюмо молчит."
+  std.p "-- Гид угрюмо молчит."
   met = true
   walkout()
 end;
@@ -184,7 +184,7 @@ end;
     {
       "После знакомства";
       function(s)
-        p "-- Мы уже виделись."
+        std.p "-- Мы уже виделись."
       end;
       cond = function(s)
         return met
@@ -193,14 +193,14 @@ end;
     {
       "Знакомы ли мы?";
       function(s)
-        p "-- Похоже, да."
+        std.p "-- Похоже, да."
       end;
       cond = fn.знакомы;
     };
     {
       "s как аргумент функции";
       function(s)
-        p "-- Да."
+        std.p "-- Да."
       end;
       hidden = true;
       cond = function(s)
@@ -215,7 +215,7 @@ end;
     {
       "Проверка and";
       function(s)
-        p "-- И это правда."
+        std.p "-- И это правда."
       end;
       cond = function(s)
         return met and true
@@ -226,7 +226,7 @@ end;
         return "Вопрос из блока?"
       end;
       function(s)
-        p "-- Ответ из блока."
+        std.p "-- Ответ из блока."
       end;
     };
     {
@@ -236,7 +236,7 @@ end;
     {
       "С действием?";
       function(s)
-        p(fn.reply_text(s))
+        std.p(fn.reply_text(s))
         fn.act_say(s)
       end;
     };

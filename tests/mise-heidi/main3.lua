@@ -71,10 +71,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -91,7 +91,7 @@ room {
   dsc = "Ты стоишь около избушки, на восток от которой раскинулся лес.";
   e_to = 'forest';
   in_to = function(s)
-    p "Такой славный денек... Он слишком хорош, чтобы прятаться внутри."
+    std.p "Такой славный денек... Он слишком хорош, чтобы прятаться внутри."
   end;
   cant_go = "Единственный путь ведет на восток.";
   obj = {
@@ -136,7 +136,7 @@ room {
       -"гнездо|мох|прутики,прутья";
       nam = "nest";
       description = function(s)
-        p "Гнездо сплетено из прутиков и аккуратно устлано мхом."
+        std.p "Гнездо сплетено из прутиков и аккуратно устлано мхом."
         mp:content(s)
       end;
     }:attr 'container,open';

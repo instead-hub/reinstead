@@ -106,10 +106,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -139,22 +139,22 @@ mp.Any = function(s, ev, w, wh)
     local __match = ev
     if __match == "Exam" and w then
       if w:has("scenery") then
-        p "осмотр декорации"
+        std.p "осмотр декорации"
       end
     elseif __match == "Wear" then
-      p "надели"
+      std.p "надели"
     end
   end
   return false
 end;
 
 _'game'.before_Inv = function(s)
-  p(fn.by_number(3))
-  p(fn.by_word("да", true))
-  p(fn.by_word("да", false))
-  p(fn.by_word("нет", true))
-  p(fn.by_word("иное", false))
-  p(fn.only_wild(7))
+  std.p(fn.by_number(3))
+  std.p(fn.by_word("да", true))
+  std.p(fn.by_word("да", false))
+  std.p(fn.by_word("нет", true))
+  std.p(fn.by_word("иное", false))
+  std.p(fn.only_wild(7))
 end;
 
 mp.Default = "нет обработчика";

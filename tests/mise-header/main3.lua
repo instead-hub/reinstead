@@ -81,10 +81,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -110,7 +110,7 @@ room {
 _'game'.dsc = "Заставка.";
 _'game'.hint_verbs = { "#Exam", "#Take" };
 _'game'.before_Exam = function(s, w)
-  p "Нечего осматривать."
+  std.p "Нечего осматривать."
 end;
 
 pl.word = -"ты/мр"

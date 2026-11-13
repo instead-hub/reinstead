@@ -116,30 +116,30 @@ end
 
 fn.on_take = function(s)
   if s.weight + 1 > 0 then
-    p "тяжёлый"
+    std.p "тяжёлый"
   end
-  p(fn.label(s))
-  p(fn.label(s, "им"))
-  p(fn.label(s, "вн"))
-  p(s:noun_hint("вн"))
-  p(s:noun_hint("зв"))
-  p(s:noun_hint({ "рд", 2 }))
-  p(s:noun_hint({ "рд", 2 }))
-  p(s:noun_hint("им"))
-  p(s:noun_hint({ "вн", 2 }))
-  p(s:noun_hint({ "пр", "мн" }))
-  p(s:noun_hint({ "тв", 2 }))
-  p(s:noun_hint({}))
-  p(s:Noun_hint({ "рд", 2 }, 1))
-  p(fn.first_str({ "a", "b" }))
+  std.p(fn.label(s))
+  std.p(fn.label(s, "им"))
+  std.p(fn.label(s, "вн"))
+  std.p(s:noun_hint("вн"))
+  std.p(s:noun_hint("зв"))
+  std.p(s:noun_hint({ "рд", 2 }))
+  std.p(s:noun_hint({ "рд", 2 }))
+  std.p(s:noun_hint("им"))
+  std.p(s:noun_hint({ "вн", 2 }))
+  std.p(s:noun_hint({ "пр", "мн" }))
+  std.p(s:noun_hint({ "тв", 2 }))
+  std.p(s:noun_hint({}))
+  std.p(s:Noun_hint({ "рд", 2 }, 1))
+  std.p(fn.first_str({ "a", "b" }))
   local h = { "вн", "мн" }
-  p(s:noun_hint(h))
-  p(_(chosen):noun_hint("вн"))
-  p(fn.spot(s):noun_hint("вн"))
+  std.p(s:noun_hint(h))
+  std.p(_(chosen):noun_hint("вн"))
+  std.p(fn.spot(s):noun_hint("вн"))
   do
     local o, i = fn.where_list(_'crate'):lookup(_'crate')
     if o and i then
-      p(o:noun_hint("вн"))
+      std.p(o:noun_hint("вн"))
     end
   end
   do
@@ -147,10 +147,10 @@ fn.on_take = function(s)
     if w then
       w:noun_hint()
     else
-      p "пусто"
+      std.p "пусто"
     end
   end
-  p(fn.label2(s, 2))
+  std.p(fn.label2(s, 2))
   fn.label(s, 1, 2)
 end
 
@@ -185,10 +185,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -228,7 +228,7 @@ obj {
   -"лампа";
   nam = "lamp";
   before_Take = function(s, w)
-    p(_(s.target):noun_hint("вн"))
+    std.p(_(s.target):noun_hint("вн"))
   end;
 }
 

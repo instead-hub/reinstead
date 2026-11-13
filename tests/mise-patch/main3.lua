@@ -41,7 +41,7 @@ fn.path_dsc = function(w)
 end
 
 fn.helper = function()
-  p "helper"
+  std.p "helper"
 end
 
 fn.start = function(load)
@@ -75,10 +75,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -103,7 +103,7 @@ room {
 
 _'box'.before_Take = function(s, w)
   if s.score_value + 1 > 0 then
-    p "взяли"
+    std.p "взяли"
   end
 end;
 _'box'.Take = "метод";

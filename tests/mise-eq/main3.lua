@@ -42,7 +42,7 @@ fn.path_dsc = function(w)
 end
 
 fn.on_take = function(s)
-  p "взято"
+  std.p "взято"
 end
 
 fn.init = function()
@@ -84,10 +84,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -107,21 +107,21 @@ obj {
   before_Take = fn.on_take;
   before_Exam = "Нечего рассматривать.";
   after_Drop = function(s)
-    p "Упало."
+    std.p "Упало."
   end;
   before_Open = function(s) return false end;
   ["before_Pull,Ask"] = function(s, w)
     if w then
-      p("спросили: ", w)
+      std.p("спросили: ", w)
     else
-      p "ничего"
+      std.p "ничего"
     end
   end;
   ["before_Drop,PutOn"] = function(s, w)
     if w == _'hall' then
-      p("в ", w:noun_hint("вн"))
+      std.p("в ", w:noun_hint("вн"))
     else
-      p "мимо"
+      std.p "мимо"
     end
   end;
 }:attr 'scenery':enable():dict { ["коробка/вн"] = "коробку" }

@@ -73,10 +73,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -100,7 +100,7 @@ room {
   s_to = 'bar';
   w_to = 'cloakroom';
   n_to = function(s)
-    p "Вы только пришли сюда. К тому же, погода снаружи заметно ухудшается."
+    std.p "Вы только пришли сюда. К тому же, погода снаружи заметно ухудшается."
   end;
 }
 
@@ -117,11 +117,11 @@ room {
       -"маленький бронзовый крючок,крючок|вешалка";
       nam = "hook";
       description = function(s)
-        p "Всего лишь маленький бронзовый крючок для одежды,"
+        std.p "Всего лишь маленький бронзовый крючок для одежды,"
         if where(_'cloak') == s then
-          p "с которого свисает черный бархатный плащ."
+          std.p "с которого свисает черный бархатный плащ."
         else
-          p "привинченный к стене."
+          std.p "привинченный к стене."
         end
       end;
     }:attr 'scenery,supporter';
@@ -140,7 +140,7 @@ room {
   before_Walk = function(s, w)
     if (mp:compass_dir(w) or nil) ~= "n_to" and not w:has("light") then
       _'message'.number = _'message'.number + (2)
-      p "Слоняться в кромешной тьме -- не самая лучшая идея."
+      std.p "Слоняться в кромешной тьме -- не самая лучшая идея."
       return
     end
     return false
@@ -151,7 +151,7 @@ room {
     end
     if not s:has("light") then
       _'message'.number = _'message'.number + (1)
-      p "В непроглядной темноте это очень трудно..."
+      std.p "В непроглядной темноте это очень трудно..."
       return
     end
     return false
@@ -163,10 +163,10 @@ room {
       number = 0;
       description = function(s)
         if s.number < 2 then
-          p "Начертанная в пыли надпись сообщает Вам, что..."
+          std.p "Начертанная в пыли надпись сообщает Вам, что..."
           walk(_'goodend')
         else
-          p([[Полустертую надпись разобрать очень трудно.
+          std.p([[Полустертую надпись разобрать очень трудно.
 С трудом можно различить такие слова...]])
           walk(_'badend')
         end
@@ -192,7 +192,7 @@ obj {
       end
       return false
     else
-      p "Не самое подходящее место для того, чтобы оставлять здесь свою одежду."
+      std.p "Не самое подходящее место для того, чтобы оставлять здесь свою одежду."
       return
     end
   end;
@@ -204,7 +204,7 @@ obj {
     if w ~= _'hook' then
       return false
     end
-    p "Ты повесил плащ на крючок."
+    std.p "Ты повесил плащ на крючок."
   end;
 }:attr 'clothing'
 
@@ -218,7 +218,7 @@ gameover {
   nam = "goodend";
   title = "Вы выиграли";
   dsc = function(s)
-    p("Ваш счет: ", score)
+    std.p("Ваш счет: ", score)
   end;
 }
 

@@ -71,10 +71,10 @@ Path = Class {
   before_Default = function(s, ev, w, wh)
     local d = (s.desc)
     if d then
-      p(d)
+      std.p(d)
       return
     end
-    p(fn.path_dsc(_(s.walk_to)))
+    std.p(fn.path_dsc(_(s.walk_to)))
   end;
 }:attr 'scenery,enterable'
 
@@ -123,5 +123,5 @@ _'sphere'.found_in = 'test_room';
 _'kid'.found_in = 'test_room';
 
 _'game'.before_Inv = function(s)
-  p("kid: hp=", _'kid'.hp, " x=", _'kid'.x)
+  std.p("kid: hp=", _'kid'.hp, " x=", _'kid'.x)
 end;
