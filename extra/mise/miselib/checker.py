@@ -3,11 +3,11 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from . import types
 from .ast_nodes import (
-    AssignStmt, Bind, BinOp, Call, CallStmt, DictLit, Emit, EntityDecl, Error,
-    Expr, ExternDecl, FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt,
-    Handler, IfStmt, InOp, IndexAccess, InterpStr, Lambda, ListLit, Lit,
-    LocalStmt, MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym,
-    TalkChoice, TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
+    AssignStmt, Bind, BinOp, Call, DictLit, Emit, EntityDecl, Error, Expr,
+    ExternDecl, FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler,
+    IfStmt, InOp, IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt,
+    MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym, TalkChoice,
+    TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
 )
 from .narrow import narrow, returns_all
 from .symbols import (
@@ -490,18 +490,25 @@ def _check_local_stmt(ctx: Context, s: LocalStmt, env: Dict[str, Type],
                 else (opt(dt) if got is None else dt)
 
 
+def _narrow_branch(ctx: Context, cond: Expr, env: Dict[str, Type],
+                   decl_env: Dict[str, Type], arg_names: Optional[Dict[int, str]]
+                   ) -> Tuple[Dict[str, Type], Dict[str, Type]]:
+    benv = narrow(ctx, cond, env, True, arg_names)
+    bdecl = dict(decl_env)
+    if isinstance(cond, Bind):
+        for n in cond.names:
+            if n != "_":
+                bdecl[n] = benv[n]
+    return benv, bdecl
+
+
 def _check_if_stmt(ctx: Context, s: IfStmt, env: Dict[str, Type], decl_env: Dict[str, Type],
                    owner: Optional[str], rets: Optional[List[Type]],
                    arg_names: Optional[Dict[int, str]], fn_decl: Optional[FnDecl], in_loop: bool):
     cenv = dict(env)
     for cond, body, _l in s.branches:
         _check_cond(ctx, cond, cenv, owner)
-        benv = narrow(ctx, cond, cenv, True, arg_names)
-        bdecl = dict(decl_env)
-        if isinstance(cond, Bind):
-            for n in cond.names:
-                if n != "_":
-                    bdecl[n] = benv[n]
+        benv, bdecl = _narrow_branch(ctx, cond, cenv, decl_env, arg_names)
         _check_stmts(ctx, body, benv, owner, rets, arg_names, fn_decl, in_loop, bdecl)
         cenv = narrow(ctx, cond, cenv, False, arg_names)
     if s.else_body is not None:
@@ -513,12 +520,7 @@ def _check_while_stmt(ctx: Context, s: WhileStmt, env: Dict[str, Type], decl_env
                       arg_names: Optional[Dict[int, str]], fn_decl: Optional[FnDecl]):
     wenv = dict(env)
     _check_cond(ctx, s.cond, wenv, owner)
-    benv = narrow(ctx, s.cond, wenv, True, arg_names)
-    bdecl = dict(decl_env)
-    if isinstance(s.cond, Bind):
-        for n in s.cond.names:
-            if n != "_":
-                bdecl[n] = benv[n]
+    benv, bdecl = _narrow_branch(ctx, s.cond, wenv, decl_env, arg_names)
     _check_stmts(ctx, s.body, benv, owner, rets, arg_names, fn_decl, True, bdecl)
 
 
@@ -593,13 +595,13 @@ def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
                 _check_local_stmt(ctx, s, env, denv, owner)
             case AssignStmt():
                 _check_assign_stmt(ctx, s, env, denv, owner)
-            case CallStmt():
-                if s.call.receiver is None:
-                    ext = ctx.externs.get(s.call.func)
+            case Call():
+                if s.receiver is None:
+                    ext = ctx.externs.get(s.func)
                     if ext is not None and ext.kind in ("value", "lvalue"):
-                        raise Error(f"{s.call.func}: an expression, not a statement (use its value)",
+                        raise Error(f"{s.func}: an expression, not a statement (use its value)",
                                     s.line)
-                _check_call(ctx, s.call, env, owner)
+                _check_call(ctx, s, env, owner)
             case IfStmt():
                 _check_if_stmt(ctx, s, env, denv, owner, rets, arg_names, fn_decl, in_loop)
             case WhileStmt():

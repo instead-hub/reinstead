@@ -64,28 +64,35 @@ class Parser:
             self.eat("NEWLINE")
         self.skip_nl()
 
+    def _check_name(self, name: str, line: int, forbid_reserved: bool = False) -> str:
+        if name in LUA_KEYWORDS:
+            raise Error(f"{name!r} is a Lua keyword and cannot be a name", line, self.src)
+        if forbid_reserved and name in _RESERVED_VARS:
+            raise Error(f"{name!r} is reserved by the runtime and cannot be a name", line, self.src)
+        return name
+
+    def _comma_sep(self, fn) -> List[Any]:
+        res = [fn()]
+        while self.match("OP", ","):
+            res.append(fn())
+        return res
+
     def eat_name(self, forbid_reserved: bool = False) -> Token:
         t = self.eat("IDENT")
-        if t.val in LUA_KEYWORDS:
-            raise Error(f"{t.val!r} is a Lua keyword and cannot be a name", t.line, self.src)
-        if forbid_reserved and t.val in _RESERVED_VARS:
-            raise Error(f"{t.val!r} is reserved by the runtime and cannot be a name", t.line, self.src)
+        self._check_name(t.val, t.line, forbid_reserved)
         return t
 
     def sym(self) -> str:
         t = self.cur()
         if t.kind in ("IDENT", "TAG", "TILDE_ID"):
-            if t.kind == "IDENT" and t.val in LUA_KEYWORDS:
-                raise Error(f"{t.val!r} is a Lua keyword and cannot be a name", t.line, self.src)
+            if t.kind == "IDENT":
+                self._check_name(t.val, t.line)
             self.pos += 1
             return t.val
         raise Error(f"expected symbol, got {t.val!r}", t.line, self.src)
 
     def sym_list(self) -> List[str]:
-        res = [self.sym()]
-        while self.match("OP", ","):
-            res.append(self.sym())
-        return res
+        return self._comma_sep(self.sym)
 
     # --- Top Level ---
 
@@ -201,10 +208,7 @@ class Parser:
         return opt(one) if self.match("OP", "?") else one
 
     def _parse_type_list(self) -> List[Type]:
-        res = [self._parse_type_str()]
-        while self.match("OP", ","):
-            res.append(self._parse_type_str())
-        return res
+        return self._comma_sep(self._parse_type_str)
 
     def _parse_sig(self) -> List[Type]:
         """`[`: `type, type]` after a name — the arguments an event passes.
@@ -481,13 +485,8 @@ class Parser:
         return prms
 
     def _parse_prop_val(self) -> Any:
-        first = self.parse_expr()
-        if self.at("OP", ","):
-            items = [first]
-            while self.match("OP", ","):
-                items.append(self.parse_expr())
-            return ListLit(line=first.line, items=items)
-        return first
+        items = self._comma_sep(self.parse_expr)
+        return items[0] if len(items) == 1 else ListLit(line=items[0].line, items=items)
 
     def _parse_handler(self) -> Handler:
         tok = self.eat("IDENT")
@@ -522,7 +521,7 @@ class Parser:
         """
         names = self.sym_list()
         arg_types = self._parse_sig()
-        sig = EventsDecl(extend=extend, line=line, sigs=[(names, arg_types)])
+        sig = EventsDecl(extend=extend, line=line, names=names, arg_types=arg_types)
         self.eat_nl()
         handlers: List[Handler] = []
         has_block = bool(self.match("INDENT"))
@@ -620,7 +619,7 @@ class Parser:
 
     def _parse_choice(self) -> TalkChoice:
         mtok = self.eat("OP")
-        c = TalkChoice(sticky=(mtok.val == "+"), flags=["always"] if mtok.val == "+" else [], line=mtok.line)
+        c = TalkChoice(flags=["always"] if mtok.val == "+" else [], line=mtok.line)
         if self.match("OP", "["):
             c.cond = self.parse_expr()
             self.eat("OP", "]")
@@ -694,13 +693,10 @@ class Parser:
                 return ReturnStmt(line=line, kind="return", values=vals)
             if kw == "local":
                 self.pos += 1
-                names = []
-                while True:
-                    vn = self.eat_name(forbid_reserved=True).val
-                    vt = self._parse_type_str() if self.match("OP", ":") else None
-                    names.append((vn, vt))
-                    if not self.match("OP", ","):
-                        break
+                names = self._comma_sep(lambda: (
+                    self.eat_name(forbid_reserved=True).val,
+                    self._parse_type_str() if self.match("OP", ":") else None,
+                ))
                 vals = self.parse_expr_list() if self.match("OP", "=") else []
                 self.skip_nl()      # a block-bodied lambda already consumed it
                 return LocalStmt(line=line, names=names, values=vals)
@@ -724,11 +720,11 @@ class Parser:
             m = self.eat_name().val
             args = self._app_args()
             self.skip_nl()          # a block-bodied lambda already consumed it
-            return CallStmt(line=line, call=Call(line=line, func=m, receiver=lhs, args=args))
+            return Call(line=line, func=m, receiver=lhs, args=args)
         if isinstance(lhs, Sym) and lhs.name != "...":
             args = self._app_args()
             self.skip_nl()
-            return CallStmt(line=line, call=Call(line=line, func=lhs.name, args=args))
+            return Call(line=line, func=lhs.name, args=args)
         raise Error("expected statement", line, self.src)
 
     def _parse_cond(self) -> Expr:
@@ -744,10 +740,7 @@ class Parser:
                 names.append(self.eat("IDENT").val)
             if names and self.match("OP", ":="):
                 for n in names:
-                    if n in LUA_KEYWORDS:
-                        raise Error(f"{n!r} is a Lua keyword and cannot be a name", line, self.src)
-                    if n in _RESERVED_VARS:
-                        raise Error(f"{n!r} is reserved by the runtime and cannot be a name", line, self.src)
+                    self._check_name(n, line, forbid_reserved=True)
                 return Bind(line=line, names=names, value=self.parse_expr())
         self.pos = save
         return self.parse_expr()
@@ -776,9 +769,9 @@ class Parser:
         arms = []
         while not self.at("DEDENT") and not self.at("EOF"):
             al = self.cur().line
-            pats = [Sym(line=al, name="_") if self.match("IDENT", "_") else self.parse_primary()]
-            while self.match("OP", ","):
-                pats.append(Sym(line=al, name="_") if self.match("IDENT", "_") else self.parse_primary())
+            pats = self._comma_sep(
+                lambda: Sym(line=al, name="_") if self.match("IDENT", "_") else self.parse_primary()
+            )
             guard = self.parse_expr() if self.match("IDENT", "when") else None
             self.eat("OP", "->")
             body = self.parse_stmt_block() if self.at("NEWLINE") else [self.parse_stmt()]
@@ -810,10 +803,7 @@ class Parser:
     # --- Expressions (Pratt + ML Application) ---
 
     def parse_expr_list(self) -> List[Expr]:
-        res = [self.parse_expr()]
-        while self.match("OP", ","):
-            res.append(self.parse_expr())
-        return res
+        return self._comma_sep(self.parse_expr)
 
     def parse_expr(self, min_prec: int = 1) -> Expr:
         # `not` binds looser than comparisons (as in Python): `not x in a, b`
@@ -829,9 +819,7 @@ class Parser:
             ):
                 neg = self.match("IDENT", "not") is not None
                 self.eat("IDENT", "in")
-                alts = [self.parse_expr(_BIN_PREC["=="] + 1)]
-                while self.match("OP", ","):
-                    alts.append(self.parse_expr(_BIN_PREC["=="] + 1))
+                alts = self._comma_sep(lambda: self.parse_expr(_BIN_PREC["=="] + 1))
                 in_op = InOp(line=t.line if neg else left.line, subject=left, alts=alts)
                 left = UnaryOp(line=t.line, op="not", operand=in_op) if neg else in_op
                 continue
@@ -885,9 +873,7 @@ class Parser:
     def _postfix_tail(self, atom: Expr) -> Expr:
         while True:
             if self.match("OP", "."):
-                ftok = self.eat("IDENT")
-                if ftok.val in LUA_KEYWORDS:
-                    raise Error(f"{ftok.val!r} is a Lua keyword and cannot be a name", ftok.line, self.src)
+                ftok = self.eat_name()
                 atom = FieldAccess(line=atom.line, obj=atom, field=ftok.val)
             elif self.at("OP", "[") and not self.cur().spaced:
                 self.pos += 1

@@ -126,10 +126,6 @@ class AssignStmt(Stmt):
     values: List[Expr] = field(default_factory=list)
 
 @dataclass
-class CallStmt(Stmt):
-    call: Call = field(default_factory=Call)
-
-@dataclass
 class IfStmt(Stmt):
     branches: List[Tuple[Expr, List[Stmt], int]] = field(default_factory=list)
     else_body: Optional[List[Stmt]] = None
@@ -233,7 +229,8 @@ class ExternDecl:
 @dataclass
 class EventsDecl:
     """`event A, B: obj, str` — names and the action arguments each one takes."""
-    sigs: List[Tuple[List[str], List[Type]]] = field(default_factory=list)
+    names: List[str] = field(default_factory=list)
+    arg_types: List[Type] = field(default_factory=list)
     extend: bool = False
     line: int = 0
     src: str = ""
@@ -272,7 +269,6 @@ class VerbDecl:
 
 @dataclass
 class TalkChoice:
-    sticky: bool = False
     cond: Any = None
     ask: Any = None
     reply: Any = None

@@ -2,11 +2,11 @@
 from typing import Any, List, NamedTuple, Optional, Sequence, Set, Tuple
 
 from .ast_nodes import (
-    AssignStmt, Bind, BinOp, Call, CallStmt, DictLit, EntityDecl, Expr,
-    ExternDecl, FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler,
-    IfStmt, InOp, IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt,
-    LuaDecl, MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym,
-    TalkChoice, TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
+    AssignStmt, Bind, BinOp, Call, DictLit, EntityDecl, Expr, ExternDecl,
+    FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler, IfStmt, InOp,
+    IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt, LuaDecl,
+    MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym, TalkChoice,
+    TalkDecl, UnaryOp, VarDecl, VerbDecl, WhileStmt,
 )
 from .lexer import lua_lines
 from .symbols import Context
@@ -25,7 +25,8 @@ _PREC = {
     "+": 5, "-": 5,
     "*": 6, "/": 6, "%": 6,
 }
-_PRINT = {"p": "std.p", "pr": "std.pr", "pn": "std.pn"}
+_PRINT = {"p": "std.p", "pr": "std.pr", "pn": "std.pn",
+          "say": "std.p", "append": "std.pr", "line": "std.pn"}
 
 
 class LuaExpr(NamedTuple):
@@ -282,6 +283,11 @@ class Emitter:
             return f"({expr})"
         return f"(function(c) return {expr} end)({subj.code})"
 
+    def _func(self, prms: str, stmts: List[Stmt], ind: int = 0) -> str:
+        pad = " " * ind
+        b = _ind(self._stmts(stmts), ind + 2)
+        return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
+
     def _prop_val(self, p: Prop, ind: int = 0) -> str:
         v, pad = p.value, " " * ind
         if isinstance(v, FnRef):
@@ -291,13 +297,9 @@ class Emitter:
         if isinstance(v, DictLit):
             return self._dict_lit(v)
         if isinstance(v, list):
-            prms = self._prop_prms(p)
-            b = _ind(self._stmts(v), ind + 2)
-            return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
+            return self._func(self._prop_prms(p), v, ind)
         if isinstance(v, Lambda) and isinstance(v.body, list):
-            prms = ", ".join(_bind(pn) for pn, _t in v.params)
-            b = _ind(self._stmts(v.body), ind + 2)
-            return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
+            return self._func(", ".join(_bind(pn) for pn, _t in v.params), v.body, ind)
         if isinstance(v, ListLit):
             is_r = p.is_ref
             items = [f'"{it.name}"' if (is_r and isinstance(it, Sym) and it.rk == "obj")
@@ -344,8 +346,7 @@ class Emitter:
         if isinstance(h.body, InterpStr):
             return key, f"function({prms})\n{_ind(self._p_call(h.body, 'p'), ind + 2)}\n{pad}end"
         if isinstance(h.body, list):
-            b = _ind(self._stmts(h.body), ind + 2)
-            return key, f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
+            return key, self._func(prms, h.body, ind)
         return key, "nil"
 
     def _emit_impl(self, ent: EntityDecl) -> str:
@@ -416,7 +417,7 @@ class Emitter:
         if isinstance(v, Lit) and v.kind == "str":
             return f"{pad}{lua_str(v.val)};"
         if isinstance(v, list):
-            return f"{pad}function(s)\n{_ind(self._stmts(v), ind + 2)}\n{pad}end;"
+            return f"{pad}{self._func('s', v, ind)};"
         return f"{pad}{self._expr(v)};"
 
     def _talk_choice(self, c: TalkChoice, ind: int) -> str:
@@ -455,7 +456,7 @@ class Emitter:
             if isinstance(c.cond, FnRef):
                 its.append(f"{ipad}cond = {self._fnref(c.cond.name)};")
             elif isinstance(c.cond, list):
-                its.append(f"{ipad}cond = function(s)\n{_ind(self._stmts(c.cond), ind + 4)}\n{ipad}end;")
+                its.append(f"{ipad}cond = {self._func('s', c.cond, ind + 2)};")
             else:
                 its.append(f"{ipad}cond = function(s) return {self._expr(c.cond)} end;")
         its.append(f"{pad}}};")
@@ -510,6 +511,10 @@ class Emitter:
         hdr = f"while {self._expr(s.cond)} do"
         return f"{hdr}\n{b}\nend" if b.strip() else f"{hdr}\nend"
 
+    def _for_block(self, hdr: str, body: List[Stmt]) -> str:
+        b = _ind(self._stmts(body), 2)
+        return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
+
     def _stmt(self, s: Stmt) -> str:
         match s:
             case SayStmt():
@@ -530,8 +535,8 @@ class Emitter:
                     if isinstance(s.target, FieldAccess) else self._le(s.target, as_lhs=True).code
                 rhs = ", ".join(self._expr(v) for v in s.values)
                 return f"{lhs} = {rhs}" if s.op == "=" else f"{lhs} = {lhs} {s.op[0]} ({rhs})"
-            case CallStmt():
-                return self._call(s.call).code
+            case Call():
+                return self._call(s).code
             case IfStmt():
                 return self._if_chain(s.branches, s.else_body)
             case WhileStmt():
@@ -541,15 +546,13 @@ class Emitter:
             case ForNumStmt():
                 hdr = f"{_bind(s.var)} = {self._expr(s.start)}, {self._expr(s.stop)}" \
                     + (f", {self._expr(s.step)}" if s.step else "")
-                b = _ind(self._stmts(s.body), 2)
-                return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
+                return self._for_block(hdr, s.body)
             case ForInStmt():
                 vs = ", ".join(_bind(n) for n, _t in s.vars)
                 it = self._expr(s.iter_expr)
                 hdr = (f"__, {vs} in ipairs({it})" if len(s.vars) == 1 else f"{vs} in ipairs({it})") \
                     if s.is_of else f"{vs} in {it}"
-                b = _ind(self._stmts(s.body), 2)
-                return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
+                return self._for_block(hdr, s.body)
         return ""
 
     def _p_call(self, e: Expr, fn: str = "p") -> str:
@@ -655,13 +658,8 @@ class Emitter:
         return "{ " + ", ".join(items) + " }"
 
     def _call(self, c: Call) -> LuaExpr:
-        if not c.receiver and c.func in ("say", "append", "line"):
-            fn_name = _PRINT[{"say": "p", "append": "pr", "line": "pn"}[c.func]]
-            if not c.args:
-                return LuaExpr(f"{fn_name}()", PREC_ATOM)
-            code = self._p_call(c.args[0], fn_name) if len(c.args) == 1 \
-                else f"{fn_name}({', '.join(self._expr(a) for a in c.args)})"
-            return LuaExpr(code, PREC_ATOM)
+        if not c.receiver and c.func in ("say", "append", "line") and len(c.args) == 1:
+            return LuaExpr(self._p_call(c.args[0], c.func), PREC_ATOM)
         all_a = ([c.receiver] + c.args) if c.receiver else list(c.args)
         args = [self._le(a) for a in all_a]
         ext = self.ctx.externs.get(c.func)
