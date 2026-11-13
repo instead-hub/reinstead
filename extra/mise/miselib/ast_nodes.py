@@ -161,6 +161,7 @@ class Handler:
     params: Optional[List[str]]
     body: Any                  # List[Stmt], Expr, FnRef, "pass", "stop"
     line: int = 0
+    src: str = ""
 
 @dataclass
 class Emit:
@@ -180,6 +181,7 @@ class Prop:
     emit: Optional[Emit] = None   # a method call instead of a plain field
     is_ref: bool = False          # the declared type says "reference" (filled by the checker)
     line: int = 0
+    src: str = ""
 
 @dataclass
 class EntityDecl:
@@ -196,6 +198,7 @@ class EntityDecl:
     children: List["EntityDecl"] = field(default_factory=list)
     is_mixin: bool = False
     line: int = 0
+    src: str = ""
 
 @dataclass
 class FnDecl:
@@ -203,9 +206,20 @@ class FnDecl:
     params: List[Tuple[str, Type]]
     variadic: Optional[Type] = None
     ret_types: List[Type] = field(default_factory=list)
-    body: Any = None           # List[Stmt] or str (template / raw lua)
-    extern: str = ""           # "" (user fn) | "fn" | "value" | "lvalue"
+    body: Any = None           # List[Stmt] or str (`lua` block body)
     line: int = 0
+    src: str = ""
+
+@dataclass
+class ExternDecl:
+    kind: str                  # "fn" | "value" | "lvalue"
+    name: str
+    params: List[Tuple[str, Type]]
+    variadic: Optional[Type] = None
+    ret_types: List[Type] = field(default_factory=list)
+    template: str = ""
+    line: int = 0
+    src: str = ""
 
 @dataclass
 class EventsDecl:
@@ -213,6 +227,7 @@ class EventsDecl:
     sigs: List[Tuple[List[str], List[Type]]] = field(default_factory=list)
     extend: bool = False
     line: int = 0
+    src: str = ""
 
 
 @dataclass
@@ -221,6 +236,7 @@ class EntryDecl:
     name: str
     params: List[Tuple[str, Type]] = field(default_factory=list)
     line: int = 0
+    src: str = ""
 
 
 @dataclass
@@ -230,6 +246,7 @@ class TypeDecl:
     negate: bool = False
     extend: bool = False
     line: int = 0
+    src: str = ""
 
 @dataclass
 class VerbDecl:
@@ -242,6 +259,7 @@ class VerbDecl:
     prio: Optional[int] = None
     hint: Any = None
     line: int = 0
+    src: str = ""
 
 @dataclass
 class TalkChoice:
@@ -264,16 +282,19 @@ class TalkDecl:
     choices: List[TalkChoice] = field(default_factory=list)
     labels: List[Tuple[str, Any, List[TalkChoice]]] = field(default_factory=list)
     line: int = 0
+    src: str = ""
 
 @dataclass
 class VarDecl:
     kind: str                  # "global" or "const"
     items: List[Tuple[str, Optional[Type], Expr, int]] = field(default_factory=list)
+    src: str = ""
 
 @dataclass
 class LuaDecl:
     code: str
     line: int = 0
+    src: str = ""
 
 @dataclass
 class Program:
@@ -283,3 +304,4 @@ class Program:
     includes: List[str] = field(default_factory=list)
     requires: List[str] = field(default_factory=list)
     items: List[Any] = field(default_factory=list)
+    root_src: str = ""

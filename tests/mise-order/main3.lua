@@ -48,6 +48,14 @@ fn.lua_two = function()
   return hidden_two
 end
 
+fn.calc_hp = function()
+  return 7 + fn.bonus_val()
+end
+
+fn.bonus_val = function()
+  return BONUS
+end
+
 fn.start = function(load)
   move(me(), _'test_room')
 end
@@ -89,7 +97,7 @@ Path = Class {
 }:attr 'scenery,enterable'
 
 Base = Class {
-  hp = 7 + BONUS;
+  hp = fn.calc_hp();
 }
 
 Kid = Class({

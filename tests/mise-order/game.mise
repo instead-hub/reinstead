@@ -32,7 +32,7 @@ class Kid(Base) : Talkative
   x: num
 
 class Base
-  hp = 7 + BONUS
+  hp = calc_hp
 
 obj sphere "сфера"
   dsc = "Гладкая сфера."
@@ -40,6 +40,12 @@ obj sphere "сфера"
 
 mixin Talkative
   before Talk = "поговорили"
+
+fn calc_hp() -> num
+  return 7 + bonus_val
+
+fn bonus_val()
+  return BONUS
 
 const BONUS = 3
 

@@ -1,28 +1,48 @@
 """Compact Lua (`main3.lua`) emitter for MISE 2."""
-MATCH_TMP = "__match"
-from typing import Any, List, Optional, Sequence, Set, Tuple
-from .ast_nodes import *
-from .checker import Context, load_includes, prescan
+from typing import Any, List, NamedTuple, Optional, Sequence, Set, Tuple
+
+from .ast_nodes import (
+    AssignStmt, Bind, BinOp, Call, CallStmt, EntityDecl, Expr, ExternDecl,
+    FieldAccess, FnDecl, FnRef, ForInStmt, ForNumStmt, Handler, IfStmt, InOp,
+    IndexAccess, InterpStr, Lambda, ListLit, Lit, LocalStmt, LuaDecl,
+    MatchStmt, Program, Prop, ReturnStmt, SayStmt, Stmt, Sym, TalkChoice,
+    TalkDecl, UnaryOp, VarDecl, VerbDecl,
+)
 from .lexer import lua_lines
-from .parser import parse_source
+from .symbols import Context
 
-_PREC = {"or": 1, "and": 2, "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3,
-         "..": 4, "+": 5, "-": 5, "*": 6, "/": 6, "%": 6}
+MATCH_TMP = "__match"
+PREC_RAW = 0
+PREC_UNARY = 7
+PREC_LIT = 8
+PREC_PREFIX = 9
+PREC_ATOM = 10
+
+_PREC = {
+    "or": 1, "and": 2,
+    "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3,
+    "..": 4,
+    "+": 5, "-": 5,
+    "*": 6, "/": 6, "%": 6,
+}
+_PRINT = {"p": "std.p", "pr": "std.pr", "pn": "std.pn"}
 
 
-def _parens_on_right(op: str, right: str) -> bool:
-    """A right operand needs its own parentheses: Lua is left-associative, so an
-    equal precedence there would be regrouped (`a - (b - c)` is not `a - b - c`).
-    `..` is the exception — Lua groups it to the right, and the value is the same."""
-    parent, child = _PREC[op], _PREC[right]
-    return child < parent or (child == parent and op != "..")
+class LuaExpr(NamedTuple):
+    """Emitted Lua code paired with its Lua operator precedence."""
+
+    code: str
+    prec: int = PREC_ATOM
+
+    def at(self, min_prec: int, avoid_dash: bool = False) -> str:
+        if self.prec < min_prec or (avoid_dash and self.code.startswith("-")):
+            return f"({self.code})"
+        return self.code
 
 
 def lua_str(s: str) -> str:
     if "\n" in s or "\\" in s or ('"' in s and "'" in s):
         eq = ""
-        # the closing `]…]` must not appear inside the text, and a final `]` of the
-        # text would abut the closing bracket — both need a longer delimiter
         while f"]{eq}]" in s or (not eq and s.endswith("]")):
             eq += "="
         lead = "\n" if s.startswith("\n") else ""
@@ -30,27 +50,22 @@ def lua_str(s: str) -> str:
     return f"'{s}'" if '"' in s else f'"{s}"'
 
 
-_PRINT = {"p": "std.p", "pr": "std.pr", "pn": "std.pn"}   # engine print helpers
-
-
 def _bind(name: str) -> str:
     """Keep `_` free for STEAD3's global object lookup `_'id'`."""
     return "__" if name == "_" else name
 
 
-def _is_compound(e: Expr) -> bool:
-    return isinstance(e, (BinOp, UnaryOp, Lambda, InOp)) \
-        or (isinstance(e, Lit) and e.kind == "raw")
+def _ind(text: str, n: int = 2) -> str:
+    pad = " " * n
+    return "\n".join(pad + l if l.strip() else "" for l in lua_lines(text))
 
 
 def _class_has_body(ent: EntityDecl) -> bool:
-    """Does the class carry anything the engine has to run or store?"""
     return bool(ent.words or ent.traits or ent.handlers
                 or any(p.value is not None for p in ent.props))
 
 
 def _class_names_in_use(items: List[Any]) -> Set[str]:
-    """Names an emitted `Class` global is needed for: a parent, an instance."""
     used: Set[str] = set()
     for ent in items:
         if not isinstance(ent, EntityDecl):
@@ -63,11 +78,6 @@ def _class_names_in_use(items: List[Any]) -> Set[str]:
         if ent.children:
             used.update(_class_names_in_use(ent.children))
     return used
-
-
-def _ind(text: str, n: int = 2) -> str:
-    pad = " " * n
-    return "\n".join(pad + l if l.strip() else "" for l in lua_lines(text))
 
 
 class Emitter:
@@ -85,11 +95,8 @@ class Emitter:
 
         in_use = _class_names_in_use(self.prog.items)
         rendered = [(it, *self._fn_parts(it)) for it in self.prog.items
-                    if isinstance(it, FnDecl) and not it.extern]
+                    if isinstance(it, FnDecl)]
 
-        # One local table, not one local per function: a chunk may hold only 200
-        # locals, and a function of the table is visible before it is assigned,
-        # so mutual recursion needs no forward declarations either.
         if rendered:
             chunks.append("local fn = {}")
         chunks.extend(it.code for it in self.prog.items if isinstance(it, LuaDecl))
@@ -97,52 +104,51 @@ class Emitter:
             head = f"fn.{fn.name} = function({prms})"
             chunks.append(f"{head}\n{body}\nend" if body.strip() else f"{head}\nend")
 
-        # the engine calls these globals itself; mise code calls `fn.init`/`fn.start`
         for fn, _prms, _body in rendered:
             if fn.name in self.ctx.entries:
                 args = ", ".join(_bind(pn) for pn, _t in fn.params)
                 chunks.append(f"function {fn.name}({args})\n  return fn.{fn.name}({args})\nend")
 
         for it in self.prog.items:
-            if isinstance(it, VarDecl):
-                chunks.append("\n".join(f"{it.kind} '{vn}' ({self._prop_scalar(ve)})" for vn, _vt, ve, _l in it.items))
-            elif isinstance(it, EntityDecl):
-                if it.kind == "class" and (it.name in self.ctx.ctors
-                        or not ((_class_has_body(it) and not it.is_mixin) or it.name in in_use)):
-                    continue
-                s = self._emit_entity(it)
-                if s:
-                    chunks.append(s)
-            elif isinstance(it, VerbDecl):
-                chunks.append(self._emit_verb(it))
-            elif isinstance(it, TalkDecl):
-                chunks.append(self._emit_talk(it))
+            match it:
+                case VarDecl():
+                    chunks.append("\n".join(
+                        f"{it.kind} '{vn}' ({self._prop_scalar(ve)})"
+                        for vn, _vt, ve, _l in it.items
+                    ))
+                case EntityDecl():
+                    if it.kind == "class" and (it.name in self.ctx.ctors
+                            or not ((_class_has_body(it) and not it.is_mixin) or it.name in in_use)):
+                        continue
+                    s = self._emit_entity(it)
+                    if s:
+                        chunks.append(s)
+                case VerbDecl():
+                    chunks.append(self._emit_verb(it))
+                case TalkDecl():
+                    chunks.append(self._emit_talk(it))
 
         return "\n\n".join(c for c in chunks if c.strip()) + "\n"
 
     def _fn_parts(self, fn: FnDecl) -> Tuple[str, str]:
         prms = ", ".join([_bind(pn) for pn, _pt in fn.params] + (["..."] if fn.variadic else []))
-        if isinstance(fn.body, str):        # a `lua` block: statements, verbatim
-            body = _ind(fn.body.strip(), 2)
-        else:
-            body = _ind(self._stmts(fn.body), 2)
+        body = _ind(fn.body.strip(), 2) if isinstance(fn.body, str) else _ind(self._stmts(fn.body), 2)
         return prms, body
 
     def _emit_entity(self, ent: EntityDecl, ind: int = 0) -> str:
         if ent.kind == "class":
             if ent.name in self.ctx.ctors:
-                return ""               # `class story(room) = cutscene`: the engine owns it
+                return ""
             lines, tails = self._obj_parts(ent, is_class=True, ind=0)
             inner = "\n".join(lines)
             if ent.parent and ent.parent != self.ctx.root_class:
-                head = f"{ent.name} = Class({{\n{inner}\n}}, {ent.parent})" if inner else f"{ent.name} = Class({{}}, {ent.parent})"
+                head = f"{ent.name} = Class({{\n{inner}\n}}, {ent.parent})" if inner \
+                    else f"{ent.name} = Class({{}}, {ent.parent})"
             else:
                 head = f"{ent.name} = Class {{\n{inner}\n}}" if inner else f"{ent.name} = Class {{}}"
             return head + "".join(tails)
-
         if ent.kind == "impl":
             return self._emit_impl(ent)
-
         ctor = self.ctx.ctors.get(ent.kind, ent.kind)
         lines, tails = self._obj_parts(ent, is_class=False, ind=ind)
         pad = " " * ind
@@ -159,7 +165,8 @@ class Emitter:
             lines.append(f"{fpad}nam = {lua_str(ent.name)};")
         attrs = [tr for tr in ent.traits if tr not in self.ctx.classes]
         if ent.locations:
-            v = f"'{ent.locations[0]}'" if len(ent.locations) == 1 else "{ " + ", ".join(f'"{l}"' for l in ent.locations) + " }"
+            v = f"'{ent.locations[0]}'" if len(ent.locations) == 1 \
+                else "{ " + ", ".join(f'"{l}"' for l in ent.locations) + " }"
             lines.append(f"{fpad}found_in = {v};")
         for p in ent.props:
             if p.value is None:
@@ -181,7 +188,6 @@ class Emitter:
         return lines, tails
 
     def _method_call(self, p: Prop) -> Optional[str]:
-        """The engine method call a field turns into, or None for a plain field."""
         spec = p.emit
         if spec is None:
             return None
@@ -193,17 +199,16 @@ class Emitter:
         if form == "table":
             return f":{mname} {v.val}" if isinstance(v, Lit) and v.kind == "table" else ""
         items = v.items if isinstance(v, ListLit) else [v]
-        if form == "join":                  # `:attr 'a,b'` — one comma-joined string
+        if form == "join":
             parts = [it.name if isinstance(it, Sym) else self._expr(it).strip("'\"") for it in items]
             return f":{mname} '{','.join(parts)}'"
-        if form == "list":                  # `:with{ 'a', 'b' }` — names, resolved by the engine
+        if form == "list":
             parts = [self._prop_scalar(it) for it in items]
             return f":{mname}{{ {', '.join(parts)} }}" if parts else ""
         args = [self._expr(it) for it in items]
         return f":{mname}({', '.join(args)})" if args else ""
 
     def _if_chain(self, branches, else_body, ind: int = 0) -> str:
-        """`if`/`elseif` chain; a `:=` branch binds its names in a `do` block."""
         pad = " " * ind
         cond, body, _l = branches[0]
         if isinstance(cond, Bind):
@@ -231,7 +236,6 @@ class Emitter:
         return "\n".join(lines)
 
     def _if_else(self, branches, else_body, ind: int) -> str:
-        """The rest of a chain: `elseif` arms, or `else` with the remaining chain."""
         pad = " " * ind
         if not branches:
             if else_body is None:
@@ -251,40 +255,39 @@ class Emitter:
         return head
 
     def _pure(self, e: Expr) -> bool:
-        """Can this expression be evaluated twice without side effects?"""
-        if isinstance(e, Lit):
-            return True
-        if isinstance(e, Sym):
-            return e.rk not in ("fn0",)          # a bare fn name is a call
-        if isinstance(e, FieldAccess):
-            return self._pure(e.obj)
-        if isinstance(e, IndexAccess):
-            return self._pure(e.obj) and self._pure(e.index)
-        if isinstance(e, InterpStr):
-            return all(self._pure(x) if isinstance(x, Expr) else True for x in e.parts)
-        if isinstance(e, UnaryOp):
-            return self._pure(e.operand)
-        if isinstance(e, BinOp):
-            return self._pure(e.left) and self._pure(e.right)
+        match e:
+            case Lit():
+                return True
+            case Sym():
+                return e.rk not in ("fn0",)
+            case FieldAccess():
+                return self._pure(e.obj)
+            case IndexAccess():
+                return self._pure(e.obj) and self._pure(e.index)
+            case InterpStr():
+                return all(self._pure(x) if isinstance(x, Expr) else True for x in e.parts)
+            case UnaryOp():
+                return self._pure(e.operand)
+            case BinOp():
+                return self._pure(e.left) and self._pure(e.right)
         return False
 
     def _in_op(self, e: InOp) -> str:
-        """`x in a, b` — compare once (a call subject is bound to a parameter)."""
-        subj = self._expr(e.subject)
-        chks = [f"{'c' if not self._pure(e.subject) else subj} == {self._expr(a)}"
-                for a in e.alts]
+        subj = self._le(e.subject)
+        pure = self._pure(e.subject)
+        lhs = subj.at(_PREC["=="]) if pure else "c"
+        chks = [f"{lhs} == {self._le(a).at(_PREC['=='] + 1)}" for a in e.alts]
         expr = " or ".join(chks) if chks else "false"
-        if self._pure(e.subject):
+        if pure:
             return f"({expr})"
-        return f"(function(c) return {expr} end)({subj})"
+        return f"(function(c) return {expr} end)({subj.code})"
 
     def _prop_val(self, p: Prop, ind: int = 0) -> str:
         v, pad = p.value, " " * ind
         if isinstance(v, FnRef):
             return self._fnref(v.name)
-        if isinstance(v, Lit):
-            if v.kind in ("table", "raw"):     # `{ ... }` verbatim, a `` `lua expression` ``
-                return v.val
+        if isinstance(v, Lit) and v.kind in ("table", "raw"):
+            return v.val
         if isinstance(v, list):
             prms = self._prop_prms(p)
             b = _ind(self._stmts(v), ind + 2)
@@ -295,12 +298,12 @@ class Emitter:
             return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
         if isinstance(v, ListLit):
             is_r = p.is_ref
-            items = [f'"{it.name}"' if (is_r and isinstance(it, Sym) and it.name in self.ctx.objects)
+            items = [f'"{it.name}"' if (is_r and isinstance(it, Sym) and it.rk == "obj")
                      else (self._prop_scalar(it) if is_r else self._expr(it))
                      for it in v.items]
-            if is_r and len(items) == 1 and isinstance(v.items[0], Sym) and v.items[0].name in self.ctx.objects:
+            if is_r and len(items) == 1 and isinstance(v.items[0], Sym) and v.items[0].rk == "obj":
                 return f"'{v.items[0].name}'"
-            if len(items) > 1:                      # a field list: one item per line
+            if len(items) > 1:
                 body = "".join(f"{pad}  {it},\n" for it in items)
                 return "{\n" + body + pad + "}"
             return "{ " + ", ".join(items) + " }"
@@ -309,14 +312,13 @@ class Emitter:
         return "nil"
 
     def _prop_prms(self, p: Prop) -> str:
-        """Parameters of a prop body, resolved by the checker."""
         return ", ".join(_bind(n) for n in p.params) if p.params else "s"
 
     def _prop_scalar(self, e: Expr) -> str:
         if isinstance(e, Sym):
-            if e.name in self.ctx.objects:
+            if e.rk == "obj":
                 return f"'{e.name}'"
-            if e.name in self.ctx.event_names or e.rk in ("enum", "event"):
+            if e.rk in ("enum", "event"):
                 return lua_str(e.name)
             if e.rk == "global_ref":
                 return e.name
@@ -327,7 +329,8 @@ class Emitter:
         joined = ",".join(h.events)
         key = f'["{pfx}{joined}"]' if len(h.events) > 1 else f"{pfx}{joined}"
         is_any = any(ev in ("Any", "Default") for ev in h.events)
-        prms = ", ".join(_bind(n) for n in h.params) if h.params is not None else ("s, ev, w, wh" if is_any else "s, w, wh")
+        prms = ", ".join(_bind(n) for n in h.params) if h.params is not None \
+            else ("s, ev, w, wh" if is_any else "s, w, wh")
         if h.body == "pass":
             return key, f"function({prms}) return false end"
         if h.body == "stop":
@@ -355,8 +358,6 @@ class Emitter:
                 if call:
                     lines.append(f"{ref}{call}")
                 continue
-            # `-"…"` is the engine's word marker (`__unm` on a string is identity),
-            # so an assignment keeps it: `pl.word = -"ты"` as mp-ru.lua does
             lines.append(f"{ref}.{p.name} = {self._prop_val(p)};")
         for h in ent.handlers:
             k, fn = self._handler_pair(h)
@@ -389,7 +390,8 @@ class Emitter:
     def _emit_talk(self, td: TalkDecl) -> str:
         lines = [f"dlg {{\n  nam = '{td.name}';"]
         lines.extend(f"  {p.name} = {self._prop_val(p)};" for p in td.props)
-        phrs = ([self._talk_val(td.intro, 4)] if td.intro is not None else []) + [self._talk_choice(c, 4) for c in td.choices]
+        phrs = ([self._talk_val(td.intro, 4)] if td.intro is not None else []) \
+            + [self._talk_choice(c, 4) for c in td.choices]
         lines.append("  phr = {\n" + "\n".join(phrs) + "\n  };")
         if td.labels:
             lbls = []
@@ -457,77 +459,82 @@ class Emitter:
         its.append(f"{pad}}};")
         return "\n".join(its)
 
-    # --- Statements & Expressions ---
+    # --- Statements & Precedence-Aware Expressions --------------------------
 
     def _stmts(self, stmts: List[Stmt]) -> str:
         return "\n".join(self._stmt(s) for s in stmts)
 
+    def _emit_match(self, s: MatchStmt) -> str:
+        subj = self._expr(s.subject)
+        arms, else_b = [], None
+        for pats, guard, body, _l in s.arms:
+            if len(pats) == 1 and isinstance(pats[0], Sym) and pats[0].name == "_" and not guard:
+                else_b = body
+                break
+            chks = [f"{MATCH_TMP} == {self._le(p).at(_PREC['=='] + 1)}" for p in pats
+                    if not (isinstance(p, Sym) and p.name == "_")]
+            cstr = " or ".join(chks)
+            if guard:
+                gstr = self._le(guard).at(_PREC["and"] + 1)
+                cstr = f"({cstr}) and {gstr}" if len(chks) > 1 \
+                    else (f"{cstr} and {gstr}" if cstr else gstr)
+            arms.append((cstr or "true", body))
+        if not arms:
+            eb = self._stmts(else_b) if else_b else ""
+            inner = f"local {MATCH_TMP} = {subj}" + (f"\n{eb}" if eb.strip() else "")
+            return "do\n" + _ind(inner, 2) + "\nend"
+        parts = []
+        for i, (cstr, body) in enumerate(arms):
+            kw = "if" if i == 0 else "elseif"
+            b = _ind(self._stmts(body), 2)
+            parts.append(f"{kw} {cstr} then\n{b}" if b.strip() else f"{kw} {cstr} then")
+        if else_b is not None:
+            eb = _ind(self._stmts(else_b), 2)
+            parts.append(f"else\n{eb}" if eb.strip() else "else")
+        parts.append("end")
+        return "do\n" + _ind(f"local {MATCH_TMP} = {subj}\n" + "\n".join(parts), 2) + "\nend"
+
     def _stmt(self, s: Stmt) -> str:
-        if isinstance(s, SayStmt):
-            return self._p_call(s.expr, s.mode)
-        if isinstance(s, ReturnStmt):
-            if s.kind == "stop":
+        match s:
+            case SayStmt():
+                return self._p_call(s.expr, s.mode)
+            case ReturnStmt(kind="stop"):
                 return "return"
-            if s.kind == "pass":
+            case ReturnStmt(kind="pass"):
                 return "return false"
-            if s.kind == "break":
+            case ReturnStmt(kind="break"):
                 return "break"
-            return ("return " + ", ".join(self._expr(v) for v in s.values)) if s.values else "return"
-        if isinstance(s, LocalStmt):
-            ns = ", ".join(_bind(n) for n, _t in s.names)
-            return f"local {ns} = {', '.join(self._expr(v) for v in s.values)}" if s.values else f"local {ns}"
-        if isinstance(s, AssignStmt):
-            lhs = f"{self._prefix(s.target.obj)}.{s.target.field}" if isinstance(s.target, FieldAccess) else self._expr(s.target, as_lhs=True)
-            rhs = ", ".join(self._expr(v) for v in s.values)
-            return f"{lhs} = {rhs}" if s.op == "=" else f"{lhs} = {lhs} {s.op[0]} ({rhs})"
-        if isinstance(s, CallStmt):
-            return self._call(s.call)
-        if isinstance(s, IfStmt):
-            return self._if_chain(s.branches, s.else_body)
-        if isinstance(s, MatchStmt):
-            # the subject is evaluated once; arms are `or`-chains (like `in`)
-            subj = self._expr(s.subject)
-            arms, else_b = [], None
-            for pats, guard, body, _l in s.arms:
-                if len(pats) == 1 and isinstance(pats[0], Sym) and pats[0].name == "_" and not guard:
-                    else_b = body
-                    break
-                chks = [f"{MATCH_TMP} == {self._expr(p)}" for p in pats
-                        if not (isinstance(p, Sym) and p.name == "_")]
-                cstr = " or ".join(chks)
-                if guard:
-                    gstr = self._expr(guard)
-                    cstr = f"({cstr}) and {gstr}" if len(chks) > 1 \
-                        else (f"{cstr} and {gstr}" if cstr else gstr)
-                arms.append((cstr or "true", body))
-            if not arms:
-                eb = self._stmts(else_b) if else_b else ""
-                inner = f"local {MATCH_TMP} = {subj}" + (f"\n{eb}" if eb.strip() else "")
-                return "do\n" + _ind(inner, 2) + "\nend"
-            parts = []
-            for i, (cstr, body) in enumerate(arms):
-                kw = "if" if i == 0 else "elseif"
-                b = _ind(self._stmts(body), 2)
-                parts.append(f"{kw} {cstr} then\n{b}" if b.strip() else f"{kw} {cstr} then")
-            if else_b is not None:
-                eb = _ind(self._stmts(else_b), 2)
-                parts.append(f"else\n{eb}" if eb.strip() else "else")
-            parts.append("end")
-            return "do\n" + _ind(f"local {MATCH_TMP} = {subj}\n" + "\n".join(parts), 2) + "\nend"
-        if isinstance(s, ForNumStmt):
-            hdr = f"{_bind(s.var)} = {self._expr(s.start)}, {self._expr(s.stop)}" + (f", {self._expr(s.step)}" if s.step else "")
-            b = _ind(self._stmts(s.body), 2)
-            return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
-        if isinstance(s, ForInStmt):
-            vs = ", ".join(_bind(n) for n, _t in s.vars)
-            it = self._expr(s.iter_expr)
-            hdr = (f"__, {vs} in ipairs({it})" if len(s.vars) == 1 else f"{vs} in ipairs({it})") if s.is_of else f"{vs} in {it}"
-            b = _ind(self._stmts(s.body), 2)
-            return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
+            case ReturnStmt():
+                return ("return " + ", ".join(self._expr(v) for v in s.values)) if s.values else "return"
+            case LocalStmt():
+                ns = ", ".join(_bind(n) for n, _t in s.names)
+                return f"local {ns} = {', '.join(self._expr(v) for v in s.values)}" if s.values else f"local {ns}"
+            case AssignStmt():
+                lhs = f"{self._le(s.target.obj).at(PREC_PREFIX)}.{s.target.field}" \
+                    if isinstance(s.target, FieldAccess) else self._le(s.target, as_lhs=True).code
+                rhs = ", ".join(self._expr(v) for v in s.values)
+                return f"{lhs} = {rhs}" if s.op == "=" else f"{lhs} = {lhs} {s.op[0]} ({rhs})"
+            case CallStmt():
+                return self._call(s.call).code
+            case IfStmt():
+                return self._if_chain(s.branches, s.else_body)
+            case MatchStmt():
+                return self._emit_match(s)
+            case ForNumStmt():
+                hdr = f"{_bind(s.var)} = {self._expr(s.start)}, {self._expr(s.stop)}" \
+                    + (f", {self._expr(s.step)}" if s.step else "")
+                b = _ind(self._stmts(s.body), 2)
+                return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
+            case ForInStmt():
+                vs = ", ".join(_bind(n) for n, _t in s.vars)
+                it = self._expr(s.iter_expr)
+                hdr = (f"__, {vs} in ipairs({it})" if len(s.vars) == 1 else f"{vs} in ipairs({it})") \
+                    if s.is_of else f"{vs} in {it}"
+                b = _ind(self._stmts(s.body), 2)
+                return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
         return ""
 
     def _p_call(self, e: Expr, fn: str = "p") -> str:
-        # `std.p` and not `p`: a local named `p` must not break every `say`
         fn = _PRINT.get(fn, fn)
         if isinstance(e, Lit) and e.kind == "str":
             lit = lua_str(e.val)
@@ -537,93 +544,109 @@ class Emitter:
             return f"{fn}({', '.join(args)})"
         return f"{fn}({self._expr(e)})"
 
-    def _prefix(self, e: Expr) -> str:
-        s = self._expr(e)
-        return f"({s})" if isinstance(e, (BinOp, UnaryOp, Lambda, InOp, ListLit, Lit)) else s
-
     def _expr(self, e: Expr, as_lhs: bool = False) -> str:
-        if isinstance(e, Lit):
-            return ("true" if e.val else "false") if e.kind == "bool" else ("nil" if e.kind == "nil" else (lua_str(e.val) if e.kind == "str" else str(e.val)))
-        if isinstance(e, InterpStr):
-            return "(" + " .. ".join(lua_str(p) if isinstance(p, str) else f"tostring({self._expr(p)})" for p in e.parts) + ")"
-        if isinstance(e, FnRef):
-            return self._fnref(e.name)
-        if isinstance(e, ListLit):
-            return ("{ " + ", ".join(self._expr(it) for it in e.items) + " }") if e.items else "{}"
-        if isinstance(e, Sym):
-            n = e.name
-            if e.rk == "lvalue":
-                return self._expand(self.ctx.fns[n], [])    # the place itself
-            if as_lhs or e.rk == "var":
-                return n
-            if e.rk == "obj":
-                return f"_'{n}'"
-            if e.rk == "global_ref":
-                return f"_({n})"
-            if e.rk in ("event", "enum"):
-                return lua_str(n)
-            if e.rk == "fn0":
+        return self._le(e, as_lhs).code
+
+    def _le_sym(self, e: Sym, as_lhs: bool) -> LuaExpr:
+        n = e.name
+        if e.rk == "lvalue":
+            return self._expand(self.ctx.externs[n], ())
+        if as_lhs or e.rk == "var":
+            return LuaExpr(n, PREC_ATOM)
+        match e.rk:
+            case "obj":
+                return LuaExpr(f"_'{n}'", PREC_ATOM)
+            case "global_ref":
+                return LuaExpr(f"_({n})", PREC_ATOM)
+            case "event" | "enum":
+                return LuaExpr(lua_str(n), PREC_LIT)
+            case "fn0":
                 return self._call(Call(line=e.line, func=n))
-            if e.rk == "value":
-                fn = self.ctx.fns.get(n)
-                return self._expand(fn, []) if fn and isinstance(fn.body, str) else n
-            return n
-        if isinstance(e, FieldAccess):
-            c = f"{self._prefix(e.obj)}.{e.field}"
-            return f"_({c})" if (e.is_ref and not as_lhs) else c
-        if isinstance(e, IndexAccess):
-            return f"{self._prefix(e.obj)}[{self._expr(e.index)}]"
-        if isinstance(e, UnaryOp):
-            raw_s = self._expr(e.operand)
-            need_p = _is_compound(e.operand) and (
-                isinstance(e.operand, BinOp)
-                or (isinstance(e.operand, Lit) and e.operand.kind == "raw")
-                or (e.op == "-" and (isinstance(e.operand, UnaryOp) or raw_s.startswith("-")))
-            )
-            in_s = f"({raw_s})" if need_p else raw_s
-            return f"not {in_s}" if e.op == "not" else f"-{in_s}"
-        if isinstance(e, Lambda):
-            prms = ", ".join(_bind(pn) for pn, _t in e.params)
-            if isinstance(e.body, list):
-                b = _ind(self._stmts(e.body), 2)
-                return f"function({prms})\n{b}\nend" if b.strip() else f"function({prms}) end"
-            return f"function({prms}) return {self._expr(e.body)} end"
-        if isinstance(e, InOp):
-            return self._in_op(e)
-        if isinstance(e, BinOp):
-            op = "~=" if e.op == "!=" else e.op
-            ls, rs = self._expr(e.left), self._expr(e.right)
-            if (isinstance(e.left, BinOp) and _PREC[e.left.op] < _PREC[e.op]) \
-                    or (isinstance(e.left, Lit) and e.left.kind == "raw"):
-                ls = f"({ls})"
-            if (isinstance(e.right, BinOp) and _parens_on_right(e.op, e.right.op)) \
-                    or (isinstance(e.right, Lit) and e.right.kind == "raw"):
-                rs = f"({rs})"
-            return f"{ls} {op} {rs}"
-        if isinstance(e, Call):
-            return self._call(e)
-        return "nil"
+            case "value":
+                ext = self.ctx.externs.get(n)
+                return self._expand(ext, ()) if ext is not None else LuaExpr(n, PREC_ATOM)
+        return LuaExpr(n, PREC_ATOM)
+
+    def _le(self, e: Expr, as_lhs: bool = False) -> LuaExpr:
+        match e:
+            case Lit(kind="bool"):
+                return LuaExpr("true" if e.val else "false", PREC_LIT)
+            case Lit(kind="nil"):
+                return LuaExpr("nil", PREC_LIT)
+            case Lit(kind="str"):
+                return LuaExpr(lua_str(e.val), PREC_LIT)
+            case Lit(kind="raw"):
+                return LuaExpr(str(e.val), PREC_RAW)
+            case Lit(kind="num"):
+                code = str(e.val)
+                return LuaExpr(code, PREC_UNARY if code.startswith("-") else PREC_LIT)
+            case Lit():
+                return LuaExpr(str(e.val), PREC_LIT)
+            case InterpStr():
+                joined = " .. ".join(
+                    lua_str(p) if isinstance(p, str) else f"tostring({self._expr(p)})"
+                    for p in e.parts
+                )
+                return LuaExpr(f"({joined})", PREC_ATOM)
+            case FnRef():
+                return LuaExpr(self._fnref(e.name), PREC_ATOM)
+            case ListLit():
+                code = ("{ " + ", ".join(self._expr(it) for it in e.items) + " }") if e.items else "{}"
+                return LuaExpr(code, PREC_LIT)
+            case Sym():
+                return self._le_sym(e, as_lhs)
+            case FieldAccess():
+                c = f"{self._le(e.obj).at(PREC_PREFIX)}.{e.field}"
+                return LuaExpr(f"_({c})" if (e.is_ref and not as_lhs) else c, PREC_ATOM)
+            case IndexAccess():
+                return LuaExpr(f"{self._le(e.obj).at(PREC_PREFIX)}[{self._expr(e.index)}]", PREC_ATOM)
+            case UnaryOp(op="not"):
+                return LuaExpr(f"not {self._le(e.operand).at(PREC_UNARY)}", PREC_UNARY)
+            case UnaryOp():
+                return LuaExpr(f"-{self._le(e.operand).at(PREC_UNARY, avoid_dash=True)}", PREC_UNARY)
+            case Lambda():
+                prms = ", ".join(_bind(pn) for pn, _t in e.params)
+                if isinstance(e.body, list):
+                    b = _ind(self._stmts(e.body), 2)
+                    code = f"function({prms})\n{b}\nend" if b.strip() else f"function({prms}) end"
+                else:
+                    code = f"function({prms}) return {self._expr(e.body)} end"
+                return LuaExpr(code, PREC_RAW)
+            case InOp():
+                return LuaExpr(self._in_op(e), PREC_ATOM)
+            case BinOp():
+                p = _PREC[e.op]
+                ls = self._le(e.left).at(p)
+                rs = self._le(e.right).at(p if e.op == ".." else p + 1)
+                return LuaExpr(f"{ls} {'~=' if e.op == '!=' else e.op} {rs}", p)
+            case Call():
+                return self._call(e)
+        return LuaExpr("nil", PREC_LIT)
 
     def _fnref(self, name: str) -> str:
         return f"fn.{name}"
 
-    def _call(self, c: Call) -> str:
+    def _call(self, c: Call) -> LuaExpr:
         if not c.receiver and c.func in ("say", "append", "line"):
             fn_name = _PRINT[{"say": "p", "append": "pr", "line": "pn"}[c.func]]
             if not c.args:
-                return f"{fn_name}()"
-            return self._p_call(c.args[0], fn_name) if len(c.args) == 1 else f"{fn_name}({', '.join(self._expr(a) for a in c.args)})"
+                return LuaExpr(f"{fn_name}()", PREC_ATOM)
+            code = self._p_call(c.args[0], fn_name) if len(c.args) == 1 \
+                else f"{fn_name}({', '.join(self._expr(a) for a in c.args)})"
+            return LuaExpr(code, PREC_ATOM)
         all_a = ([c.receiver] + c.args) if c.receiver else list(c.args)
-        fn = self.ctx.fns.get(c.func)
-        args = [self._expr(a) for a in all_a]
-        if fn and fn.extern:
-            return self._expand(fn, args, [_is_compound(a) for a in all_a])
-        return f"fn.{c.func}({', '.join(args)})" if c.func in self.ctx.fns else f"{c.func}({', '.join(args)})"
+        args = [self._le(a) for a in all_a]
+        ext = self.ctx.externs.get(c.func)
+        if ext is not None:
+            return self._expand(ext, args)
+        joined = ", ".join(a.code for a in args)
+        callee = f"fn.{c.func}" if c.func in self.ctx.fns else c.func
+        return LuaExpr(f"{callee}({joined})", PREC_ATOM)
 
-    def _expand(self, fn: FnDecl, args: List[str], compound: Sequence[bool] = ()) -> str:
-        """An extern is a macro: its template is pasted in place of the call."""
-        t = fn.body
-        return _fill_slots(t, args, compound) if "$" in t else t
+    def _expand(self, ext: ExternDecl, args: Sequence[LuaExpr]) -> LuaExpr:
+        t = ext.template
+        code = _fill_slots(t, args) if "$" in t else t
+        return LuaExpr(code, PREC_ATOM)
 
 
 def _trim_empty_slot(head: str, tail: str) -> Tuple[str, str]:
@@ -634,58 +657,51 @@ def _trim_empty_slot(head: str, tail: str) -> Tuple[str, str]:
     return head, tail
 
 
-def _slot_needs_parens(head: str, tail: str) -> bool:
+def _slot_min_prec(head: str, tail: str) -> int:
     left_ok = not head.strip() or head.rstrip().endswith(("(", ",", "{", "["))
     right_ok = not tail.strip() or tail.lstrip().startswith((",", ")", "}", "]"))
-    return not (left_ok and right_ok)
+    if left_ok and right_ok:
+        return PREC_RAW
+    if tail.lstrip().startswith((".", ":", "[", "(")):
+        return PREC_PREFIX
+    return PREC_UNARY
 
 
-def _fill_slots(text: str, args: List[str], compound: Sequence[bool] = ()) -> str:
-    """Fill the `$1`, `$*` and `$2...` slots of an extern template in one pass.
-
-    The slots are found from the right, so an inserted argument is never scanned
-    again: a game string that happens to contain `$1` reaches the output as it
-    is. An empty argument takes the comma that connected it (`g($1, $2...)` with
-    one argument is `g(a)`, not `g(a, )`).
-    """
+def _fill_slots(text: str, args: Sequence[LuaExpr]) -> str:
     end = len(text)
     while True:
         at = text.rfind("$", 0, end)
         if at < 0:
             return text
-        stop, value, wrap = _slot_at(text, at, args, compound)
-        if stop < 0:                       # a lone `$`: keep it, look further left
+        stop, value, single = _slot_at(text, at, args)
+        if stop < 0:
             end = at
             continue
         head, tail = text[:at], text[stop:]
         if not value:
             h2, t2 = _trim_empty_slot(head, tail)
             text = h2 + t2
+        elif single is not None:
+            min_p = _slot_min_prec(head, tail)
+            avoid_dash = head.rstrip().endswith("-")
+            text = head + single.at(min_p, avoid_dash=avoid_dash) + tail
         else:
-            val = f"({value})" if (wrap and _slot_needs_parens(head, tail)) else value
-            text = head + val + tail
+            text = head + value + tail
         end = at
 
 
-def _slot_at(text: str, at: int, args: List[str],
-             compound: Sequence[bool] = ()) -> Tuple[int, str, bool]:
-    """The value of the `$…` slot at `at` and the offset just past it."""
+def _slot_at(text: str, at: int, args: Sequence[LuaExpr]
+             ) -> Tuple[int, str, Optional[LuaExpr]]:
     i = at + 1
     if text[i:i + 1] == "*":
-        return i + 1, ", ".join(args), False
+        return i + 1, ", ".join(a.code for a in args), None
     j = i
     while j < len(text) and text[j].isdigit():
         j += 1
     if j == i:
-        return -1, "", False
+        return -1, "", None
     idx = int(text[i:j]) - 1
     if text.startswith("...", j):
-        return j + 3, (", ".join(args[idx:]) if idx >= 0 else ""), False
-    val = args[idx] if 0 <= idx < len(args) else ""
-    is_cmp = bool(val) and 0 <= idx < len(compound) and compound[idx]
-    return j, val, is_cmp
-
-
-def transpile(src: str, src_dir: str = "", src_name: str = "") -> str:
-    prog = load_includes(parse_source(src, src_name), src_dir)
-    return Emitter(prog, prescan(prog)).emit()
+        return j + 3, (", ".join(a.code for a in args[idx:]) if idx >= 0 else ""), None
+    arg = args[idx] if 0 <= idx < len(args) else None
+    return j, (arg.code if arg is not None else ""), arg

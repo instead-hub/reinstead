@@ -90,11 +90,14 @@ class Parser:
     # --- Top Level ---
 
     def parse_program(self) -> Program:
-        prog = Program()
+        prog = Program(root_src=self.src)
         self.skip_nl()
         while not self.at("EOF"):
             self._top_item(prog)
             self.skip_nl()
+        for it in prog.items:
+            if hasattr(it, "src") and not it.src:
+                it.src = self.src
         return prog
 
     def _top_item(self, prog: Program):
@@ -137,14 +140,14 @@ class Parser:
             self.eat_nl()
             return prog.items.append(EntryDecl(name=tok.val, params=params, line=tok.line))
         if kw == "extern":
-            return prog.items.append(self._parse_fn(is_extern=True))
+            return prog.items.append(self._parse_extern())
         if kw == "event":
             self.pos += 1
             return prog.items.extend(self._parse_event(False, t.line))
         if kw in ("global", "const"):
             return prog.items.append(self._parse_vars())
         if kw == "fn":
-            return prog.items.append(self._parse_fn(is_extern=False))
+            return prog.items.append(self._parse_fn())
         if kw == "verb":
             self.pos += 1
             return prog.items.append(self._parse_verb("verb", t.line))
@@ -197,6 +200,12 @@ class Parser:
             one = Tbl(None) if word == "tbl" else Ref(None) if word == "ref" else Name(word)
         return opt(one) if self.match("OP", "?") else one
 
+    def _parse_type_list(self) -> List[Type]:
+        res = [self._parse_type_str()]
+        while self.match("OP", ","):
+            res.append(self._parse_type_str())
+        return res
+
     def _parse_sig(self) -> List[Type]:
         """`[`: `type, type]` after a name — the arguments an event passes.
 
@@ -205,10 +214,7 @@ class Parser:
         """
         if not self.match("OP", ":") or self.at("NEWLINE"):
             return []
-        args = [self._parse_type_str()]
-        while self.match("OP", ","):
-            args.append(self._parse_type_str())
-        return args
+        return self._parse_type_list()
 
     def _parse_type(self, extend: bool) -> TypeDecl:
         line = self.cur().line
@@ -254,44 +260,49 @@ class Parser:
         self.eat("OP", ")")
         return params, var
 
-    def _parse_fn(self, is_extern: bool) -> Any:
+    def _parse_return_types(self, allow_colon: bool = False) -> List[Type]:
+        if not (self.match("OP", "->") or (allow_colon and self.match("OP", ":"))):
+            return []
+        return self._parse_type_list()
+
+    def _parse_extern(self) -> ExternDecl:
         line = self.eat("IDENT").line
-        ext_kind = ""
-        if is_extern:
-            kind = self.eat("IDENT")
-            if kind.val == "global":
-                raise Error("`extern global` is gone: an alias of a Lua global is "
-                            "`extern value` (read) or `extern lvalue` (read and write), "
-                            "a Lua function is `extern fn name(...) = \"template\"`",
-                            kind.line, self.src)
-            if kind.val not in ("fn", "value", "lvalue"):
-                raise Error(f"extern {kind.val}: expected `fn`, `value` or `lvalue`",
-                            kind.line, self.src)
-            ext_kind = kind.val
+        kind = self.eat("IDENT")
+        if kind.val == "global":
+            raise Error("`extern global` is gone: an alias of a Lua global is "
+                        "`extern value` (read) or `extern lvalue` (read and write), "
+                        "a Lua function is `extern fn name(...) = \"template\"`",
+                        kind.line, self.src)
+        if kind.val not in ("fn", "value", "lvalue"):
+            raise Error(f"extern {kind.val}: expected `fn`, `value` or `lvalue`",
+                        kind.line, self.src)
         name = self.eat_name(forbid_reserved=True).val
         params, var = self._parse_param_list(default_s=True, typed=True)
-        rets = []
-        if self.match("OP", "->") or (ext_kind in ("value", "lvalue") and self.match("OP", ":")):
-            rets.append(self._parse_type_str())
-            while self.match("OP", ","):
-                rets.append(self._parse_type_str())
-        if is_extern:
-            if not self.match("OP", "=") or self.cur().kind not in ("STRING", "ISTRING", "RAW"):
-                raise Error(f"extern {name}: expected a template "
-                            f"(`= \"…\"`)", self.cur().line, self.src)
-            raw = self.eat(self.cur().kind).val
-            self.eat_nl()
-            return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=raw,
-                          extern=ext_kind, line=line)
+        rets = self._parse_return_types(allow_colon=kind.val in ("value", "lvalue"))
+        if not self.match("OP", "=") or self.cur().kind not in ("STRING", "ISTRING", "RAW"):
+            raise Error(f"extern {name}: expected a template (`= \"…\"`)",
+                        self.cur().line, self.src)
+        tmpl = self.eat(self.cur().kind).val
+        self.eat_nl()
+        return ExternDecl(kind=kind.val, name=name, params=params, variadic=var,
+                          ret_types=rets, template=tmpl, line=line, src=self.src)
+
+    def _parse_fn(self) -> FnDecl:
+        line = self.eat("IDENT").line
+        name = self.eat_name(forbid_reserved=True).val
+        params, var = self._parse_param_list(default_s=True, typed=True)
+        rets = self._parse_return_types()
         if self.match("OP", "=") or self.at("RAW"):
             self.match("OP", "=")
             # `fn f(x) = expr` is just a short `fn f(x)` with `return expr`
             values = [self.parse_expr()]
             self.eat_nl()
             return FnDecl(name=name, params=params, variadic=var, ret_types=rets,
-                          body=[ReturnStmt(line=line, kind="return", values=values)], line=line)
+                          body=[ReturnStmt(line=line, kind="return", values=values)],
+                          line=line, src=self.src)
         body = self._opt_lua_or_stmts()
-        return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=body, line=line)
+        return FnDecl(name=name, params=params, variadic=var, ret_types=rets,
+                      body=body, line=line, src=self.src)
 
     def _opt_lua_or_stmts(self) -> Any:
         if self.at("NEWLINE") and self.peek().kind == "INDENT" and self.peek(2).val == "lua":

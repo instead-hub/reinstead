@@ -2,6 +2,7 @@ game "header"
 
 lang ru
 include stdlib
+include stdlib
 
 fmt = dash
 

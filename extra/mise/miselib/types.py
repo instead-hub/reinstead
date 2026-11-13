@@ -84,10 +84,10 @@ ANY = Name("any")
 EVENT = Name("event")
 
 
-def union(*types: Iterable[Type]) -> Type:
+def union(*ts: Iterable[Type]) -> Type:
     """A canonical union: flattened, without duplicates and without nil."""
     parts, nil = [], False
-    for t in types:
+    for t in ts:
         for one in (t.parts if isinstance(t, Union) else (t,)):
             if isinstance(one, Name) and one.name == "nil":
                 nil = True
