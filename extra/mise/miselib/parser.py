@@ -300,7 +300,7 @@ class Parser:
     def _parse_lua(self) -> LuaDecl:
         line = self.eat("IDENT", "lua").line
         self.eat_nl()
-        start_line = self.eat("INDENT").line
+        self.eat("INDENT")
         depth = 1
         while depth > 0 and not self.at("EOF"):
             depth += (1 if self.at("INDENT") else -1 if self.at("DEDENT") else 0)
@@ -309,8 +309,10 @@ class Parser:
             self.pos += 1
         end_line = self.cur().line if not self.at("EOF") else len(self.raw_lines) + 1
         self.match("DEDENT")
-        raw_slice = self.raw_lines[start_line - 1:end_line - 1]
-        block_ind = len(raw_slice[0]) - len(raw_slice[0].lstrip(" \t")) if raw_slice else 0
+        # from the line after `lua`: the block may start with comments, and a
+        # comment produces no token (so the INDENT line is the first code line)
+        raw_slice = self.raw_lines[line:end_line - 1]
+        block_ind = next((len(l) - len(l.lstrip(" \t")) for l in raw_slice if l.strip()), 0)
         llines = lua_lines("\n".join(raw_slice))
         while llines and (not llines[-1].strip()
                           or len(llines[-1]) - len(llines[-1].lstrip(" \t")) < block_ind):

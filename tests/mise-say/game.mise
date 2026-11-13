@@ -20,6 +20,11 @@ fn slen(t: str) -> num
 fn esc_ml() -> str
   return "a\nb"
 
+fn commented() -> str
+  lua
+    -- комментарий в начале тела сохраняется
+    return "comment"
+
 fn tri_ml() -> str
   return """
 c
@@ -44,6 +49,7 @@ impl game
     # `..` слабее `+`, как в Lua: склеиваем уже сумму
     say ("n=" .. x.pri + 1)
     say (x.pri + 1 .. "!")
+    say (commented)
     # скобки справа при равном приоритете не теряются
     say "parens={10 - (5 - 2)},{100 / (10 / 2)},{10 - (5 + 2)}"
 

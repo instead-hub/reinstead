@@ -54,6 +54,11 @@ fn.esc_ml = function()
 b]]
 end
 
+fn.commented = function()
+  -- комментарий в начале тела сохраняется
+  return "comment"
+end
+
 fn.tri_ml = function()
   return [[c
 d]]
@@ -122,6 +127,7 @@ _'game'.before_Inv = function(s)
   p("ml=", fn.slen(fn.esc_ml()), ",", fn.slen(fn.tri_ml()), ",", fn.slen(fn.raw_ml()))
   p("n=" .. _'x'.pri + 1)
   p(_'x'.pri + 1 .. "!")
+  p(fn.commented())
   p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2))
 end;
 

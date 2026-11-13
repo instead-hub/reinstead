@@ -2,5 +2,5 @@
 > инвентарь
 
 x x:noun() вещь line text
-append textraw words вещь ml=3,3,3 n=4 4! parens=7,20,3
+append textraw words вещь ml=3,3,3 n=4 4! comment parens=7,20,3
 
