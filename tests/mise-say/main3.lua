@@ -67,6 +67,16 @@ fn.show = function(x)
   return "x=" .. x
 end
 
+fn.esc_br = function()
+  return [=[x
+y]]=]
+end
+
+fn.esc_br2 = function()
+  return [=[a]]b
+конец]]=]
+end
+
 fn.tri_ml = function()
   return [[c
 d]]
@@ -142,6 +152,9 @@ _'game'.before_Inv = function(s)
   p(fn.commented())
   p(fn.show(42))
   p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2))
+  p("br=", fn.slen(fn.esc_br()), ",", fn.slen(fn.esc_br2()))
+  fn.note(fn.esc_br())
+  fn.note(fn.esc_br2())
 end;
 
 _'x'.found_in = 'test_room';

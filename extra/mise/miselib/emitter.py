@@ -23,7 +23,9 @@ def _parens_on_right(op: str, right: str) -> bool:
 def lua_str(s: str) -> str:
     if "\n" in s or "\\" in s or ('"' in s and "'" in s):
         eq = ""
-        while f"]{eq}]" in s or s.endswith("]"):
+        # the closing `]…]` must not appear inside the text, and a final `]` of the
+        # text would abut the closing bracket — both need a longer delimiter
+        while f"]{eq}]" in s or (not eq and s.endswith("]")):
             eq += "="
         lead = "\n" if s.startswith("\n") else ""
         return f"[{eq}[{lead}{s}]{eq}]"
@@ -601,7 +603,7 @@ class Emitter:
             if as_lhs or e.rk == "var":
                 fn = self.ctx.fns.get(n)
                 if fn is not None and fn.is_lvalue:
-                    return self._expand(fn, [], as_stmt=True)   # the place itself
+                    return self._expand(fn, [])                 # the place itself
                 return n
             if e.rk == "obj":
                 return f"_'{n}'"
@@ -613,7 +615,7 @@ class Emitter:
                 return self._call(Call(line=e.line, func=n))
             if e.rk == "value":
                 fn = self.ctx.fns.get(n)
-                return self._expand(fn, [], False) if fn and isinstance(fn.body, str) else n
+                return self._expand(fn, []) if fn and isinstance(fn.body, str) else n
             return n
         if isinstance(e, FieldAccess):
             c = f"{self._expr(e.obj)}.{e.field}"
@@ -656,16 +658,17 @@ class Emitter:
         fn = self.ctx.fns.get(c.func)
         args = [self._expr(a) for a in all_a]
         if fn and fn.is_extern:
-            return self._expand(fn, args, as_stmt)
+            return self._expand(fn, args)
         return f"fn.{c.func}({', '.join(args)})" if c.func in self.ctx.fns else f"{c.func}({', '.join(args)})"
 
-    def _expand(self, fn: FnDecl, args: List[str], as_stmt: bool) -> str:
+    def _expand(self, fn: FnDecl, args: List[str]) -> str:
+        """An extern is a macro: its template is pasted in place of the call.
+
+        The template is one Lua value (or one statement) as its author wrote it,
+        parentheses included: the emitter adds none.
+        """
         t = fn.body
-        if "$" in t:
-            return _fill_slots(t, args)
-        if as_stmt or t.startswith("(") or _SIMPLE_EXPR.match(t.strip()):
-            return t
-        return f"({t})"
+        return _fill_slots(t, args) if "$" in t else t
 
 
 def _fill_slots(text: str, args: List[str]) -> str:
@@ -712,9 +715,6 @@ def _slot_at(text: str, at: int, args: List[str]) -> Tuple[int, str]:
     if text.startswith("...", j):
         return j + 3, (", ".join(args[idx:]) if idx >= 0 else "")
     return j, (args[idx] if 0 <= idx < len(args) else "")
-
-
-_SIMPLE_EXPR = re.compile(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*(?:\([^()]*\))?")
 
 
 def transpile(src: str, src_dir: str = "", src_name: str = "") -> str:
