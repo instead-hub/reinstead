@@ -372,9 +372,7 @@ class Parser:
         while not self.at("DEDENT") and not self.at("EOF"):
             t = self.cur()
             kw = t.val
-            if (kw in PHASES and self.peek().kind == "IDENT") or (
-                kw.startswith(("before_", "after_", "post_", "life_")) and self.peek().val != "="
-            ):
+            if kw in PHASES and self.peek().kind == "IDENT":
                 ent.handlers.append(self._parse_handler())
                 continue
             if kw == "words":
@@ -512,16 +510,9 @@ class Parser:
 
     def _parse_handler(self) -> Handler:
         tok = self.eat("IDENT")
-        if "_" in tok.val and tok.val.split("_", 1)[0] in PHASES:
-            phase, first_ev = tok.val.split("_", 1)
-            evs = [first_ev]
-            while self.match("OP", ","):
-                evs.append(self.eat("IDENT").val)
-        else:
-            phase = tok.val
-            evs = self.sym_list()
+        phase = tok.val
+        evs = self.sym_list()
         prms = self._opt_ident_parens()
-        self.match("OP", "->")
         label = f"{phase} {','.join(evs)}"
         return Handler(phase=phase, events=evs, params=prms,
                        body=self._parse_handler_body(label), line=tok.line)
