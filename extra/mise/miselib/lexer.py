@@ -20,6 +20,10 @@ _LUA_SPAN_RE = re.compile(
     r"--\[(=*)\[[\s\S]*?\]\1\]|--[^\n]*|\[(=*)\[[\s\S]*?\]\2\]"
     r'|"(?:\\[\s\S]|[^"\\\n])*"|\'(?:\\[\s\S]|[^\'\\\n])*\''
 )
+# Lua keywords mise does not use as words: written as a name, they would reach the
+# generated file as an identifier (`local end = 1`, `s.end = 1`, `fn.end = …`).
+# A `lua` block is the one place where they are ordinary Lua, so its body is exempt.
+_LUA_KEYWORDS = frozenset({"do", "end", "function", "goto", "repeat", "then", "until", "while"})
 _MULTI_OPS = ("...", "->", ":=", "+=", "-=", "==", "!=", "~=", "<=", ">=", "..")
 _SINGLE_OPS = set("()[]{}:,.;=+-*/%<>@&*+?~|")
 
@@ -86,6 +90,7 @@ def tokenize(src: str, src_name: str = "") -> List[Token]:
     src = src.replace("\r\n", "\n").replace("\r", "\n")
     tokens: List[Token] = []
     indents = [0]
+    raw_lua: List[int] = []          # indentation levels of `lua` bodies (raw Lua)
     pdepth = 0
     n, pos, line = len(src), 0, 1
     line_start = True
@@ -107,8 +112,13 @@ def tokenize(src: str, src_name: str = "") -> List[Token]:
             if ind > indents[-1]:
                 indents.append(ind)
                 tokens.append(Token("INDENT", "", line))
+                prev = tokens[-3] if len(tokens) > 2 else None
+                if prev is not None and prev.kind == "IDENT" and prev.val == "lua":
+                    raw_lua.append(ind)  # the body of a `lua` block is Lua, not mise
             else:
                 while ind < indents[-1]:
+                    if raw_lua and raw_lua[-1] == indents[-1]:
+                        raw_lua.pop()
                     indents.pop()
                     tokens.append(Token("DEDENT", "", line))
                 if ind != indents[-1]:
@@ -185,7 +195,11 @@ def tokenize(src: str, src_name: str = "") -> List[Token]:
 
         m = _IDENT_RE.match(src, pos)
         if m:
-            tokens.append(Token("IDENT", m.group(0), line, spaced))
+            word = m.group(0)
+            if not raw_lua and word in _LUA_KEYWORDS:
+                raise Error(f"{word!r} is a Lua keyword and cannot be a name",
+                            line, src_name)
+            tokens.append(Token("IDENT", word, line, spaced))
             pos = m.end()
             continue
 
