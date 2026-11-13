@@ -636,6 +636,11 @@ class Parser:
                 c.flags.append(self.eat("IDENT").val)
             elif self.match("OP", "->"):
                 c.next_label = self.eat("IDENT").val
+            else:
+                t = self.cur()
+                raise Error(f"talk choice: unexpected {t.val!r} after the question "
+                            f"(only `hidden`, `only`, `always` or `-> label` may follow)",
+                            t.line, self.src)
         self.eat_nl()
         if self.match("INDENT"):
             first = True
