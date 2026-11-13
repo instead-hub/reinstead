@@ -1,0 +1,1 @@
+mise: lua-as-field.mise:7: `lua` is not a value: a field or a handler takes a `fn` with a `lua` body (`field = &name`, `before X = &name`)

@@ -1,0 +1,1 @@
+mise: lua-as-stmt.mise:7: `lua` is not a statement: it is the whole body of a `fn` (or the top level of the file)

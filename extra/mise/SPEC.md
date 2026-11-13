@@ -124,9 +124,11 @@ extern fn noun(s: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str = "$1:noun_
 читается и глобал движка: `extern value mp -> any = "mp"` (скобки у `extern
 value` необязательны).
 
-Функции, объявленные внутри `lua`-блока (`function foo(...)`), mise **не видит**:
-`lua` нужен для побочных эффектов и настройки движка, а не для API игры. Свою
-функцию объявляйте через `fn` (с `lua`-телом, если нужно) или `extern fn`.
+`lua` — это либо верхний уровень файла (настройка движка, побочные эффекты), либо
+**всё тело `fn`**; в поле или в обработчик его положить нельзя — пишите `fn` с
+`lua`-телом и ссылайтесь на неё (`field = &name`, `before X = &name`). Функции,
+объявленные внутри `lua`-блока (`function foo(...)`), mise **не видит**: свою
+функцию объявляйте через `fn` или `extern fn`.
 
 ### Идея 8: Унификация сущностей
 - **Настройка игры и игрока — обычные `impl game` / `impl pl`**, глобальные
@@ -817,7 +819,7 @@ event_list   ::= IDENT { "," IDENT }
 handler_body ::= value                               (* before Take = "Нельзя!" *)
                | "pass"
                | "stop"
-               | stmt_block
+               | stmt_block                          (* `lua` в обработчике нельзя: `&fn` *)
 
 (* =====================================================================
    Глаголы
@@ -933,6 +935,7 @@ primary     ::= NUMBER | BOOL | "nil" | "..." | STRING | "`" <lua expr> "`"
 lvalue      ::= IDENT | postfix_expr "." IDENT | postfix_expr "[" expr "]"
 raw_lua     ::= "`" <lua expr> "`"
 lua_decl    ::= "lua" INDENT { <raw lua line> NEWLINE } DEDENT
+              (* только верх файла и тело `fn`; в поле/обработчике — ошибка *)
 ```
 
 ---
@@ -987,7 +990,7 @@ app_expr ::= postfix_expr [ ":" IDENT { arg_atom } | arg_atom { arg_atom } ]
 
 ## 8. Инструменты и проверки
 
-- `tests/run-mise-tests.sh [--engine]` — 31 игра: сверка `main3.lua` байт-в-байт
+- `tests/run-mise-tests.sh [--engine]` — 32 игры: сверка `main3.lua` байт-в-байт
   и 31 прогон в движке (26 с записанным транскриптом, 5 — против оригинала
   metaparser); `dict.mrd` рядом с игрой — кэш слов, его валидирует сам движок;
 - `tests/run-mise-error-tests.sh` — 137 негативных случаев с точными сообщениями

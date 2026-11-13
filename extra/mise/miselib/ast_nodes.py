@@ -24,7 +24,7 @@ class Expr:
 
 @dataclass
 class Lit(Expr):
-    kind: str = "nil"          # "num", "bool", "str", "nil", "raw" (backtick), "lua" (block), "table" ({...})
+    kind: str = "nil"          # "num", "bool", "str", "nil", "raw" (backtick), "table" ({...})
     val: Any = None
 
 @dataclass

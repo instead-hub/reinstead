@@ -441,9 +441,9 @@ class Parser:
                         "(`text = [\"page 1\", \"page 2\"]` or a multi-line `[` block)",
                         self.cur().line, self.src)
         if self.at("IDENT", "lua"):
-            val = Lit(line=self.cur().line, kind="lua", val=self._parse_lua().code)
-            self.eat("DEDENT")
-            return val
+            raise Error("`lua` is not a value: a field or a handler takes a `fn` with a "
+                        "`lua` body (`field = &name`, `before X = &name`)",
+                        self.cur().line, self.src)
         stmts = []
         while not self.at("DEDENT") and not self.at("EOF"):
             stmts.append(self.parse_stmt())
@@ -672,6 +672,9 @@ class Parser:
     def parse_stmt(self) -> Stmt:
         t = self.cur()
         line = t.line
+        if t.kind == "IDENT" and t.val == "lua":
+            raise Error("`lua` is not a statement: it is the whole body of a `fn` "
+                        "(or the top level of the file)", t.line, self.src)
         if t.kind in ("STRING", "ISTRING"):
             e = self._parse_str_tok()
             mode = "pr" if self.match("OP", "~") else "p"

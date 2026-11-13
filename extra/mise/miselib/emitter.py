@@ -345,9 +345,6 @@ class Emitter:
         if isinstance(v, Lit):
             if v.kind in ("table", "raw"):     # `{ ... }` verbatim, a `` `lua expression` ``
                 return v.val
-            if v.kind == "lua":                # a `lua` block: an opaque body
-                prms = self._prop_prms(p)
-                return f"function({prms})\n{_ind(v.val, ind + 2)}\n{pad}end"
         if isinstance(v, list):
             prms = self._prop_prms(p)
             b = _ind(self._stmts(v), ind + 2)
@@ -399,8 +396,6 @@ class Emitter:
             return key, self._fnref(h.body.name)
         if isinstance(h.body, Lit) and h.body.kind == "str":
             return key, lua_str(h.body.val)
-        if isinstance(h.body, Lit) and h.body.kind == "lua":
-            return key, f"function({prms})\n{_ind(h.body.val, ind + 2)}\n{pad}end"
         if isinstance(h.body, InterpStr):
             return key, f"function({prms})\n{_ind(self._p_call(h.body, 'p'), ind + 2)}\n{pad}end"
         if isinstance(h.body, list):

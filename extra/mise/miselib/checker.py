@@ -775,8 +775,6 @@ def _check_entity(ctx: Context, ent: EntityDecl):
                 if want and not any(is_subtype(ctx, t, w) for w in want):
                     raise TypeCheckError(f"{where}: return {t}, declared returns "
                                          f"{', '.join(str(w) for w in want)}", p.line)
-        elif isinstance(p.value, Lit) and p.value.kind == "lua":
-            _prop_body_env(ctx, p)
         else:
             _check_callable_part(ctx, p.value, {"s": Name(_root(ctx))}, owner, p.typ, where, p.line)
         if p.emit and p.value is not None:
@@ -1539,7 +1537,7 @@ def _value_types(ctx: Context, values: List[Expr], env: Dict[str, Type],
 
 
 def _is_method_val(val: Any) -> bool:
-    return isinstance(val, (list, FnRef)) or (isinstance(val, Lit) and val.kind == "lua")
+    return isinstance(val, (list, FnRef))
 
 
 def _class_methods(ctx: Context, cls: str) -> Set[str]:
