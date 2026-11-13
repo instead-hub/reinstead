@@ -792,7 +792,7 @@ def _check_entity(ctx: Context, ent: EntityDecl):
 
 
 HANDLER_PARAMS = ("s", "w", "wh", "w2", "w3")
-CHOICE_FIELDS = ("ask", "reply", "do", "onempty")
+CHOICE_FIELDS = ("ask", "reply", "act", "onempty")
 
 
 def _handler_event_args(ctx: Context, h: Handler) -> List[Type]:

@@ -4,4 +4,4 @@ include stdlib
 
 talk c
   * "вопрос"
-    do = "строка"
+    act = "строка"

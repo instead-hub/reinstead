@@ -86,13 +86,13 @@ class talk(room) = dlg
   obj: tbl[choice]
 
 # A `*`/`+` choice in a dialogue. These are the words the author writes; the
-# emitter maps them onto the engine's `phr` fields (ask -> dsc, reply/do -> act).
+# emitter maps them onto the engine's `phr` fields (ask -> dsc, reply -> act).
 # A condition (`[expr]`/`when = …`) is a truthiness test, like `if`, so it is
 # not typed here.
 class choice
   ask: str | fn(s: obj) -> str      # the line in the choice list
   reply: str | fn(s: obj) -> str    # what is printed when it is chosen
-  do: fn(s: obj)                    # the action after the reply
+  act: fn(s: obj)                   # the action after the reply
   onempty: fn(s: obj) -> str        # no selectable sub-choice: dlg.lua calls it
   next: str                         # a tag: `-> label`
   hidden: bool

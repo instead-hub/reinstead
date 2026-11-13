@@ -83,7 +83,7 @@ talk разговор_с_гидом
     reply = &reply_text
   * "С действием?"
     reply = &reply_text
-    do = &act_say
+    act = &act_say
   label финал
     say = "-- Продолжение следует."
     * "Спасибо."
