@@ -6,6 +6,8 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +24,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -49,6 +51,11 @@ end
 function init()
   return fn.init()
 end
+
+const 'HELD_STATE' (0)
+const 'QUEEN_STATE' (1)
+const 'WOOL_STATE' (2)
+const 'CHAIR_STATE' (3)
 
 Door = Class({
   walk_to = 'none';
@@ -98,13 +105,6 @@ Kitten = Class {
 obj {
   nam = "none";
 }
-
---"мочь"
-
-const 'HELD_STATE' (0)
-const 'QUEEN_STATE' (1)
-const 'WOOL_STATE' (2)
-const 'CHAIR_STATE' (3)
 
 room {
   -"гостиная|снег|снежинки";

@@ -10,8 +10,7 @@ that every consumer re-parsed; this module holds one representation instead:
     Union(parts, nil=True)      `A|B?`
 
 `str()` prints the source spelling (`ref[talk]|fn(obj)->ref`, `obj?`), which is
-what diagnostics and `.err` tests pin, and `parse()` reads that spelling back
-(it is used where types arrive as text).
+what diagnostics and `.err` tests pin.
 """
 from dataclasses import dataclass
 from typing import Iterable, Optional, Tuple
@@ -46,12 +45,12 @@ class Tbl(Type):
 
 @dataclass(frozen=True)
 class Ref(Type):
-    """`ref` (name is empty: any object) or `ref[C]`."""
+    """`ref` (inner is None: any object) or `ref[C]`."""
 
-    name: str = ""
+    inner: Optional[Type] = None
 
     def __str__(self) -> str:
-        return "ref" if not self.name else f"ref[{self.name}]"
+        return "ref" if self.inner is None else f"ref[{self.inner}]"
 
 
 @dataclass(frozen=True)
@@ -151,12 +150,6 @@ def tbl_inner(t: Type) -> Optional[Type]:
     return one.inner if isinstance(one, Tbl) else None
 
 
-def ref_inner(t: Type) -> Optional[str]:
-    """`ref[C]` -> `C`; `ref` (any object) -> `""`; not a reference -> None."""
-    one = single(t)
-    return one.name if isinstance(one, Ref) else None
-
-
 def fn_returns(t: Optional[Type]) -> Tuple[Type, ...]:
     """Return types of the `fn(...) -> T` alternatives of a type."""
     return tuple(r for one in parts(t) if isinstance(one, Fn) for r in one.rets) \
@@ -169,58 +162,3 @@ def fn_of(t: Type) -> Optional[Fn]:
         if isinstance(one, Fn):
             return one
     return None
-
-
-# --- parsing the textual spelling (used where a type arrives as text) --------
-
-def parse(text: str) -> Type:
-    """`ref[talk]|fn(obj)->ref` -> a `Type`."""
-    text = text.strip()
-    if text.endswith("?"):
-        return opt(parse(text[:-1]))
-    alts = _split_top(text, "|")
-    if len(alts) > 1:
-        return union(*(parse(a) for a in alts))
-    return _parse_one(text.strip())
-
-
-def _parse_one(text: str) -> Type:
-    if text == "tbl":
-        return Tbl(None)                       # a bare table: no element type
-    if text == "ref":
-        return Ref("")                         # any object
-    if text.startswith("tbl["):
-        inner = text[4:-1]
-        return Tbl(parse(inner) if inner.strip() else Name(""))   # `tbl[]` keeps ""
-    if text.startswith("ref[") and text.endswith("]"):
-        return Ref(text[4:-1].strip())
-    if text.startswith("fn("):
-        close = _closing(text, 2)
-        params = tuple(parse(p) for p in _split_top(text[3:close], ",") if p)
-        rest = text[close + 1:]
-        rets = tuple(parse(r) for r in _split_top(rest[2:], ",") if r) \
-            if rest.startswith("->") else ()
-        return Fn(params, rets)
-    return Name(text)
-
-
-def _closing(text: str, start: int = 0) -> int:
-    """The `)` that closes the `(` at `start`."""
-    depth = 0
-    for i in range(start, len(text)):
-        ch = text[i]
-        depth += (1 if ch == "(" else -1 if ch == ")" else 0)
-        if depth == 0:
-            return i
-    return len(text) - 1
-
-
-def _split_top(text: str, sep: str) -> list:
-    res, depth, start = [], 0, 0
-    for i, ch in enumerate(text):
-        depth += (1 if ch in "([" else -1 if ch in ")]" else 0)
-        if ch == sep and depth == 0:
-            res.append(text[start:i].strip())
-            start = i + 1
-    res.append(text[start:].strip())
-    return [r for r in res if r]

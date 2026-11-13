@@ -6,6 +6,8 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +24,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -78,20 +80,6 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
-Talkative = Class {
-  heard = false;
-  before_Talk = function(s)
-    s.heard = true
-    std.p "поговорили"
-  end;
-}
-
-Flying = Class {
-  before_Climb = function(s)
-    std.p "взлетел"
-  end;
-}
-
 Bird = Class {
   before_Climb = function(s)
     std.p "взлетел"
@@ -101,8 +89,6 @@ Bird = Class {
 obj {
   nam = "none";
 }
-
---"мочь"
 
 Bird {
   -"орёл";

@@ -1,12 +1,18 @@
 """Minimalist recursive-descent parser for MISE 2."""
 from typing import Any, List, Optional, Tuple
-from . import types
 from .ast_nodes import *
-from .lexer import Token, lua_lines, tokenize
+from .lexer import Token, tokenize
 from .types import ANY, Fn, Name, Ref, Tbl, Type, opt, union
 
 PHASES = frozenset({"on", "before", "after", "post", "life"})
 META_KEYS = frozenset({"game", "name", "version", "author", "info"})
+LUA_KEYWORDS = frozenset({
+    "and", "break", "do", "else", "elseif", "end", "false", "for",
+    "function", "goto", "if", "in", "local", "nil", "not", "or",
+    "repeat", "return", "then", "true", "until", "while",
+})
+_LUA_ONLY_KEYWORDS = frozenset({"do", "end", "function", "goto", "repeat", "then", "until", "while"})
+_RESERVED_VARS = frozenset({"fn", "std"})
 # Kind keywords are not known here: `obj`/`room`/`story` are classes declared in
 # core.mise, and a declaration is recognised by its shape (`Kind name`).
 STMT_KWS = frozenset({
@@ -23,9 +29,8 @@ _BIN_PREC = {
 
 
 class Parser:
-    def __init__(self, tokens: List[Token], src_name: str = "", raw_src: str = ""):
+    def __init__(self, tokens: List[Token], src_name: str = ""):
         self.tokens, self.pos, self.src = tokens, 0, src_name
-        self.raw_lines = raw_src.splitlines() if raw_src else []
 
     def cur(self) -> Token:
         return self.tokens[self.pos]
@@ -59,9 +64,19 @@ class Parser:
             self.eat("NEWLINE")
         self.skip_nl()
 
+    def eat_name(self, forbid_reserved: bool = False) -> Token:
+        t = self.eat("IDENT")
+        if t.val in LUA_KEYWORDS:
+            raise Error(f"{t.val!r} is a Lua keyword and cannot be a name", t.line, self.src)
+        if forbid_reserved and t.val in _RESERVED_VARS:
+            raise Error(f"{t.val!r} is reserved by the runtime and cannot be a name", t.line, self.src)
+        return t
+
     def sym(self) -> str:
         t = self.cur()
         if t.kind in ("IDENT", "TAG", "TILDE_ID"):
+            if t.kind == "IDENT" and t.val in LUA_KEYWORDS:
+                raise Error(f"{t.val!r} is a Lua keyword and cannot be a name", t.line, self.src)
             self.pos += 1
             return t.val
         raise Error(f"expected symbol, got {t.val!r}", t.line, self.src)
@@ -117,7 +132,7 @@ class Parser:
             return prog.items.append(self._parse_type(extend=False))
         if kw == "entry":
             self.pos += 1
-            tok = self.eat("IDENT")
+            tok = self.eat_name()
             params, _ = self._parse_param_list(default_s=False, typed=True)
             self.eat_nl()
             return prog.items.append(EntryDecl(name=tok.val, params=params, line=tok.line))
@@ -176,10 +191,10 @@ class Parser:
             self.pos += 2
             inner = self._parse_type_str(single) if not self.at("OP", "]") else Name("")
             self.eat("OP", "]")
-            one = Tbl(inner) if t.val == "tbl" else Ref(str(inner))
+            one = Tbl(inner) if t.val == "tbl" else Ref(inner)
         else:
             word = self.eat("IDENT").val
-            one = Tbl(None) if word == "tbl" else Ref("") if word == "ref" else Name(word)
+            one = Tbl(None) if word == "tbl" else Ref(None) if word == "ref" else Name(word)
         return opt(one) if self.match("OP", "?") else one
 
     def _parse_sig(self) -> List[Type]:
@@ -197,7 +212,7 @@ class Parser:
 
     def _parse_type(self, extend: bool) -> TypeDecl:
         line = self.cur().line
-        name = self.eat("IDENT").val
+        name = self.eat_name().val
         self.match("OP", "=")
         neg, vals = False, []
         in_brackets = bool(self.match("OP", "["))
@@ -228,7 +243,7 @@ class Parser:
             if default_s and self.match("OP", "..."):
                 var = self._parse_type_str(single=True) if self.match("OP", ":") else ANY
                 break
-            pn = self.eat("IDENT").val
+            pn = self.eat_name(forbid_reserved=True).val
             if self.match("OP", ":"):
                 pt: Any = self._parse_type_str(single=True)
             else:
@@ -241,7 +256,7 @@ class Parser:
 
     def _parse_fn(self, is_extern: bool) -> Any:
         line = self.eat("IDENT").line
-        is_value = is_lvalue = False
+        ext_kind = ""
         if is_extern:
             kind = self.eat("IDENT")
             if kind.val == "global":
@@ -252,23 +267,22 @@ class Parser:
             if kind.val not in ("fn", "value", "lvalue"):
                 raise Error(f"extern {kind.val}: expected `fn`, `value` or `lvalue`",
                             kind.line, self.src)
-            is_value = kind.val in ("value", "lvalue")
-            is_lvalue = kind.val == "lvalue"
-        name = self.eat("IDENT").val
+            ext_kind = kind.val
+        name = self.eat_name(forbid_reserved=True).val
         params, var = self._parse_param_list(default_s=True, typed=True)
         rets = []
-        if self.match("OP", "->"):
+        if self.match("OP", "->") or (ext_kind in ("value", "lvalue") and self.match("OP", ":")):
             rets.append(self._parse_type_str())
             while self.match("OP", ","):
                 rets.append(self._parse_type_str())
         if is_extern:
-            if not self.match("OP", "="):
+            if not self.match("OP", "=") or self.cur().kind not in ("STRING", "ISTRING", "RAW"):
                 raise Error(f"extern {name}: expected a template "
                             f"(`= \"…\"`)", self.cur().line, self.src)
             raw = self.eat(self.cur().kind).val
             self.eat_nl()
             return FnDecl(name=name, params=params, variadic=var, ret_types=rets, body=raw,
-                          is_extern=True, is_value=is_value, is_lvalue=is_lvalue, line=line)
+                          extern=ext_kind, line=line)
         if self.match("OP", "=") or self.at("RAW"):
             self.match("OP", "=")
             # `fn f(x) = expr` is just a short `fn f(x)` with `return expr`
@@ -289,7 +303,7 @@ class Parser:
         return self.parse_stmt_block()
 
     def _parse_var_item(self) -> Tuple[str, Optional[Type], Expr, int]:
-        vn = self.eat("IDENT").val
+        vn = self.eat_name(forbid_reserved=True).val
         vt = self._parse_type_str() if self.match("OP", ":") else None
         self.eat("OP", "=")
         item = (vn, vt, self.parse_expr(), self.cur().line)
@@ -312,35 +326,20 @@ class Parser:
     def _parse_lua(self) -> LuaDecl:
         line = self.eat("IDENT", "lua").line
         self.eat_nl()
-        self.eat("INDENT")
-        depth = 1
-        while depth > 0 and not self.at("EOF"):
-            depth += (1 if self.at("INDENT") else -1 if self.at("DEDENT") else 0)
-            if depth == 0:
-                break
-            self.pos += 1
-        end_line = self.cur().line if not self.at("EOF") else len(self.raw_lines) + 1
-        self.match("DEDENT")
-        # from the line after `lua`: the block may start with comments, and a
-        # comment produces no token (so the INDENT line is the first code line)
-        raw_slice = self.raw_lines[line:end_line - 1]
-        block_ind = next((len(l) - len(l.lstrip(" \t")) for l in raw_slice if l.strip()), 0)
-        llines = lua_lines("\n".join(raw_slice))
-        while llines and (not llines[-1].strip()
-                          or len(llines[-1]) - len(llines[-1].lstrip(" \t")) < block_ind):
-            llines.pop()
-        ind = min((len(l) - len(l.lstrip(" \t")) for l in llines if l.strip()), default=0)
-        return LuaDecl(code="\n".join(l[ind:] if l.strip() else "" for l in llines), line=line)
+        code = self.eat("LUA_BLOCK").val
+        self.skip_nl()
+        return LuaDecl(code=code, line=line)
 
     # --- Unified Entity (`class`, `obj`, `room`, `impl`, ...) ---
 
     def _parse_entity(self) -> EntityDecl:
         tok = self.eat("IDENT")
-        kind = "class" if tok.val == "mixin" else tok.val
+        is_mixin = tok.val == "mixin"
+        kind = "class" if is_mixin else tok.val
         name = self.sym() if (kind == "impl" or self.cur().kind in ("IDENT", "TAG")) else None
         parent = None
         if kind == "class" and self.match("OP", "("):
-            parent = self.eat("IDENT").val
+            parent = self.eat_name().val
             self.eat("OP", ")")
         words = self._header_words()
         traits = self.sym_list() if (self.match("OP", ":") and not self.at("NEWLINE")) else []
@@ -351,7 +350,7 @@ class Parser:
             while self.match("OP", "."):
                 ctor += "." + self.eat("IDENT").val
         ent = EntityDecl(kind=kind, name=name, parent=parent, ctor=ctor, words=words, traits=traits,
-                         locations=locs, line=tok.line, src=self.src)
+                         locations=locs, is_mixin=is_mixin, line=tok.line)
         self.eat_nl()
         if self.match("INDENT"):
             self._parse_members(ent)
@@ -382,7 +381,7 @@ class Parser:
             if self.peek().kind in ("IDENT", "TAG"):
                 ent.children.append(self._parse_entity())
                 continue
-            pname = self.eat("IDENT").val
+            pname = self.eat_name().val
             prms = self._opt_ident_parens()
 
             if ent.kind == "class" and self.match("OP", ":"):
@@ -539,8 +538,8 @@ class Parser:
         single name: with several names it would be unclear which one it belongs to.
         """
         names = self.sym_list()
-        types = self._parse_sig()
-        sig = EventsDecl(extend=extend, line=line, sigs=[(names, types)])
+        arg_types = self._parse_sig()
+        sig = EventsDecl(extend=extend, line=line, sigs=[(names, arg_types)])
         self.eat_nl()
         handlers: List[Handler] = []
         has_block = bool(self.match("INDENT"))
@@ -629,7 +628,7 @@ class Parser:
             elif t.kind == "OP" and t.val in ("*", "+"):
                 td.choices.append(self._parse_choice())
             else:
-                pn = self.eat("IDENT").val
+                pn = self.eat_name().val
                 self.eat("OP", "=")
                 td.props.append(Prop(name=pn, value=self.parse_expr(), line=t.line))
                 self.eat_nl()
@@ -714,7 +713,7 @@ class Parser:
                 self.pos += 1
                 names = []
                 while True:
-                    vn = self.eat("IDENT").val
+                    vn = self.eat_name(forbid_reserved=True).val
                     vt = self._parse_type_str() if self.match("OP", ":") else None
                     names.append((vn, vt))
                     if not self.match("OP", ","):
@@ -737,7 +736,7 @@ class Parser:
             return AssignStmt(line=line, target=lhs, op=op, values=vals)
 
         if self.match("OP", ":"):
-            m = self.eat("IDENT").val
+            m = self.eat_name().val
             args = self._app_args()
             self.skip_nl()          # a block-bodied lambda already consumed it
             return CallStmt(line=line, call=Call(line=line, func=m, receiver=lhs, args=args))
@@ -759,6 +758,11 @@ class Parser:
                     break
                 names.append(self.eat("IDENT").val)
             if names and self.match("OP", ":="):
+                for n in names:
+                    if n in LUA_KEYWORDS:
+                        raise Error(f"{n!r} is a Lua keyword and cannot be a name", line, self.src)
+                    if n in _RESERVED_VARS:
+                        raise Error(f"{n!r} is reserved by the runtime and cannot be a name", line, self.src)
                 return Bind(line=line, names=names, value=self.parse_expr())
         self.pos = save
         return self.parse_expr()
@@ -795,7 +799,7 @@ class Parser:
 
     def _parse_for(self) -> Stmt:
         line = self.eat("IDENT", "for").line
-        vn = self.eat("IDENT").val
+        vn = self.eat_name(forbid_reserved=True).val
         vt = self._parse_type_str() if self.match("OP", ":") else None
         if self.match("OP", "="):
             a = self.parse_expr()
@@ -805,7 +809,7 @@ class Parser:
             return ForNumStmt(line=line, var=vn, var_type=vt, start=a, stop=b, step=step, body=self.parse_stmt_block())
         vlist = [(vn, vt)]
         while self.match("OP", ","):
-            n2 = self.eat("IDENT").val
+            n2 = self.eat_name(forbid_reserved=True).val
             t2 = self._parse_type_str() if self.match("OP", ":") else None
             vlist.append((n2, t2))
         is_of = bool(self.match("IDENT", "of"))
@@ -860,7 +864,7 @@ class Parser:
         """Application by juxtaposition: `f a b`, `obj:m a`. Parentheses only group."""
         base = self.parse_postfix()
         while self.match("OP", ":"):
-            m = self.eat("IDENT").val
+            m = self.eat_name().val
             base = Call(line=base.line, func=m, receiver=base, args=self._app_args())
             base = self._postfix_tail(base)
         if isinstance(base, Sym) and base.name != "..." and self._can_start_arg():
@@ -891,7 +895,10 @@ class Parser:
     def _postfix_tail(self, atom: Expr) -> Expr:
         while True:
             if self.match("OP", "."):
-                atom = FieldAccess(line=atom.line, obj=atom, field=self.eat("IDENT").val)
+                ftok = self.eat("IDENT")
+                if ftok.val in LUA_KEYWORDS:
+                    raise Error(f"{ftok.val!r} is a Lua keyword and cannot be a name", ftok.line, self.src)
+                atom = FieldAccess(line=atom.line, obj=atom, field=ftok.val)
             elif self.at("OP", "[") and not self.cur().spaced:
                 self.pos += 1
                 idx = self.parse_expr()
@@ -918,6 +925,10 @@ class Parser:
             self.pos += 1
             return Lit(line=t.line, kind="raw", val=t.val)
         if t.kind == "IDENT":
+            if t.val in _LUA_ONLY_KEYWORDS:
+                raise Error(f"{t.val!r} is a Lua keyword and cannot be a name", t.line, self.src)
+            if t.val in STMT_KWS:
+                raise Error(f"unexpected token {t.val!r}", t.line, self.src)
             self.pos += 1
             if t.val in ("true", "false"):
                 return Lit(line=t.line, kind="bool", val=(t.val == "true"))
@@ -1002,7 +1013,12 @@ def _split_interp_str(s: str, line: int, src: str) -> Expr:
             break
         if j > i:
             parts.append(s[i:j])
-        parts.append(Parser(tokenize(s[j + 1:k].strip(), src), src).parse_expr())
+        sub = Parser(tokenize(s[j + 1:k].strip(), src, line), src)
+        expr = sub.parse_expr()
+        sub.skip_nl()
+        if not sub.at("EOF"):
+            raise Error(f"unexpected {sub.cur().val!r} in interpolation", line, src)
+        parts.append(expr)
         i = k + 1
     if len(parts) == 1 and isinstance(parts[0], str):
         return Lit(line=line, kind="str", val=parts[0])
@@ -1010,4 +1026,4 @@ def _split_interp_str(s: str, line: int, src: str) -> Expr:
 
 
 def parse_source(src: str, src_name: str = "") -> Program:
-    return Parser(tokenize(src, src_name), src_name, src).parse_program()
+    return Parser(tokenize(src, src_name), src_name).parse_program()

@@ -6,6 +6,10 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
+local hidden_two = 2
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +26,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -40,6 +44,10 @@ fn.path_dsc = function(w)
   return ("{#Me}" .. " {#word/мочь,нст,#me}" .. " пойти ") .. fn.where_prep(w) .. " " .. w:noun_hint("вн") .. "."
 end
 
+fn.lua_two = function()
+  return hidden_two
+end
+
 fn.start = function(load)
   move(me(), _'test_room')
 end
@@ -47,6 +55,8 @@ end
 function start(load)
   return fn.start(load)
 end
+
+const 'BONUS' (3)
 
 Door = Class({
   walk_to = 'none';
@@ -78,34 +88,29 @@ Path = Class {
   end;
 }:attr 'scenery,enterable'
 
-Base = Class {}
+Base = Class {
+  hp = 7 + BONUS;
+}
 
 Kid = Class({
   before_Talk = "поговорили";
 }, Base)
 
-Talkative = Class {
-  before_Talk = "поговорили";
-}
-
 obj {
   nam = "none";
 }
 
---"мочь"
+Kid {
+  -"детёныш";
+  nam = "kid";
+  x = fn.lua_two();
+}
 
 obj {
   -"сфера";
   nam = "sphere";
   dsc = "Гладкая сфера.";
   before_Peg = "покрутили";
-}
-
-Kid {
-  -"детёныш";
-  nam = "kid";
-  hp = 10;
-  x = 2;
 }
 
 room {

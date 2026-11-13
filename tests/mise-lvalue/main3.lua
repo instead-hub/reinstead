@@ -6,6 +6,8 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +24,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -46,6 +48,11 @@ end
 
 fn.bump = function(n)
   mp.score = mp.score + (n)
+end
+
+fn.local_shadow = function(score)
+  score = score + (1)
+  return score
 end
 
 fn.cur_score = function()
@@ -90,8 +97,6 @@ obj {
   nam = "none";
 }
 
---"мочь"
-
 room {
   -"зал";
   nam = "hall";
@@ -101,7 +106,8 @@ room {
 _'game'.before_Inv = function(s)
   mp.score = 10
   fn.bump(5)
-  std.p("score=", mp.score)
+  local loc = fn.local_shadow(1)
+  std.p("score=", mp.score, " loc=", loc)
   mp.multi["s"] = "мульти"
   local m = mp.multi["s"]
   std.p("mm=", m, " cur=", fn.cur_score())

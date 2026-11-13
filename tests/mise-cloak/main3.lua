@@ -6,6 +6,8 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +24,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -49,6 +51,8 @@ end
 function start(load)
   return fn.start(load)
 end
+
+global 'score' (0)
 
 Door = Class({
   walk_to = 'none';
@@ -83,10 +87,6 @@ Path = Class {
 obj {
   nam = "none";
 }
-
---"мочь"
-
-global 'score' (0)
 
 room {
   -"фойе";

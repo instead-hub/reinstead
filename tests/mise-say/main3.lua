@@ -6,6 +6,8 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +24,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -60,6 +62,9 @@ end
 
 fn.commented = function()
   -- комментарий в начале тела сохраняется
+  --[=[
+      и длинный комментарий с "кавычкой
+    ]=]
   return "comment"
 end
 
@@ -124,12 +129,11 @@ obj {
   nam = "none";
 }
 
---"мочь"
-
 obj {
   -"вещь";
   nam = "x";
   pri = 3;
+  cnt = 3;
 }
 
 room {
@@ -151,7 +155,7 @@ _'game'.before_Inv = function(s)
   std.p(_'x'.pri + 1 .. "!")
   std.p(fn.commented())
   std.p(fn.show(42))
-  std.p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2))
+  std.p("parens=", 10 - (5 - 2), ",", 100 / (10 / 2), ",", 10 - (5 + 2), ",", -(-_'x'.pri), ",", (#("ab" .. "cd")), ",", (_'x' or _'x').cnt)
   std.p("br=", fn.slen(fn.esc_br()), ",", fn.slen(fn.esc_br2()))
   fn.note(fn.esc_br())
   fn.note(fn.esc_br2())

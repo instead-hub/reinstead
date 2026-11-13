@@ -20,10 +20,6 @@ _LUA_SPAN_RE = re.compile(
     r"--\[(=*)\[[\s\S]*?\]\1\]|--[^\n]*|\[(=*)\[[\s\S]*?\]\2\]"
     r'|"(?:\\[\s\S]|[^"\\\n])*"|\'(?:\\[\s\S]|[^\'\\\n])*\''
 )
-# Lua keywords mise does not use as words: written as a name, they would reach the
-# generated file as an identifier (`local end = 1`, `s.end = 1`, `fn.end = …`).
-# A `lua` block is the one place where they are ordinary Lua, so its body is exempt.
-_LUA_KEYWORDS = frozenset({"do", "end", "function", "goto", "repeat", "then", "until", "while"})
 _MULTI_OPS = ("...", "->", ":=", "+=", "-=", "==", "!=", "~=", "<=", ">=", "..")
 _SINGLE_OPS = set("()[]{}:,.;=+-*/%<>@&*+?~|")
 
@@ -86,13 +82,90 @@ def _scan_str(src: str, pos: int, line: int, src_name: str):
     raise Error("unterminated string literal", line, src_name)
 
 
-def tokenize(src: str, src_name: str = "") -> List[Token]:
+def _indent_cols(s: str) -> int:
+    return sum(3 if c == "\t" else 1 for c in s)
+
+
+def _strip_cols(line_text: str, cols: int) -> str:
+    if not line_text.strip():
+        return ""
+    used, i = 0, 0
+    while i < len(line_text) and used < cols and line_text[i] in " \t":
+        used += 3 if line_text[i] == "\t" else 1
+        i += 1
+    return line_text[i:]
+
+
+def _scan_lua_line(src: str, pos: int, line: int, src_name: str):
+    """Advance across one logical Lua line, keeping long strings/comments intact."""
+    n, i, cur_line = len(src), pos, line
+    while i < n and src[i] != "\n":
+        m = _LUA_SPAN_RE.match(src, i)
+        if m:
+            cur_line += m.group(0).count("\n")
+            i = m.end()
+            continue
+        if src[i] in ('"', "'"):
+            raise Error("unterminated string literal", cur_line, src_name)
+        if src.startswith("--", i) and _LONG_RE.match(src, i + 2):
+            raise Error("unterminated [[...]] comment", cur_line, src_name)
+        if _LONG_RE.match(src, i):
+            raise Error("unterminated [[...]] string", cur_line, src_name)
+        i += 1
+    return (i + 1, cur_line + 1) if (i < n and src[i] == "\n") else (i, cur_line)
+
+
+def _after_lua_header(src: str, pos: int) -> int:
+    """If only whitespace/comment precedes EOL after `lua`, return index past `\\n`, else -1."""
+    n, i = len(src), pos
+    while i < n and src[i] in " \t":
+        i += 1
+    if i < n and (src[i] == "#" or src.startswith("--", i)):
+        while i < n and src[i] != "\n":
+            i += 1
+    return (i + 1) if (i < n and src[i] == "\n") else (i if i >= n else -1)
+
+
+def _scan_lua_block(src: str, pos: int, line: int, base_ind: int, src_name: str):
+    """Scan all lines indented deeper than `base_ind` as raw Lua code."""
+    n, cur, cur_line = len(src), pos, line
+    kept, blanks = [], []
+    end_pos, end_line, start_line = pos, line, line
+    while cur < n:
+        ws = cur
+        while ws < n and src[ws] in " \t":
+            ws += 1
+        if ws >= n or src[ws] == "\n":
+            blanks.append((0, ""))
+            cur = ws + 1 if ws < n else n
+            cur_line += 1 if ws < n else 0
+            continue
+        ind = _indent_cols(src[cur:ws])
+        if ind <= base_ind:
+            break
+        if not kept:
+            start_line = cur_line
+        else:
+            kept.extend(blanks)
+        blanks = []
+        nxt, nxt_line = _scan_lua_line(src, ws, cur_line, src_name)
+        raw_line = src[cur:nxt - 1] if (nxt > cur and src[nxt - 1] == "\n") else src[cur:nxt]
+        kept.append((ind, raw_line))
+        cur, cur_line = nxt, nxt_line
+        end_pos, end_line = cur, cur_line
+    if not kept:
+        return None, pos, line
+    min_ind = min(ind for ind, text in kept if text.strip())
+    code = "\n".join(_strip_cols(text, min_ind) for _ind, text in kept)
+    return Token("LUA_BLOCK", code, start_line), end_pos, end_line
+
+
+def tokenize(src: str, src_name: str = "", start_line: int = 1) -> List[Token]:
     src = src.replace("\r\n", "\n").replace("\r", "\n")
     tokens: List[Token] = []
     indents = [0]
-    raw_lua: List[int] = []          # indentation levels of `lua` bodies (raw Lua)
     pdepth = 0
-    n, pos, line = len(src), 0, 1
+    n, pos, line = len(src), 0, start_line
     line_start = True
 
     while pos < n:
@@ -108,17 +181,12 @@ def tokenize(src: str, src_name: str = "") -> List[Token]:
                 while pos < n and src[pos] != "\n":
                     pos += 1
                 continue
-            ind = sum(3 if c == "\t" else 1 for c in src[ls:pos])
+            ind = _indent_cols(src[ls:pos])
             if ind > indents[-1]:
                 indents.append(ind)
                 tokens.append(Token("INDENT", "", line))
-                prev = tokens[-3] if len(tokens) > 2 else None
-                if prev is not None and prev.kind == "IDENT" and prev.val == "lua":
-                    raw_lua.append(ind)  # the body of a `lua` block is Lua, not mise
             else:
                 while ind < indents[-1]:
-                    if raw_lua and raw_lua[-1] == indents[-1]:
-                        raw_lua.pop()
                     indents.pop()
                     tokens.append(Token("DEDENT", "", line))
                 if ind != indents[-1]:
@@ -196,10 +264,17 @@ def tokenize(src: str, src_name: str = "") -> List[Token]:
         m = _IDENT_RE.match(src, pos)
         if m:
             word = m.group(0)
-            if not raw_lua and word in _LUA_KEYWORDS:
-                raise Error(f"{word!r} is a Lua keyword and cannot be a name",
-                            line, src_name)
+            at_bol = pdepth == 0 and (not tokens or tokens[-1].kind in ("NEWLINE", "INDENT", "DEDENT"))
+            nxt_line = _after_lua_header(src, m.end()) if (word == "lua" and at_bol) else -1
             tokens.append(Token("IDENT", word, line, spaced))
+            if nxt_line >= 0:
+                tokens.append(Token("NEWLINE", "\n", line))
+                pos, line, line_start = nxt_line, line + 1, True
+                blk, pos, line = _scan_lua_block(src, pos, line, indents[-1], src_name)
+                if blk is not None:
+                    tokens.append(blk)
+                    tokens.append(Token("NEWLINE", "\n", line - 1))
+                continue
             pos = m.end()
             continue
 

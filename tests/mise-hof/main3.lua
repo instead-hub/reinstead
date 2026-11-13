@@ -6,6 +6,8 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +24,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -45,7 +47,7 @@ fn.run = function(f)
 end
 
 fn.each = function(t, f)
-  for _, w in ipairs(t) do
+  for __, w in ipairs(t) do
     f(w)
   end
 end
@@ -80,7 +82,7 @@ end
 
 fn.sum_args = function(...)
   local acc = 0
-  for _, v in ipairs({ ... }) do
+  for __, v in ipairs({ ... }) do
     if v then
       acc = acc + (v)
     end
@@ -107,7 +109,7 @@ end
 
 fn.closure = function(s)
   local n = 0
-  for _, w in ipairs({ _'box' }) do
+  for __, w in ipairs({ _'box' }) do
     fn.each(inv(), function(x)
       n = n + (1)
     end)
@@ -154,8 +156,6 @@ Tree = Class {}:attr 'scenery'
 obj {
   nam = "none";
 }
-
---"мочь"
 
 obj {
   -"коробка";

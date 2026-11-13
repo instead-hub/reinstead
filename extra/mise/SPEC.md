@@ -47,7 +47,7 @@
 1. Постфиксные `.` и `[]`: `s.door`, `list[1]`
 2. **Аппликация (вызов через пробел) и `:`-метод:** `has w light`, `w:has light`, `where player`
 3. Унарный минус: `-1`
-4. Арифметика и конкатенация: `* / %`, `+ - ..`
+4. Арифметика и конкатенация: `* / %`, затем `+ -`, затем `..`
 5. Сравнения и принадлежность: `==`, `!=`, `<`, `<=`, `>`, `>=`, `in`, `not in`
 6. `not`  (`not has w light` $\equiv$ `not (has(w, light))`, `not w in a, b` $\equiv$ `not (w in a, b)`)
 7. Логические `and`, `or`
@@ -547,9 +547,10 @@ false`). Арность сверяется с объявлением.
 
 | Что                                                                     | Как решено                                                                 |
 |-------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| `fn`, включая взаимную рекурсию                                         | forward-декларации (`local fn_b`)                                          |
-| класс: родитель (`class B(A)`), трейт (`: Thing`), вид (`Thing item`)   | все классы идут первыми, родитель раньше ребёнка (топосорт по `parent`)    |
-| `class X` объявленный кусками (поля и трейты отдельно)                  | куски сливаются в один `Class { … }`; поля собирает чекер                  |
+| `fn`, включая взаимную рекурсию                                         | все функции живут в одной таблице `local fn = {}`                          |
+| `lua` на верхнем уровне и `const`/`global`                              | идут раньше функций и классов (`local` из `lua` и константы уже в области) |
+| класс: родитель (`class B(A)`), трейт (`: Thing`), вид (`Thing item`)   | все классы идут до объектов, родитель и миксины раньше ребёнка (топосорт)  |
+| `class X` объявленный кусками (поля и трейты отдельно)                  | куски сливаются до проверки типов в один `Class { … }`                     |
 | `impl X` выше `X`                                                       | все `impl` эмиттятся последними                                            |
 | `verb … for X` выше `X`                                                 | глаголы идут после объектов                                                |
 | `extend verb #Tag` / `remove verb #Tag` выше `verb Tag`                 | внутри группы глаголов: `verb`, затем `extend`, затем `remove`             |
@@ -790,7 +791,8 @@ event_decl  ::= [ "extend" ] "event" ident_list [ ":" [ type_list ] ]
 entry_decl  ::= "entry" IDENT "(" [ param_list ] ")"
 
 extern_decl ::= "extern" "fn" IDENT "(" [ param_list ] ")" [ "->" type_list ] "=" STRING
-              | "extern" "value" IDENT [ "(" [ param_list ] ")" ] [ "->" type_list ] "=" STRING
+              | "extern" "value" IDENT [ "(" [ param_list ] ")" ] [ ("->" | ":") type_list ] "=" STRING
+              | "extern" "lvalue" IDENT ("->" | ":") type "=" STRING
 
 (* `?` относится к атому слева от него, поэтому `fn(obj) -> str?` — функция,
    возвращающая `str?`, а `ref[talk]?` — ссылка, которая может быть nil.
@@ -954,10 +956,11 @@ expr        ::= or_expr
 or_expr     ::= and_expr { "or" and_expr }
 and_expr    ::= not_expr { "and" not_expr }
 not_expr    ::= "not" not_expr | cmp_expr
-cmp_expr    ::= add_expr [ ("==" | "!=" | "<" | "<=" | ">=" | ">")
-                           add_expr
-                         | ("in" | "not" "in") add_expr { "," add_expr } ]
-add_expr    ::= mul_expr { ("+" | "-" | "..") mul_expr }
+cmp_expr    ::= concat_expr [ ("==" | "!=" | "<" | "<=" | ">=" | ">")
+                              concat_expr
+                            | ("in" | "not" "in") concat_expr { "," concat_expr } ]
+concat_expr ::= add_expr { ".." add_expr }
+add_expr    ::= mul_expr { ("+" | "-") mul_expr }
 mul_expr    ::= unary_expr { ("*" | "/" | "%") unary_expr }
 unary_expr  ::= "-" unary_expr | app_expr
 

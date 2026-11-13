@@ -6,6 +6,8 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +24,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -82,8 +84,6 @@ obj {
   nam = "none";
 }
 
---"мочь"
-
 obj {
   -"коробка";
   nam = "box";
@@ -108,13 +108,17 @@ room {
 }
 
 _'game'.before_Inv = function(s)
-  for _, w in ipairs({ _'box', _'rock' }) do
-    std.p(w:noun_hint())
+  for __, w in ipairs({ _'box', _'rock' }) do
+    if w == _'box' then
+      std.p(w:noun_hint())
+    else
+      std.p(w:noun_hint())
+    end
   end
   for i, w in ipairs({ _'box', _'rock' }) do
     std.p(i)
   end
-  for _, w in ipairs(fn.plurals(_'box')) do
+  for __, w in ipairs(fn.plurals(_'box')) do
     std.p(w:noun_hint())
   end
 end;

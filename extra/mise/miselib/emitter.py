@@ -1,8 +1,6 @@
 """Compact Lua (`main3.lua`) emitter for MISE 2."""
 MATCH_TMP = "__match"
-import re
-from dataclasses import replace
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, List, Optional, Sequence, Set, Tuple
 from .ast_nodes import *
 from .checker import Context, load_includes, prescan
 from .lexer import lua_lines
@@ -32,38 +30,23 @@ def lua_str(s: str) -> str:
     return f"'{s}'" if '"' in s else f'"{s}"'
 
 
-_VERB_ORDER = {"verb": 0, "extend": 1, "remove": 2}
 _PRINT = {"p": "std.p", "pr": "std.pr", "pn": "std.pn"}   # engine print helpers
+
+
+def _bind(name: str) -> str:
+    """Keep `_` free for STEAD3's global object lookup `_'id'`."""
+    return "__" if name == "_" else name
+
+
+def _is_compound(e: Expr) -> bool:
+    return isinstance(e, (BinOp, UnaryOp, Lambda, InOp)) \
+        or (isinstance(e, Lit) and e.kind == "raw")
 
 
 def _class_has_body(ent: EntityDecl) -> bool:
     """Does the class carry anything the engine has to run or store?"""
     return bool(ent.words or ent.traits or ent.handlers
                 or any(p.value is not None for p in ent.props))
-
-
-def _merged_classes(items: List[Any], ctx: Context) -> Dict[str, EntityDecl]:
-    """One declaration per class: a class may be written in pieces.
-
-    The field declarations are already merged by the checker (they live on the
-    first piece); the parent, words, traits and handlers are collected here.
-    """
-    merged: Dict[str, EntityDecl] = {}
-    for ent in items:
-        if not isinstance(ent, EntityDecl) or ent.kind != "class" or not ent.name:
-            continue
-        decl = merged.get(ent.name)
-        if decl is None:
-            first = ctx.class_decls.get(ent.name, ent)
-            merged[ent.name] = replace(first, words=list(ent.words), traits=list(ent.traits),
-                                       handlers=list(ent.handlers), props=list(first.props))
-            continue
-        decl.parent = decl.parent or ent.parent
-        decl.ctor = decl.ctor or ent.ctor
-        decl.words = decl.words or list(ent.words)
-        decl.traits += [t for t in ent.traits if t not in decl.traits]
-        decl.handlers += [h for h in ent.handlers if h not in decl.handlers]
-    return merged
 
 
 def _class_names_in_use(items: List[Any]) -> Set[str]:
@@ -73,37 +56,13 @@ def _class_names_in_use(items: List[Any]) -> Set[str]:
         if not isinstance(ent, EntityDecl):
             continue
         if ent.kind == "class":
-            used.update([ent.parent] if ent.parent else [])
+            if ent.parent:
+                used.add(ent.parent)
         elif ent.kind != "impl" and ent.name is not None:
             used.add(ent.kind)
+        if ent.children:
+            used.update(_class_names_in_use(ent.children))
     return used
-
-
-def _class_plan(items: List[Any], ctx: Context) -> List[EntityDecl]:
-    """The `Class` chunks to emit, a parent before its child.
-
-    A class is skipped when the engine owns it (`class story(room) = cutscene`)
-    or when it only spells out field types and nothing refers to it — such a
-    declaration exists for the checker, there is nothing to build.
-    """
-    merged = _merged_classes(items, ctx)
-    in_use = _class_names_in_use(items)
-    order: List[EntityDecl] = []
-    placed: Set[str] = set()
-
-    def place(start: EntityDecl):
-        chain = [start]
-        while chain[-1].parent in merged and merged[chain[-1].parent] not in chain:
-            chain.append(merged[chain[-1].parent])
-        for c in reversed(chain):
-            if c.name not in placed and c.name not in ctx.ctors \
-                    and (_class_has_body(c) or c.name in in_use):
-                placed.add(c.name)
-                order.append(c)
-
-    for decl in merged.values():
-        place(decl)
-    return order
 
 
 def _ind(text: str, n: int = 2) -> str:
@@ -124,14 +83,16 @@ class Emitter:
         hdr.append(f'require "parser/mp-{self.prog.lang}"')
         chunks.append("\n".join(hdr))
 
+        in_use = _class_names_in_use(self.prog.items)
         rendered = [(it, *self._fn_parts(it)) for it in self.prog.items
-                    if isinstance(it, FnDecl) and not it.is_extern]
+                    if isinstance(it, FnDecl) and not it.extern]
 
         # One local table, not one local per function: a chunk may hold only 200
         # locals, and a function of the table is visible before it is assigned,
         # so mutual recursion needs no forward declarations either.
         if rendered:
             chunks.append("local fn = {}")
+        chunks.extend(it.code for it in self.prog.items if isinstance(it, LuaDecl))
         for fn, prms, body in rendered:
             head = f"fn.{fn.name} = function({prms})"
             chunks.append(f"{head}\n{body}\nend" if body.strip() else f"{head}\nend")
@@ -139,15 +100,16 @@ class Emitter:
         # the engine calls these globals itself; mise code calls `fn.init`/`fn.start`
         for fn, _prms, _body in rendered:
             if fn.name in self.ctx.entries:
-                args = ", ".join(pn for pn, _t in fn.params)
+                args = ", ".join(_bind(pn) for pn, _t in fn.params)
                 chunks.append(f"function {fn.name}({args})\n  return fn.{fn.name}({args})\nend")
 
-        for it in self._emission_order():
-            if isinstance(it, LuaDecl):
-                chunks.append(it.code)
-            elif isinstance(it, VarDecl):
+        for it in self.prog.items:
+            if isinstance(it, VarDecl):
                 chunks.append("\n".join(f"{it.kind} '{vn}' ({self._prop_scalar(ve)})" for vn, _vt, ve, _l in it.items))
             elif isinstance(it, EntityDecl):
+                if it.kind == "class" and (it.name in self.ctx.ctors
+                        or not ((_class_has_body(it) and not it.is_mixin) or it.name in in_use)):
+                    continue
                 s = self._emit_entity(it)
                 if s:
                     chunks.append(s)
@@ -158,27 +120,8 @@ class Emitter:
 
         return "\n\n".join(c for c in chunks if c.strip()) + "\n"
 
-    def _emission_order(self) -> List[Any]:
-        """The chunks that run at load time, in an order that does not depend on
-        the source order of the declarations.
-
-        The engine executes the file top to bottom, so a parent class has to be
-        built before its child, an object before an `impl` that writes into it,
-        and a verb before `extend`/`remove` of that verb. Functions are emitted
-        before all of this (see `emit`), and object fields hold names, not
-        references, so the rest keeps the source order.
-        """
-        items = self.prog.items
-        values = [it for it in items
-                  if isinstance(it, (LuaDecl, VarDecl, TalkDecl))
-                  or (isinstance(it, EntityDecl) and it.kind not in ("class", "impl"))]
-        verbs = sorted((it for it in items if isinstance(it, VerbDecl)),
-                       key=lambda v: _VERB_ORDER[v.mode])
-        impls = [it for it in items if isinstance(it, EntityDecl) and it.kind == "impl"]
-        return _class_plan(items, self.ctx) + values + verbs + impls
-
     def _fn_parts(self, fn: FnDecl) -> Tuple[str, str]:
-        prms = ", ".join([pn for pn, _pt in fn.params] + (["..."] if fn.variadic else []))
+        prms = ", ".join([_bind(pn) for pn, _pt in fn.params] + (["..."] if fn.variadic else []))
         if isinstance(fn.body, str):        # a `lua` block: statements, verbatim
             body = _ind(fn.body.strip(), 2)
         else:
@@ -265,9 +208,11 @@ class Emitter:
         cond, body, _l = branches[0]
         if isinstance(cond, Bind):
             b = _ind(self._stmts(body), ind + 4)
+            bound = ", ".join(_bind(n) for n in cond.names)
+            test = " and ".join(n for n in cond.names if n != "_") or "true"
             lines = [f"{pad}do",
-                     f"{pad}  local {', '.join(cond.names)} = {self._expr(cond.value)}",
-                     f"{pad}  if {' and '.join(cond.names)} then"]
+                     f"{pad}  local {bound} = {self._expr(cond.value)}",
+                     f"{pad}  if {test} then"]
             if b.strip():
                 lines.append(b)
             tail = self._if_else(branches[1:], else_body, ind + 2)
@@ -345,7 +290,7 @@ class Emitter:
             b = _ind(self._stmts(v), ind + 2)
             return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
         if isinstance(v, Lambda) and isinstance(v.body, list):
-            prms = ", ".join(pn for pn, _t in v.params)
+            prms = ", ".join(_bind(pn) for pn, _t in v.params)
             b = _ind(self._stmts(v.body), ind + 2)
             return f"function({prms})\n{b}\n{pad}end" if b.strip() else f"function({prms})\n{pad}end"
         if isinstance(v, ListLit):
@@ -365,7 +310,7 @@ class Emitter:
 
     def _prop_prms(self, p: Prop) -> str:
         """Parameters of a prop body, resolved by the checker."""
-        return ", ".join(p.params) if p.params else "s"
+        return ", ".join(_bind(n) for n in p.params) if p.params else "s"
 
     def _prop_scalar(self, e: Expr) -> str:
         if isinstance(e, Sym):
@@ -382,7 +327,7 @@ class Emitter:
         joined = ",".join(h.events)
         key = f'["{pfx}{joined}"]' if len(h.events) > 1 else f"{pfx}{joined}"
         is_any = any(ev in ("Any", "Default") for ev in h.events)
-        prms = ", ".join(h.params) if h.params is not None else ("s, ev, w, wh" if is_any else "s, w, wh")
+        prms = ", ".join(_bind(n) for n in h.params) if h.params is not None else ("s, ev, w, wh" if is_any else "s, w, wh")
         if h.body == "pass":
             return key, f"function({prms}) return false end"
         if h.body == "stop":
@@ -529,14 +474,14 @@ class Emitter:
                 return "break"
             return ("return " + ", ".join(self._expr(v) for v in s.values)) if s.values else "return"
         if isinstance(s, LocalStmt):
-            ns = ", ".join(n for n, _t in s.names)
+            ns = ", ".join(_bind(n) for n, _t in s.names)
             return f"local {ns} = {', '.join(self._expr(v) for v in s.values)}" if s.values else f"local {ns}"
         if isinstance(s, AssignStmt):
-            lhs = f"{self._expr(s.target.obj)}.{s.target.field}" if isinstance(s.target, FieldAccess) else self._expr(s.target, as_lhs=True)
+            lhs = f"{self._prefix(s.target.obj)}.{s.target.field}" if isinstance(s.target, FieldAccess) else self._expr(s.target, as_lhs=True)
             rhs = ", ".join(self._expr(v) for v in s.values)
             return f"{lhs} = {rhs}" if s.op == "=" else f"{lhs} = {lhs} {s.op[0]} ({rhs})"
         if isinstance(s, CallStmt):
-            return self._call(s.call, as_stmt=True)
+            return self._call(s.call)
         if isinstance(s, IfStmt):
             return self._if_chain(s.branches, s.else_body)
         if isinstance(s, MatchStmt):
@@ -570,13 +515,13 @@ class Emitter:
             parts.append("end")
             return "do\n" + _ind(f"local {MATCH_TMP} = {subj}\n" + "\n".join(parts), 2) + "\nend"
         if isinstance(s, ForNumStmt):
-            hdr = f"{s.var} = {self._expr(s.start)}, {self._expr(s.stop)}" + (f", {self._expr(s.step)}" if s.step else "")
+            hdr = f"{_bind(s.var)} = {self._expr(s.start)}, {self._expr(s.stop)}" + (f", {self._expr(s.step)}" if s.step else "")
             b = _ind(self._stmts(s.body), 2)
             return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
         if isinstance(s, ForInStmt):
-            vs = ", ".join(n for n, _t in s.vars)
+            vs = ", ".join(_bind(n) for n, _t in s.vars)
             it = self._expr(s.iter_expr)
-            hdr = (f"_, {vs} in ipairs({it})" if len(s.vars) == 1 else f"{vs} in ipairs({it})") if s.is_of else f"{vs} in {it}"
+            hdr = (f"__, {vs} in ipairs({it})" if len(s.vars) == 1 else f"{vs} in ipairs({it})") if s.is_of else f"{vs} in {it}"
             b = _ind(self._stmts(s.body), 2)
             return f"for {hdr} do\n{b}\nend" if b.strip() else f"for {hdr} do\nend"
         return ""
@@ -592,6 +537,10 @@ class Emitter:
             return f"{fn}({', '.join(args)})"
         return f"{fn}({self._expr(e)})"
 
+    def _prefix(self, e: Expr) -> str:
+        s = self._expr(e)
+        return f"({s})" if isinstance(e, (BinOp, UnaryOp, Lambda, InOp, ListLit, Lit)) else s
+
     def _expr(self, e: Expr, as_lhs: bool = False) -> str:
         if isinstance(e, Lit):
             return ("true" if e.val else "false") if e.kind == "bool" else ("nil" if e.kind == "nil" else (lua_str(e.val) if e.kind == "str" else str(e.val)))
@@ -603,10 +552,9 @@ class Emitter:
             return ("{ " + ", ".join(self._expr(it) for it in e.items) + " }") if e.items else "{}"
         if isinstance(e, Sym):
             n = e.name
+            if e.rk == "lvalue":
+                return self._expand(self.ctx.fns[n], [])    # the place itself
             if as_lhs or e.rk == "var":
-                fn = self.ctx.fns.get(n)
-                if fn is not None and fn.is_lvalue:
-                    return self._expand(fn, [])                 # the place itself
                 return n
             if e.rk == "obj":
                 return f"_'{n}'"
@@ -621,15 +569,21 @@ class Emitter:
                 return self._expand(fn, []) if fn and isinstance(fn.body, str) else n
             return n
         if isinstance(e, FieldAccess):
-            c = f"{self._expr(e.obj)}.{e.field}"
+            c = f"{self._prefix(e.obj)}.{e.field}"
             return f"_({c})" if (e.is_ref and not as_lhs) else c
         if isinstance(e, IndexAccess):
-            return f"{self._expr(e.obj)}[{self._expr(e.index)}]"
+            return f"{self._prefix(e.obj)}[{self._expr(e.index)}]"
         if isinstance(e, UnaryOp):
-            in_s = f"({self._expr(e.operand)})" if isinstance(e.operand, BinOp) else self._expr(e.operand)
+            raw_s = self._expr(e.operand)
+            need_p = _is_compound(e.operand) and (
+                isinstance(e.operand, BinOp)
+                or (isinstance(e.operand, Lit) and e.operand.kind == "raw")
+                or (e.op == "-" and (isinstance(e.operand, UnaryOp) or raw_s.startswith("-")))
+            )
+            in_s = f"({raw_s})" if need_p else raw_s
             return f"not {in_s}" if e.op == "not" else f"-{in_s}"
         if isinstance(e, Lambda):
-            prms = ", ".join(pn for pn, _t in e.params)
+            prms = ", ".join(_bind(pn) for pn, _t in e.params)
             if isinstance(e.body, list):
                 b = _ind(self._stmts(e.body), 2)
                 return f"function({prms})\n{b}\nend" if b.strip() else f"function({prms}) end"
@@ -639,9 +593,11 @@ class Emitter:
         if isinstance(e, BinOp):
             op = "~=" if e.op == "!=" else e.op
             ls, rs = self._expr(e.left), self._expr(e.right)
-            if isinstance(e.left, BinOp) and _PREC[e.left.op] < _PREC[e.op]:
+            if (isinstance(e.left, BinOp) and _PREC[e.left.op] < _PREC[e.op]) \
+                    or (isinstance(e.left, Lit) and e.left.kind == "raw"):
                 ls = f"({ls})"
-            if isinstance(e.right, BinOp) and _parens_on_right(e.op, e.right.op):
+            if (isinstance(e.right, BinOp) and _parens_on_right(e.op, e.right.op)) \
+                    or (isinstance(e.right, Lit) and e.right.kind == "raw"):
                 rs = f"({rs})"
             return f"{ls} {op} {rs}"
         if isinstance(e, Call):
@@ -651,31 +607,40 @@ class Emitter:
     def _fnref(self, name: str) -> str:
         return f"fn.{name}"
 
-    def _call(self, c: Call, as_stmt: bool = False) -> str:
+    def _call(self, c: Call) -> str:
         if not c.receiver and c.func in ("say", "append", "line"):
-            fn = {"say": "p", "append": "pr", "line": "pn"}[c.func]
-            fn = _PRINT[fn]
+            fn_name = _PRINT[{"say": "p", "append": "pr", "line": "pn"}[c.func]]
             if not c.args:
-                return f"{fn}()"
-            return self._p_call(c.args[0], fn) if len(c.args) == 1 else f"{fn}({', '.join(self._expr(a) for a in c.args)})"
+                return f"{fn_name}()"
+            return self._p_call(c.args[0], fn_name) if len(c.args) == 1 else f"{fn_name}({', '.join(self._expr(a) for a in c.args)})"
         all_a = ([c.receiver] + c.args) if c.receiver else list(c.args)
         fn = self.ctx.fns.get(c.func)
         args = [self._expr(a) for a in all_a]
-        if fn and fn.is_extern:
-            return self._expand(fn, args)
+        if fn and fn.extern:
+            return self._expand(fn, args, [_is_compound(a) for a in all_a])
         return f"fn.{c.func}({', '.join(args)})" if c.func in self.ctx.fns else f"{c.func}({', '.join(args)})"
 
-    def _expand(self, fn: FnDecl, args: List[str]) -> str:
-        """An extern is a macro: its template is pasted in place of the call.
-
-        The template is one Lua value (or one statement) as its author wrote it,
-        parentheses included: the emitter adds none.
-        """
+    def _expand(self, fn: FnDecl, args: List[str], compound: Sequence[bool] = ()) -> str:
+        """An extern is a macro: its template is pasted in place of the call."""
         t = fn.body
-        return _fill_slots(t, args) if "$" in t else t
+        return _fill_slots(t, args, compound) if "$" in t else t
 
 
-def _fill_slots(text: str, args: List[str]) -> str:
+def _trim_empty_slot(head: str, tail: str) -> Tuple[str, str]:
+    if head.rstrip().endswith(","):
+        return head.rstrip()[:-1], tail
+    if tail.lstrip().startswith(","):
+        return head, tail.lstrip()[1:]
+    return head, tail
+
+
+def _slot_needs_parens(head: str, tail: str) -> bool:
+    left_ok = not head.strip() or head.rstrip().endswith(("(", ",", "{", "["))
+    right_ok = not tail.strip() or tail.lstrip().startswith((",", ")", "}", "]"))
+    return not (left_ok and right_ok)
+
+
+def _fill_slots(text: str, args: List[str], compound: Sequence[bool] = ()) -> str:
     """Fill the `$1`, `$*` and `$2...` slots of an extern template in one pass.
 
     The slots are found from the right, so an inserted argument is never scanned
@@ -688,37 +653,37 @@ def _fill_slots(text: str, args: List[str]) -> str:
         at = text.rfind("$", 0, end)
         if at < 0:
             return text
-        stop, value = _slot_at(text, at, args)
+        stop, value, wrap = _slot_at(text, at, args, compound)
         if stop < 0:                       # a lone `$`: keep it, look further left
             end = at
             continue
         head, tail = text[:at], text[stop:]
         if not value:
-            head = head.rstrip()
-            head = head[:-1] if head.endswith(",") else head
-            tail = tail.lstrip()
-            tail = tail[1:] if tail.startswith(",") else tail
-        text = head + value + tail
+            h2, t2 = _trim_empty_slot(head, tail)
+            text = h2 + t2
+        else:
+            val = f"({value})" if (wrap and _slot_needs_parens(head, tail)) else value
+            text = head + val + tail
         end = at
 
 
-def _slot_at(text: str, at: int, args: List[str]) -> Tuple[int, str]:
-    """The value of the `$…` slot at `at` and the offset just past it.
-
-    `-1` as the offset means "not a slot" (a bare `$`).
-    """
+def _slot_at(text: str, at: int, args: List[str],
+             compound: Sequence[bool] = ()) -> Tuple[int, str, bool]:
+    """The value of the `$…` slot at `at` and the offset just past it."""
     i = at + 1
     if text[i:i + 1] == "*":
-        return i + 1, ", ".join(args)
+        return i + 1, ", ".join(args), False
     j = i
     while j < len(text) and text[j].isdigit():
         j += 1
     if j == i:
-        return -1, ""
+        return -1, "", False
     idx = int(text[i:j]) - 1
     if text.startswith("...", j):
-        return j + 3, (", ".join(args[idx:]) if idx >= 0 else "")
-    return j, (args[idx] if 0 <= idx < len(args) else "")
+        return j + 3, (", ".join(args[idx:]) if idx >= 0 else ""), False
+    val = args[idx] if 0 <= idx < len(args) else ""
+    is_cmp = bool(val) and 0 <= idx < len(compound) and compound[idx]
+    return j, val, is_cmp
 
 
 def transpile(src: str, src_dir: str = "", src_name: str = "") -> str:

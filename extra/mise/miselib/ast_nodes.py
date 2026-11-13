@@ -35,7 +35,7 @@ class InterpStr(Expr):
 class Sym(Expr):
     name: str = ""
     # how the name is emitted; filled by the checker:
-    #   "var" | "obj" | "enum" | "event" | "global" | "global_ref" | "fn0" (call) | "value"
+    #   "var" | "lvalue" | "obj" | "enum" | "event" | "global" | "global_ref" | "fn0" (call) | "value"
     rk: str = ""
 
 @dataclass
@@ -194,8 +194,8 @@ class EntityDecl:
     props: List[Prop] = field(default_factory=list)
     handlers: List[Handler] = field(default_factory=list)
     children: List["EntityDecl"] = field(default_factory=list)
+    is_mixin: bool = False
     line: int = 0
-    src: str = ""
 
 @dataclass
 class FnDecl:
@@ -204,9 +204,7 @@ class FnDecl:
     variadic: Optional[Type] = None
     ret_types: List[Type] = field(default_factory=list)
     body: Any = None           # List[Stmt] or str (template / raw lua)
-    is_extern: bool = False
-    is_value: bool = False          # `extern value` — an expression, not a callable
-    is_lvalue: bool = False         # `extern lvalue` — also a place one may assign to
+    extern: str = ""           # "" (user fn) | "fn" | "value" | "lvalue"
     line: int = 0
 
 @dataclass

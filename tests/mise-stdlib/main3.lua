@@ -6,6 +6,8 @@ require "parser/mp-ru"
 
 local fn = {}
 
+--"мочь"
+
 fn.where_list = function(w)
   local list = {}
   where(w, list)
@@ -22,7 +24,7 @@ end
 
 fn.door_next = function(s, w)
   local l = fn.where_list(s)
-  local _, i = l:lookup(w)
+  local __, i = l:lookup(w)
   if i and (#l) > 1 then
     return l[i % (#l) + 1]
   end
@@ -80,7 +82,7 @@ fn.probe = function(w, t, ev)
   std.p((mp.event or nil))
   std.p((#t))
   std.p((instead.tiny))
-  std.p((s.desc))
+  std.p((w.desc))
   std.p((mp:compass_dir(w) or nil))
   std.p(((mp.args[1] or {}).word or ''))
   std.p((((function(o) local m = getmetatable(w) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G["list"]))))
@@ -151,6 +153,8 @@ function start(load)
   return fn.start(load)
 end
 
+global 'starts' (0)
+
 Door = Class({
   walk_to = 'none';
   door_to = function(s)
@@ -185,8 +189,6 @@ obj {
   nam = "none";
 }
 
---"мочь"
-
 room {
   -"зал";
   nam = "hall";
@@ -219,8 +221,6 @@ room {
   nam = "test_room";
   dsc = "Тестовая комната.";
 }
-
-global 'starts' (0)
 
 _'box'.found_in = 'test_room';
 

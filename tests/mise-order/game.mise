@@ -12,6 +12,12 @@ include stdlib
 extend verb #Exam
   words = "смотри"
 
+event InspectKid: Kid
+
+fn lua_two() -> num
+  lua
+    return hidden_two
+
 verb Peg for sphere
   words = "покрут/ить"
   patterns = ["{noun}/вн : Peg"]
@@ -19,22 +25,26 @@ verb Peg for sphere
 impl sphere
   found_in = test_room
 
+Kid kid "детёныш"
+  x = lua_two
+
 class Kid(Base) : Talkative
   x: num
 
 class Base
-  hp: num
+  hp = 7 + BONUS
 
 obj sphere "сфера"
   dsc = "Гладкая сфера."
   before Peg = "покрутили"
 
-Kid kid "детёныш"
-  hp = 10
-  x = 2
-
 mixin Talkative
   before Talk = "поговорили"
+
+const BONUS = 3
+
+lua
+  local hidden_two = 2
 
 room test_room "тестовая комната"
   dsc = "Тестовая комната."

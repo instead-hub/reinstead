@@ -18,7 +18,10 @@ fn start(load)
 impl game
   before Inv =
     for w of {box, rock}
-      say (w:noun)
+      if w == box
+        say (w:noun)
+      else
+        say (w:noun)
     for i, w of {box, rock}
       say (i)
     for w of plurals box
