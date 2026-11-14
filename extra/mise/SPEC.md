@@ -390,6 +390,13 @@ mise: unknown field 'kkz' (use __kkz for dynamic values)      (* получат�
   добавляется `nil` (`fn pick(s) … return 1` → `-> num?`); объявленный `-> T`
   при таком пути — ошибка; тело-блок колбэка с объявленным результатом обязано
   содержать `return` (тело-выражение `&(w) expr` возвращает его всегда).
+- `pass`/`stop`/`return`/`break` — `laststat` своего блока: инструкция того же
+  блока после них — ошибка (`pass: unreachable statement after it`). Иначе
+  эмиттер ставил бы `return` в середину Lua-блока, а там ему нельзя (и `break`
+  в середине не примет LuaJIT).
+- `reply`, заканчивающийся `pass`/`stop`, вместе с `act` — тоже ошибка
+  (`pass: reply ends the choice, so act never runs`): в `dlg` они попадают в
+  одну функцию, так что `act` после `return` невыполним.
 
 **Типы значений**
 - "`any`" не проходит в конкретный тип;

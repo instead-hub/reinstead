@@ -1,0 +1,11 @@
+game "t"
+lang ru
+include stdlib
+
+talk t1
+  * "Спросить"
+    reply =
+      "Ответ."
+      pass
+    act =
+      "Действие."

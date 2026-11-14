@@ -577,11 +577,20 @@ def _check_for_in_stmt(ctx: Context, s: ForInStmt, env: Dict[str, Type], decl_en
     _check_stmts(ctx, s.body, benv, owner, rets, fn_decl=fn_decl, in_loop=True, decl_env=bdecl)
 
 
+def _check_block_end(stmts: List[Stmt]) -> None:
+    """`return`, `pass`, `stop` and `break` are Lua `laststat`: they end the block,
+    so any statement after them would make the emitted Lua invalid."""
+    for cur, nxt in zip(stmts, stmts[1:]):
+        if isinstance(cur, ReturnStmt):
+            raise Error(f"{cur.kind}: unreachable statement after it", nxt.line)
+
+
 def _check_stmts(ctx: Context, stmts: List[Stmt], env: Dict[str, Type],
                  owner: Optional[str] = None, rets: Optional[List[Type]] = None,
                  arg_names: Optional[Dict[int, str]] = None,
                  fn_decl: Optional[FnDecl] = None, in_loop: bool = False,
                  decl_env: Optional[Dict[str, Type]] = None):
+    _check_block_end(stmts)
     denv = dict(env) if decl_env is None else decl_env
     for s in stmts:
         match s:
@@ -863,6 +872,9 @@ def _check_talk(ctx: Context, td: TalkDecl):
             raise Error(f"talk {td.name}: duplicate label {ln!r}", td.line)
 
     def chk_choice(ch: TalkChoice):
+        if ch.act and isinstance(ch.reply, list) and isinstance(ch.reply[-1], ReturnStmt):
+            raise Error(f"{ch.reply[-1].kind}: reply ends the choice, so act never runs",
+                        ch.reply[-1].line)
         if ch.next_label and ch.next_label not in labels:
             raise Error(f"talk {td.name}: unknown label {ch.next_label!r} in `next`/`->`", ch.line)
         for part, want, what in [(ch.cond, None, "when")] + [

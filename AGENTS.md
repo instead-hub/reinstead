@@ -44,6 +44,7 @@ transpiler neither produces nor consumes.
 
 `dict.mrd` beside a test game is a cache validated by a word sum (`mrd:create`), so it is committed and kept: a warm run is ~0.25 s instead of ~4 s.
 - Autoscript = one player command per line; lines starting with `!`/`/` are system commands (`!game`, `!script`, `!restart`, `!font`, `!quit`, ...). `data/games/autoscript` is an orchestrator over all games, not a game.
+- `log*.txt` (MetaTranscript) is written by `mp:log` before `std.format`: dashes stay ` -- `, quotes stay `"`. Judge text formatting by the formatted output (`instead-cli -e` stdout), not by the log.
 - `dict.mrd` beside a game is a generated, tracked cache; the engine regenerates it when sources change, so it can appear modified after runs.
 
 ## Parser (`data/stead3/parser/`)

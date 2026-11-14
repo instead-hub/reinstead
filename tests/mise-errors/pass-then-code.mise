@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "ящик"
+  description =
+    "Просто ящик."
+    pass
+    "А это уже не напечатается."
