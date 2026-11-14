@@ -991,26 +991,29 @@ def _interp_end(s: str, start: int) -> int:
 
 
 def _split_interp_str(s: str, line: int, src: str) -> Expr:
+    def unesc(txt: str) -> str:
+        return txt.replace("\x01", "{").replace("\x02", "}")
+
     parts: List[Any] = []
     i, n = 0, len(s)
     while i < n:
         j = s.find("{", i)
         if j == -1:
-            parts.append(s[i:])
+            parts.append(unesc(s[i:]))
             break
         if j + 1 < n and s[j + 1] in "$#":     # `{$fmt …}` — the engine's own markup
             k = s.find("}", j + 1)
             end = (k + 1) if k != -1 else n
-            parts.append(s[i:end])
+            parts.append(unesc(s[i:end]))
             i = end
             continue
         k = _interp_end(s, j)
         if k == -1:
-            parts.append(s[i:])
+            parts.append(unesc(s[i:]))
             break
         if j > i:
-            parts.append(s[i:j])
-        sub = Parser(tokenize(s[j + 1:k].strip(), src, line), src)
+            parts.append(unesc(s[i:j]))
+        sub = Parser(tokenize(unesc(s[j + 1:k]).strip(), src, line), src)
         expr = sub.parse_expr()
         sub.skip_nl()
         if not sub.at("EOF"):

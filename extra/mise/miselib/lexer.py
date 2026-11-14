@@ -59,8 +59,9 @@ def _scan_str(src: str, pos: int, line: int, src_name: str):
     while i < n:
         if src.startswith(delim, i):
             val = "".join(buf)
-            kind = "ISTRING" if (delim[0] == '"' and "{" in val and "}" in val) else "STRING"
-            return Token(kind, val.replace("\x00{", "{").replace("\x00}", "}"), line), i + len(delim), line
+            if delim[0] == '"' and "{" in val and "}" in val:
+                return Token("ISTRING", val, line), i + len(delim), line
+            return Token("STRING", val.replace("\x01", "{").replace("\x02", "}"), line), i + len(delim), line
         ch = src[i]
         if ch == "\n":
             line += 1
@@ -74,7 +75,12 @@ def _scan_str(src: str, pos: int, line: int, src_name: str):
                 while i < n and src[i] in " \t":
                     i += 1
                 continue
-            buf.append("\n" if nxt == "n" else "\t" if nxt == "t" else ("\x00" + nxt if nxt in "{}" else nxt))
+            if nxt == "\\" and i + 2 < n and src[i + 2] in "{}":
+                buf.append("\\\x01" if src[i + 2] == "{" else "\\\x02")
+                i += 3
+                continue
+            buf.append("\n" if nxt == "n" else "\t" if nxt == "t"
+                       else "\x01" if nxt == "{" else "\x02" if nxt == "}" else nxt)
             i += 2
             continue
         buf.append(ch)

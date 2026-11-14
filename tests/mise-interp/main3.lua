@@ -108,4 +108,5 @@ _'game'.before_Inv = function(s)
   std.p("вложенные ", fn.tag(tostring((#{ 1, 2 }))), " скобки")
   std.p("кавычка ", fn.tag("}"), " внутри")
   std.p("движок {$fmt b|жирный}", " и ", fn.tag("x"))
+  std.p("{key|ссылка} и ", _'key':noun_hint("тв"), [[ \{в скобках\}]])
 end;

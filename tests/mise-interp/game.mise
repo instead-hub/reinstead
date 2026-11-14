@@ -26,3 +26,4 @@ impl game
     say "вложенные {tag(tostring(len([1, 2])))} скобки"
     say "кавычка {tag '}'} внутри"
     say "движок {$fmt b|жирный} и {tag 'x'}"
+    say "\{key|ссылка\} и {key:noun тв} \\{в скобках\\}"
