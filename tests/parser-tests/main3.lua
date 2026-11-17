@@ -287,6 +287,23 @@ local function test_regressions()
 	ok("VerbExtend без тега: внятное сообщение",
 		okk == false and tostring(err):find("Extending non existing verb", 1, true) ~= nil,
 		tostring(err))
+
+	-- 3. mp.lua/mplib.lua: mp:move dispatch of LetGo/LetIn must reach the
+	-- current room (before_LetGo/after_LetIn); plain runmethods still skips
+	-- std.here(), the action chain already calls the room.
+	local room = std.here()
+	local hits = {}
+	std.rawset(room, 'before_LetGo', function() hits.before = true return false end)
+	std.rawset(room, 'after_LetIn', function() hits.after = true return false end)
+	mp:runmethods('before', 'LetGo', room, std.me(), room)
+	mp:runmethods('after', 'LetIn', room, std.me())
+	ok("runmethods пропускает комнату", not hits.before and not hits.after)
+	mp:runmethods_here('before', 'LetGo', room, std.me(), room)
+	ok("runmethods_here зовёт before_LetGo комнаты", hits.before == true)
+	mp:runmethods_here('after', 'LetIn', room, std.me())
+	ok("runmethods_here зовёт after_LetIn комнаты", hits.after == true)
+	std.rawset(room, 'before_LetGo', nil)
+	std.rawset(room, 'after_LetIn', nil)
 end
 
 function init()

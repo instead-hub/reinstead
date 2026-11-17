@@ -2263,7 +2263,7 @@ function mp:call(ob, ev, ...)
   return r, v
 end
 
-function mp:events_call(events, oo, t)
+function mp:events_call(events, oo, t, here)
   if not t then t = '' else t = t .. '_' end
   for _, o in ipairs(oo) do
     for _, e in ipairs(events) do
@@ -2282,7 +2282,7 @@ function mp:events_call(events, oo, t)
         table.remove(e.args, 1)
       end
       local r, v
-      if (meta and o == mp) or (not meta and std.is_obj(ob) and (o ~= 'obj' or ob ~= std.here())) then
+      if (meta and o == mp) or (not meta and std.is_obj(ob) and (here or o ~= 'obj' or ob ~= std.here())) then
         r, v = self:call(ob, eany, e.ev, std.unpack(e.args))
         if r then std.pn(r) end
         if not v then
@@ -2339,6 +2339,20 @@ function mp:restore_ctx(ctx)
   self.first_hint, self.second_hint = ctx.first_hint, ctx.second_hint
   self.event = ctx.event
   self.xevent = ctx.xevent
+end
+
+--- Like mp:runmethods, but also dispatches to the current room.
+-- The events_call guard normally skips std.here() in the 'obj' slot (the
+-- action chain already calls the room there). mp:move needs the room as a
+-- regular holder, so it opts out of that guard.
+function mp:runmethods_here(t, verb, ...)
+  local events = { {ev = verb, args = { ... }}}
+  local ctx = self:save_ctx()
+  self.xevent = self.event
+  local r, v = self:events_call(events, { 'obj' }, t, true)
+  self:restore_ctx(ctx)
+  self.reaction = false
+  return r, v
 end
 
 --- Execute a method
