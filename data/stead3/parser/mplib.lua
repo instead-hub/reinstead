@@ -285,6 +285,7 @@ std.class({
       local t = std.call(s, 'text', s.__num)
       if not t then
         s:Next(true)
+        return
       end
       p (t)
     else
