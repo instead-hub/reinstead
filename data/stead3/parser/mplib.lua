@@ -444,7 +444,7 @@ std.player.where = function(s, where)
 end
 
 std.room.display = function(s)
-  local c = std.call(mp, 'content', s)
+  local c = std.call(mp, 'display', s)
   return c
 end
 
@@ -477,7 +477,7 @@ function mp:visible_scope(s)
 end
 
 std.obj.display = function(s)
-  local c = std.call(mp, 'content', mp:visible_scope(s))
+  local c = std.call(mp, 'display', mp:visible_scope(s))
   return c
 end
 
@@ -900,39 +900,47 @@ function mp:defpri(w)
 end
 
 mp.msg.Exam = {}
---- Display the object contents
-function mp:content(w, exam)
+
+function mp:scene(w)
+  local dsc, v
+  -- pn()
+  if mp:thedark(w) then
+    dsc, v = std.call(w, 'dark_dsc')
+    if dsc then p(dsc) end
+    if not v then
+      mp:message 'WHEN_DARK'
+    end
+  else
+    if w:type'room' and not w:has'visited' and w.init_dsc ~= nil then
+      dsc, v = std.call(w, 'init_dsc')
+    else
+      dsc, v = std.call(w, (w:type('room') and 'dsc') or 'inside_dsc')
+    end
+    if dsc then p(dsc) end
+    if not v then
+      mp:message 'INSIDE_SCENE'
+    end
+  end
+  p(std.scene_delim)
+end
+
+function mp:display(w)
   if w:type 'dlg' then
     return
   end
+  if (w == std.me():where() or std.here() == w) and
+    (mp.event == 'Look' or mp.event == 'Exam' or std.me():need_scene()) then
+    self:scene(w)
+  end
+  mp:content(w)
+end
+
+--- Display the object contents
+function mp:content(w, exam)
   local oo = {}
   local ooo = {}
   local expand = {}
-  local inside
-  if (w == std.me():where() or std.here() == w) and
-    (mp.event == 'Look' or mp.event == 'Exam' or std.me():need_scene()) then
-    inside = true
-    local dsc, v
-    -- pn()
-    if mp:thedark(w) then
-      dsc, v = std.call(w, 'dark_dsc')
-      if dsc then p(dsc) end
-      if not v then
-        mp:message 'WHEN_DARK'
-      end
-    else
-      if w:type'room' and not w:has'visited' and w.init_dsc ~= nil then
-        dsc, v = std.call(w, 'init_dsc')
-      else
-        dsc, v = std.call(w, w:type'room' and 'dsc' or 'inside_dsc')
-      end
-      if dsc then p(dsc) end
-      if not v then
-        mp:message 'INSIDE_SCENE'
-      end
-    end
-    p(std.scene_delim)
-  end
+
   self:objects(w, oo, false)
   if w == std.here() then
     self:objects(self.persistent, oo, false)
@@ -990,7 +998,7 @@ function mp:content(w, exam)
 --  end
   oo = ooo
   if #oo == 0 then
-    if not inside and exam and mp.first == w and not something then
+    if exam and mp.first == w and not something then
       mp:message ('Exam.NOTHING', w)
     end
   else
