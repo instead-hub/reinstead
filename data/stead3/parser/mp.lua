@@ -3015,7 +3015,7 @@ std.mod_start(function()
   mp:compl_reset()
   mp:compl_fill(mp:compl(""))
   mp.last_gfx = false
---  if instead.text_input then instead.text_input(true) end
+  if instead.text_input then instead.text_input(true) end
 end, 2)
 instead.mouse_filter(0)
 -- speedup undo
