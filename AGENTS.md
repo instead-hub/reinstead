@@ -5,13 +5,21 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 ## Build
 
 - `make` — default (LuaJIT + SDL2 via pkg-config). SDL3: `make SDLVER=sdl3` (pkg-config `sdl3`).
-- `./make-default.sh` — bundled Lua (`src/lua`), no LuaJIT; `SDLVER=sdl3 ./make-default.sh` for SDL3. Also `./make-tcc.sh`, `make WITH_FREETYPE=1`, `make WITH_SCHRIFT=1`.
+- `./make-default.sh` — bundled Lua (`src/lua`), no LuaJIT; `SDLVER=sdl3 ./make-default.sh` for SDL3. Also `./make-tcc.sh`, `make WITH_FREETYPE=1`, `make WITH_SCHRIFT=1`. The bundled Lua is built with `-DLUA_UCID`: without it `lctype.c` treats every byte ≥ 0x80 as non-alphabetic, and generated Lua with Cyrillic identifiers (mise allows them) does not parse.
 - Platform: `src/platform_sdl.c` holds the SDL-shared part and includes `src/sdl2/platform.c` or `src/sdl3/platform.c` (`-DUSE_SDL3` selects SDL3). `src/platform.h` is the only platform header. Plan9 (`src/plan9/platform.c`) is standalone.
 - `./clean.sh` or `make clean`; binary is `./reinstead`.
 - Build artifacts (`*.o`, `reinstead`, `data/settings`) are untracked — never commit them.
 - CI (`.github/workflows/CI.yml`) only builds variants; it does not run tests.
 
 ## Tests (headless)
+
+**Which suite to run.** The parser suite does not depend on the transpiler, and
+the transpiler suite does not depend on parser internals — pick by what you
+touch:
+
+| Touching | Run |
+|---|---|
+| `data/stead3/parser/**`, `data/stead3/morph/**`, engine bootstrap (`data/core/core.lua`, `data/stead3/{stead,dlg,declare}.lua`) | `run-parser-tests.sh` (~40 s, of which `match-dump` is ~40 s) |
 
 - `./tests/run-parser-tests.sh` (needs a built `./reinstead`; override with `BIN=...`). Runs parser unit checks (`tests/parser-tests`) and golden diffs (`tests/match-dump/golden.txt` = `mp:match` snapshots, `golden-compl.txt` = `mp:compl`; `tests/noun-forms/golden.txt` = noun declension forms).
 - Single test game directly:
@@ -22,8 +30,11 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 
 - Pass the game directory as an absolute path; relative `games/trial` fails with "Can not detect game format":
   `SDL_VIDEODRIVER=dummy ./reinstead -appdata /tmp/x -noautosave /work/data/games/trial -i /work/data/games/trial/autoscript`
-- `-i` script is opened relative to CWD (use an absolute path). CLI options are parsed in `data/core/core.lua`: positional = game dir, plus `-i`, `-appdata`, `-noautosave`, `-debug`, `-scale`, `-tts`, `-noautoload`.
+- `-i` script is opened relative to CWD (use an absolute path). CLI options are parsed in `data/core/core.lua`: positional = game dir, plus `-i`, `-appdata`, `-noautosave`, `-debug`, `-scale`, `-tts`, `-noautoload`, `-stop`. `-stop` makes a scripted run non-interactive: it ends with status 1 as soon as a command raises an engine error, and ends with status 0 when the last script is exhausted (without it the engine stops the script and waits for input, which looks like a hang). The test harness passes it.
+
+`dict.mrd` beside a test game is a cache validated by a word sum (`mrd:create`), so it is committed and kept: a warm run is ~0.25 s instead of ~4 s.
 - Autoscript = one player command per line; lines starting with `!`/`/` are system commands (`!game`, `!script`, `!restart`, `!font`, `!quit`, ...). `data/games/autoscript` is an orchestrator over all games, not a game.
+- `log*.txt` (MetaTranscript) is written by `mp:log` before `std.format`: dashes stay ` -- `, quotes stay `"`. Judge text formatting by the formatted output (`instead-cli -e` stdout), not by the log.
 - `dict.mrd` beside a game is a generated, tracked cache; the engine regenerates it when sources change, so it can appear modified after runs.
 
 ## Parser (`data/stead3/parser/`)
@@ -39,6 +50,10 @@ RE:INSTEAD: minimal INSTEAD parser-game player. C engine (`src/`, SDL2/SDL3), ga
 - Words: `obj { -"камень,валун"; ... }` — comma = aliases, `|` = separate names, `/` = grammatical hints (`-"пёс,собака/мр,од,жив"`).
 - Attributes are set with `:attr 'container,open'`; a plain field `container = true` does NOT set an attribute.
 - Rooms are lit by default; `:attr '~light'` makes a room dark.
+- `scenery` objects' `dsc` is skipped in the room panorama (`mplib.lua: not v:has'scenery'`): put the state line in the room's `dsc`, or make the object `static`.
+- A `container,open` object's examine goes to its contents: the `switchable` state line is not printed and contents are listed via their `dsc`. For a state line on examine, drop `open` (`inside` needs only `container`) and handle insertion in a `before` hook.
+- `pass` at the end of a `description` block means "unhandled" and the engine appends its nothing-special line; use `stop` (or no trailing statement). Exception: `switchable`/`openable` objects, where `pass` lets the engine print the state line.
+- Rooms get `before_LetGo` (source) / `after_LetIn` (destination) via `mp:runmethods_here`; `onexit` is not the hook for this (its `stop`/`pass` are inverted).
 
 ## Workflow
 
