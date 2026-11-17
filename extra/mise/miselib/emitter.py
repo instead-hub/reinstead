@@ -349,9 +349,12 @@ class Emitter:
             return key, self._func(prms, h.body, ind)
         return key, "nil"
 
+    def _target_ref(self, t: str) -> str:
+        return t if (t in self.ctx.classes or t in ("mp", "pl")) else f"_'{t}'"
+
     def _emit_impl(self, ent: EntityDecl) -> str:
         t = ent.name or "game"
-        ref = t if (t in self.ctx.classes or t in ("mp", "pl")) else f"_'{t}'"
+        ref = self._target_ref(t)
         lines = []
         if ent.words:
             lines.append(f"{ref}.word = -{lua_str('|'.join(ent.words))}")
@@ -373,8 +376,9 @@ class Emitter:
         return "\n".join(lines)
 
     def _emit_verb(self, v: VerbDecl) -> str:
+        t = None if v.target in (None, "game") else self._target_ref(v.target)
         if v.mode == "remove":
-            return f"VerbRemove '{v.name}'"
+            return f"VerbRemove('{v.name}', {t})" if t else f"VerbRemove '{v.name}'"
         its = []
         tag = (f"#{v.name}" if v.tag is None else v.tag) if v.mode == "verb" else v.name
         if tag:
@@ -387,8 +391,10 @@ class Emitter:
         if v.hint is not None:
             _, fn = self._handler_pair(Handler(phase="on", events=["hint"], params=["s"], body=v.hint))
             its.append(f"hint = {fn}")
+        if v.mode == "verb" and v.target == "mp":
+            return f"MetaVerb {{ {', '.join(its)} }}"
         call = "Verb" if v.mode == "verb" else ("VerbExtendWord" if v.words else "VerbExtend")
-        return f"{call}({{ {', '.join(its)} }}, _'{v.target}')" if v.target else f"{call} {{ {', '.join(its)} }}"
+        return f"{call}({{ {', '.join(its)} }}, {t})" if t else f"{call} {{ {', '.join(its)} }}"
 
     def _emit_talk(self, td: TalkDecl) -> str:
         lines = [f"dlg {{\n  nam = '{td.name}';"]

@@ -135,8 +135,9 @@ class Parser:
             self.pos += 1
             self.match("IDENT", "verb")
             tag = self.eat("TAG").val
+            target = self.sym() if self.match("IDENT", "for") else None
             self.eat_nl()
-            return prog.items.append(VerbDecl(name=tag, mode="remove", line=t.line))
+            return prog.items.append(VerbDecl(name=tag, mode="remove", target=target, line=t.line))
         if kw == "type":
             self.pos += 1
             return prog.items.append(self._parse_type(extend=False))
@@ -567,6 +568,8 @@ class Parser:
             if k == "tag":
                 vd.tag = "" if self.match("IDENT", "false") else self.eat("TAG").val
             elif k == "target":
+                if vd.target is not None:
+                    raise Error(f"verb {name.lstrip('#')}: target declared twice", ktok.line, self.src)
                 vd.target = self.sym()
             elif k == "prio":
                 vd.prio = int(self.eat("NUMBER").val)

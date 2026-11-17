@@ -935,7 +935,7 @@ handler_body ::= value                               (* before Take = "Нель�
 
 verb_decl   ::= "verb" IDENT [ "for" SYMBOL ] INDENT { verb_member NEWLINE } DEDENT
               | "extend" "verb" TAG [ "for" SYMBOL ] INDENT { verb_member NEWLINE } DEDENT
-              | "remove" "verb" TAG
+              | "remove" "verb" TAG [ "for" SYMBOL ]
 
 verb_member ::= "words" "=" (STRING | list)
               | "patterns" "=" (STRING | list)

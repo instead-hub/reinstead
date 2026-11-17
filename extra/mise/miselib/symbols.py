@@ -20,8 +20,7 @@ TBL = Tbl(None)
 _SLOT_OBJ_RE = re.compile(r"\{(?:noun|noun_obj|compass\w*)\}")
 CURRENT_EVENT = frozenset({"ev", "event"})
 READONLY_FIELDS = frozenset({"nam"})
-ENGINE_OBJECTS = frozenset({"player"})
-BUILTIN_TARGETS = frozenset({"game", "pl", "mp"})
+BUILTIN_TARGETS = frozenset({"game", "pl", "mp", "player"})
 PRIMITIVES = frozenset({"str", "num", "bool", "any", "event", "tbl", "nil", "ref"})
 KINDS = {"str": STR, "num": NUM, "bool": BOOL, "nil": NIL, "raw": ANY}
 PRINTABLE = union(STR, NUM, BOOL, Name("obj"), EVENT)
@@ -404,9 +403,7 @@ def _verb_tag(item: VerbDecl) -> str:
 
 
 def _verb_pat_sig(pat: str, obj_type: Type) -> Optional[Tuple[str, List[Type], bool]]:
-    if ":" not in pat:
-        return None
-    lhs, rhs = pat.rsplit(":", 1)
+    lhs, rhs = pat.rsplit(":", 1) if ":" in pat else ("", pat)
     ev_parts = rhs.strip().split()
     if not ev_parts:
         return None
@@ -595,10 +592,9 @@ def _inline_mixin_traits(ctx: Context, ent: EntityDecl, instantiated_classes: Se
     ent.handlers = [h for h in exp_h if (h.phase, tuple(h.events)) not in own_h] + ent.handlers
 
 
-def known_target(ctx: Context, name: str, allow_engine: bool = False) -> bool:
+def known_target(ctx: Context, name: str) -> bool:
     return (name in BUILTIN_TARGETS or name.startswith("@")
-            or name in ctx.objects or name in ctx.classes
-            or (allow_engine and name in ENGINE_OBJECTS))
+            or name in ctx.objects or name in ctx.classes)
 
 
 def _kind_hint(ctx: Context, ent: EntityDecl) -> str:
@@ -626,7 +622,7 @@ def _register_entity(ctx: Context, ent: EntityDecl, instantiated_classes: Set[st
         if ent.name:
             _declare_object(ctx, ent.name, ent.kind, ent.line)
             ctx.entity_of[ent.name] = ent
-    if ent.kind == "impl" and ent.name and not known_target(ctx, ent.name, allow_engine=True):
+    if ent.kind == "impl" and ent.name and not known_target(ctx, ent.name):
         raise Error(f"impl {ent.name!r}: unknown target", ent.line)
     for ch in ent.children:
         _register_entity(ctx, ch, instantiated_classes)
@@ -645,11 +641,11 @@ def _register_entities(ctx: Context, prog: Program):
 
 
 def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[Type]]):
-    active_verbs: Dict[str, List[Tuple[str, List[Type], int, VerbDecl]]] = {}
+    active_verbs: Dict[Tuple[str, str], List[Tuple[str, List[Type], int, VerbDecl]]] = {}
     for item in prog.items:
         if not isinstance(item, VerbDecl):
             continue
-        tag = _verb_tag(item)
+        key = (_verb_tag(item), item.target or "game")
         if item.mode == "verb" and not item.patterns:
             raise attach_item_src(
                 ctx, item,
@@ -658,9 +654,9 @@ def _resolve_verb_events(ctx: Context, prog: Program, base_evs: Dict[str, List[T
                       item.line),
             )
         if item.mode == "remove":
-            active_verbs.pop(tag, None)
+            active_verbs.pop(key, None)
             continue
-        contribs = active_verbs.setdefault(tag, [])
+        contribs = active_verbs.setdefault(key, [])
         for pat in item.patterns:
             ps = _verb_pat_sig(pat, Name(root_class(ctx)))
             if ps:
@@ -800,7 +796,8 @@ def _collect_fields_and_refs(ctx: Context, prog: Program):
                     if vd.mode == "extend":
                         tag = _verb_tag(vd) or f"#{vd.name}"
                         base = tag.lstrip("#")
-                        if base not in ctx.event_names and tag not in ctx.verb_tags:
+                        known_verbs = ctx.enums.get("verb", (set(), False))[0]
+                        if base not in ctx.event_names and tag not in ctx.verb_tags and tag not in known_verbs:
                             raise Error(f"extend verb {tag}: unknown verb "
                                         f"(declare it with `verb {base}` first)", vd.line)
                     if vd.target and not known_target(ctx, vd.target):

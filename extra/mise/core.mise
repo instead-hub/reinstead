@@ -12,7 +12,9 @@ type verb = [
   #Answer, #Ask, #AskFor, #Attack, #Blow, #Burn, #Buy, #Climb, #Close,
   #Consult, #Cut, #Dig, #Disrobe, #Drink, #Drop, #Eat, #Exam, #Exit,
   #Fill, #GetOff, #Give, #Insert, #Inv, #Jump, #Kiss, #Listen, #Lock,
-  #Look, #Next, #No, #Open, #Pull, #Push, #Rub, #Search, #Show, #Sing,
+  #Look, #MetaAutoplay, #MetaDump, #MetaExpert, #MetaHelp, #MetaLoad,
+  #MetaNoun, #MetaRestart, #MetaSave, #MetaTrace, #MetaTranscript, #MetaUndo,
+  #MetaWord, #Next, #No, #Open, #Pull, #Push, #Rub, #Search, #Show, #Sing,
   #Sleep, #Smell, #Swim, #SwitchOff, #SwitchOn, #Take, #Talk, #Taste,
   #Tear, #Tell, #Think, #ThrowAt, #Tie, #Touch, #Turn, #Unlock, #Wait,
   #Wake, #Walk, #Wave, #Wear, #Yes,
@@ -133,6 +135,10 @@ event Disrobe, PushDir, Take: obj, obj
 event Inv, Look, Wake:
 event Any, Default, Drink, Jump, Next, No, Receive, Sing, Sleep, Swim, Think:
 event ThrownAt, Wait, WaveHands, Yes:
+event MetaAutoplay, MetaDump, MetaExpertOff, MetaExpertOn, MetaHelp, MetaLoad:
+event MetaRestart, MetaSave, MetaScore, MetaTraceOff, MetaTraceOn:
+event MetaTranscript, MetaTranscriptOff, MetaTranscriptOn, MetaUndo, MetaVerbs, MetaVersion:
+event MetaNoun, MetaWord: str
 
 type phase = after, before, life, post
 
