@@ -1,0 +1,6 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+obj box "ящик"

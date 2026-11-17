@@ -1,0 +1,13 @@
+game "t"
+lang ru
+include stdlib
+
+fn text_of(t: str) -> str
+  return t
+
+impl game : Ask
+  before Any =
+    match ev
+      Ask ->
+        pass
+    say (text_of wh)

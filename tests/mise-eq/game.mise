@@ -1,0 +1,64 @@
+game "eq"
+
+lang ru
+include stdlib
+
+fn on_take(s: obj)
+  "взято"
+
+fmt = dash
+
+impl game
+  dsc = "Заставка."
+
+fn init()
+  take box
+
+obj box "коробка" : scenery
+  description = "Просто коробка."
+  capacity = 2
+  disabled = false
+  found_in = hall
+  scope = [box]
+  dict = { ["коробка/вн"] = "коробку" }
+
+  before Take = &on_take
+  before Exam = "Нечего рассматривать."
+  after Drop =
+    "Упало."
+  before Open = pass
+  before Pull, Ask =
+    if w
+      say "спросили: " w
+    else
+      say "ничего"
+  before Drop, PutOn =
+    if w == hall
+      say "в " (w:noun вн)
+    else
+      say "мимо"
+
+verb Probe
+  tag = #Probe
+  words = "пробовать"
+  prio = 7
+  patterns = ["{noun}/вн : Probe"]
+  hint = [[Подсказка.]]
+
+event Probe: obj
+
+room hall "зал"
+  dsc = "Большой зал."
+  n_to = hall
+  before Walk = "Стоит на месте."
+
+fn start(load)
+  player:move hall
+
+talk chat
+  intro = "Привет."
+  label more
+    say = "Продолжение."
+    * "Ещё?"
+      "Да."
+      -> more

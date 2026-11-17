@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+fn want(f: fn(obj) -> num)
+  say (tostr (f none))
+
+fn use(f: fn(str) -> num)
+  want f

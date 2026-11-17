@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+event X
+  whenever
+    pass

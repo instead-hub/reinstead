@@ -1,0 +1,1 @@
+mise: line 5: type state: 'open' is already a value of type 'attr' (an enum value belongs to one type)

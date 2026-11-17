@@ -1,0 +1,42 @@
+game "for-of"
+
+lang ru
+
+include stdlib
+
+obj box "коробка" : scenery
+  description = "Коробка."
+
+obj rock "камень" : scenery
+  description = "Камень."
+
+obj coin "монета"
+
+fn start(load)
+  player:move test_room
+
+impl game
+  before Inv =
+    for w of [box, rock]
+      if w == box
+        say (w:noun)
+      else
+        say (w:noun)
+    for i, w of [box, rock]
+      say (i)
+    for w of plurals box
+      say (w:noun)
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl box
+  found_in = test_room
+
+impl rock
+  found_in = test_room
+
+impl coin
+  found_in = test_room

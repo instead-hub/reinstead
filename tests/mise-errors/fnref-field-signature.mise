@@ -1,0 +1,11 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+
+fn wrong(w: num) -> num
+  return w + 1
+
+impl box
+  description = &wrong

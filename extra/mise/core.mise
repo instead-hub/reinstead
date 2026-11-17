@@ -1,0 +1,250 @@
+# MISE 2 engine core: kinds, engine fields, types and extern functions.
+# Included by `stdlib.mise`; an author includes `stdlib`, not this file.
+
+type attr = [
+  ~, animate, clothing, concealed, container, cutscene, door, edible,
+  enterable, gameover, light, lockable, locked, luminous, moved, multi,
+  on, open, openable, scenery, static, supporter, switchable, transparent,
+  visited, worn,
+]
+type direction = n_to, ne_to, e_to, se_to, s_to, sw_to, w_to, nw_to, d_to, u_to, in_to, out_to
+type verb = [
+  #Answer, #Ask, #AskFor, #Attack, #Blow, #Burn, #Buy, #Climb, #Close,
+  #Consult, #Cut, #Dig, #Disrobe, #Drink, #Drop, #Eat, #Exam, #Exit,
+  #Fill, #GetOff, #Give, #Insert, #Inv, #Jump, #Kiss, #Listen, #Lock,
+  #Look, #Next, #No, #Open, #Pull, #Push, #Rub, #Search, #Show, #Sing,
+  #Sleep, #Smell, #Swim, #SwitchOff, #SwitchOn, #Take, #Talk, #Taste,
+  #Tear, #Tell, #Think, #ThrowAt, #Tie, #Touch, #Turn, #Unlock, #Wait,
+  #Wake, #Walk, #Wave, #Wear, #Yes,
+]
+
+
+class obj = obj
+  # engine fields that have no props type of their own, and the keys that are
+  # not fields at all but engine method calls
+  with: ref | tbl[ref] = method with(list)
+  attr: attr | tbl[attr] = method attr(join)
+  disabled: bool = method disable(none) else enable
+  dict: tbl = method dict(table)
+  nam: str
+  tag: str | bool
+  obj: tbl[obj]
+  way: ref
+  lifes: tbl[obj]
+  hint_verbs: tbl[verb]
+  hint_verbs_only: tbl[verb]
+  daemon: fn(obj)
+  description: str | bool | fn(obj) -> str
+  dsc: str | bool | fn(obj) -> str
+  title: str | bool | fn(obj) -> str
+  inv: str | bool | fn(obj) -> str
+  inside_dsc: str | bool | fn(obj) -> str
+  init_dsc: str | bool | fn(obj) -> str
+  dark_dsc: str | bool | fn(obj) -> str
+  each_turn: fn(obj)
+  when_open: str | bool | fn(obj) -> str
+  when_closed: str | bool | fn(obj) -> str
+  when_on: str | bool | fn(obj) -> str
+  when_off: str | bool | fn(obj) -> str
+  scope: ref | tbl[ref] | fn(s: obj, w: list)
+  found_in: ref | tbl[ref] | fn(obj) -> bool
+  talk_to: ref[talk] | fn(obj) -> ref      # `ref` = `ref[obj]`
+  with_key: ref | fn(obj) -> ref
+  default_Event: event | fn(obj) -> event
+  capacity: num | fn(obj) -> num
+  pri: num | fn(obj) -> num          # display order: lower goes first (stead.lua, mplib.lua)
+  disp: str | fn(obj) -> str
+  help: str | fn(obj) -> str
+  gfx: str | fn(obj) -> str
+  word: str | fn(obj) -> str
+  raw_word: str | fn(obj) -> str
+
+obj none
+
+class room(obj) = room
+  cant_go: str | bool | fn(obj, direction) -> str
+  OnError: fn(s: obj, err: str)
+  compass_look: fn(s: obj, to: direction)
+  onenter: fn(s: obj, w: obj)
+  onexit: fn(s: obj, w: obj)
+  enter: fn(s: obj, w: obj)
+  exit: fn(s: obj, w: obj)
+  n_to: ref | fn(obj) -> ref
+  ne_to: ref | fn(obj) -> ref
+  e_to: ref | fn(obj) -> ref
+  se_to: ref | fn(obj) -> ref
+  s_to: ref | fn(obj) -> ref
+  sw_to: ref | fn(obj) -> ref
+  w_to: ref | fn(obj) -> ref
+  nw_to: ref | fn(obj) -> ref
+  d_to: ref | fn(obj) -> ref
+  u_to: ref | fn(obj) -> ref
+  in_to: ref | fn(obj) -> ref
+  out_to: ref | fn(obj) -> ref
+  next_to: ref | fn(obj) -> ref
+
+class door(obj) = door
+  door_to: ref | fn(obj) -> ref
+
+class story(room) = cutscene
+  text: str | tbl[str] | fn(obj, num) -> str?
+
+class ending(room) = gameover
+
+# a dialogue is a room-like object (`std.dlg = std.class({...}, std.room)`)
+class talk(room) = dlg
+  phr: tbl[choice]
+  obj: tbl[choice]
+
+# A `*`/`+` choice in a dialogue. These are the words the author writes; the
+# emitter maps them onto the engine's `phr` fields (ask -> dsc, reply -> act).
+# A condition (`[expr]`/`when = …`) is a truthiness test, like `if`, so it is
+# not typed here.
+class choice
+  ask: str | fn(s: obj) -> str      # the line in the choice list
+  reply: str | fn(s: obj) -> str    # what is printed when it is chosen
+  act: fn(s: obj)                   # the action after the reply
+  onempty: fn(s: obj) -> str        # no selectable sub-choice: dlg.lua calls it
+  next: str                         # a tag: `-> label`
+  hidden: bool
+  only: bool
+  always: bool
+
+# a list is its own root in the engine (`std.list = std.class{__list_type = true}`),
+# it holds objects; the engine also accepts a plain table of objects
+class list = std.list
+
+# entry points: the engine calls these globals itself
+entry init()
+entry start(load: bool)
+
+# Events: the full action arguments, the acted object first.  A handler on that
+# object receives them after `s`; a room/game/mp handler gets the object as `w`.
+event Answer, Ask, AskFor, AskTo, Consult, Tell: obj, str
+event Burn, Cut, Dig, Tie: obj, obj?
+event Give, Insert, Lock, PutOn, Remove, Show, ThrowAt, Transfer, Unlock: obj, obj
+event LetGo: obj, obj, obj
+event LetIn: obj, obj
+event Attack, Blow, Buy, Climb, Close, Drop, Eat, Enter, Exam, Exit, Fill, GetOff: obj
+event JumpOver, Kiss, Listen, LookUnder, Open, Pull, Push, Rub, Search, Smell: obj
+event SwitchOff, SwitchOn, Talk, Taste, Tear, Touch, Turn, Use, WakeOther, Walk: obj
+event Wave, Wear: obj
+event Disrobe, PushDir, Take: obj, obj
+event Inv, Look, Wake:
+event Any, Default, Drink, Jump, Next, No, Receive, Sing, Sleep, Swim, Think:
+event ThrownAt, Wait, WaveHands, Yes:
+
+type phase = after, before, life, post
+
+# Lua functions callable from expressions. A Lua global of your own is read
+# through `extern value name -> type = "template"`.
+extern fn p(...: any) = "std.p($*)"
+extern fn pr(...: any) = "std.pr($*)"
+extern fn pn(...: any) = "std.pn($*)"
+extern fn tostring(v: any) -> str = "tostring($1)"
+extern fn tonumber(v: any) -> num? = "tonumber($1)"
+extern fn type(v: any) -> str = "type($1)"
+extern fn next(t: tbl) -> any = "next($*)"
+extern fn select(...: any) -> any = "select($*)"
+extern fn error(...: any) = "error($*)"
+extern fn assert(...: any) = "assert($*)"
+extern fn unpack(t: tbl) -> any = "std.unpack($*)"
+extern fn rawget(t: tbl, k: any) -> any = "rawget($1, $2)"
+extern fn rawset(t: tbl, k: any, v: any) -> tbl = "rawset($1, $2, $3)"
+extern fn setmetatable(t: tbl, m: tbl) -> tbl = "setmetatable($1, $2)"
+extern fn getmetatable(t: tbl) -> any = "getmetatable($1)"
+extern fn print(...: any) = "print($*)"
+extern fn pcall(...: any) -> bool = "pcall($*)"
+
+# Engine extern functions
+extern fn here() -> room = "here()"
+extern fn player() -> obj = "me()"
+extern fn time(t: num?) -> num = "time($1)"
+extern fn has(s: obj, a: attr) -> bool = "$1:has($2)"
+extern fn hasnt(s: obj, a: attr) -> bool = "$1:hasnt($2)"
+extern fn move(s: obj, where: obj) = "move($1, $2)"
+extern fn check_move(s: obj, where: obj) -> bool = "mp:move($1, $2)"
+extern fn attr(s: obj, a: attr) = "$1:attr($2)"
+extern fn inside(w: obj, x: obj) -> bool = "$1:inside($2)"
+extern value compass_dir(w: obj) -> direction? = "(mp:compass_dir($1) or nil)"
+extern fn once(s: obj, t: str?) -> bool = "$1:once($2)"
+extern fn say(text: any, ...: any) = "std.p($*)"
+extern fn line(...: any) = "std.pn($*)"
+extern fn append(text: any, ...: any) = "std.pr($*)"
+extern fn rnd(n: num) -> num = "rnd($1)"
+extern fn xaction(ev: event, ...: obj) = "mp:xaction($*)"
+extern fn subaction(ev: event, ...: obj) = "mp:subaction($*)"
+extern fn daemonStart(w: obj) = "DaemonStart($1)"
+extern fn daemonStop(w: obj) = "DaemonStop($1)"
+extern fn enable(w: obj) = "enable($1)"
+extern fn disable(w: obj) = "disable($1)"
+extern fn place(w: obj) = "place($1)"
+extern fn isDaemon(w: obj) -> bool = "isDaemon($1)"
+extern fn getDaemons() -> list = "getDaemons()"
+extern fn disabled(w: obj) -> bool = "disabled($1)"
+extern fn for_plural(s: obj, f: fn(obj)) = "$1:for_plural($2)"
+extern fn trace(s: obj, f: fn(obj)) = "mp:trace($1, $2)"
+extern value isa(s: obj, cls: str) -> bool = "(((function(o) local m = getmetatable($1) while m do if m == o then return true end m = getmetatable(m) end return false end)(_G[$2])))"
+extern fn seen(w: ref, wh: ref?) -> obj? = "seen($*)"
+extern fn walk(where: obj) = "walk($1)"
+extern fn walkin(where: obj) = "walkin($1)"
+extern fn take(w: obj) = "take($1)"
+extern fn drop(w: obj) = "drop($1)"
+extern fn content(w: obj) = "mp:content($1)"
+extern fn inv() -> list = "inv()"
+extern value len(v: tbl|str) -> num = "(#$1)"
+extern fn pairs(t: tbl) -> fn() -> any, any = "pairs($1)"
+extern fn ipairs(t: tbl) -> fn() -> num, any = "ipairs($1)"
+extern fn walkout() = "walkout()"
+extern fn visits(w: obj) -> num = "visits($1)"
+extern value event() -> event? = "(mp.event or nil)"
+extern value xevent() -> event? = "(mp.xevent or nil)"
+extern fn have(w: obj) -> obj? = "have($1)"
+extern fn visited(w: obj) -> bool = "visited($1)"
+extern fn access(s: obj) -> bool = "$1:access()"
+extern fn offerslight(w: obj) -> bool = "mp:offerslight($1)"
+extern fn visible_scope(where: obj) -> obj? = "mp:visible_scope($1)"
+extern fn where(w: obj) -> obj? = "where($1)"
+extern fn inroom(w: obj) -> obj = "inroom($1)"
+extern fn thedark(what: obj) -> bool = "mp:thedark($1)"
+extern fn hint(s: obj, h: str) = "$1:hint($2)"
+extern fn multi_alias(s: obj) -> num = "$1:multi_alias()"
+extern fn walkback(w: obj?) = "walkback($1)"
+extern fn remove(w: obj) = "remove($1)"
+extern fn lookup(w: list, wh: obj) -> obj?, num? = "$1:lookup($2)"
+extern fn add(w: list, wh: obj) = "$1:add($2)"
+extern fn del(w: list, wh: obj) = "$1:del($2)"
+extern fn push(w: obj, ww: obj?) = "push($*)"
+extern fn pop(w: obj?, ww: obj?) = "pop($*)"
+extern fn empty(w: obj?) -> bool = "empty($1)"
+extern fn from() -> obj = "from()"
+extern fn check_held(w: obj) -> bool = "mp:check_held($1)"
+extern fn check_live(w: obj) -> bool = "mp:check_live($1)"
+extern fn check_touch() -> bool = "mp:check_touch()"
+extern fn check_worn(w: obj) -> bool = "mp:check_worn($1)"
+extern fn check_inside(w: obj) -> bool = "mp:check_inside($1)"
+extern fn clear() = "mp:clear()"
+extern fn cls_prompt() = "mp:cls_prompt()"
+extern fn need_scene(s: obj, v: bool) = "$1:need_scene($2)"
+extern fn player_moved() = "player_moved()"
+extern fn lifeon(w: obj) = "lifeon($1)"
+extern fn lifeoff(w: obj) = "lifeoff($1)"
+extern fn call_before(s: obj, ev: event) = "std.call($1, 'before_' .. $2)"
+extern fn runmethods(what: phase, meth: event, ...: obj) = "mp:runmethods($*)"
+extern fn runorval(w: obj, name: str, ...: any) -> any = "mp:runorval($*)"
+extern fn theme_name() -> str = "theme.name()"
+extern fn pclr() = "std.pclr()"
+extern fn ref(name: str) -> obj? = "std.ref($1)"
+extern value arg_word(i: num) -> str = "((mp.args[$1] or {}).word or '')"
+extern value tiny() -> bool = "(instead.tiny)"
+extern fn music(name: str, ...: any) = "snd.music($*)"
+extern fn tostr(s: any) -> str = "tostring($1)"
+extern value desc(s: obj) -> str? = "($1.desc)"
+extern lvalue score: num = "mp.score"
+extern lvalue undo: num = "mp.undo"
+extern lvalue detailed_inv: bool = "mp.detailed_inv"
+extern lvalue notitle: bool = "instead.notitle"
+extern lvalue autocompl: bool = "mp.autocompl"
+extern lvalue autohelp: bool = "mp.autohelp"
+extern lvalue autohelp_limit: num = "mp.autohelp_limit"
+extern lvalue compl_thresh: num = "mp.compl_thresh"

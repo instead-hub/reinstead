@@ -1,0 +1,171 @@
+game "kinds"
+
+lang ru
+
+include stdlib
+
+fn tick(s: obj)
+  pass
+
+class obj
+  treasure: ref | fn(s: obj)
+
+class obj
+  obj_note: num
+
+class room
+  room_note: num
+
+type mood = [calm, angry]
+extend type mood = [tired]
+class obj
+  home_to: ref
+
+fmt verbose
+
+fn init()
+  take statue
+
+impl game
+  hint_verbs = [#Look]
+
+impl pl
+  word = -"ты"
+
+fn start(load)
+  player:move hall
+
+story intro
+  dsc = "Пролог."
+  after Enter =
+    [[История началась.]]
+
+story prologue
+  text = [
+    [[Первая страница.
+Вторая строка первой страницы.]],
+    "Вторая страница.",
+  ]
+
+story epilogue
+  text = "Конец."
+
+obj sky "небо" : scenery
+  dsc = "Небо в облаках."
+  room_note = "не комната"
+
+room hall "зал"
+  dsc = "Большой зал."
+  room_note = 1
+  obj_note = 2
+  dict = { ["зал/вн"] = "зал" }
+  with = sky
+  on Enter =
+    [[Вы вошли.]]
+  on Walk =
+    [[Вы идёте.]]
+  on Look =
+    [[Вы осматриваетесь.]]
+  post Look =
+    [[Уже осмотрелись.]]
+  life Give, Show =
+    [[Жизнь кипит.]]
+  after Turn =
+    [[Повернулись.]]
+  compass_look =
+    if to
+      pass
+  scope =
+    pass
+  enter =
+    w:noun
+  exit =
+    pass
+  onenter =
+    w:noun
+  onexit =
+    pass
+  each_turn =
+    pass
+  found_in =
+    pass
+  when_open =
+    pass
+  when_closed =
+    pass
+  when_on =
+    pass
+  when_off =
+    pass
+  s_to = garden
+
+door gate "ворота"
+
+Door gate2 "калитка"
+  door_to =
+    return hall
+
+room garden "сад"
+  dsc = "Тихий сад."
+  d_to = hall
+  home_to = hall
+  scope = [statue, relic]
+  default_Event = Exam
+
+obj statue "статуя" : scenery
+  mood = calm
+  treasure = relic
+
+obj relic "реликвия" @ garden
+  mood = tired
+  disabled = true
+  daemon = &tick
+  when_open = "Открыто."
+  help = "Подсказка."
+  disp = "Реликвия."
+  gfx = "relic.png"
+  word =
+    return 'реликвия'
+  on Use =
+    [[Применили.]]
+  on AskTo =
+    [[Попросили.]]
+
+obj key "ключ"
+
+obj mirror "зеркало"
+  disabled = false
+  obj shard "осколок"
+    disabled = true
+
+class Ghost "призрак"
+  disabled = true
+
+obj casket "шкатулка" : lockable, locked
+  with_key = key
+  capacity = 2
+
+verb Probe
+  tag = #Probe
+  words = "пробовать"
+  prio = 10
+  hint = "Подсказка."
+  patterns = ["{noun}/вн : Probe"]
+impl Ghost
+  disabled = false
+
+impl relic
+  disabled = true
+
+impl key
+  disabled = false
+
+impl game
+  dict = { ["зал/вн"] = "зал" }
+  game_time = 0
+  game_look = 2
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."

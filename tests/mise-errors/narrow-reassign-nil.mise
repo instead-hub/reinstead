@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(start_obj: obj) -> str
+  local cur: obj? = start_obj
+  while cur
+    cur = where cur
+    return cur:noun
+  return ""

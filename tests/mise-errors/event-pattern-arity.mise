@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+event Zap: obj, obj
+
+verb Zap
+  words = "зап/ать"
+  patterns = ["{noun}/вн : Zap"]

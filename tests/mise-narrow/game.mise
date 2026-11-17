@@ -1,0 +1,40 @@
+game "narrow"
+
+lang ru
+include stdlib
+
+# Сужение типов должно работать не только на компиляции: каждая ветка печатает
+# свой маркер, поэтому транскрипт проверяет, что ветки выбираются верно.
+
+obj box "коробка"
+  found_in = hall
+
+fn show(w: obj) -> str
+  return w:noun вн
+
+impl game
+  before Inv =
+    local t = inv
+    if x := t[1]                    # связывание: x виден только в своей ветке
+      say "взято: " (show x)
+    else
+      say "пусто"
+    local first = t[1]              # это obj?
+    if first                        # обычное сужение через if
+      say "первый: " (show first)
+    else
+      say "первого нет"
+    if first and first:hasnt light  # and: правый операнд видит сужение левого
+      say "и не светится"
+    else
+      say "иначе"
+    if not first or first:hasnt light
+      say "пусто или не светится"
+    if first != nil
+      say "точно есть"
+
+room hall "зал"
+  dsc = "Зал."
+
+fn start(load)
+  player:move hall

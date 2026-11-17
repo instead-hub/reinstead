@@ -1,0 +1,29 @@
+game "t"
+
+lang ru
+
+include stdlib
+
+extend type attr = seen
+
+class Tree : scenery
+
+Tree tree "дерево"
+
+impl tree
+  before Take =
+    for_plural s &(w) w:attr seen
+    trace s &(w) w:attr seen
+    if s:isa Tree
+      [[дерево]]
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl tree
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(s: obj)
+  local i = inv
+  if s := i[1]
+    say "x"

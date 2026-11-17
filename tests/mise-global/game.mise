@@ -1,0 +1,32 @@
+game "global"
+
+lang ru
+
+include stdlib
+
+global
+  picked = box
+  target = none
+
+obj box "коробка"
+
+room r "комната"
+  dsc =
+    "Комната."
+    append (picked:noun вн)
+    "."
+    if target != none
+      "Цель есть."
+    else
+      "Цели нет."
+
+obj lever "рычаг" @ r
+  before Pull =
+    if target == none
+      target = box
+      "Взял."
+      stop
+    "Уже."
+
+fn start(load)
+  player:move r

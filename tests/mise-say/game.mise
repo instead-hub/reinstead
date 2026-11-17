@@ -1,0 +1,78 @@
+game "say"
+
+lang ru
+
+include stdlib
+
+fn note(t: str)
+  lua
+    p(t)
+
+fn raw_ml() -> str
+  lua
+    return [[m
+n]]
+
+fn slen(t: str) -> num
+  lua
+    return #t
+
+fn esc_ml() -> str
+  return "a\nb"
+
+fn commented() -> str
+  lua
+    -- комментарий в начале тела сохраняется
+    --[=[
+      и длинный комментарий с "кавычкой
+    ]=]
+    return "comment"
+
+# `= выражение` — та же функция, что и блок с `return` (не макрос)
+fn show(x: num) -> str = `"x=" .. x`
+
+fn esc_br() -> str
+  return "x\ny]"
+
+fn esc_br2() -> str
+  return "a]]b\nконец]"
+
+fn tri_ml() -> str
+  return """
+c
+d"""
+
+obj x "вещь"
+  pri = 3
+  cnt = 3
+
+fn start(load)
+  player:move test_room
+
+impl game
+  before Inv =
+    "x"
+    "x:noun()"
+    say (x:noun)
+    line "line text"
+    "append text"~
+    note "raw words"
+    note (x:noun)
+    say "ml={slen esc_ml},{slen tri_ml},{slen raw_ml}"
+    # `..` слабее `+`, как в Lua: склеиваем уже сумму
+    say ("n=" .. x.pri + 1)
+    say (x.pri + 1 .. "!")
+    say (commented)
+    say (show 42)
+    # скобки справа при равном приоритете не теряются
+    say "parens={10 - (5 - 2)},{100 / (10 / 2)},{10 - (5 + 2)},{-(-x.pri)},{len ('ab' .. 'cd')},{(x or x).cnt}"
+    # многострочный текст, кончающийся на `]`: длинная скобка удлиняется
+    say "br={slen esc_br},{slen esc_br2}"
+    note esc_br
+    note esc_br2
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl x
+  found_in = test_room

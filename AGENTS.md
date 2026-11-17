@@ -19,9 +19,19 @@ touch:
 
 | Touching | Run |
 |---|---|
+| `extra/mise/**` (compiler, `core.mise`, `stdlib*.mise`) | `run-mise-tests.sh --engine` + `run-mise-error-tests.sh` (~17 s) |
 | `data/stead3/parser/**`, `data/stead3/morph/**`, engine bootstrap (`data/core/core.lua`, `data/stead3/{stead,dlg,declare}.lua`) | `run-parser-tests.sh` (~40 s, of which `match-dump` is ~40 s) |
+| before a release / full check | all three |
 
+While working on mise the parser tests are not needed — they exercise the
+engine's own `mp:match`/`mp:compl`/morphology against their own fixtures
+(`tests/parser-tests`, `tests/match-dump`, `tests/noun-forms`), which the
+transpiler neither produces nor consumes.
+
+- `./tests/run-mise-tests.sh` and `./tests/run-mise-error-tests.sh` go through `tests/mise-check.py` (one Python process for all cases — importing the compiler costs more than the work). `--engine` also checks the `-stop` contract: a script that ends exits 0, a command error exits 1.
 - `./tests/run-parser-tests.sh` (needs a built `./reinstead`; override with `BIN=...`). Runs parser unit checks (`tests/parser-tests`) and golden diffs (`tests/match-dump/golden.txt` = `mp:match` snapshots, `golden-compl.txt` = `mp:compl`; `tests/noun-forms/golden.txt` = noun declension forms).
+- `./tests/run-mise-error-tests.sh` — negative transpiler tests: every `tests/mise-errors/*.mise` must fail with the exact stderr from the sibling `.err` (pins line numbers + messages). Regenerate a case's `.err` with `python3 extra/mise/mise.py <case>.mise`.
+- `./tests/run-mise-tests.sh [--engine]` — every `tests/mise-*/game.mise` must transpile byte-identical to the committed `main3.lua`. With `--engine` the game and its `autoscript` are run under `./reinstead`: for games with an `extra/metaparser-instead/games/<name>` original the two transcripts are compared; games without an original (e.g. `mise-talk`) compare against the committed `transcript.golden` (first log line, the path, is stripped).
 - Single test game directly:
   `SDL_VIDEODRIVER=dummy ./reinstead -appdata "$(mktemp -d)" -noautosave "$PWD/tests/parser-tests"`
 - Golden regeneration is only for intentional parser behavior changes: run the dump game directly (it writes `out.txt` / `out-compl.txt` next to `tests/match-dump/main3.lua`), then copy them to `golden*.txt`. The noun forms golden is regenerated the same way (`tests/noun-forms/out.txt` → `golden.txt`). To validate a refactor, compare against a previous `mp.lua`: `git show <rev>:data/stead3/parser/mp.lua` swapped in, run the dump, `diff`.
@@ -58,4 +68,5 @@ touch:
 ## Workflow
 
 - Work on branch `opencode`, commits authored as `opencode <opencode@localhost>`; do not commit without explicit confirmation.
+- Revizor: use sprints (`start`/`check`) for refactorings only. When developing a new feature, run `report` (the current quality state) — a feature adds code, so the raw sprint parameters legitimately grow.
 - Comments in `data/stead3/parser/` are English.

@@ -1,0 +1,1 @@
+mise: line 8: &has: an extern is a macro, it has no function value (call it directly, or write a `fn` wrapper)

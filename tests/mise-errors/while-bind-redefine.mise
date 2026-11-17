@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(s: obj)
+  while s := where s
+    pass

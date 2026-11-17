@@ -1,0 +1,91 @@
+game "talk"
+
+lang ru
+
+include stdlib
+
+global
+  met = false
+  q1 = 0
+
+fn знакомы(s: obj) -> bool
+  return met
+
+fn ask_text(s: obj) -> str
+  return 'Вопрос от fn?'
+
+fn reply_text(s: obj) -> str
+  return '-- Ответ от fn.'
+
+fn act_say(s: obj)
+  [[-- Что-то произошло.]]
+
+fn start(load)
+  player:move hall
+
+room hall "зал"
+  dsc = "Большой зал."
+
+obj guide "гид,проводник" @ hall
+  dsc = "Суровый гид."
+  talk_to = разговор_с_гидом
+
+talk разговор_с_гидом
+  intro = "-- Здравствуйте, путник."
+  * [not met] "Что тут случилось?"
+    "-- Обвал в шахте."
+    * "Кто виноват?"
+      "-- Никто."
+      q1 += 1
+    * "Секретный вариант" hidden
+      "-- Тс-с-с."
+      q1 += 10
+    * "Только один раз" only -> финал
+  + "Я скоро вернусь."
+    met = true
+    walkout
+  * "Расспросить"
+    "-- О чём?"
+    onempty =
+      "-- Гид угрюмо молчит."
+      met = true
+      walkout
+    * "О погоде"
+      "-- Ветрено."
+    * "О работе"
+      "-- Тяжело."
+  * [true] "Всегда доступно"
+    "-- Да, всегда."
+  * [false] "Никогда"
+    "-- И не увидите."
+  * "После знакомства"
+    when =
+      return met
+    "-- Мы уже виделись."
+  * "Знакомы ли мы?"
+    when = &знакомы
+    "-- Похоже, да."
+  * "s как аргумент функции" hidden
+    when =
+      знакомы s
+    "-- Да."
+  * [not s:has open] "Проверка s"
+    "-- s на месте."
+  * "Проверка and"
+    when =
+      return met and true
+    "-- И это правда."
+  * ""
+    ask =
+      return 'Вопрос из блока?'
+    "-- Ответ из блока."
+  * &ask_text
+    reply = &reply_text
+  * "С действием?"
+    reply = &reply_text
+    act = &act_say
+  label финал
+    say = "-- Продолжение следует."
+    * "Спасибо."
+      met = true
+      walkout

@@ -1,0 +1,28 @@
+game "scope"
+
+lang ru
+
+include stdlib
+
+fn start(load)
+  player:move hall
+
+room hall "зал"
+  dsc = "Зал."
+  scope =
+    add w coin
+    w:add star
+    add w moon
+    del w moon
+
+room kitchen "кухня"
+  dsc = "Кухня."
+
+obj coin "монета" @ kitchen
+  description = "Золотая монета."
+
+obj star "звезда" @ kitchen
+  description = "Бумажная звезда."
+
+obj moon "луна" @ kitchen
+  description = "Картонная луна."

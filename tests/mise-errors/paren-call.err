@@ -1,0 +1,1 @@
+mise: paren-call.mise:7: unexpected ',': arguments are separated by spaces (`f a b`); a comma is only allowed in `[...]`/`{...}`

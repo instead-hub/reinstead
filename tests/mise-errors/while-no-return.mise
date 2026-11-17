@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(n: num) -> num
+  while n > 0
+    return n

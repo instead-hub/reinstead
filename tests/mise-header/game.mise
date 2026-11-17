@@ -1,0 +1,30 @@
+game "header"
+
+lang ru
+include stdlib
+include stdlib
+
+fmt = dash
+
+impl game
+  dsc = "Заставка."
+  hint_verbs = [#Exam, #Take]
+  before Exam =
+    "Нечего осматривать."
+
+impl pl "ты/мр"
+  description = "Герой."
+
+fn init()
+  take box
+  player:move hall
+
+fn start(load)
+  player:move hall
+
+obj box "коробка"
+  found_in = hall
+  description = "Просто коробка."
+
+room hall "зал"
+  dsc = "Большой зал."

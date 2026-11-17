@@ -1,0 +1,98 @@
+game "events"
+
+lang ru
+
+include stdlib
+
+fn text_of(t: str) -> str
+  return t
+
+fn reply_text(s: obj, text: str) -> str
+  return text
+
+verb Zap
+  words = "зажиг/ать"
+  patterns = ["{noun}/вн : Zap", "частота|канал : Zap"]
+verb Whisper
+  words = "шеп/тать,нашёптыв/ать"
+  patterns = ["{noun}/дт * : Whisper"]
+impl pl
+  before Take, Drop = "Тебе нельзя."
+
+impl game
+  before Open, Close = "Не сейчас."
+
+room r "комната"
+  with = x, npc, y, z
+  before Consult =
+    say (text_of wh)
+
+obj x "вещь"
+  before AskFor =
+    say (text_of w)
+  before Cut =
+    if w
+      w:has scenery
+    "Режешь."
+
+obj y "штука"
+  before Cut, Dig =
+    if w
+      w:has scenery
+    "Режешь."
+  before Take, AskFor =
+    if event == AskFor
+      say (text_of w)
+    else
+      pass
+  before Any =
+    match ev
+      Ask ->
+        say (text_of w)
+      Cut ->
+        if w
+          w:has scenery
+      _ ->
+        pass
+
+obj z "штуковина"
+  before AskFor = &reply_text
+  before Consult(s, text) =
+    say (text_of text)
+  before Whisper =
+    say (text_of w)
+
+obj npc "сторож" : animate
+  life Ask =
+    say (text_of w)
+
+impl game
+  before Tell =
+    say (text_of wh)
+  before Zap =
+    if w
+      w:has scenery
+
+impl mp : Ask
+  on Ask =
+    say (text_of wh)
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl x
+  found_in = test_room
+
+impl y
+  found_in = test_room
+
+impl z
+  found_in = test_room
+
+impl npc
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

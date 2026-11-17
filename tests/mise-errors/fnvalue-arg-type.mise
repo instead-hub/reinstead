@@ -1,0 +1,6 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(cb: fn(obj) -> str) -> str
+  return (cb 5)

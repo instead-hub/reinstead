@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+obj lamp "лампа"
+  dsc =
+    lua
+      return "из lua"

@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+room hall "зал"
+  with = box, phantom
+
+obj box "коробка"

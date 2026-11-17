@@ -1,0 +1,90 @@
+game "t"
+
+lang ru
+
+include stdlib
+
+extend type attr = seen
+
+class Tree : scenery
+
+fn run(f: fn(w: obj) -> bool) -> bool
+  return f box
+
+fn each(t: tbl, f: fn(w: obj))
+  for _, w:obj in ipairs t
+    f w
+
+# функция-параметр перед обычным параметром (разбор типов)
+fn apply(cb: fn(x: obj) -> num, w: obj) -> num
+  return cb w + 1
+
+# лямбда с телом-блоком: возвращаемое значение сверяется с ожидаемой подписью
+fn apply_text(cb: fn(x: obj) -> str) -> str
+  return cb box
+
+fn probe_lambda() -> str
+  return apply_text &(s: obj)
+    return "из лямбды"
+
+# взаимная рекурсия и вызов fn, объявленной ниже (forward-декларация)
+fn is_even(n: num) -> bool
+  if n == 0
+    return true
+  return is_odd (n - 1)
+
+fn is_odd(n: num) -> bool
+  if n == 0
+    return false
+  return is_even (n - 1)
+
+# вариадик `...`: упаковка в `[...]` и чтение первого аргумента
+fn sum_args(...: num) -> num
+  local acc = 0
+  for v of [...]
+    if v
+      acc += v
+  return acc
+
+fn head_arg(...: str) -> str?
+  local a = ...
+  return a
+
+fn total(n: num) -> num
+  local r = 0
+  for i:num = 1, n
+    r += i
+  return r
+
+obj box "коробка"
+  on Take =
+    if run &(w) w:has light
+      [[светло]]
+    say "apply: " (apply &(x) 41 box)
+    if is_even 4 and not is_odd 4
+      say "even: " (sum_args 10 20 12)
+    if h := head_arg "раз" "два"
+      say "head: " h
+    for_plural s &(w) w:attr seen
+    each (inv) &(w) w:attr seen
+    if total 3 > 0
+      pass
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl box
+  found_in = test_room
+
+fn start(load)
+  player:move test_room
+
+# замыкание: лямбда видит и меняет локальную переменную
+fn closure(s: obj) -> num
+  local n = 0
+  for w of [box]
+    each inv &(x)
+      n += 1
+  return n

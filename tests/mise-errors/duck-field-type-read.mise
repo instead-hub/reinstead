@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+obj xxx "икс"
+  t = true
+
+fn test(s: obj)
+  say (s.t + 1)

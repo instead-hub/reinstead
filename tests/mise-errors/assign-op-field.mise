@@ -1,0 +1,11 @@
+game "t"
+lang ru
+include stdlib
+
+
+obj box "коробка"
+  dsc = "a"
+
+impl box
+  before Exam =
+    s.dsc += 1

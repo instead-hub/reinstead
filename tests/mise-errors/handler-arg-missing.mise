@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка" : scenery
+  dsc = "Просто коробка."
+  before Pull, Ask =
+    say (w:noun вн)

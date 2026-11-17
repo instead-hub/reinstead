@@ -1,0 +1,41 @@
+game "t"
+
+lang ru
+
+include stdlib
+
+mixin Talkative
+  heard = false
+  before Talk =
+    s.heard = true
+    [[поговорили]]
+
+mixin Flying
+  before Climb =
+    [[взлетел]]
+
+class Bird : animate, Flying
+
+Bird eagle "орёл"
+
+obj parrot "попугай" : Talkative
+
+obj crow "ворона" : Talkative
+  before Talk = [[кар]]
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl eagle
+  found_in = test_room
+
+impl parrot
+  found_in = test_room
+
+impl crow
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

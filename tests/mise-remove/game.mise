@@ -1,0 +1,38 @@
+game "remove"
+
+lang ru
+
+include stdlib
+
+event Zap: obj
+
+verb Zap
+  words = "зажиг/ать"
+  patterns = ["* : Zap"]
+verb Whisper
+  words = "шеп/тать"
+  patterns = ["{noun}/дт * : Whisper"]
+remove #Zap
+
+remove #Wear
+
+room r "комната"
+  before Zap =
+    w:has scenery
+  before Whisper =
+    say (wh)
+
+obj x "вещь"
+  before Whisper =
+    say (w)
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl x
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

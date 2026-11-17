@@ -1,0 +1,149 @@
+game "t"
+
+lang ru
+
+include stdlib
+
+global
+  chosen = crate
+  last_room: obj? = none       # аннотация: «комната или ничего»
+  flag: bool = false
+
+class obj
+  target: ref
+
+class Box : container
+  weight = 0
+
+# одноимённое поле с другим типом: `target` у `class obj` — ссылка (`ref`),
+# а здесь — строка. Реф-ность поля решается по объявлению класса, не по имени.
+class Tag : obj
+  target: str
+
+Tag note "записка"
+  target = "просто текст"
+
+fn label(w: obj, n: tbl[case|gram]|case|num?, nn: num?) -> str
+  if n and nn
+    return w:noun n nn
+  if n
+    return w:noun n
+  return w:noun
+
+fn label2(w: obj, n: case|num) -> str
+  return w:noun n
+
+fn first_str(t: tbl[str]) -> str?
+  return t[1]   # элемента может не быть
+
+fn spot(s: obj) -> obj
+  return s:where and s:where or none
+
+# событие в движке — строка (`mp.event` = 'Take'), поэтому оно складывается с текстом
+fn ev_text(ev: event) -> str
+  return "событие: " .. ev
+
+# `scope`/`found_in` объявлены как union (запись: объект или список), но движок
+# нормализует одиночную ссылку в список при загрузке — читать и обходить можно
+fn first_in(s: obj) -> ref?
+  return s.found_in[1]
+
+fn remember_room(s: obj)
+  last_room = s:where
+
+fn scope_names(s: obj) -> num
+  local n = 0
+  for w of s.scope
+    if w
+      n += 1
+  return n
+
+# 0-арная fn в значении поля объекта (`dsc = room_text`).
+# Поле `T | fn(obj) -> T` читается как union — компилятор не подставляет вызов,
+# значение достаётся своей обёрткой (`std.call` в `lua`-блоке).
+fn room_text() -> str
+  return "Тестовая комната."
+
+fn probe_str(s: obj, f: str) -> str?
+  lua
+    local v = s[f]
+    if type(v) == 'function' then v = v(s) end
+    if type(v) == 'string' then return v end
+    return nil
+
+fn probe_num(s: obj, f: str) -> num?
+  lua
+    local v = s[f]
+    if type(v) == 'function' then v = v(s) end
+    if type(v) == 'number' then return v end
+    return nil
+
+fn field_probe(s: obj) -> str
+  local w = probe_str s 'word' or "?"
+  local d = probe_str s 'dsc' or "-"
+  if p := probe_num s 'pri'
+    return "{w}:{p + 1}:{d}"
+  return "{w}:-:{d}"
+
+fn on_take(s: Box)
+  if s.weight + 1 > 0
+    [[тяжёлый]]
+  say (label s)
+  say (label s им)
+  say (label s вн)
+  say (s:noun вн)
+  say (s:noun зв)
+  say (s:noun ([рд, 2]))
+  say (s:noun [рд, 2])
+  say (s:noun им)
+  say (s:noun ([вн, 2]))
+  say (s:noun ([пр, мн]))
+  say (s:noun ([тв, 2]))
+  say (s:noun ([]))
+  say (s:Noun ([рд, 2]) 1)
+  say (first_str [ [[a]], [[b]] ])
+  local h = [вн, мн]
+  say (s:noun h)
+  say (chosen:noun вн)
+  say ( (spot s):noun вн)
+  if o, i := lookup (where_list crate) crate
+    say (o:noun вн)
+  if w := inv[1]
+    w:noun
+  else
+    say "пусто"
+  say (label2 s 2)
+  label s 1 2
+
+Box crate "ящик"
+
+obj orb "сфера"
+
+obj lamp "лампа"
+  before Take =
+    say (s.target:noun вн)
+
+impl lamp
+  target = orb
+
+impl crate
+  before Take = &on_take
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = room_text
+  n_to = chosen
+  s_to = &(r) test_room
+
+impl crate
+  found_in = test_room
+
+impl orb
+  found_in = test_room
+
+impl lamp
+  found_in = test_room
+
+fn start(load)
+  player:move test_room

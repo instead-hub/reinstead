@@ -1,0 +1,1 @@
+mise: line 11: box.description: wrong is fn(num)->num, expected fn(obj)->str

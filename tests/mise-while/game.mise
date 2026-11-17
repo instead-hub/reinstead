@@ -1,0 +1,49 @@
+game "while"
+
+lang ru
+
+include stdlib
+
+room hall "зал"
+  dsc = "Зал."
+
+obj chest "сундук" : container, open @ hall
+
+obj box "коробка" : container, open
+
+obj coin "монета"
+
+fn start(load)
+  box:move chest
+  coin:move box
+  player:move hall
+
+# Обход цепочки контейнеров через `while up := where cur`
+fn root_holder(w: obj) -> obj
+  local cur = w
+  while up := where cur
+    cur = up
+  return cur
+
+# Обход с обновлением локальной `obj?`-переменной и `break`
+fn depth_of(w: obj) -> num
+  local cur: obj? = w
+  local d = 0
+  while cur
+    local next_up = where cur
+    if not next_up
+      break
+    d += 1
+    cur = next_up
+  return d
+
+impl game
+  before Inv =
+    local r = root_holder coin
+    local d = depth_of coin
+    local n = 3
+    local acc = 0
+    while n > 0
+      acc += n
+      n -= 1
+    say "root={r:noun} depth={d} sum={acc}"

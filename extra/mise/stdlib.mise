@@ -1,0 +1,46 @@
+# MISE 2 standard library: game-facing API built on `core`.
+
+include core
+
+fn where_list(w: obj) -> list
+  lua
+    local list = {}
+    where(w, list)
+    return std.list(list)
+
+fn plurals(s: obj) -> list
+  lua
+    return std.list(mp.multi[s] or { s })
+
+fn is_room(s: obj?) -> bool
+  lua
+    return not not std.is_obj(s or false, 'room')
+
+fn door_next(s: obj, w: obj) -> obj?
+  local l = where_list s
+  local _, i = lookup l w
+  if i and len l > 1
+    return l[i % len l + 1]
+  pass
+
+class Door(door) : static
+  walk_to = none
+  door_to =
+    local n = door_next s here
+    if n
+      return n
+    pass
+
+class Path : scenery, enterable
+  walk_to = none
+  before Walk, Enter =
+    if check_inside s.walk_to
+      stop
+    walk s.walk_to
+  before Default =
+    local d = desc s
+    if d
+      say d
+      stop
+    say (path_dsc s.walk_to)
+  default_Event = Walk

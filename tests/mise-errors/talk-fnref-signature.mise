@@ -1,0 +1,11 @@
+game "t"
+lang ru
+include stdlib
+
+fn wrong(n: num) -> num
+  return n
+
+talk x
+  intro = "раз"
+  * "вопрос"
+    reply = &wrong

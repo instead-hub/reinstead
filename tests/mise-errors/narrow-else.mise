@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(w: obj?)
+  if w
+    pass
+  else
+    w:noun

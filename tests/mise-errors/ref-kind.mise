@@ -1,0 +1,11 @@
+game "t"
+lang ru
+include stdlib
+
+room foyer "фойе"
+  dsc = "Ф."
+
+obj guide "гид"
+
+impl guide
+  talk_to = foyer

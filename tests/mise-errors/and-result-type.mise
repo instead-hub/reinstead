@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(a: num?) -> num
+  local x = a and 5
+  return x

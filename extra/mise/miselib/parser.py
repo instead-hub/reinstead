@@ -1,0 +1,1029 @@
+"""Minimalist recursive-descent parser for MISE 2."""
+from typing import Any, List, Optional, Tuple
+from .ast_nodes import *
+from .lexer import Token, tokenize
+from .types import ANY, Fn, Name, Ref, Tbl, Type, opt, union
+
+PHASES = frozenset({"on", "before", "after", "post", "life"})
+META_KEYS = frozenset({"game", "name", "version", "author", "info"})
+LUA_KEYWORDS = frozenset({
+    "and", "break", "do", "else", "elseif", "end", "false", "for",
+    "function", "goto", "if", "in", "local", "nil", "not", "or",
+    "repeat", "return", "then", "true", "until", "while",
+})
+_LUA_ONLY_KEYWORDS = frozenset({"do", "end", "function", "goto", "repeat", "then", "until"})
+_RESERVED_VARS = frozenset({"fn", "std"})
+# Kind keywords are not known here: `obj`/`room`/`story` are classes declared in
+# core.mise, and a declaration is recognised by its shape (`Kind name`).
+STMT_KWS = frozenset({
+    "if", "elseif", "else", "match", "while", "for", "in", "of",
+    "local", "return", "stop", "pass", "break", "and", "or", "not",
+})
+_BIN_PREC = {
+    "or": 1, "and": 2,
+    "==": 3, "!=": 3, "<": 3, "<=": 3, ">": 3, ">=": 3,
+    "..": 4,                    # looser than `+`/`-`, as in Lua (`..` wins over `*`)
+    "+": 5, "-": 5,
+    "*": 6, "/": 6, "%": 6,
+}
+
+
+class Parser:
+    def __init__(self, tokens: List[Token], src_name: str = ""):
+        self.tokens, self.pos, self.src = tokens, 0, src_name
+
+    def cur(self) -> Token:
+        return self.tokens[self.pos]
+
+    def peek(self, n: int = 1) -> Token:
+        return self.tokens[min(self.pos + n, len(self.tokens) - 1)]
+
+    def at(self, kind: str, val: Optional[str] = None) -> bool:
+        t = self.cur()
+        return t.kind == kind and (val is None or t.val == val)
+
+    def eat(self, kind: str, val: Optional[str] = None) -> Token:
+        t = self.cur()
+        if t.kind != kind or (val is not None and t.val != val):
+            raise Error(f"expected {val or kind}, got {t.val!r}", t.line, self.src)
+        self.pos += 1
+        return t
+
+    def match(self, kind: str, val: Optional[str] = None) -> Optional[Token]:
+        if self.at(kind, val):
+            self.pos += 1
+            return self.tokens[self.pos - 1]
+        return None
+
+    def skip_nl(self):
+        while self.at("NEWLINE"):
+            self.pos += 1
+
+    def eat_nl(self):
+        if not self.at("EOF") and not self.at("DEDENT"):
+            self.eat("NEWLINE")
+        self.skip_nl()
+
+    def _check_name(self, name: str, line: int, forbid_reserved: bool = False) -> str:
+        if name in LUA_KEYWORDS:
+            raise Error(f"{name!r} is a Lua keyword and cannot be a name", line, self.src)
+        if forbid_reserved and name in _RESERVED_VARS:
+            raise Error(f"{name!r} is reserved by the runtime and cannot be a name", line, self.src)
+        return name
+
+    def _comma_sep(self, fn) -> List[Any]:
+        res = [fn()]
+        while self.match("OP", ","):
+            res.append(fn())
+        return res
+
+    def eat_name(self, forbid_reserved: bool = False) -> Token:
+        t = self.eat("IDENT")
+        self._check_name(t.val, t.line, forbid_reserved)
+        return t
+
+    def sym(self) -> str:
+        t = self.cur()
+        if t.kind in ("IDENT", "TAG", "TILDE_ID"):
+            if t.kind == "IDENT":
+                self._check_name(t.val, t.line)
+            self.pos += 1
+            return t.val
+        raise Error(f"expected symbol, got {t.val!r}", t.line, self.src)
+
+    def sym_list(self) -> List[str]:
+        return self._comma_sep(self.sym)
+
+    # --- Top Level ---
+
+    def parse_program(self) -> Program:
+        prog = Program(root_src=self.src)
+        self.skip_nl()
+        while not self.at("EOF"):
+            self._top_item(prog)
+            self.skip_nl()
+        for it in prog.items:
+            if hasattr(it, "src") and not it.src:
+                it.src = self.src
+        return prog
+
+    def _top_item(self, prog: Program):
+        t = self.cur()
+        kw = t.val
+        if kw in META_KEYS and (self.peek().kind in ("STRING", "ISTRING") or self.peek().val == "="):
+            self.pos += 1
+            self.match("OP", "=")
+            prog.meta.append(("name" if kw == "game" else kw, self.eat(self.cur().kind).val))
+            return self.eat_nl()
+        if kw in ("lang", "include", "require", "fmt"):
+            self.pos += 1
+            self.match("OP", "=")
+            if kw == "lang":
+                prog.lang = self.eat("IDENT").val
+            else:
+                getattr(prog, kw + ("s" if kw != "fmt" else "")).extend(self.sym_list())
+            return self.eat_nl()
+        if kw == "extend":
+            self.pos += 1
+            if self.match("IDENT", "type"):
+                return prog.items.append(self._parse_type(extend=True))
+            if self.match("IDENT", "event"):
+                return prog.items.extend(self._parse_event(True, t.line))
+            self.match("IDENT", "verb")
+            return prog.items.append(self._parse_verb("extend", t.line))
+        if kw == "remove":
+            self.pos += 1
+            self.match("IDENT", "verb")
+            tag = self.eat("TAG").val
+            self.eat_nl()
+            return prog.items.append(VerbDecl(name=tag, mode="remove", line=t.line))
+        if kw == "type":
+            self.pos += 1
+            return prog.items.append(self._parse_type(extend=False))
+        if kw == "entry":
+            self.pos += 1
+            tok = self.eat_name()
+            params, _ = self._parse_param_list(default_s=False, typed=True)
+            self.eat_nl()
+            return prog.items.append(EntryDecl(name=tok.val, params=params, line=tok.line))
+        if kw == "extern":
+            return prog.items.append(self._parse_extern())
+        if kw == "event":
+            self.pos += 1
+            return prog.items.extend(self._parse_event(False, t.line))
+        if kw in ("global", "const"):
+            return prog.items.append(self._parse_vars())
+        if kw == "fn":
+            return prog.items.append(self._parse_fn())
+        if kw == "verb":
+            self.pos += 1
+            return prog.items.append(self._parse_verb("verb", t.line))
+        if kw == "talk":
+            return prog.items.append(self._parse_talk())
+        if kw == "lua":
+            return prog.items.append(self._parse_lua())
+        prog.items.append(self._parse_entity())
+
+    # --- Types, Vars, Fns ---
+
+    def _parse_type_str(self, single: bool = False, names: Optional[List[str]] = None) -> Type:
+        """`single` stops the `->` return list at a comma: inside a parameter list
+        `fn(a) -> b, c` means "a callback returning b, then a parameter c"."""
+        res = [self._parse_type_atom(names, single)]
+        while self.match("OP", "|"):
+            res.append(self._parse_type_atom(names, single))
+        return union(*res)
+
+    def _parse_type_atom(self, names: Optional[List[str]], single: bool = False) -> Type:
+        t = self.cur()
+        if t.val == "fn" and self.peek().val == "(":
+            self.pos += 2
+            pts: List[Type] = []
+            if not self.at("OP", ")"):
+                while True:
+                    pname = None
+                    if self.cur().kind == "IDENT" and self.peek().val == ":":
+                        pname = self.cur().val
+                        self.pos += 2
+                    pts.append(self._parse_type_str(single=True))
+                    if pname and names is not None:
+                        names.append(pname)
+                    if not self.match("OP", ","):
+                        break
+            self.eat("OP", ")")
+            rts: List[Type] = []
+            if self.match("OP", "->"):
+                rts.append(self._parse_type_str(single))
+                while not single and self.match("OP", ","):
+                    rts.append(self._parse_type_str())
+            one: Type = Fn(tuple(pts), tuple(rts))
+        elif t.val in ("tbl", "ref") and self.peek().val == "[":
+            self.pos += 2
+            inner = self._parse_type_str(single) if not self.at("OP", "]") else Name("")
+            self.eat("OP", "]")
+            one = Tbl(inner) if t.val == "tbl" else Ref(inner)
+        else:
+            word = self.eat("IDENT").val
+            one = Tbl(None) if word == "tbl" else Ref(None) if word == "ref" else Name(word)
+        return opt(one) if self.match("OP", "?") else one
+
+    def _parse_type_list(self) -> List[Type]:
+        return self._comma_sep(self._parse_type_str)
+
+    def _parse_sig(self) -> List[Type]:
+        """`[`: `type, type]` after a name — the arguments an event passes.
+
+        A bare `event X:` (the colon with nothing after it) means "no arguments",
+        so a table of signatures can keep its colons aligned.
+        """
+        if not self.match("OP", ":") or self.at("NEWLINE"):
+            return []
+        return self._parse_type_list()
+
+    def _parse_type(self, extend: bool) -> TypeDecl:
+        line = self.cur().line
+        name = self.eat_name().val
+        self.match("OP", "=")
+        neg, vals = False, []
+        in_brackets = bool(self.match("OP", "["))
+        while not self.at("EOF") and not (self.at("OP", "]") if in_brackets else self.at("NEWLINE")):
+            if self.match("OP", "~"):
+                neg = True
+            elif not in_brackets or self.cur().kind in ("IDENT", "NUMBER", "TILDE_ID", "TAG"):
+                vals.append(self.cur().val)
+                self.pos += 1
+            else:
+                raise Error(f"invalid enum value {self.cur().val!r}",
+                            self.cur().line, self.src)
+            if not self.match("OP", ",") and not in_brackets:
+                break
+        if in_brackets:
+            self.eat("OP", "]")
+        self.eat_nl()
+        return TypeDecl(name=name, values=vals, negate=neg, extend=extend, line=line)
+
+    def _parse_param_list(self, default_s: bool = False, typed: bool = True
+                          ) -> Tuple[List[Tuple[str, Any]], Optional[str]]:
+        """Parse `(a: T, b: U, ...: V)` parameter list."""
+        params: List[Tuple[str, Any]] = []
+        var: Optional[str] = None
+        if not self.match("OP", "("):
+            return params, var
+        while not self.at("OP", ")") and not self.at("EOF"):
+            if default_s and self.match("OP", "..."):
+                var = self._parse_type_str(single=True) if self.match("OP", ":") else ANY
+                break
+            pn = self.eat_name(forbid_reserved=True).val
+            if self.match("OP", ":"):
+                pt: Any = self._parse_type_str(single=True)
+            else:
+                pt = (Name("obj") if (default_s and pn == "s") else ANY) if typed else None
+            params.append((pn, pt))
+            if not self.match("OP", ","):
+                break
+        self.eat("OP", ")")
+        return params, var
+
+    def _parse_return_types(self, allow_colon: bool = False) -> List[Type]:
+        if not (self.match("OP", "->") or (allow_colon and self.match("OP", ":"))):
+            return []
+        return self._parse_type_list()
+
+    def _parse_extern(self) -> ExternDecl:
+        line = self.eat("IDENT").line
+        kind = self.eat("IDENT")
+        if kind.val == "global":
+            raise Error("`extern global` is gone: an alias of a Lua global is "
+                        "`extern value` (read) or `extern lvalue` (read and write), "
+                        "a Lua function is `extern fn name(...) = \"template\"`",
+                        kind.line, self.src)
+        if kind.val not in ("fn", "value", "lvalue"):
+            raise Error(f"extern {kind.val}: expected `fn`, `value` or `lvalue`",
+                        kind.line, self.src)
+        name = self.eat_name(forbid_reserved=True).val
+        params, var = self._parse_param_list(default_s=True, typed=True)
+        rets = self._parse_return_types(allow_colon=kind.val in ("value", "lvalue"))
+        if not self.match("OP", "=") or self.cur().kind not in ("STRING", "ISTRING", "RAW"):
+            raise Error(f"extern {name}: expected a template (`= \"…\"`)",
+                        self.cur().line, self.src)
+        tmpl = self.eat(self.cur().kind).val
+        self.eat_nl()
+        return ExternDecl(kind=kind.val, name=name, params=params, variadic=var,
+                          ret_types=rets, template=tmpl, line=line, src=self.src)
+
+    def _parse_fn(self) -> FnDecl:
+        line = self.eat("IDENT").line
+        name = self.eat_name(forbid_reserved=True).val
+        params, var = self._parse_param_list(default_s=True, typed=True)
+        rets = self._parse_return_types()
+        if self.match("OP", "=") or self.at("RAW"):
+            self.match("OP", "=")
+            # `fn f(x) = expr` is just a short `fn f(x)` with `return expr`
+            values = [self.parse_expr()]
+            self.eat_nl()
+            return FnDecl(name=name, params=params, variadic=var, ret_types=rets,
+                          body=[ReturnStmt(line=line, kind="return", values=values)],
+                          line=line, src=self.src)
+        body = self._opt_lua_or_stmts()
+        return FnDecl(name=name, params=params, variadic=var, ret_types=rets,
+                      body=body, line=line, src=self.src)
+
+    def _opt_lua_or_stmts(self) -> Any:
+        if self.at("NEWLINE") and self.peek().kind == "INDENT" and self.peek(2).val == "lua":
+            self.eat_nl()
+            self.eat("INDENT")
+            code = self._parse_lua().code
+            self.eat("DEDENT")
+            return code
+        return self.parse_stmt_block()
+
+    def _parse_var_item(self) -> Tuple[str, Optional[Type], Expr, int]:
+        vn = self.eat_name(forbid_reserved=True).val
+        vt = self._parse_type_str() if self.match("OP", ":") else None
+        self.eat("OP", "=")
+        item = (vn, vt, self.parse_expr(), self.cur().line)
+        self.eat_nl()
+        return item
+
+    def _parse_vars(self) -> VarDecl:
+        kind = self.eat("IDENT").val
+        items = []
+        if self.match("NEWLINE"):
+            self.skip_nl()
+            self.eat("INDENT")
+            while not self.at("DEDENT") and not self.at("EOF"):
+                items.append(self._parse_var_item())
+            self.eat("DEDENT")
+        else:
+            items.append(self._parse_var_item())
+        return VarDecl(kind=kind, items=items)
+
+    def _parse_lua(self) -> LuaDecl:
+        line = self.eat("IDENT", "lua").line
+        self.eat_nl()
+        code = self.eat("LUA_BLOCK").val
+        self.skip_nl()
+        return LuaDecl(code=code, line=line)
+
+    # --- Unified Entity (`class`, `obj`, `room`, `impl`, ...) ---
+
+    def _parse_entity(self) -> EntityDecl:
+        tok = self.eat("IDENT")
+        is_mixin = tok.val == "mixin"
+        kind = "class" if is_mixin else tok.val
+        name = self.sym() if (kind == "impl" or self.cur().kind in ("IDENT", "TAG")) else None
+        parent = None
+        if kind == "class" and self.match("OP", "("):
+            parent = self.eat_name().val
+            self.eat("OP", ")")
+        words = self._header_words()
+        traits = self.sym_list() if (self.match("OP", ":") and not self.at("NEWLINE")) else []
+        locs = self.sym_list() if self.match("OP", "@") else []
+        ctor = None
+        if kind == "class" and self.match("OP", "="):
+            ctor = self.eat("IDENT").val
+            while self.match("OP", "."):
+                ctor += "." + self.eat("IDENT").val
+        ent = EntityDecl(kind=kind, name=name, parent=parent, ctor=ctor, words=words, traits=traits,
+                         locations=locs, is_mixin=is_mixin, line=tok.line)
+        self.eat_nl()
+        if self.match("INDENT"):
+            self._parse_members(ent)
+            self.eat("DEDENT")
+        return ent
+
+    def _parse_members(self, ent: EntityDecl):
+        while not self.at("DEDENT") and not self.at("EOF"):
+            t = self.cur()
+            kw = t.val
+            if kw in PHASES and self.peek().kind == "IDENT":
+                ent.handlers.append(self._parse_handler())
+                continue
+            if kw == "words":
+                raise Error('words live in the header: write `obj name "слово|слово"` '
+                            '(or `obj name [...]`) instead of a `words =` member',
+                            t.line, self.src)
+            if kw[:1].islower() and kw not in PHASES and self.peek().kind == "IDENT" \
+                    and self.peek(2).val not in ("=", "(", "@", ","):
+                import difflib
+                near = difflib.get_close_matches(kw, sorted(PHASES), 1, 0.75)
+                if near:
+                    raise Error(f"bad field name {kw + ' ' + self.peek().val!r} "
+                                f"(did you mean {near[0] + ' ' + self.peek().val!r}?)",
+                                t.line, self.src)
+            if self.peek().kind in ("IDENT", "TAG"):
+                ent.children.append(self._parse_entity())
+                continue
+            pname = self.eat_name().val
+            prms = self._opt_ident_parens()
+
+            if ent.kind == "class" and self.match("OP", ":"):
+                type_params: List[str] = []
+                typ = self._parse_type_str(names=type_params)
+                emit = self._field_emit()
+                ent.props.append(Prop(name=pname, typ=typ, emit=emit,
+                                      type_params=type_params, line=t.line))
+                self.eat_nl()
+                continue
+
+            if not self.match("OP", "="):
+                raise Error(f"{pname}: a member is written with '=' "
+                            f"(`{pname} = value` or `{pname} =` and an indented body)",
+                            t.line, self.src)
+            val = self._value_after_eq()
+            ent.props.append(Prop(name=pname, value=val, params=prms, line=t.line))
+
+    def _field_emit(self) -> Optional[Emit]:
+        """`= method with(each)` — how a declared field's value reaches Lua."""
+        if not self.match("OP", "="):
+            return None
+        kw = self.eat("IDENT")
+        if kw.val != "method":
+            raise Error(f"expected `method` after '=', got {kw.val!r}", kw.line, self.src)
+        mname = self.eat("IDENT").val           # the engine method name
+        form = "each"
+        if self.match("OP", "("):
+            if not self.at("OP", ")"):
+                form = self.eat("IDENT").val
+            self.eat("OP", ")")
+        if form not in ("each", "join", "list", "table", "none"):
+            raise Error(f"unknown method form {form!r} (each, join, list, table, none)",
+                        self.cur().line, self.src)
+        other = self.eat("IDENT").val if self.match("IDENT", "else") else ""
+        return Emit(method=mname, form=form, other=other)
+
+    def _header_words(self, allow_empty: bool = True) -> List[str]:
+        """A single string or a `[...]` list of strings (`words`, `patterns`)."""
+        if self.cur().kind in ("STRING", "ISTRING"):
+            return [self.eat(self.cur().kind).val]
+        if self.at("OP", "[") or not allow_empty:
+            self.eat("OP", "[")
+            res = []
+            while not self.at("OP", "]") and not self.at("EOF"):
+                res.append(self.eat(self.cur().kind).val)
+                if not self.match("OP", ","):
+                    break
+            self.eat("OP", "]")
+            return res
+        return []
+
+    def _value_after_eq(self) -> Any:
+        """After `=`: a value on the same line, or an indented body.
+
+        A body is a block of statements (or a `lua` block); a `-` list is still
+        read as a list value until lists become `[...]` literals everywhere.
+        """
+        if not self.at("NEWLINE"):
+            val = self._parse_prop_val()
+            if isinstance(val, Lambda) and isinstance(val.body, list):
+                self.skip_nl()
+            else:
+                self.eat_nl()
+            return val
+        self.eat_nl()
+        self.eat("INDENT")
+        if self.at("OP", "-"):
+            raise Error("a `-` list is gone: write a `[...]` list after '=' "
+                        "(`text = [\"page 1\", \"page 2\"]` or a multi-line `[` block)",
+                        self.cur().line, self.src)
+        if self.at("IDENT", "lua"):
+            raise Error("`lua` is not a value: a field or a handler takes a `fn` with a "
+                        "`lua` body (`field = &name`, `before X = &name`)",
+                        self.cur().line, self.src)
+        stmts = []
+        while not self.at("DEDENT") and not self.at("EOF"):
+            stmts.append(self.parse_stmt())
+            self.skip_nl()
+        self.eat("DEDENT")
+        return stmts
+
+    def _opt_ident_parens(self) -> Optional[List[str]]:
+        if not self.match("OP", "("):
+            return None
+        prms = self.sym_list() if not self.at("OP", ")") else []
+        self.eat("OP", ")")
+        return prms
+
+    def _parse_prop_val(self) -> Any:
+        items = self._comma_sep(self.parse_expr)
+        return items[0] if len(items) == 1 else ListLit(line=items[0].line, items=items)
+
+    def _parse_handler(self) -> Handler:
+        tok = self.eat("IDENT")
+        phase = tok.val
+        evs = self.sym_list()
+        prms = self._opt_ident_parens()
+        label = f"{phase} {','.join(evs)}"
+        return Handler(phase=phase, events=evs, params=prms,
+                       body=self._parse_handler_body(label), line=tok.line)
+
+    def _parse_handler_body(self, label: str = "") -> Any:
+        """A handler always takes `=`: a value on the line, or a body below it."""
+        if self.match("OP", "="):
+            if self.match("IDENT", "pass"):
+                self.eat_nl()
+                return "pass"
+            if self.match("IDENT", "stop"):
+                self.eat_nl()
+                return "stop"
+            return self._value_after_eq()
+        t = self.cur()
+        where = label or "a handler"
+        raise Error(f"{where}: a handler is written with '=' (`{where} = …` or "
+                    f"`{where} =` and an indented body)", t.line, self.src)
+
+    def _parse_event(self, extend: bool, line: int) -> List[Any]:
+        """`event A, B: obj, str` — a signature; a block adds handlers for one name.
+
+        `extend event` replaces the arguments of an event that is declared already
+        (the engine's own signatures live in `core.mise`). A block of phases needs a
+        single name: with several names it would be unclear which one it belongs to.
+        """
+        names = self.sym_list()
+        arg_types = self._parse_sig()
+        sig = EventsDecl(extend=extend, line=line, names=names, arg_types=arg_types)
+        self.eat_nl()
+        handlers: List[Handler] = []
+        has_block = bool(self.match("INDENT"))
+        if has_block:
+            if len(names) > 1:
+                raise Error(f"event {', '.join(names)}: a handler block needs a single name",
+                            line, self.src)
+            handlers = self._parse_event_handlers(names[0])
+            self.eat("DEDENT")
+        out: List[Any] = [sig]
+        if has_block:
+            out.append(EntityDecl(kind="impl", name="mp", traits=list(names),
+                                  handlers=handlers, line=line))
+        return out
+
+    def _parse_event_handlers(self, name: str) -> List[Handler]:
+        """The phase lines of an `event` block: `on = …`, `before = …` (no name)."""
+        handlers: List[Handler] = []
+        while not self.at("DEDENT") and not self.at("EOF"):
+            ptok = self.eat("IDENT")
+            if ptok.val not in PHASES:
+                raise Error(f"event {name}: unknown phase {ptok.val!r}", ptok.line, self.src)
+            prms = self._opt_ident_parens()
+            handlers.append(Handler(phase=ptok.val, events=[name], params=prms,
+                                    body=self._parse_handler_body(), line=ptok.line))
+        return handlers
+
+    # --- Verbs & Talk (`*` / `+` Choice Syntax) ---
+
+    def _parse_verb(self, mode: str, line: int) -> VerbDecl:
+        name = self.eat("TAG").val if mode == "extend" else self.eat("IDENT").val
+        target = self.sym() if self.match("IDENT", "for") else None
+        vd = VerbDecl(name=name, mode=mode, target=target, line=line)
+        self.eat_nl()
+        self.eat("INDENT")
+        while not self.at("DEDENT") and not self.at("EOF"):
+            ktok = self.eat("IDENT")
+            k = ktok.val
+            if k == "hint":
+                vd.hint = self._parse_handler_body()
+                continue
+            self.eat("OP", "=")
+            if k == "tag":
+                vd.tag = "" if self.match("IDENT", "false") else self.eat("TAG").val
+            elif k == "target":
+                vd.target = self.sym()
+            elif k == "prio":
+                vd.prio = int(self.eat("NUMBER").val)
+            elif k in ("words", "patterns"):
+                setattr(vd, k, self._header_words(allow_empty=False))
+            else:
+                raise Error(f"unknown verb field {k!r}", ktok.line, self.src)
+            self.eat_nl()
+        self.eat("DEDENT")
+        return vd
+
+    def _parse_talk(self) -> TalkDecl:
+        line = self.eat("IDENT", "talk").line
+        td = TalkDecl(name=self.sym(), line=line)
+        self.eat_nl()
+        self.eat("INDENT")
+        while not self.at("DEDENT") and not self.at("EOF"):
+            t = self.cur()
+            if t.val == "intro":
+                if td.intro is not None:
+                    raise Error(f"talk {td.name}: `intro` declared twice", t.line, self.src)
+                self.pos += 1
+                td.intro = self._parse_handler_body()
+            elif t.val == "label":
+                self.pos += 1
+                lname = self.eat("IDENT").val
+                self.eat_nl()
+                self.eat("INDENT")
+                lsay, lchoices = None, []
+                while not self.at("DEDENT") and not self.at("EOF"):
+                    if self.at("OP", "*") or self.at("OP", "+"):
+                        lchoices.append(self._parse_choice())
+                    elif self.match("IDENT", "say"):
+                        lsay = self._parse_handler_body()
+                    else:
+                        raise Error(f"unexpected item {self.cur().val!r} in talk label "
+                                    f"(expected `say = …` or a `*`/`+` choice)",
+                                    self.cur().line, self.src)
+                self.eat("DEDENT")
+                td.labels.append((lname, lsay, lchoices))
+            elif t.kind == "OP" and t.val in ("*", "+"):
+                td.choices.append(self._parse_choice())
+            else:
+                pn = self.eat_name().val
+                self.eat("OP", "=")
+                td.props.append(Prop(name=pn, value=self.parse_expr(), line=t.line))
+                self.eat_nl()
+        self.eat("DEDENT")
+        return td
+
+    def _parse_choice(self) -> TalkChoice:
+        mtok = self.eat("OP")
+        c = TalkChoice(flags=["always"] if mtok.val == "+" else [], line=mtok.line)
+        if self.match("OP", "["):
+            c.cond = self.parse_expr()
+            self.eat("OP", "]")
+        c.ask = FnRef(line=mtok.line, name=self.eat("IDENT").val) if self.match("OP", "&") else self._parse_str_tok()
+        while not self.at("NEWLINE") and not self.at("EOF"):
+            if self.cur().val in ("hidden", "only", "always"):
+                c.flags.append(self.eat("IDENT").val)
+            elif self.match("OP", "->"):
+                c.next_label = self.eat("IDENT").val
+            else:
+                t = self.cur()
+                raise Error(f"talk choice: unexpected {t.val!r} after the question "
+                            f"(only `hidden`, `only`, `always` or `-> label` may follow)",
+                            t.line, self.src)
+        self.eat_nl()
+        if self.match("INDENT"):
+            first = True
+            while not self.at("DEDENT") and not self.at("EOF"):
+                if self.at("OP", "*") or self.at("OP", "+"):
+                    c.children.append(self._parse_choice())
+                elif self.cur().val in ("onempty", "when", "ask", "reply", "act"):
+                    kw = self.eat("IDENT").val
+                    setattr(c, {"when": "cond"}.get(kw, kw), self._parse_handler_body())
+                elif self.match("OP", "->"):
+                    c.next_label = self.eat("IDENT").val
+                    self.eat_nl()
+                else:
+                    st = self.parse_stmt()
+                    self.skip_nl()
+                    if first and isinstance(st, SayStmt) and st.mode == "p":
+                        c.reply = st.expr
+                    else:
+                        c.act.append(st)
+                first = False
+            self.eat("DEDENT")
+        return c
+
+    # --- Statements ---
+
+    def parse_stmt_block(self) -> List[Stmt]:
+        self.eat_nl()
+        self.eat("INDENT")
+        stmts = []
+        while not self.at("DEDENT") and not self.at("EOF"):
+            stmts.append(self.parse_stmt())
+            self.skip_nl()
+        self.eat("DEDENT")
+        return stmts
+
+    def parse_stmt(self) -> Stmt:
+        t = self.cur()
+        line = t.line
+        if t.kind == "IDENT" and t.val == "lua":
+            raise Error("`lua` is not a statement: it is the whole body of a `fn` "
+                        "(or the top level of the file)", t.line, self.src)
+        if t.kind in ("STRING", "ISTRING"):
+            e = self._parse_str_tok()
+            mode = "pr" if self.match("OP", "~") else "p"
+            self.eat_nl()
+            return SayStmt(line=line, expr=e, mode=mode)
+        if t.kind == "IDENT":
+            kw = t.val
+            if kw in ("stop", "pass", "break"):
+                self.pos += 1
+                self.eat_nl()
+                return ReturnStmt(line=line, kind=kw)
+            if kw == "return":
+                self.pos += 1
+                vals = self.parse_expr_list() if not (self.at("NEWLINE") or self.at("DEDENT")) else []
+                self.eat_nl()
+                return ReturnStmt(line=line, kind="return", values=vals)
+            if kw == "local":
+                self.pos += 1
+                names = self._comma_sep(lambda: (
+                    self.eat_name(forbid_reserved=True).val,
+                    self._parse_type_str() if self.match("OP", ":") else None,
+                ))
+                vals = self.parse_expr_list() if self.match("OP", "=") else []
+                self.skip_nl()      # a block-bodied lambda already consumed it
+                return LocalStmt(line=line, names=names, values=vals)
+            if kw == "if":
+                return self._parse_if()
+            if kw == "while":
+                return self._parse_while()
+            if kw == "match":
+                return self._parse_match()
+            if kw == "for":
+                return self._parse_for()
+
+        lhs = self.parse_postfix()
+        if self.cur().kind == "OP" and self.cur().val in ("=", "+=", "-="):
+            op = self.eat("OP").val
+            vals = self.parse_expr_list()
+            self.skip_nl()          # a block-bodied lambda already consumed it
+            return AssignStmt(line=line, target=lhs, op=op, values=vals)
+
+        if self.match("OP", ":"):
+            m = self.eat_name().val
+            args = self._app_args()
+            self.skip_nl()          # a block-bodied lambda already consumed it
+            return Call(line=line, func=m, receiver=lhs, args=args)
+        if isinstance(lhs, Sym) and lhs.name != "...":
+            args = self._app_args()
+            self.skip_nl()
+            return Call(line=line, func=lhs.name, args=args)
+        raise Error("expected statement", line, self.src)
+
+    def _parse_cond(self) -> Expr:
+        """A condition: an expression, or `x := expr` / `a, b := expr`."""
+        save = self.pos
+        if self.cur().kind == "IDENT":
+            line = self.cur().line
+            names = [self.eat("IDENT").val]
+            while self.match("OP", ","):
+                if self.cur().kind != "IDENT":
+                    names = []
+                    break
+                names.append(self.eat("IDENT").val)
+            if names and self.match("OP", ":="):
+                for n in names:
+                    self._check_name(n, line, forbid_reserved=True)
+                return Bind(line=line, names=names, value=self.parse_expr())
+        self.pos = save
+        return self.parse_expr()
+
+    def _parse_if(self) -> IfStmt:
+        line = self.eat("IDENT").line
+        cond = self._parse_cond()
+        branches = [(cond, self.parse_stmt_block(), line)]
+        while self.at("IDENT", "elseif"):
+            el = self.eat("IDENT").line
+            ec = self._parse_cond()
+            branches.append((ec, self.parse_stmt_block(), el))
+        else_body = self.parse_stmt_block() if self.match("IDENT", "else") else None
+        return IfStmt(line=line, branches=branches, else_body=else_body)
+
+    def _parse_while(self) -> WhileStmt:
+        line = self.eat("IDENT", "while").line
+        cond = self._parse_cond()
+        return WhileStmt(line=line, cond=cond, body=self.parse_stmt_block())
+
+    def _parse_match(self) -> MatchStmt:
+        line = self.eat("IDENT", "match").line
+        subj = self.parse_expr()
+        self.eat_nl()
+        self.eat("INDENT")
+        arms = []
+        while not self.at("DEDENT") and not self.at("EOF"):
+            al = self.cur().line
+            pats = self._comma_sep(
+                lambda: Sym(line=al, name="_") if self.match("IDENT", "_") else self.parse_primary()
+            )
+            guard = self.parse_expr() if self.match("IDENT", "when") else None
+            self.eat("OP", "->")
+            body = self.parse_stmt_block() if self.at("NEWLINE") else [self.parse_stmt()]
+            arms.append((pats, guard, body, al))
+            self.skip_nl()
+        self.eat("DEDENT")
+        return MatchStmt(line=line, subject=subj, arms=arms)
+
+    def _parse_for(self) -> Stmt:
+        line = self.eat("IDENT", "for").line
+        vn = self.eat_name(forbid_reserved=True).val
+        vt = self._parse_type_str() if self.match("OP", ":") else None
+        if self.match("OP", "="):
+            a = self.parse_expr()
+            self.eat("OP", ",")
+            b = self.parse_expr()
+            step = self.parse_expr() if self.match("OP", ",") else None
+            return ForNumStmt(line=line, var=vn, var_type=vt, start=a, stop=b, step=step, body=self.parse_stmt_block())
+        vlist = [(vn, vt)]
+        while self.match("OP", ","):
+            n2 = self.eat_name(forbid_reserved=True).val
+            t2 = self._parse_type_str() if self.match("OP", ":") else None
+            vlist.append((n2, t2))
+        is_of = bool(self.match("IDENT", "of"))
+        if not is_of:
+            self.eat("IDENT", "in")
+        return ForInStmt(line=line, vars=vlist, iter_expr=self.parse_expr(), is_of=is_of, body=self.parse_stmt_block())
+
+    # --- Expressions (Pratt + ML Application) ---
+
+    def parse_expr_list(self) -> List[Expr]:
+        return self._comma_sep(self.parse_expr)
+
+    def parse_expr(self, min_prec: int = 1) -> Expr:
+        # `not` binds looser than comparisons (as in Python): `not x in a, b`
+        if min_prec <= _BIN_PREC["=="] and self.match("IDENT", "not"):
+            line = self.tokens[self.pos - 1].line
+            left = UnaryOp(line=line, op="not", operand=self.parse_expr(_BIN_PREC["=="]))
+        else:
+            left = self.parse_unary()
+        while True:
+            t = self.cur()
+            if t.kind == "IDENT" and min_prec <= _BIN_PREC["=="] and (
+                t.val == "in" or (t.val == "not" and self.peek().val == "in")
+            ):
+                neg = self.match("IDENT", "not") is not None
+                self.eat("IDENT", "in")
+                alts = self._comma_sep(lambda: self.parse_expr(_BIN_PREC["=="] + 1))
+                in_op = InOp(line=t.line if neg else left.line, subject=left, alts=alts)
+                left = UnaryOp(line=t.line, op="not", operand=in_op) if neg else in_op
+                continue
+            op = t.val if (t.kind == "OP" or (t.kind == "IDENT" and t.val in ("and", "or"))) else ""
+            prec = _BIN_PREC.get(op, 0)
+            if prec < min_prec:
+                break
+            self.pos += 1
+            left = BinOp(line=left.line, op=op, left=left, right=self.parse_expr(prec + 1))
+        return left
+
+    def parse_unary(self) -> Expr:
+        if self.match("IDENT", "not"):
+            return UnaryOp(line=self.cur().line, op="not", operand=self.parse_unary())
+        if self.match("OP", "-"):
+            return UnaryOp(line=self.cur().line, op="-", operand=self.parse_unary())
+        return self.parse_app()
+
+    def parse_app(self) -> Expr:
+        """Application by juxtaposition: `f a b`, `obj:m a`. Parentheses only group."""
+        base = self.parse_postfix()
+        while self.match("OP", ":"):
+            m = self.eat_name().val
+            base = Call(line=base.line, func=m, receiver=base, args=self._app_args())
+            base = self._postfix_tail(base)
+        if isinstance(base, Sym) and base.name != "..." and self._can_start_arg():
+            return Call(line=base.line, func=base.name, args=self._app_args())
+        return base
+
+    def _app_args(self) -> List[Expr]:
+        """Arguments of one call: atoms up to the next operator or end of line."""
+        args = []
+        while self._can_start_arg():
+            arg = self.parse_postfix()
+            args.append(arg)
+            if isinstance(arg, Lambda) and isinstance(arg.body, list):
+                break               # a block-bodied lambda closes the argument list
+        return args
+
+    def _can_start_arg(self) -> bool:
+        t = self.cur()
+        if t.kind in ("NUMBER", "STRING", "ISTRING", "TAG", "TILDE_ID", "RAW"):
+            return True
+        if t.kind == "IDENT":
+            return t.val not in STMT_KWS
+        return t.kind == "OP" and t.val in ("(", "[", "{", "&", "...")
+
+    def parse_postfix(self) -> Expr:
+        return self._postfix_tail(self.parse_primary())
+
+    def _postfix_tail(self, atom: Expr) -> Expr:
+        while True:
+            if self.match("OP", "."):
+                ftok = self.eat_name()
+                atom = FieldAccess(line=atom.line, obj=atom, field=ftok.val)
+            elif self.at("OP", "[") and not self.cur().spaced:
+                self.pos += 1
+                idx = self.parse_expr()
+                self.eat("OP", "]")
+                atom = IndexAccess(line=atom.line, obj=atom, index=idx)
+            else:
+                break
+        return atom
+
+    def _parse_lambda(self) -> Expr:
+        line = self.eat("OP", "&").line
+        params, _ = self._parse_param_list(default_s=False, typed=False)
+        body: Any = self.parse_stmt_block() if self.at("NEWLINE") else self.parse_expr()
+        return Lambda(line=line, params=params, body=body)
+
+    def parse_primary(self) -> Expr:
+        t = self.cur()
+        if t.kind == "NUMBER":
+            self.pos += 1
+            return Lit(line=t.line, kind="num", val=float(t.val) if "." in t.val else int(t.val))
+        if t.kind in ("STRING", "ISTRING"):
+            return self._parse_str_tok()
+        if t.kind == "RAW":
+            self.pos += 1
+            return Lit(line=t.line, kind="raw", val=t.val)
+        if t.kind == "IDENT":
+            if t.val in _LUA_ONLY_KEYWORDS:
+                raise Error(f"{t.val!r} is a Lua keyword and cannot be a name", t.line, self.src)
+            if t.val in STMT_KWS:
+                raise Error(f"unexpected token {t.val!r}", t.line, self.src)
+            self.pos += 1
+            if t.val in ("true", "false"):
+                return Lit(line=t.line, kind="bool", val=(t.val == "true"))
+            if t.val == "nil":
+                return Lit(line=t.line, kind="nil")
+            return Sym(line=t.line, name=t.val)
+        if t.kind in ("TAG", "TILDE_ID"):
+            self.pos += 1
+            return Sym(line=t.line, name=t.val)
+        if self.match("OP", "..."):
+            return Sym(line=t.line, name="...")
+        if self.at("OP", "&") and self.peek().val == "(":
+            return self._parse_lambda()
+        if self.match("OP", "&"):
+            return FnRef(line=t.line, name=self.eat("IDENT").val)
+        if self.match("OP", "("):
+            if self.at("OP", ")"):
+                raise Error("empty parentheses are not a call: write the name alone "
+                            "(`walkout`) or use a block", t.line, self.src)
+            e = self.parse_expr()
+            if self.at("OP", ","):
+                raise Error("unexpected ',': arguments are separated by spaces "
+                            "(`f a b`); a comma is only allowed in `[...]`/`{...}`",
+                            self.cur().line, self.src)
+            self.eat("OP", ")")
+            return e
+        if self.match("OP", "["):
+            items = []
+            while not self.at("OP", "]") and not self.at("EOF"):
+                items.append(self.parse_expr())
+                if not self.match("OP", ","):
+                    break
+            self.eat("OP", "]")
+            return ListLit(line=t.line, items=items)
+        if self.match("OP", "{"):
+            return self._parse_dict_lit(t.line)
+        raise Error(f"unexpected token {t.val!r}", t.line, self.src)
+
+    def _parse_dict_lit(self, line: int) -> DictLit:
+        pairs: List[Tuple[Any, Expr]] = []
+        while not self.at("OP", "}") and not self.at("EOF"):
+            if self.match("OP", "["):
+                k: Any = self.parse_expr()
+                self.eat("OP", "]")
+            elif self.cur().kind == "IDENT" and self.peek().val == "=":
+                k = self.eat_name().val
+            else:
+                raise Error("use `[...]` for a list; `{...}` is for key-value tables "
+                            "(`{ k = v }` or `{ [k] = v }`)", self.cur().line, self.src)
+            if not self.match("OP", "="):
+                raise Error("use `[...]` for a list; `{...}` is for key-value tables "
+                            "(`{ k = v }` or `{ [k] = v }`)", self.cur().line, self.src)
+            pairs.append((k, self.parse_expr()))
+            if not self.match("OP", ","):
+                break
+        self.eat("OP", "}")
+        return DictLit(line=line, pairs=pairs)
+
+    def _parse_str_tok(self) -> Expr:
+        t = self.eat(self.cur().kind)
+        if t.kind == "STRING":
+            return Lit(line=t.line, kind="str", val=t.val)
+        return _split_interp_str(t.val, t.line, self.src)
+
+
+def _interp_end(s: str, start: int) -> int:
+    """The `}` closing the `{` at `start`, counting nested braces (`{tbl[1]}`,
+    `{ {1,2} }`) and skipping string literals inside the expression."""
+    depth, i, n = 1, start + 1, len(s)
+    while i < n:
+        ch = s[i]
+        if ch in "\"'":
+            i += 1
+            while i < n and s[i] != ch:
+                i += 2 if s[i] == "\\" else 1
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return -1
+
+
+def _split_interp_str(s: str, line: int, src: str) -> Expr:
+    def unesc(txt: str) -> str:
+        return txt.replace("\x01", "{").replace("\x02", "}")
+
+    parts: List[Any] = []
+    i, n = 0, len(s)
+    while i < n:
+        j = s.find("{", i)
+        if j == -1:
+            parts.append(unesc(s[i:]))
+            break
+        if j + 1 < n and s[j + 1] in "$#":     # `{$fmt …}` — the engine's own markup
+            k = s.find("}", j + 1)
+            end = (k + 1) if k != -1 else n
+            parts.append(unesc(s[i:end]))
+            i = end
+            continue
+        k = _interp_end(s, j)
+        if k == -1:
+            parts.append(unesc(s[i:]))
+            break
+        if j > i:
+            parts.append(unesc(s[i:j]))
+        sub = Parser(tokenize(unesc(s[j + 1:k]).strip(), src, line), src)
+        expr = sub.parse_expr()
+        sub.skip_nl()
+        if not sub.at("EOF"):
+            raise Error(f"unexpected {sub.cur().val!r} in interpolation", line, src)
+        parts.append(expr)
+        i = k + 1
+    if len(parts) == 1 and isinstance(parts[0], str):
+        return Lit(line=line, kind="str", val=parts[0])
+    return InterpStr(line=line, parts=parts)
+
+
+def parse_source(src: str, src_name: str = "") -> Program:
+    return Parser(tokenize(src, src_name), src_name).parse_program()

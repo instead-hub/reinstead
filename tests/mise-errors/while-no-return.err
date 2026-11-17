@@ -1,0 +1,1 @@
+mise: line 5: fn f: num is declared, but a path leaves the body without `return` (add `return` or `pass`, or declare `num?`)

@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+fn take_str(t: tbl[str]) -> str?
+  return t[1]
+
+fn from_list(l: list) -> str?
+  return take_str l

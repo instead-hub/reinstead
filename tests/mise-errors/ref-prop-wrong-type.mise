@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+global g = 5
+
+room r "зал"
+  n_to = g

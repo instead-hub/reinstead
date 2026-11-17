@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+
+fn pick(o: obj) -> fn(obj) -> bool
+  return &has

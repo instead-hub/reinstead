@@ -1,0 +1,1 @@
+mise: braces-list.mise:6: use `[...]` for a list; `{...}` is for key-value tables (`{ k = v }` or `{ [k] = v }`)

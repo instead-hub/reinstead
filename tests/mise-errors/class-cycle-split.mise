@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+class A
+  x: num
+
+class B(A)
+
+class A(B)

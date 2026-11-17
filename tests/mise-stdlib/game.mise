@@ -1,0 +1,151 @@
+game "stdlib"
+
+lang ru
+
+include stdlib
+
+room hall "зал"
+  dsc = "Зал."
+  OnError =
+    say (err)
+
+fn describe(s: obj) -> str
+  return 'Ящик.'
+
+# обработчик может быть цельной Lua-функцией — через `fn` с `lua`-телом
+fn lua_probe(s: obj, w: obj) -> bool
+  lua
+    return false
+
+# аргумент шаблона не подставляется повторно (`$1` внутри текста остаётся)
+extern value join2(a: str, b: str) -> str = "(($1) .. ($2))"
+
+obj box "ящик" : container, open
+  description = &describe
+  before Take = &lua_probe
+
+obj note "записка"
+  before Disrobe = "pass"
+  description = "use heal"
+  scope = [box, note]
+
+fn probe(w: obj, t: tbl, ev: event)
+  time
+  time 5
+  say (time)
+  hasnt w open
+  once w 'tag'
+  once w
+  w:once "tag"
+  w:once
+  subaction ev
+  subaction ev w w
+  xaction ev w
+  daemonStart w
+  daemonStop w
+  enable w
+  disable w
+  isDaemon w
+  getDaemons
+  disabled w
+  walkin hall
+  take w
+  drop w
+  pairs t
+  ipairs t
+  next t
+  unpack t
+  walkout
+  visits w
+  say (xevent)
+  say (event)
+  say (len t)
+  say (tiny)
+  say (desc w)
+  say (compass_dir w)
+  say (arg_word 1)
+  say (isa w 'list')
+  visited w
+  access w
+  offerslight w
+  visible_scope hall
+  inroom w
+  thedark w
+  multi_alias w
+  gram w
+  walkback
+  walkback w
+  walkback
+  remove w
+  add (inv) w
+  del (inv) w
+  inv:add w
+  say (0)
+  append (0)
+  say (box)
+  say 'x' 1 (w)
+  line 1 (2)
+  push w
+  push w w
+  pop
+  pop w
+  pop
+  empty
+  empty w
+  empty
+  if empty
+    say (0)
+  check_held w
+  check_live w
+  check_touch
+  check_worn w
+  clear
+  cls_prompt
+  need_scene w true
+  player_moved
+  lifeon w
+  lifeoff w
+  call_before w ev
+  runmethods before Take w
+  runorval w 'inv'
+  theme_name
+  pclr
+  ref 'box'
+  say (arg_word 1)
+  say (tiny)
+  music 'x'
+  rnd 1
+  local xs = inv
+  local n = len xs
+  say n
+  local daemons = getDaemons
+  say (len daemons)
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl box
+  found_in = test_room
+
+impl note
+  found_in = test_room
+
+impl game
+  before Inv =
+    local xs = [7, 8]
+    local a, b = unpack xs
+    say "unpack {tostr a} {tostr b} next {tostr (next xs)}"
+    say (len "abc")
+    say (join2 "a" "b$1c")
+    if starts == 1
+      start false               # точка входа — обычная функция `fn.start`
+    say "starts={starts}"
+    pass
+
+global starts = 0
+
+fn start(load)
+  starts += 1
+  player:move test_room

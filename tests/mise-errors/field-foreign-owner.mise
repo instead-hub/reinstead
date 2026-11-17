@@ -1,0 +1,12 @@
+game "t"
+lang ru
+include stdlib
+
+obj a "а"
+  only_a = 1
+
+obj b "б"
+
+impl b
+  before Exam =
+    say a.only_b

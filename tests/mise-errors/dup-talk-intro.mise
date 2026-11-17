@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+talk x
+  intro = "раз"
+  intro = "два"

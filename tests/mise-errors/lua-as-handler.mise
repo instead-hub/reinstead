@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+
+impl box
+  before Pull =
+    lua
+      p("x")

@@ -1,0 +1,1 @@
+mise: dash-list.mise:7: a `-` list is gone: write a `[...]` list after '=' (`text = ["page 1", "page 2"]` or a multi-line `[` block)

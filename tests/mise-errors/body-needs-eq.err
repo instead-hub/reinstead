@@ -1,0 +1,1 @@
+mise: body-needs-eq.mise:6: dsc: a member is written with '=' (`dsc = value` or `dsc =` and an indented body)

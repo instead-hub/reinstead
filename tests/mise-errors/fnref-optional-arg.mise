@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+fn bad(s: obj, w: str)
+  say w
+
+obj box "коробка" : scenery
+  dsc = "Просто коробка."
+  before Pull, Ask = &bad

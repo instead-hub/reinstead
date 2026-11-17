@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+fn apply(cb: fn(obj) -> str) -> str
+  return (cb none)
+
+fn h() -> str
+  return apply &(s: obj)
+    return 1

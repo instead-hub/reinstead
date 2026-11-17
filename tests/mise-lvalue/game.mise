@@ -1,0 +1,34 @@
+game "lvalue"
+
+lang ru
+
+include stdlib
+
+# `extern lvalue` — место, куда можно писать: чтение и запись одним шаблоном
+# (`score` уже объявлен в `stdlib` как `extern lvalue score: num = "mp.score"`)
+extern lvalue mm -> tbl[any] = "mp.multi"
+
+room hall "зал"
+  dsc = "Зал."
+
+fn start(load)
+  player:move hall
+
+fn bump(n: num)
+  score += n
+
+fn local_shadow(score: num) -> num
+  score += 1
+  return score
+
+fn cur_score() -> num = score
+
+impl game
+  before Inv =
+    score = 10
+    bump 5
+    local loc = local_shadow 1
+    say "score={score} loc={loc}"
+    mm["s"] = "мульти"
+    local m = mm["s"]
+    say "mm={m} cur={cur_score}"

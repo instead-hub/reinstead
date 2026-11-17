@@ -1,0 +1,1 @@
+mise: line 7: fn name_of: str is declared, but a path leaves the body without `return` (add `return` or `pass`, or declare `str?`)

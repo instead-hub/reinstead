@@ -1,0 +1,6 @@
+game "t"
+lang ru
+include stdlib
+
+
+extern prop foo: num = "x"

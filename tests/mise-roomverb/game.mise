@@ -1,0 +1,28 @@
+game "roomverb"
+
+lang ru
+
+include stdlib
+
+# MetaVerb "~помощь,помоги/те" из mp-ru.lua принадлежит метапарсеру, и
+# объявить его заново из игры нельзя, поэтому у тестового глагола своё имя
+# и своё слово.
+event Assist
+
+room computer "компьютер"
+
+verb Assist
+  target = computer
+  words = "ассист/ировать"
+  patterns = [": Assist"]
+
+extend verb #Assist
+  target = computer
+  words = "ассистировать"
+
+impl computer
+  on Assist = "Помощь."
+
+# глагол привязан к комнате-компьютеру, поэтому игрок стартует там
+fn start(load)
+  player:move computer

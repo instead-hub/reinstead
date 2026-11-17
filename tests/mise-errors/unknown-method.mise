@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+obj box "коробка"
+
+fn probe(s: obj)
+  say (s:whatsoever)

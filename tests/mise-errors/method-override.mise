@@ -1,0 +1,9 @@
+game "t"
+lang ru
+include stdlib
+
+class Door(door)
+  door_to = none
+
+Door d "дверь"
+  door_to = none

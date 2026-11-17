@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+verb Zap
+  words = "зап/ать"
+  patterns = ["{noun}/вн : Zap"]
+  hint = 5

@@ -1,0 +1,33 @@
+game "class"
+
+lang ru
+
+include stdlib
+
+class path(obj) : scenery, enterable
+
+class path
+  walk_to: ref
+
+class darkroom(room) : ~light
+
+class darkroom
+  hall_note: num
+
+room hall "зал"
+  dsc = "Зал."
+
+path way "тропа"
+  walk_to = hall
+
+darkroom cellar "подвал"
+  dsc = "Подвал."
+  hall_note = 1
+
+# --- тестовая комната: транскрипт должен что-то видеть ---
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+fn start(load)
+  player:move test_room

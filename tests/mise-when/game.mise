@@ -1,0 +1,50 @@
+game "t"
+
+lang ru
+
+include stdlib
+
+extend type attr = seen
+
+class Tree : scenery
+
+fn pick(s: obj) -> str
+  if s:isa Tree
+    return [[дерево]]
+  elseif s:has scenery
+    return [[декорация]]
+  else
+    return [[прочее]]
+
+obj box "коробка"
+  on Take =
+    if o := seen 'box'
+      o:attr seen
+      say (pick s)
+    else
+      [[не видно]]
+
+event Gaze
+
+impl box
+  on Gaze =
+    [[смотрят]]
+    local style = light
+    if style == light
+      pass
+    local e = Exam
+    if e == Wear
+      [[одежда]]
+
+fn start(load)
+  player:move test_room
+  if true
+    [[one]]
+  if false
+    [[two]]
+
+room test_room "тестовая комната"
+  dsc = "Тестовая комната."
+
+impl box
+  found_in = test_room

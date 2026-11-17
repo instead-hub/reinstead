@@ -1,0 +1,6 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(s: str)
+  say s.nam

@@ -1,0 +1,7 @@
+game "t"
+lang ru
+include stdlib
+
+fn f(n: num)
+  match n
+    5, _ -> say "a"

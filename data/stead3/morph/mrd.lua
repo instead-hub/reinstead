@@ -872,6 +872,23 @@ std.obj.Noun = function(self, ...)
   return mrd.lang.cap(mrd:noun(self, ...))
 end
 
+-- Join a hint list (`{'вн', 2}`) into the comma string the morph API
+-- expects; a separate method because a table second argument already
+-- means "collect word forms" in mrd:noun/obj (see mp:noun_forms).
+std.obj.noun_hint = function(self, n, nn)
+  if type(n) == 'table' then
+    n = table.concat(n, ',')
+  end
+  return mrd:noun(self, n, nn)
+end
+
+std.obj.Noun_hint = function(self, n, nn)
+  if type(n) == 'table' then
+    n = table.concat(n, ',')
+  end
+  return mrd.lang.cap(mrd:noun(self, n, nn))
+end
+
 std.obj.gram = function(self, ...)
   local hint, w, gram,  _
   _, w, hint = mrd:obj(self, ...)

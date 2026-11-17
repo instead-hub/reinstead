@@ -1,0 +1,6 @@
+game "t"
+lang ru
+include stdlib
+
+Prop box "коробка"
+  attrs = scenery

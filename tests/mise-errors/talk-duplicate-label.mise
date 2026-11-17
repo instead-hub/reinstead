@@ -1,0 +1,11 @@
+game "t"
+lang ru
+include stdlib
+
+talk c
+  label x
+    * "a"
+      "b"
+  label x
+    * "c"
+      "d"

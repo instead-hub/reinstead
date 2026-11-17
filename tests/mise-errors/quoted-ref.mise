@@ -1,0 +1,8 @@
+game "t"
+lang ru
+include stdlib
+
+room hall "зал"
+  n_to = "box"
+
+obj box "коробка"

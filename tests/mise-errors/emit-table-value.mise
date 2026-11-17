@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+
+class C
+  d: tbl = method dict(table)
+
+C c "ц"
+  d = 5

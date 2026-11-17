@@ -1,0 +1,10 @@
+game "t"
+lang ru
+include stdlib
+
+class C
+  dsc: fn(s: obj) -> str
+
+obj c "ц" : C
+  dsc =
+    return 5

@@ -1,0 +1,16 @@
+game "t"
+lang ru
+include stdlib
+
+
+class A
+  x: num
+
+class B
+  y: num
+
+class C(A)
+  z: num
+
+class C(B)
+  w: num
