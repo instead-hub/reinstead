@@ -6,7 +6,7 @@ else
 	SDL_CFLAGS="`pkg-config --cflags sdl2`"
 	SDL_LDFLAGS="`pkg-config --libs sdl2`"
 fi
-CFLAGS="$SDL_CFLAGS -Isrc/lua -Isrc/instead -Dunix -DSDL_DISABLE_IMMINTRIN_H -DSTBI_NO_SIMD"
+CFLAGS="$SDL_CFLAGS -Isrc/lua -Isrc/instead -Dunix -DLUA_UCID -DSDL_DISABLE_IMMINTRIN_H -DSTBI_NO_SIMD"
 LDFLAGS="$SDL_LDFLAGS -lm"
 tcc -o reinstead src/*.c src/instead/*.c src/lua/*.c $CFLAGS $LDFLAGS
 rm -f *.o
