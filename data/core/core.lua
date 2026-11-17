@@ -308,6 +308,8 @@ function core.init()
 			conf.autoload = false
 		elseif a == '-noautosave' then
 			conf.autosave = false
+		elseif a == '-stop' then
+			conf.stop_on_err = true
 		elseif a == '-i' then
 			local script = ARGS[k+1] or "autoscript"
 			conf.autoload = false
@@ -315,7 +317,7 @@ function core.init()
 			autoscript_push(script)
 		elseif a == '-h' or a == '-help' then
 			print("RE:INSTEAD v"..VERSION)
-			print(string.format("Usage:\n\t%s [gamedir] [-debug] [-i <autoscript>] [-scale <f>]", EXEFILE))
+			print(string.format("Usage:\n\t%s [gamedir] [-debug] [-i <autoscript>] [-scale <f>] [-stop]", EXEFILE))
 			os.exit(0)
 		elseif a == "-scale" then
 			SCALE = tonumber(ARGS[k+1] or "1.0")
@@ -617,6 +619,11 @@ function core.run()
 				if instead.error() then
 					if type(v) ~= 'string' then v = '' end
 					v = v ..'\n('.. instead.error("")..')'
+					if conf.stop_on_err then
+						-- `-stop`: a failed command ends the run with a non-zero status
+						print(v)
+						os.exit(1)
+					end
 					autoscript_stop()
 				end
 				if not parser_mode and not cmd_mode and false then -- disabled for parser games
