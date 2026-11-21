@@ -289,21 +289,24 @@ local function test_regressions()
 		tostring(err))
 
 	-- 3. mp.lua/mplib.lua: mp:move dispatch of LetGo/LetIn must reach the
-	-- current room (before_LetGo/after_LetIn); plain runmethods still skips
-	-- std.here(), the action chain already calls the room.
+	-- current room (before_LetIn/after_LetGo); runmethods treats the room
+	-- as a regular object.
 	local room = std.here()
 	local hits = {}
-	std.rawset(room, 'before_LetGo', function() hits.before = true return false end)
-	std.rawset(room, 'after_LetIn', function() hits.after = true return false end)
-	mp:runmethods('before', 'LetGo', room, std.me(), room)
-	mp:runmethods('after', 'LetIn', room, std.me())
-	ok("runmethods пропускает комнату", not hits.before and not hits.after)
-	mp:runmethods_here('before', 'LetGo', room, std.me(), room)
-	ok("runmethods_here зовёт before_LetGo комнаты", hits.before == true)
-	mp:runmethods_here('after', 'LetIn', room, std.me())
-	ok("runmethods_here зовёт after_LetIn комнаты", hits.after == true)
-	std.rawset(room, 'before_LetGo', nil)
-	std.rawset(room, 'after_LetIn', nil)
+	std.rawset(room, 'before_LetIn', function() hits.in_ = true return false end)
+	std.rawset(room, 'after_LetGo', function() hits.out = true return false end)
+	mp:runmethods('before', 'LetIn', room, std.me())
+	ok("runmethods зовёт before_LetIn комнаты", hits.in_ == true)
+	hits = {}
+	mp:move(std.ref('gem'), room)
+	ok("mp:move зовёт before_LetIn комнаты", hits.in_ == true)
+	hits = {}
+	mp:move(std.ref('stone'), std.ref('box'))
+	ok("mp:move зовёт after_LetGo комнаты", hits.out == true)
+	std.rawset(room, 'before_LetIn', nil)
+	std.rawset(room, 'after_LetGo', nil)
+	mp:move(std.ref('gem'), std.ref('box'))
+	mp:move(std.ref('stone'), room)
 end
 
 function init()
