@@ -16,7 +16,7 @@ fn is_obj(s: obj?, t: str?) -> bool
   lua
     return not not std.is_obj(s or false, t)
 
-fn is_talk(s: obj?) -> bool
+fn is_dlg(s: obj?) -> bool
   return is_obj s 'dlg'
 
 fn is_room(s: obj?) -> bool
