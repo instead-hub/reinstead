@@ -20,8 +20,16 @@ fn.plurals = function(s)
   return std.list(mp.multi[s] or { s })
 end
 
+fn.is_obj = function(s, t)
+  return not not std.is_obj(s or false, t)
+end
+
+fn.is_talk = function(s)
+  return fn.is_obj(s, "dlg")
+end
+
 fn.is_room = function(s)
-  return not not std.is_obj(s or false, 'room')
+  return fn.is_obj(s, "room")
 end
 
 fn.door_next = function(s, w)
