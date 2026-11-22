@@ -36,6 +36,12 @@ class obj = obj
   hint_verbs: tbl[verb]
   hint_verbs_only: tbl[verb]
   daemon: fn(obj)
+  # Movement hooks: called by std.player.walk for the player. `onwalk`
+  # runs before the exit/enter checks (return false cancels the walk,
+  # true/nil continues; note `pass` = false, `stop` = nil here).
+  # `afterwalk` runs after the room change, its text is printed.
+  onwalk: fn(s: obj, from: obj, to: obj) -> bool?
+  afterwalk: fn(s: obj, from: obj, to: obj) -> str?
   description: str | bool | fn(obj) -> str
   dsc: str | bool | fn(obj) -> str
   title: str | bool | fn(obj) -> str
