@@ -572,8 +572,8 @@ function mrd:file(f, dict)
   debug("Added file: ", f)
   for l in ff:lines() do
     for w in l:gmatch('%-"[^"]+"') do
-      w = w:gsub('^%-"', ""):gsub('"$', "")
-      local words = split(w, '[^|]+')
+      local wi = w:gsub('^%-"', ""):gsub('"$', "")
+      local words = split(wi, '[^|]+')
       for _, word in ipairs(words) do
         word = word:gsub("/[^/]*$", "")
         for ww in word:gmatch(word_match) do
