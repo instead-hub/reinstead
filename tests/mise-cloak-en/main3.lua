@@ -20,7 +20,7 @@ fn.is_obj = function(s, t)
   return not not std.is_obj(s or false, t)
 end
 
-fn.is_talk = function(s)
+fn.is_dlg = function(s)
   return fn.is_obj(s, "dlg")
 end
 
